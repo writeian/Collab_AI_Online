@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
-from models import db, Chat, Message, User, PromptRecord, Room
+from models import db, Chat, Message, User, PromptRecord, Room, Comment
 from openai_utils import get_ai_response, get_modes_for_room, BASE_MODES
 from access_control import (
     get_current_user, 
@@ -54,9 +54,65 @@ def view_chat(chat_id):
         return redirect(url_for("chat.view_chat", chat_id=chat_obj.id))
 
     messages = Message.query.filter_by(chat_id=chat_obj.id).order_by(Message.timestamp).all()
+    # Get comments for this chat
+    comments = Comment.query.filter_by(chat_id=chat_obj.id).order_by(Comment.timestamp).all()
     # Get dynamic modes for this chat's room
     modes = get_modes_for_room(chat_obj.room)
-    return render_template("chat/view.html", chat=chat_obj, messages=messages, user=user, modes=modes)
+    return render_template("chat/view.html", chat=chat_obj, messages=messages, comments=comments, user=user, modes=modes)
+
+@chat.route("/chat/<int:chat_id>/comment", methods=["POST"])
+@require_chat_access
+def add_comment(chat_id):
+    """Add a comment on a specific dialogue item."""
+    chat_obj = Chat.query.get_or_404(chat_id)
+    user = get_current_user()
+    
+    if not user:
+        flash("Please log in to add comments.")
+        return redirect(url_for("auth.login"))
+    
+    dialogue_number = request.form.get("dialogue_number", type=int)
+    content = request.form.get("content", "").strip()
+    
+    if not dialogue_number or not content:
+        flash("Please provide both dialogue number and comment content.")
+        return redirect(url_for("chat.view_chat", chat_id=chat_obj.id))
+    
+    # Validate that the dialogue number exists (check if there are enough messages)
+    messages = Message.query.filter_by(chat_id=chat_obj.id).order_by(Message.timestamp).all()
+    if dialogue_number < 1 or dialogue_number > len(messages):
+        flash("Invalid dialogue number.")
+        return redirect(url_for("chat.view_chat", chat_id=chat_obj.id))
+    
+    # Create the comment
+    comment = Comment(
+        chat_id=chat_obj.id,
+        user_id=user.id,
+        dialogue_number=dialogue_number,
+        content=content
+    )
+    db.session.add(comment)
+    db.session.commit()
+    
+    flash("Comment added successfully.")
+    return redirect(url_for("chat.view_chat", chat_id=chat_obj.id))
+
+@chat.route("/chat/<int:chat_id>/comment/<int:comment_id>/delete", methods=["POST"])
+@require_chat_edit
+def delete_comment(chat_id, comment_id):
+    """Delete a comment (only comment author or chat owner can delete)."""
+    comment = Comment.query.get_or_404(comment_id)
+    user = get_current_user()
+    
+    # Check if user can delete this comment
+    if comment.user_id != user.id and comment.chat.created_by != user.id:
+        flash("You don't have permission to delete this comment.")
+        return redirect(url_for("chat.view_chat", chat_id=chat_id))
+    
+    db.session.delete(comment)
+    db.session.commit()
+    flash("Comment deleted successfully.")
+    return redirect(url_for("chat.view_chat", chat_id=chat_id))
 
 @chat.route("/chat/<int:chat_id>/edit", methods=["GET", "POST"])
 @require_chat_edit

@@ -11,6 +11,7 @@
     <div class="dashboard-actions">
         <a href="{{ url_for('room.create_room') }}" class="btn btn-primary">Create New Room</a>
         <a href="{{ url_for('dashboard.view_prompts') }}" class="btn btn-secondary">View All Prompts</a>
+        <a href="{{ url_for('dashboard.system_instructions') }}" class="btn btn-info">Manage System Instructions</a>
     </div>
     
     <!-- Room Overview -->
@@ -44,6 +45,10 @@
                             <div class="stat-item">
                                 <span class="stat-number">{{ room_stats[room.id].message_count }}</span>
                                 <span class="stat-label">Messages</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number">{{ room_stats[room.id].comment_count }}</span>
+                                <span class="stat-label">Comments</span>
                             </div>
                         </div>
                         
@@ -94,6 +99,10 @@
                 <div class="summary-item">
                     <h3>{{ room_stats.values()|sum(attribute='message_count') }}</h3>
                     <p>Total Messages</p>
+                </div>
+                <div class="summary-item">
+                    <h3>{{ room_stats.values()|sum(attribute='comment_count') }}</h3>
+                    <p>Total Comments</p>
                 </div>
             </div>
         </div>

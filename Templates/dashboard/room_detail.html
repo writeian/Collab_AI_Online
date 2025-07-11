@@ -39,6 +39,10 @@
                 <div class="stat-label">Total Prompts</div>
             </div>
             <div class="stat-card">
+                <h3>{{ comment_count }}</h3>
+                <div class="stat-label">Total Comments</div>
+            </div>
+            <div class="stat-card">
                 <h3>{{ mode_counts|length }}</h3>
                 <div class="stat-label">Writing Modes Used</div>
             </div>
@@ -71,6 +75,7 @@
                         <tr>
                             <th>Member</th>
                             <th>Prompts Sent</th>
+                            <th>Comments Made</th>
                             <th>Last Activity</th>
                         </tr>
                     </thead>
@@ -79,6 +84,14 @@
                         <tr>
                             <td>{{ display_name }}</td>
                             <td>{{ prompt_count }}</td>
+                            <td>
+                                {% set user_comment_count = user_comments|selectattr('0', 'equalto', user_id)|first %}
+                                {% if user_comment_count %}
+                                    {{ user_comment_count[2] }}
+                                {% else %}
+                                    0
+                                {% endif %}
+                            </td>
                             <td>
                                 {% set last_prompt = prompts|selectattr('user_id', 'equalto', user_id)|first %}
                                 {% if last_prompt %}
@@ -110,8 +123,11 @@
                     <div class="prompt-content">
                         {{ prompt.prompt_content[:200] }}{% if prompt.prompt_content|length > 200 %}...{% endif %}
                     </div>
-                    <div class="prompt-chat">
-                        Chat: {{ prompt.chat.title }}
+                    <div class="prompt-meta">
+                        <span class="prompt-room">Room: {{ prompt.room.name }}</span>
+                        <span class="prompt-chat">
+                            <a href="{{ url_for('chat.view_chat', chat_id=prompt.chat.id) }}">Chat: {{ prompt.chat.title }}</a>
+                        </span>
                     </div>
                 </div>
                 {% endfor %}

@@ -1,8 +1,10 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from models import db, PromptRecord, User, Chat, Room, RoomMember, Message
+from models import db, PromptRecord, User, Chat, Room, RoomMember, Message, Comment, CustomPrompt
 from access_control import get_current_user, require_login
 from sqlalchemy import func
 from collections import defaultdict
+from openai_utils import BASE_MODES, get_modes_for_room
+from datetime import datetime
 
 dashboard = Blueprint('dashboard', __name__)
 
@@ -46,18 +48,138 @@ def index():
         # Count prompts in this room
         prompt_count = PromptRecord.query.filter_by(room_id=room.id).count()
         
+        # Count comments in this room
+        comment_count = db.session.query(func.count(Comment.id)).join(Chat).filter(
+            Chat.room_id == room.id
+        ).scalar()
+        
         room_stats[room.id] = {
             'member_count': member_count,
             'chat_count': chat_count,
             'message_count': message_count or 0,
             'last_activity': last_activity,
-            'prompt_count': prompt_count
+            'prompt_count': prompt_count,
+            'comment_count': comment_count or 0
         }
     
     return render_template("dashboard/index.html", 
                          user=user,
                          rooms=all_rooms,
                          room_stats=room_stats)
+
+@dashboard.route("/system-instructions")
+@require_login
+def system_instructions():
+    """Manage system instructions for AI modes."""
+    user = get_current_user()
+    
+    # Get all rooms the user has access to
+    user_room_ids = []
+    
+    # Rooms owned by user
+    owned_rooms = Room.query.filter_by(owner_id=user.id).all()
+    user_room_ids.extend([room.id for room in owned_rooms if room is not None])
+    
+    # Rooms where user is a member
+    member_rooms = Room.query.join(RoomMember).filter(RoomMember.user_id == user.id).all()
+    user_room_ids.extend([room.id for room in member_rooms if room is not None])
+    
+    # Get all rooms for mode selection
+    rooms = Room.query.filter(Room.id.in_(user_room_ids)).all()
+    
+    # Get base modes
+    base_modes = BASE_MODES
+    
+    # Get room-specific modes if a room is selected
+    selected_room_id = request.args.get('room', '')
+    room_specific_modes = {}
+    
+    if selected_room_id:
+        selected_room = Room.query.get(selected_room_id)
+        if selected_room and selected_room.id in user_room_ids:
+            room_specific_modes = get_modes_for_room(selected_room)
+    
+    # Get custom prompts for the selected room (or global if no room selected)
+    custom_prompts = {}
+    if selected_room_id:
+        custom_prompts = CustomPrompt.query.filter_by(
+            room_id=selected_room_id, 
+            is_active=True
+        ).all()
+    else:
+        # Get global custom prompts (room_id is null)
+        custom_prompts = CustomPrompt.query.filter_by(
+            room_id=None, 
+            is_active=True
+        ).all()
+    
+    # Convert custom prompts to a dictionary for easy lookup
+    custom_prompts_dict = {cp.mode_key: cp for cp in custom_prompts}
+    
+    return render_template("dashboard/system_instructions.html",
+                         user=user,
+                         rooms=rooms,
+                         base_modes=base_modes,
+                         room_specific_modes=room_specific_modes,
+                         selected_room_id=selected_room_id,
+                         custom_prompts=custom_prompts_dict)
+
+@dashboard.route("/system-instructions/edit", methods=["POST"])
+@require_login
+def edit_system_instructions():
+    """Edit system instructions for a specific mode."""
+    user = get_current_user()
+    
+    mode_key = request.form.get('mode_key')
+    new_prompt = request.form.get('prompt', '').strip()
+    label = request.form.get('label', '').strip()
+    room_id = request.form.get('room_id', '')
+    
+    if not mode_key or not new_prompt or not label:
+        flash("Please provide mode key, label, and prompt content.")
+        return redirect(url_for("dashboard.system_instructions"))
+    
+    # Convert room_id to integer or None
+    room_id = int(room_id) if room_id else None
+    
+    # Check if user has access to this room
+    if room_id:
+        room = Room.query.get(room_id)
+        if not room or (room.owner_id != user.id and not RoomMember.query.filter_by(room_id=room_id, user_id=user.id).first()):
+            flash("You don't have permission to edit prompts for this room.")
+            return redirect(url_for("dashboard.system_instructions"))
+    
+    # Check if a custom prompt already exists for this mode and room
+    existing_prompt = CustomPrompt.query.filter_by(
+        mode_key=mode_key, 
+        room_id=room_id
+    ).first()
+    
+    if existing_prompt:
+        # Update existing prompt
+        existing_prompt.prompt = new_prompt
+        existing_prompt.label = label
+        existing_prompt.updated_at = datetime.utcnow()
+        flash(f"System instructions for '{mode_key}' updated successfully!")
+    else:
+        # Create new custom prompt
+        custom_prompt = CustomPrompt(
+            mode_key=mode_key,
+            label=label,
+            prompt=new_prompt,
+            room_id=room_id,
+            created_by=user.id
+        )
+        db.session.add(custom_prompt)
+        flash(f"System instructions for '{mode_key}' created successfully!")
+    
+    db.session.commit()
+    
+    # Redirect back to the same room selection
+    if room_id:
+        return redirect(url_for("dashboard.system_instructions", room=room_id))
+    else:
+        return redirect(url_for("dashboard.system_instructions"))
 
 @dashboard.route("/room/<int:room_id>")
 @require_login
@@ -103,6 +225,20 @@ def room_detail(room_id):
         PromptRecord.user_id, User.display_name
     ).all()
     
+    # Comment statistics for this room
+    comment_count = db.session.query(func.count(Comment.id)).join(Chat).filter(
+        Chat.room_id == room.id
+    ).scalar() or 0
+    
+    # Comments by user in this room
+    user_comments = db.session.query(
+        Comment.user_id,
+        User.display_name,
+        func.count(Comment.id).label('comment_count')
+    ).join(User).join(Chat).filter(Chat.room_id == room.id).group_by(
+        Comment.user_id, User.display_name
+    ).all()
+    
     return render_template("dashboard/room_detail.html",
                          user=user,
                          room=room,
@@ -110,7 +246,9 @@ def room_detail(room_id):
                          chats=chats,
                          prompts=prompts,
                          mode_counts=mode_counts,
-                         user_activity=user_activity)
+                         user_activity=user_activity,
+                         comment_count=comment_count,
+                         user_comments=user_comments)
 
 @dashboard.route("/prompts")
 @require_login
@@ -149,9 +287,17 @@ def view_prompts():
     
     # Get unique rooms, modes, and users for filter dropdowns
     rooms = Room.query.filter(Room.id.in_(user_room_ids)).all()
-    modes = db.session.query(PromptRecord.mode).filter(
-        PromptRecord.room_id.in_(user_room_ids)
-    ).distinct().all()
+    
+    # Get modes - if a room is selected, only show modes for that room
+    if room_filter:
+        modes = db.session.query(PromptRecord.mode).filter(
+            PromptRecord.room_id == room_filter
+        ).distinct().all()
+    else:
+        modes = db.session.query(PromptRecord.mode).filter(
+            PromptRecord.room_id.in_(user_room_ids)
+        ).distinct().all()
+    
     users = db.session.query(User.username, User.display_name).join(PromptRecord).filter(
         PromptRecord.room_id.in_(user_room_ids)
     ).distinct().all()

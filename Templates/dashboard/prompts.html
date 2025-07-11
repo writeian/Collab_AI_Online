@@ -8,10 +8,10 @@
     
     <!-- Filters -->
     <div class="filters-section">
-        <form method="GET" class="filters-form">
+        <form method="GET" class="filters-form" id="filters-form">
             <div class="filter-group">
                 <label for="room">Filter by Room:</label>
-                <select name="room" id="room">
+                <select name="room" id="room" onchange="updateModeFilter()">
                     <option value="">All Rooms</option>
                     {% for room in rooms %}
                     <option value="{{ room.id }}" {% if current_room|string == room.id|string %}selected{% endif %}>
@@ -68,7 +68,9 @@
                     </div>
                     <div class="prompt-meta">
                         <span class="prompt-room">Room: {{ prompt.room.name }}</span>
-                        <span class="prompt-chat">Chat: {{ prompt.chat.title }}</span>
+                        <span class="prompt-chat">
+                            <a href="{{ url_for('chat.view_chat', chat_id=prompt.chat.id) }}">Chat: {{ prompt.chat.title }}</a>
+                        </span>
                     </div>
                 </div>
                 {% endfor %}
@@ -87,4 +89,25 @@
         <a href="{{ url_for('room.index') }}" class="btn btn-secondary">Back to Rooms</a>
     </div>
 </div>
+
+<script>
+function updateModeFilter() {
+    const roomSelect = document.getElementById('room');
+    const modeSelect = document.getElementById('mode');
+    const selectedRoom = roomSelect.value;
+    
+    // Clear the mode filter when room changes
+    modeSelect.value = '';
+    
+    // If a room is selected, we'll need to reload the page to get the correct modes
+    // This is a simple approach - in a more complex app, you might use AJAX
+    if (selectedRoom) {
+        // Add the room parameter to the current URL and reload
+        const currentUrl = new URL(window.location);
+        currentUrl.searchParams.set('room', selectedRoom);
+        currentUrl.searchParams.delete('mode'); // Clear mode when room changes
+        window.location.href = currentUrl.toString();
+    }
+}
+</script>
 {% endblock %} 

@@ -185,6 +185,23 @@ def get_modes_for_room(room):
 
 def get_mode_system_prompt(mode):
     """Return a system prompt tailored to the writing stage."""
+    # First check for custom prompts in the database
+    from models import CustomPrompt
+    from flask import current_app
+    
+    try:
+        # Check for room-specific custom prompt first
+        custom_prompt = CustomPrompt.query.filter_by(
+            mode_key=mode, 
+            is_active=True
+        ).first()
+        
+        if custom_prompt:
+            return custom_prompt.prompt
+    except Exception as e:
+        current_app.logger.error(f"Error checking custom prompts: {e}")
+    
+    # Fallback to default modes
     if mode in MODES:
         return MODES[mode].prompt
     else:

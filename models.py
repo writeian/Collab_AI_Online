@@ -59,6 +59,7 @@ class Room(db.Model):
     # Relationships
     chats = db.relationship('Chat', backref='room', lazy=True, cascade='all, delete-orphan')
     members = db.relationship('RoomMember', backref='room', lazy=True, cascade='all, delete-orphan')
+    custom_prompts = db.relationship('CustomPrompt', backref='room', lazy=True, cascade='all, delete-orphan')
     
     def __repr__(self):
         return f"<Room {self.id} {self.name!r}>"
@@ -95,6 +96,7 @@ class Chat(db.Model):
     # Relationships
     messages = db.relationship('Message', backref='chat', lazy=True, cascade='all, delete-orphan')
     prompt_records = db.relationship('PromptRecord', backref='chat', lazy=True, cascade='all, delete-orphan')
+    comments = db.relationship('Comment', backref='chat', lazy=True, cascade='all, delete-orphan')
     creator = db.relationship('User', backref='created_chats', foreign_keys=[created_by])
     
     def __repr__(self):
@@ -115,6 +117,43 @@ class Message(db.Model):
     
     def __repr__(self):
         return f"<Message {self.id} role={self.role}>"
+
+class Comment(db.Model):
+    """Comments on specific dialogue items in a chat."""
+    
+    id = db.Column(db.Integer, primary_key=True)
+    chat_id = db.Column(db.Integer, db.ForeignKey('chat.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    dialogue_number = db.Column(db.Integer, nullable=False)  # Which prompt/response (1, 2, 3, etc.)
+    content = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    user = db.relationship('User', backref='comments')
+    
+    def __repr__(self):
+        return f"<Comment {self.id} on dialogue {self.dialogue_number}>"
+
+class CustomPrompt(db.Model):
+    """Custom system instructions created by instructors for specific modes and rooms."""
+    
+    id = db.Column(db.Integer, primary_key=True)
+    room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=True)  # null for global prompts
+    mode_key = db.Column(db.String(50), nullable=False)
+    label = db.Column(db.String(100), nullable=False)
+    prompt = db.Column(db.Text, nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    
+    # Relationships
+    creator = db.relationship('User', backref='custom_prompts', foreign_keys=[created_by])
+    
+    __table_args__ = (db.UniqueConstraint('room_id', 'mode_key', name='unique_room_mode'),)
+    
+    def __repr__(self):
+        return f"<CustomPrompt {self.mode_key} for room {self.room_id}>"
 
 class PromptRecord(db.Model):
     """Records student prompts for dashboard analytics."""
