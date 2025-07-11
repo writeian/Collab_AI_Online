@@ -1,83 +1,102 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - AI Collab{% endblock %}
+{% block title %}Instructor Dashboard - AI Collab{% endblock %}
 
 {% block content %}
 <div class="container">
     <h1>Instructor Dashboard</h1>
+    <p class="dashboard-subtitle">Manage your rooms and track student activity</p>
     
-    <!-- Mode Usage Statistics -->
-    <div class="dashboard-section">
-        <h2>Mode Usage Statistics</h2>
-        <div class="stats-grid">
-            {% for mode, count in mode_counts.items() %}
-            <div class="stat-card">
-                <h3>{{ mode|title }}</h3>
-                <div class="stat-number">{{ count }}</div>
-                <div class="stat-label">prompts</div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-
-    <!-- User Statistics -->
-    <div class="dashboard-section">
-        <h2>Student Activity</h2>
-        <div class="table-container">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Student</th>
-                        <th>Total Prompts</th>
-                        <th>Last Activity</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for user_id, display_name, prompt_count in user_stats %}
-                    <tr>
-                        <td>{{ display_name }}</td>
-                        <td>{{ prompt_count }}</td>
-                        <td>
-                            {% set last_prompt = prompt_records|selectattr('user_id', 'equalto', user_id)|first %}
-                            {% if last_prompt %}
-                                {{ last_prompt.timestamp.strftime('%Y-%m-%d %H:%M') }}
-                            {% else %}
-                                Never
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- Recent Prompts -->
-    <div class="dashboard-section">
-        <h2>Recent Prompts</h2>
-        <div class="prompts-list">
-            {% for prompt in recent_prompts %}
-            <div class="prompt-card">
-                <div class="prompt-header">
-                    <span class="prompt-mode">{{ prompt.mode|title }}</span>
-                    <span class="prompt-user">{{ prompt.user.display_name }}</span>
-                    <span class="prompt-time">{{ prompt.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
-                </div>
-                <div class="prompt-content">
-                    {{ prompt.prompt_content[:200] }}{% if prompt.prompt_content|length > 200 %}...{% endif %}
-                </div>
-                <div class="prompt-chat">
-                    Chat: {{ prompt.chat.title }}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-
-    <!-- Navigation -->
+    <!-- Quick Actions -->
     <div class="dashboard-actions">
-        <a href="{{ url_for('dashboard.view_prompts') }}" class="btn btn-primary">View All Prompts</a>
-        <a href="{{ url_for('room.index') }}" class="btn btn-secondary">Back to Rooms</a>
+        <a href="{{ url_for('room.create_room') }}" class="btn btn-primary">Create New Room</a>
+        <a href="{{ url_for('dashboard.view_prompts') }}" class="btn btn-secondary">View All Prompts</a>
     </div>
+    
+    <!-- Room Overview -->
+    <div class="dashboard-section">
+        <h2>Your Rooms</h2>
+        
+        {% if rooms %}
+            <div class="room-grid">
+                {% for room in rooms %}
+                    <div class="room-card">
+                        <div class="room-header">
+                            <h3><a href="{{ url_for('dashboard.room_detail', room_id=room.id) }}">{{ room.name }}</a></h3>
+                            {% if room.description %}
+                                <p class="room-description">{{ room.description }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="room-stats">
+                            <div class="stat-item">
+                                <span class="stat-number">{{ room_stats[room.id].member_count }}</span>
+                                <span class="stat-label">Members</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number">{{ room_stats[room.id].chat_count }}</span>
+                                <span class="stat-label">Chats</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number">{{ room_stats[room.id].prompt_count }}</span>
+                                <span class="stat-label">Prompts</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number">{{ room_stats[room.id].message_count }}</span>
+                                <span class="stat-label">Messages</span>
+                            </div>
+                        </div>
+                        
+                        <div class="room-info">
+                            <small>
+                                Created {{ room.created_at.strftime('%Y-%m-%d') }}
+                                {% if room_stats[room.id].last_activity %}
+                                    | Last activity: {{ room_stats[room.id].last_activity.strftime('%Y-%m-%d %H:%M') }}
+                                {% else %}
+                                    | No activity yet
+                                {% endif %}
+                            </small>
+                        </div>
+                        
+                        <div class="room-actions">
+                            <a href="{{ url_for('room.view_room', room_id=room.id) }}" class="btn btn-sm btn-outline">View Room</a>
+                            <a href="{{ url_for('room.edit_room', room_id=room.id) }}" class="btn btn-sm btn-secondary">Edit</a>
+                            <a href="{{ url_for('room.invite_member', room_id=room.id) }}" class="btn btn-sm btn-info">Invite</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>You don't have any rooms yet.</p>
+                <a href="{{ url_for('room.create_room') }}" class="btn btn-primary">Create Your First Room</a>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Summary Statistics -->
+    {% if rooms %}
+        <div class="dashboard-section">
+            <h2>Summary</h2>
+            <div class="summary-stats">
+                <div class="summary-item">
+                    <h3>{{ rooms|length }}</h3>
+                    <p>Total Rooms</p>
+                </div>
+                <div class="summary-item">
+                    <h3>{{ room_stats.values()|sum(attribute='member_count') }}</h3>
+                    <p>Total Members</p>
+                </div>
+                <div class="summary-item">
+                    <h3>{{ room_stats.values()|sum(attribute='prompt_count') }}</h3>
+                    <p>Total Prompts</p>
+                </div>
+                <div class="summary-item">
+                    <h3>{{ room_stats.values()|sum(attribute='message_count') }}</h3>
+                    <p>Total Messages</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 </div>
 {% endblock %} 

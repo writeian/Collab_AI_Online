@@ -10,6 +10,18 @@
     <div class="filters-section">
         <form method="GET" class="filters-form">
             <div class="filter-group">
+                <label for="room">Filter by Room:</label>
+                <select name="room" id="room">
+                    <option value="">All Rooms</option>
+                    {% for room in rooms %}
+                    <option value="{{ room.id }}" {% if current_room|string == room.id|string %}selected{% endif %}>
+                        {{ room.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-group">
                 <label for="mode">Filter by Mode:</label>
                 <select name="mode" id="mode">
                     <option value="">All Modes</option>
@@ -37,9 +49,11 @@
             <a href="{{ url_for('dashboard.view_prompts') }}" class="btn btn-secondary">Clear Filters</a>
         </form>
     </div>
-
+    
     <!-- Prompts List -->
-    <div class="prompts-container">
+    <div class="dashboard-section">
+        <h2>Prompt History</h2>
+        
         {% if prompts %}
             <div class="prompts-list">
                 {% for prompt in prompts %}
@@ -50,22 +64,23 @@
                         <span class="prompt-time">{{ prompt.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
                     </div>
                     <div class="prompt-content">
-                        {{ prompt.prompt_content }}
+                        {{ prompt.prompt_content[:300] }}{% if prompt.prompt_content|length > 300 %}...{% endif %}
                     </div>
                     <div class="prompt-meta">
+                        <span class="prompt-room">Room: {{ prompt.room.name }}</span>
                         <span class="prompt-chat">Chat: {{ prompt.chat.title }}</span>
-                        <span class="prompt-length">{{ prompt.prompt_content|length }} characters</span>
                     </div>
                 </div>
                 {% endfor %}
             </div>
         {% else %}
-            <div class="no-results">
-                <p>No prompts found matching the current filters.</p>
+            <div class="empty-state">
+                <p>No prompts found with the current filters.</p>
+                <a href="{{ url_for('dashboard.view_prompts') }}" class="btn btn-secondary">Clear Filters</a>
             </div>
         {% endif %}
     </div>
-
+    
     <!-- Navigation -->
     <div class="dashboard-actions">
         <a href="{{ url_for('dashboard.index') }}" class="btn btn-secondary">Back to Dashboard</a>

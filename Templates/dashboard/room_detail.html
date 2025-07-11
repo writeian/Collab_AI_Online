@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}{{ room.name }} - Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="room-detail-header">
+        <h1>{{ room.name }}</h1>
+        <p class="room-description">
+            {% if room.description %}{{ room.description }}{% endif %}
+        </p>
+        {% if room.goals %}
+            <p class="room-goals"><strong>Learning Goals:</strong> {{ room.goals }}</p>
+        {% endif %}
+        <small>Created by {{ room.owner.display_name }} on {{ room.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+    </div>
+    
+    <div class="dashboard-actions">
+        <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline">← Back to Dashboard</a>
+        <a href="{{ url_for('room.view_room', room_id=room.id) }}" class="btn btn-primary">View Room</a>
+        <a href="{{ url_for('room.edit_room', room_id=room.id) }}" class="btn btn-secondary">Edit Room</a>
+        <a href="{{ url_for('room.invite_member', room_id=room.id) }}" class="btn btn-info">Invite Members</a>
+    </div>
+    
+    <!-- Room Statistics -->
+    <div class="dashboard-section">
+        <h2>Room Statistics</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>{{ members|length }}</h3>
+                <div class="stat-label">Members</div>
+            </div>
+            <div class="stat-card">
+                <h3>{{ chats|length }}</h3>
+                <div class="stat-label">Chats</div>
+            </div>
+            <div class="stat-card">
+                <h3>{{ prompts|length }}</h3>
+                <div class="stat-label">Total Prompts</div>
+            </div>
+            <div class="stat-card">
+                <h3>{{ mode_counts|length }}</h3>
+                <div class="stat-label">Writing Modes Used</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Writing Mode Usage -->
+    {% if mode_counts %}
+        <div class="dashboard-section">
+            <h2>Writing Mode Usage</h2>
+            <div class="mode-usage-grid">
+                {% for mode, count in mode_counts.items() %}
+                    <div class="mode-card">
+                        <h4>{{ mode|title }}</h4>
+                        <div class="mode-count">{{ count }}</div>
+                        <div class="mode-label">prompts</div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Member Activity -->
+    {% if user_activity %}
+        <div class="dashboard-section">
+            <h2>Member Activity</h2>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Member</th>
+                            <th>Prompts Sent</th>
+                            <th>Last Activity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user_id, display_name, prompt_count in user_activity %}
+                        <tr>
+                            <td>{{ display_name }}</td>
+                            <td>{{ prompt_count }}</td>
+                            <td>
+                                {% set last_prompt = prompts|selectattr('user_id', 'equalto', user_id)|first %}
+                                {% if last_prompt %}
+                                    {{ last_prompt.timestamp.strftime('%Y-%m-%d %H:%M') }}
+                                {% else %}
+                                    Never
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Recent Prompts -->
+    {% if prompts %}
+        <div class="dashboard-section">
+            <h2>Recent Prompts</h2>
+            <div class="prompts-list">
+                {% for prompt in prompts[:10] %}
+                <div class="prompt-card">
+                    <div class="prompt-header">
+                        <span class="prompt-mode">{{ prompt.mode|title }}</span>
+                        <span class="prompt-user">{{ prompt.user.display_name }}</span>
+                        <span class="prompt-time">{{ prompt.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
+                    </div>
+                    <div class="prompt-content">
+                        {{ prompt.prompt_content[:200] }}{% if prompt.prompt_content|length > 200 %}...{% endif %}
+                    </div>
+                    <div class="prompt-chat">
+                        Chat: {{ prompt.chat.title }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% if prompts|length > 10 %}
+                <p><a href="{{ url_for('dashboard.view_prompts', room=room.id) }}">View all prompts for this room</a></p>
+            {% endif %}
+        </div>
+    {% endif %}
+    
+    <!-- Room Members -->
+    <div class="dashboard-section">
+        <h2>Room Members</h2>
+        <div class="members-list">
+            {% for member in members %}
+                <div class="member-item">
+                    <div class="member-info">
+                        <strong>{{ member.display_name }}</strong>
+                        <small>@{{ member.username }}</small>
+                        {% if member.id == room.owner_id %}
+                            <span class="badge badge-primary">Owner</span>
+                        {% endif %}
+                    </div>
+                    <div class="member-actions">
+                        {% if user.id == room.owner_id and member.id != room.owner_id %}
+                            <a href="{{ url_for('room.remove_member', room_id=room.id, user_id=member.id) }}" 
+                               class="btn btn-sm btn-danger"
+                               onclick="return confirm('Remove {{ member.display_name }} from this room?')">
+                                Remove
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Room Chats -->
+    <div class="dashboard-section">
+        <h2>Room Chats</h2>
+        {% if chats %}
+            <div class="chats-list">
+                {% for chat in chats %}
+                    <div class="chat-item">
+                        <div class="chat-info">
+                            <h4><a href="{{ url_for('chat.view_chat', chat_id=chat.id) }}">{{ chat.title }}</a></h4>
+                            <span class="chat-mode">{{ chat.mode|title }}</span>
+                            <small>Created by {{ chat.creator.display_name }} on {{ chat.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                        </div>
+                        <div class="chat-actions">
+                            <a href="{{ url_for('chat.edit_chat', chat_id=chat.id) }}" class="btn btn-sm btn-secondary">Edit</a>
+                            <a href="{{ url_for('chat.delete_chat', chat_id=chat.id) }}" class="btn btn-sm btn-danger">Delete</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>No chats in this room yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 
