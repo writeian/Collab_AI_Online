@@ -1,7 +1,7 @@
 from flask import Flask
 from models import db
 import os
-from dotenv import load_dotenv
+from config import config
 
 # Import Blueprints
 from auth import auth
@@ -10,19 +10,16 @@ from chat import chat
 from dashboard import dashboard
 from google_auth import google_auth
 
-# Load environment variables from .env file
-load_dotenv()
 
-
-def create_app():
+def create_app(config_name=None):
     app = Flask(__name__)
-
-    # Secret key (needed for sessions & flash messages)
-    app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev")
-
-    # SQLite DB lives in project root
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///ai_collab.db"
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    
+    # Get configuration
+    if config_name is None:
+        config_name = os.getenv('FLASK_ENV', 'development')
+    
+    app.config.from_object(config[config_name])
+    config[config_name].init_app(app)
 
     # Initialize database
     db.init_app(app)
