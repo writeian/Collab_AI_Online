@@ -1,9 +1,10 @@
 """Helper functions for talking to AI services.
 
-Supports both OpenAI and Anthropic Claude APIs.
+Supports OpenAI, Anthropic Claude, and local Ollama APIs.
 """
 import os
 import requests
+import time
 from flask import current_app
 from models import Message, Room
 from collections import namedtuple
@@ -274,39 +275,54 @@ def call_openai_api(messages, max_tokens=300):
 
 def call_ollama_api(messages, system_prompt, max_tokens=300):
     """Call local Ollama API."""
-    ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
-    model = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
+    ollama_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    model = os.getenv("OLLAMA_MODEL", "gemma3")
     
-    # Convert messages to Ollama format
-    ollama_messages = []
+    # Convert messages to Ollama format with system prompt
+    if system_prompt:
+        prompt = f"System: {system_prompt}\\n\\n"
+    else:
+        prompt = ""
+    
+    # Add user messages
     for msg in messages:
-        if msg["role"] == "system":
-            continue
-        ollama_messages.append({
-            "role": msg["role"],
-            "content": msg["content"]
-        })
+        if msg.get('role') == 'user':
+            prompt += f"User: {msg.get('content', '')}\\n"
+        elif msg.get('role') == 'assistant':
+            prompt += f"Assistant: {msg.get('content', '')}\\n"
+    
+    prompt += "Assistant: "
     
     payload = {
         "model": model,
-        "messages": ollama_messages,
+        "prompt": prompt,
         "stream": False,
         "options": {
-            "num_predict": max_tokens,
-            "temperature": 0.7
+            "temperature": 0.7,
+            "top_p": 0.9,
+            "num_predict": max_tokens
         }
     }
     
     try:
-        response = requests.post(f"{ollama_url}/api/chat", json=payload)
-        response.raise_for_status()
-        return response.json()["message"]["content"]
-    except requests.exceptions.RequestException as e:
-        current_app.logger.error(f"Ollama API failure: {e}")
-        return "⚠️ Sorry — I couldn't reach the local AI service. Make sure Ollama is running."
+        start_time = time.time()
+        response = requests.post(f"{ollama_url}/api/generate", json=payload, timeout=120)
+        end_time = time.time()
+        
+        if response.status_code == 200:
+            result = response.json()
+            current_app.logger.info(f"Ollama response time: {end_time - start_time:.2f}s")
+            return result.get('response', '').strip()
+        else:
+            current_app.logger.error(f"Ollama API error: {response.status_code}")
+            return "I'm sorry, I'm having trouble processing your request right now."
+            
+    except requests.exceptions.Timeout:
+        current_app.logger.error("Ollama request timed out")
+        return "I'm sorry, the request took too long to process. Please try again."
     except Exception as e:
-        current_app.logger.error(f"Ollama API failure: {e}")
-        return "⚠️ Sorry — I couldn't reach the local AI service just now."
+        current_app.logger.error(f"Ollama API error: {e}")
+        return "I'm sorry, I encountered an error processing your request."
 
 
 def get_ai_response(
