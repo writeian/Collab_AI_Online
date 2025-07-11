@@ -43,6 +43,12 @@ def create_app():
         from flask import redirect, url_for
         return redirect(url_for('room.index'))
 
+    # About page
+    @app.route('/about')
+    def about():
+        from flask import render_template
+        return render_template('about.html')
+
     # Admin route to view users
     @app.route('/admin/users')
     def admin_users():

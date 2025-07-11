@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}About{% endblock %}
+
+{% block content %}
+<div class="about-container">
+    <div class="about-header">
+        <h2>About AI Collab Teams</h2>
+        <p class="about-subtitle">Empowering collaborative learning through AI-assisted writing</p>
+    </div>
+
+    <div class="about-section">
+        <h3>🎯 Our Mission</h3>
+        <p>AI Collab Teams transforms how students and instructors work together on writing projects. By combining the power of AI assistance with structured collaboration, we help teams develop better writing skills through guided, interactive learning experiences.</p>
+    </div>
+
+    <div class="about-section">
+        <h3>✨ Key Features</h3>
+        <div class="features-grid">
+            <div class="feature-card">
+                <h4>🏠 Room-Based Collaboration</h4>
+                <p>Create dedicated spaces for your teams, classes, or projects. Each room provides a focused environment for collaborative writing.</p>
+            </div>
+            <div class="feature-card">
+                <h4>🤖 AI Writing Assistant</h4>
+                <p>Powered by advanced AI models (OpenAI GPT-4o and Anthropic Claude), providing intelligent feedback across all writing stages.</p>
+            </div>
+            <div class="feature-card">
+                <h4>📝 Writing Mode System</h4>
+                <p>10 specialized writing modes from brainstorming to final polish, each with tailored AI prompts and guidance.</p>
+            </div>
+            <div class="feature-card">
+                <h4>📊 Instructor Dashboard</h4>
+                <p>Comprehensive analytics and management tools for instructors to track progress and guide student development.</p>
+            </div>
+            <div class="feature-card">
+                <h4>💬 Interactive Comments</h4>
+                <p>Students can comment on specific dialogue points, creating threaded discussions around AI feedback.</p>
+            </div>
+            <div class="feature-card">
+                <h4>🔗 Google Docs Integration</h4>
+                <p>Seamlessly import and analyze Google Docs content directly into your collaborative sessions.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="about-section">
+        <h3>🎓 Educational Focus</h3>
+        <p>AI Collab Teams is specifically designed for educational environments, helping students develop critical writing skills through:</p>
+        <ul class="feature-list">
+            <li><strong>Structured Learning:</strong> Guided writing processes with clear stages and objectives</li>
+            <li><strong>Collaborative Feedback:</strong> Team-based review and discussion of writing</li>
+            <li><strong>AI-Assisted Learning:</strong> Intelligent guidance that adapts to each writing stage</li>
+            <li><strong>Progress Tracking:</strong> Detailed analytics for instructors and students</li>
+        </ul>
+    </div>
+
+    <div class="about-section">
+        <h3>🚀 Getting Started</h3>
+        <div class="getting-started">
+            <div class="step">
+                <span class="step-number">1</span>
+                <div class="step-content">
+                    <h4>Create an Account</h4>
+                    <p>Register for free and set up your profile</p>
+                </div>
+            </div>
+            <div class="step">
+                <span class="step-number">2</span>
+                <div class="step-content">
+                    <h4>Join or Create a Room</h4>
+                    <p>Start collaborating with your team or class</p>
+                </div>
+            </div>
+            <div class="step">
+                <span class="step-number">3</span>
+                <div class="step-content">
+                    <h4>Start a Chat</h4>
+                    <p>Choose a writing mode and begin your AI-assisted writing journey</p>
+                </div>
+            </div>
+            <div class="step">
+                <span class="step-number">4</span>
+                <div class="step-content">
+                    <h4>Collaborate & Learn</h4>
+                    <p>Work together, get feedback, and improve your writing skills</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="about-section">
+        <h3>🛠️ Technology Stack</h3>
+        <div class="tech-grid">
+            <div class="tech-item">
+                <strong>Backend:</strong> Flask, SQLAlchemy
+            </div>
+            <div class="tech-item">
+                <strong>Database:</strong> SQLite
+            </div>
+            <div class="tech-item">
+                <strong>AI Services:</strong> OpenAI GPT-4o, Anthropic Claude
+            </div>
+            <div class="tech-item">
+                <strong>Integration:</strong> Google Docs API
+            </div>
+            <div class="tech-item">
+                <strong>Frontend:</strong> HTML, CSS, JavaScript
+            </div>
+            <div class="tech-item">
+                <strong>Authentication:</strong> Flask-SQLAlchemy with password hashing
+            </div>
+        </div>
+    </div>
+
+    <div class="about-section">
+        <h3>🤝 Support & Community</h3>
+        <p>Need help getting started or have questions about AI Collab Teams?</p>
+        <div class="support-options">
+            <div class="support-item">
+                <h4>📚 Documentation</h4>
+                <p>Check our comprehensive guides and tutorials</p>
+            </div>
+            <div class="support-item">
+                <h4>💡 Tips & Best Practices</h4>
+                <p>Learn how to maximize your collaborative writing experience</p>
+            </div>
+            <div class="support-item">
+                <h4>🔧 Technical Support</h4>
+                <p>Get help with setup and troubleshooting</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="about-footer">
+        <p><strong>Ready to transform your collaborative writing experience?</strong></p>
+        <div class="cta-buttons">
+            <a href="{{ url_for('auth.register') }}" class="btn btn-primary">Get Started</a>
+            <a href="{{ url_for('room.index') }}" class="btn btn-secondary">Explore Rooms</a>
+        </div>
+    </div>
+</div>
+{% endblock %} 
