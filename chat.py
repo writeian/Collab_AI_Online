@@ -1,12 +1,12 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
-from models import db, Chat, Message, User, ChatShare, PromptRecord
-from openai_utils import get_ai_response, MODES
+from models import db, Chat, Message, User, PromptRecord, Room
+from openai_utils import get_ai_response, get_modes_for_room, BASE_MODES
 from access_control import (
     get_current_user, 
     require_login, 
     require_chat_access, 
     require_chat_edit, 
-    require_chat_owner,
+    require_chat_delete,
     can_access_chat,
     can_edit_chat
 )
@@ -14,87 +14,13 @@ from google_docs import validate_google_docs_url, get_document_content
 
 chat = Blueprint('chat', __name__)
 
-@chat.route("/")
-def index():
-    user = get_current_user()
-    if user:
-        # Show user's chats and shared chats
-        owned_chats = Chat.query.filter_by(owner_id=user.id).order_by(Chat.created_at.desc()).all()
-        shared_chats = Chat.query.join(ChatShare).filter(ChatShare.user_id == user.id).order_by(Chat.created_at.desc()).all()
-        public_chats = Chat.query.filter_by(is_public=True).order_by(Chat.created_at.desc()).limit(10).all()
-    else:
-        # Show only public chats for anonymous users
-        owned_chats = []
-        shared_chats = []
-        public_chats = Chat.query.filter_by(is_public=True).order_by(Chat.created_at.desc()).limit(10).all()
-    
-    return render_template("index.html", 
-                         user=user, 
-                         owned_chats=owned_chats, 
-                         shared_chats=shared_chats, 
-                         public_chats=public_chats,
-                         modes=MODES)
-
-@chat.route("/create", methods=["GET", "POST"])
-@require_login
-def create_chat():
-    user = get_current_user()
-        
-    if request.method == "POST":
-        title = request.form["title"].strip()
-        mode = request.form.get("mode", "explore")
-        is_public = request.form.get("is_public") == "on"
-        google_doc_url = request.form.get("google_doc_url", "").strip()
-        
-        if not title:
-            flash("Chat title is required.")
-            return redirect(url_for("chat.create_chat"))
-
-        # Validate Google Doc URL if provided
-        if google_doc_url:
-            is_valid, doc_id_or_error = validate_google_docs_url(google_doc_url)
-            if not is_valid:
-                flash(f"Google Doc URL error: {doc_id_or_error}")
-                return redirect(url_for("chat.create_chat"))
-
-        chat_obj = Chat(title=title, owner_id=user.id, mode=mode, is_public=is_public)
-        db.session.add(chat_obj)
-        db.session.commit()
-        
-        # If Google Doc URL provided, import the content
-        if google_doc_url:
-            doc_id = doc_id_or_error  # This is the doc_id from validation
-            content, error = get_document_content(doc_id)
-            
-            if error:
-                flash(f"Could not access Google Doc: {error}")
-                return redirect(url_for("chat.view_chat", chat_id=chat_obj.id))
-            
-            if content:
-                # Add the Google Doc content as the first user message
-                doc_message = Message(
-                    chat_id=chat_obj.id, 
-                    user_id=user.id, 
-                    role="user", 
-                    content=f"[Google Doc Content]\n\n{content}"
-                )
-                db.session.add(doc_message)
-                
-                # Get AI response to the imported content
-                ai_content = get_ai_response(chat_obj)
-                ai_msg = Message(chat_id=chat_obj.id, role="assistant", content=ai_content)
-                db.session.add(ai_msg)
-                db.session.commit()
-                
-                flash("Google Doc content imported successfully!")
-        
-        return redirect(url_for("chat.view_chat", chat_id=chat_obj.id))
-    
-    return render_template("create_chat.html", modes=MODES)
+# Chat routes are now handled within room context
+# See room.py for room-based chat creation and management
 
 @chat.route("/chat/<int:chat_id>", methods=["GET", "POST"])
 @require_chat_access
 def view_chat(chat_id):
+    """View and interact with a chat within a room."""
     chat_obj = Chat.query.get_or_404(chat_id)
     user = get_current_user()
     
@@ -113,6 +39,7 @@ def view_chat(chat_id):
             prompt_record = PromptRecord(
                 user_id=user.id,
                 chat_id=chat_obj.id,
+                room_id=chat_obj.room_id,
                 mode=chat_obj.mode,
                 prompt_content=content
             )
@@ -127,67 +54,39 @@ def view_chat(chat_id):
         return redirect(url_for("chat.view_chat", chat_id=chat_obj.id))
 
     messages = Message.query.filter_by(chat_id=chat_obj.id).order_by(Message.timestamp).all()
-    return render_template("view_chat.html", chat=chat_obj, messages=messages, user=user, modes=MODES)
+    # Get dynamic modes for this chat's room
+    modes = get_modes_for_room(chat_obj.room)
+    return render_template("chat/view.html", chat=chat_obj, messages=messages, user=user, modes=modes)
 
-@chat.route("/edit/<int:chat_id>", methods=["GET", "POST"])
+@chat.route("/chat/<int:chat_id>/edit", methods=["GET", "POST"])
 @require_chat_edit
 def edit_chat(chat_id):
+    """Edit chat details."""
     chat_obj = Chat.query.get_or_404(chat_id)
     
     if request.method == "POST":
         chat_obj.title = request.form["title"].strip()
         chat_obj.mode = request.form.get("mode", "explore")
-        chat_obj.is_public = request.form.get("is_public") == "on"
         db.session.commit()
         flash("Chat updated successfully.")
         return redirect(url_for("chat.view_chat", chat_id=chat_obj.id))
     
-    return render_template("edit_chat.html", chat=chat_obj, modes=MODES)
+    # Get dynamic modes for this chat's room
+    modes = get_modes_for_room(chat_obj.room)
+    return render_template("chat/edit.html", chat=chat_obj, modes=modes)
 
-@chat.route("/delete/<int:chat_id>", methods=["GET", "POST"])
-@require_chat_owner
+@chat.route("/chat/<int:chat_id>/delete", methods=["GET", "POST"])
+@require_chat_delete
 def delete_chat(chat_id):
+    """Delete a chat."""
     chat_obj = Chat.query.get_or_404(chat_id)
+    room_id = chat_obj.room_id
     
     if request.method == "POST":
-        # Delete the chat (messages and shares will be deleted due to cascade)
+        # Delete the chat (messages will be deleted due to cascade)
         db.session.delete(chat_obj)
         db.session.commit()
         flash("Chat deleted successfully.")
-        return redirect(url_for("chat.index"))
+        return redirect(url_for("room.view_room", room_id=room_id))
     
-    return render_template("delete_chat.html", chat=chat_obj)
-
-@chat.route("/share/<int:chat_id>", methods=["GET", "POST"])
-@require_chat_edit
-def share_chat(chat_id):
-    chat_obj = Chat.query.get_or_404(chat_id)
-    user = get_current_user()
-
-    if request.method == "POST":
-        username = request.form["username"].strip()
-        can_edit = request.form.get("can_edit") == "on"
-        
-        target_user = User.query.filter_by(username=username).first()
-        if not target_user:
-            flash("User not found.")
-            return redirect(url_for("chat.share_chat", chat_id=chat_obj.id))
-        
-        if target_user.id == user.id:
-            flash("You cannot share a chat with yourself.")
-            return redirect(url_for("chat.share_chat", chat_id=chat_obj.id))
-        
-        # Check if already shared
-        existing_share = ChatShare.query.filter_by(chat_id=chat_obj.id, user_id=target_user.id).first()
-        if existing_share:
-            flash("Chat is already shared with this user.")
-            return redirect(url_for("chat.share_chat", chat_id=chat_obj.id))
-        
-        # Create share
-        share = ChatShare(chat_id=chat_obj.id, user_id=target_user.id, can_edit=can_edit)
-        db.session.add(share)
-        db.session.commit()
-        flash(f"Chat shared with {target_user.display_name} successfully.")
-        return redirect(url_for("chat.view_chat", chat_id=chat_obj.id))
-    
-    return render_template("share_chat.html", chat=chat_obj) 
+    return render_template("chat/delete.html", chat=chat_obj) 

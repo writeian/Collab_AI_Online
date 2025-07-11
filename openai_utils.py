@@ -5,7 +5,7 @@ Supports both OpenAI and Anthropic Claude APIs.
 import os
 import requests
 from flask import current_app
-from models import Message
+from models import Message, Room
 from collections import namedtuple
 
 def get_client_type():
@@ -13,8 +13,11 @@ def get_client_type():
     # Check API keys dynamically each time
     anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
     openai_api_key = os.getenv("OPENAI_API_KEY")
+    use_ollama = os.getenv("USE_OLLAMA", "false").lower() == "true"
     
-    if anthropic_api_key:
+    if use_ollama:
+        return "ollama"
+    elif anthropic_api_key:
         return "anthropic"
     elif openai_api_key:
         return "openai"
@@ -24,15 +27,16 @@ def get_client_type():
 # Define ChatMode namedtuple and modes
 ChatMode = namedtuple("ChatMode", "label prompt")
 
-MODES = {
-    "explore": ChatMode(       # 1
+# Base modes for fallback
+BASE_MODES = {
+    "explore": ChatMode(
         "1. Explore & evaluate significance",
         "You are a Socratic tutor. Ask probing questions to help students discover \
 what genuinely interests them about their topic. Guide them to reflect on why this \
 matters to them personally and to others. Don't provide answers - help them \
 uncover their own insights through thoughtful questioning."
     ),
-    "focus": ChatMode(         # 2
+    "focus": ChatMode(
         "2. Narrow to a researchable question",
         "You are a research question coach. Help students learn to craft clear, \
 answerable questions by asking: 'What specific aspect interests you most?' \
@@ -40,7 +44,7 @@ answerable questions by asking: 'What specific aspect interests you most?' \
 answer this?' Guide them to understand the difference between broad topics \
 and focused research questions."
     ),
-    "context": ChatMode(       # 3
+    "context": ChatMode(
         "3. Find authoritative sources",
         "You are an information literacy coach. Help students find and evaluate \
 authoritative sources by asking: 'Who are the experts on this topic?' \
@@ -49,7 +53,7 @@ authoritative sources by asking: 'Who are the experts on this topic?' \
 academic sources, expert journalism, and less reliable information. \
 Guide them to assess authority, accuracy, currency, and bias."
     ),
-    "proposal": ChatMode(      # 4
+    "proposal": ChatMode(
         "4. Write a persuasive proposal",
         "You are a proposal writing mentor. Guide students through the \
 proposal process by asking: 'What's your main argument?' 'How will you \
@@ -57,7 +61,7 @@ gather evidence?' 'What sources will you need?' Help them understand \
 what makes a proposal compelling rather than writing it for them. \
 Encourage them to articulate their own rationale and methods."
     ),
-    "outline": ChatMode(       # 5
+    "outline": ChatMode(
         "5. Design a working outline",
         "You are an outline coach. Help students learn to structure their \
 ideas by asking: 'What's your main claim?' 'What evidence supports each \
@@ -65,7 +69,7 @@ point?' 'How do these sections connect?' Guide them to create logical \
 flow and parallel structure rather than providing the outline. \
 Teach them to think about argument structure."
     ),
-    "draft": ChatMode(         # 6
+    "draft": ChatMode(
         "6. Draft key sections",
         "You are a writing coach. Help students develop their writing skills \
 by asking: 'What's your main point here?' 'How does this connect to your \
@@ -73,7 +77,7 @@ thesis?' 'What evidence supports this claim?' Guide them to write \
 clear, well-supported paragraphs rather than writing for them. \
 Focus on teaching writing principles and structure."
     ),
-    "revise": ChatMode(        # 7
+    "revise": ChatMode(
         "7. Revision strategy & feedback",
         "You are a revision mentor. Help students learn to revise by asking: \
 'What's your strongest argument?' 'Where could you strengthen evidence?' \
@@ -81,7 +85,7 @@ Focus on teaching writing principles and structure."
 their own revision priorities rather than making changes for them. \
 Teach them to evaluate their own work critically."
     ),
-    "evidence": ChatMode(      # 8
+    "evidence": ChatMode(
         "8. Evidence integrator",
         "You are an evidence coach. Help students learn to evaluate and \
 integrate sources by asking: 'How reliable is this source?' 'What does \
@@ -89,7 +93,7 @@ this evidence actually prove?' 'How does it connect to your argument?' \
 Guide them to think critically about evidence rather than selecting \
 sources for them. Teach them to assess credibility and relevance."
     ),
-    "citation": ChatMode(      # 9
+    "citation": ChatMode(
         "9. Citation & formatting coach",
         "You are a citation mentor. Help students learn citation rules by \
 asking: 'What type of source is this?' 'What information do you need?' \
@@ -97,7 +101,7 @@ asking: 'What type of source is this?' 'What information do you need?' \
 citation principles rather than formatting for them. Teach them \
 to use citation guides and style manuals."
     ),
-    "reflect": ChatMode(       # 10
+    "reflect": ChatMode(
         "10. Metacognitive reflection",
         "You are a reflection facilitator. Help students think about their \
 learning process by asking: 'What did you learn about research?' \
@@ -107,6 +111,77 @@ insights and growth rather than summarizing for them."
     ),
 }
 
+# Global MODES variable that will be updated dynamically
+MODES = BASE_MODES.copy()
+
+def generate_room_modes(room):
+    """Generate contextual writing modes based on room goals."""
+    if not room.goals:
+        return BASE_MODES
+    
+    client_type = get_client_type()
+    if not client_type:
+        return BASE_MODES
+    
+    # Create a prompt for generating contextual modes
+    system_prompt = """You are an educational AI assistant. Based on the learning goals provided, generate 5-8 contextual writing modes that would help students achieve those goals.
+
+For each mode, provide:
+1. A short, descriptive label (2-4 words)
+2. A detailed prompt explaining the AI's role and approach
+
+Focus on modes that help students learn, not modes that do the work for them. Each mode should guide students through a specific aspect of their learning journey.
+
+Return the response as a JSON object with mode keys and objects containing 'label' and 'prompt' fields."""
+
+    user_prompt = f"""Learning Goals: {room.goals}
+
+Generate contextual writing modes that would help students achieve these learning goals. Focus on modes that guide students through the learning process rather than doing the work for them."""
+
+    try:
+        if client_type == "anthropic":
+            response = call_anthropic_api(
+                [{"role": "user", "content": user_prompt}],
+                system_prompt,
+                max_tokens=800
+            )
+        else:
+            response = call_openai_api(
+                [{"role": "system", "content": system_prompt},
+                 {"role": "user", "content": user_prompt}],
+                max_tokens=800
+            )
+        
+        # Try to parse JSON response
+        import json
+        try:
+            modes_data = json.loads(response)
+            contextual_modes = {}
+            
+            for mode_key, mode_info in modes_data.items():
+                if isinstance(mode_info, dict) and 'label' in mode_info and 'prompt' in mode_info:
+                    contextual_modes[mode_key] = ChatMode(mode_info['label'], mode_info['prompt'])
+            
+            if contextual_modes:
+                return contextual_modes
+        except json.JSONDecodeError:
+            pass
+        
+        # Fallback to base modes if parsing fails
+        return BASE_MODES
+        
+    except Exception as e:
+        current_app.logger.error(f"Error generating room modes: {e}")
+        return BASE_MODES
+
+def get_modes_for_room(room):
+    """Get writing modes for a specific room, generating contextual modes if needed."""
+    if not room.goals:
+        return BASE_MODES
+    
+    # For now, return base modes. In a full implementation, you might want to cache
+    # generated modes or generate them on-demand
+    return generate_room_modes(room)
 
 def get_mode_system_prompt(mode):
     """Return a system prompt tailored to the writing stage."""
@@ -180,6 +255,43 @@ def call_openai_api(messages, max_tokens=300):
         return "⚠️ Sorry — I couldn't reach the AI service just now."
 
 
+def call_ollama_api(messages, system_prompt, max_tokens=300):
+    """Call local Ollama API."""
+    ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
+    model = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
+    
+    # Convert messages to Ollama format
+    ollama_messages = []
+    for msg in messages:
+        if msg["role"] == "system":
+            continue
+        ollama_messages.append({
+            "role": msg["role"],
+            "content": msg["content"]
+        })
+    
+    payload = {
+        "model": model,
+        "messages": ollama_messages,
+        "stream": False,
+        "options": {
+            "num_predict": max_tokens,
+            "temperature": 0.7
+        }
+    }
+    
+    try:
+        response = requests.post(f"{ollama_url}/api/chat", json=payload)
+        response.raise_for_status()
+        return response.json()["message"]["content"]
+    except requests.exceptions.RequestException as e:
+        current_app.logger.error(f"Ollama API failure: {e}")
+        return "⚠️ Sorry — I couldn't reach the local AI service. Make sure Ollama is running."
+    except Exception as e:
+        current_app.logger.error(f"Ollama API failure: {e}")
+        return "⚠️ Sorry — I couldn't reach the local AI service just now."
+
+
 def get_ai_response(
     chat,
     *,
@@ -190,7 +302,7 @@ def get_ai_response(
     """Return the assistant's reply text for a given Chat row."""
     client_type = get_client_type()
     if not client_type:
-        return "⚠️ No AI API key configured. Please set ANTHROPIC_API_KEY or OPENAI_API_KEY environment variable."
+        return "⚠️ No AI API key configured. Please set ANTHROPIC_API_KEY, OPENAI_API_KEY, or USE_OLLAMA=true environment variable."
     
     # Get mode-specific system prompt
     system_prompt = get_mode_system_prompt(chat.mode)
@@ -201,15 +313,10 @@ def get_ai_response(
         .order_by(Message.timestamp)
         .all()
     ]
-
-    # Keep only the last 20 messages to cap cost
-    messages_payload = messages_payload[-20:]
     
-    # Add system prompt at the beginning for OpenAI
-    if client_type == "openai":
-        messages_payload.insert(0, {"role": "system", "content": system_prompt})
-        return call_openai_api(messages_payload, max_tokens)
+    if client_type == "ollama":
+        return call_ollama_api(messages_payload, system_prompt, max_tokens)
     elif client_type == "anthropic":
         return call_anthropic_api(messages_payload, system_prompt, max_tokens)
-    else:
-        return "⚠️ No AI service configured."
+    else:  # openai
+        return call_openai_api(messages_payload, max_tokens)

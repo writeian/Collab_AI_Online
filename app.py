@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 
 # Import Blueprints
 from auth import auth
+from room import room
 from chat import chat
 from dashboard import dashboard
 from google_auth import google_auth
@@ -31,15 +32,16 @@ def create_app():
 
     # Register Blueprints
     app.register_blueprint(auth, url_prefix='/auth')
+    app.register_blueprint(room, url_prefix='/room')
     app.register_blueprint(chat, url_prefix='/chat')
     app.register_blueprint(dashboard, url_prefix='/dashboard')
     app.register_blueprint(google_auth, url_prefix='/auth/google')
     
-    # Redirect root to chat index
+    # Redirect root to room index
     @app.route('/')
     def root():
         from flask import redirect, url_for
-        return redirect(url_for('chat.index'))
+        return redirect(url_for('room.index'))
 
     # Admin route to view users
     @app.route('/admin/users')

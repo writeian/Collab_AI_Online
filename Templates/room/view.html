@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ room.name }}{% endblock %}
+{% block content %}
+  <div class="room-header">
+    <h2>{{ room.name }}</h2>
+    {% if room.description %}
+      <p class="room-description">{{ room.description }}</p>
+    {% endif %}
+    {% if room.goals %}
+      <p class="room-goals"><strong>Learning Goals:</strong> {{ room.goals }}</p>
+    {% endif %}
+    <small>Created by {{ room.owner.display_name }} on {{ room.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+  </div>
+  
+  <div class="room-actions">
+    {% if user.id == room.owner_id %}
+      <a href="{{ url_for('room.edit_room', room_id=room.id) }}" class="btn btn-secondary">Edit Room</a>
+      <a href="{{ url_for('room.invite_member', room_id=room.id) }}" class="btn btn-info">Invite Members</a>
+      <a href="{{ url_for('room.view_members', room_id=room.id) }}" class="btn btn-outline">View Members</a>
+    {% else %}
+      <a href="{{ url_for('room.invite_member', room_id=room.id) }}" class="btn btn-info">Invite Members</a>
+      <a href="{{ url_for('room.view_members', room_id=room.id) }}" class="btn btn-outline">View Members</a>
+    {% endif %}
+    <a href="{{ url_for('room.create_chat', room_id=room.id) }}" class="btn btn-primary">Create Chat</a>
+  </div>
+  
+  <div class="room-content">
+    <h3>Chats in this Room</h3>
+    
+    {% if chats %}
+      <div class="chat-list">
+        {% for chat in chats %}
+          <div class="chat-item">
+            <h4><a href="{{ url_for('chat.view_chat', chat_id=chat.id) }}">{{ chat.title }}</a></h4>
+            <span class="chat-mode">
+              {% if chat.mode in modes %}
+                {{ modes[chat.mode].label }}
+              {% else %}
+                {{ chat.mode }}
+              {% endif %}
+            </span>
+            <small>Created by {{ chat.creator.display_name }} on {{ chat.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+            <div class="chat-actions">
+              <a href="{{ url_for('chat.edit_chat', chat_id=chat.id) }}" class="btn btn-sm btn-secondary">Edit</a>
+              <a href="{{ url_for('chat.delete_chat', chat_id=chat.id) }}" class="btn btn-sm btn-danger">Delete</a>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>No chats yet. <a href="{{ url_for('room.create_chat', room_id=room.id) }}">Create the first chat!</a></p>
+    {% endif %}
+  </div>
+  
+  <div class="room-members">
+    <h3>Room Members</h3>
+    <ul>
+      {% for member in members %}
+        <li>
+          {{ member.display_name }}
+          {% if member.id == room.owner_id %}
+            <span class="badge badge-primary">Owner</span>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endblock %} 

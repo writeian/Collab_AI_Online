@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ chat.title }}{% endblock %}
+{% block content %}
+  <div class="chat-header">
+    <h2>{{ chat.title }}</h2>
+    <p class="chat-info">
+      In room: <a href="{{ url_for('room.view_room', room_id=chat.room_id) }}">{{ chat.room.name }}</a>
+      | Mode: 
+      {% if chat.mode in modes %}
+        {{ modes[chat.mode].label }}
+      {% else %}
+        {{ chat.mode }}
+      {% endif %}
+      | Created by {{ chat.creator.display_name }}
+    </p>
+  </div>
+  
+  <div class="chat-actions">
+    <a href="{{ url_for('chat.edit_chat', chat_id=chat.id) }}" class="btn btn-secondary">Edit Chat</a>
+    <a href="{{ url_for('chat.delete_chat', chat_id=chat.id) }}" class="btn btn-danger">Delete Chat</a>
+    <a href="{{ url_for('room.view_room', room_id=chat.room_id) }}" class="btn btn-outline">Back to Room</a>
+  </div>
+  
+  <div class="chat-messages">
+    {% for message in messages %}
+      <div class="message {{ message.role }}">
+        <div class="message-header">
+          <strong>
+            {% if message.role == 'user' %}
+              {{ message.user.display_name if message.user else 'Anonymous' }}
+            {% else %}
+              AI Assistant
+            {% endif %}
+          </strong>
+          <small>{{ message.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+        </div>
+        <div class="message-content">
+          {{ message.content }}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+  
+  {% if user %}
+    <form method="POST" class="message-form">
+      <div class="form-group">
+        <label for="content">Your message:</label>
+        <textarea id="content" name="content" required class="form-control" rows="3" placeholder="Type your message here..."></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">Send Message</button>
+    </form>
+  {% else %}
+    <p><a href="{{ url_for('auth.login') }}">Log in</a> to send messages.</p>
+  {% endif %}
+{% endblock %} 

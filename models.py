@@ -18,8 +18,8 @@ class User(db.Model):
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     
     # Relationships
-    owned_chats = db.relationship('Chat', backref='owner', lazy=True, foreign_keys='Chat.owner_id')
-    shared_chats = db.relationship('ChatShare', backref='user', lazy=True)
+    owned_rooms = db.relationship('Room', backref='owner', lazy=True, foreign_keys='Room.owner_id')
+    room_memberships = db.relationship('RoomMember', backref='user', lazy=True)
     google_auth = db.relationship('GoogleAuth', backref='user', uselist=False)
     
     def set_password(self, password):
@@ -45,44 +45,60 @@ class GoogleAuth(db.Model):
     def __repr__(self):
         return f"<GoogleAuth user_id={self.user_id}>"
 
+class Room(db.Model):
+    """A collaborative learning space where users can create and share chats."""
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    goals = db.Column(db.Text, nullable=True)  # Learning goals for the room
+    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    
+    # Relationships
+    chats = db.relationship('Chat', backref='room', lazy=True, cascade='all, delete-orphan')
+    members = db.relationship('RoomMember', backref='room', lazy=True, cascade='all, delete-orphan')
+    
+    def __repr__(self):
+        return f"<Room {self.id} {self.name!r}>"
+
+class RoomMember(db.Model):
+    """Represents a user's membership in a room."""
+    
+    id = db.Column(db.Integer, primary_key=True)
+    room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    joined_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    can_create_chats = db.Column(db.Boolean, default=True, nullable=False)
+    can_invite_members = db.Column(db.Boolean, default=False, nullable=False)
+    
+    __table_args__ = (db.UniqueConstraint('room_id', 'user_id', name='unique_room_user'),)
+    
+    def __repr__(self):
+        return f"<RoomMember room_id={self.room_id} user_id={self.user_id}>"
+
 class Chat(db.Model):
-    """A conversation that can be shared between users."""
+    """A conversation within a room that can be accessed by all room members."""
     
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(120), nullable=False)
-    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    is_public = db.Column(db.Boolean, default=False, nullable=False)
     mode = db.Column(
-        db.String(32),          # 'explore', 'focus', 'outline', 'draft', 'revise', 'polish'
+        db.String(32),          # Dynamic modes based on room goals
         default='explore',
         nullable=False
     )
     
     # Relationships
     messages = db.relationship('Message', backref='chat', lazy=True, cascade='all, delete-orphan')
-    shares = db.relationship('ChatShare', backref='chat', lazy=True, cascade='all, delete-orphan')
     prompt_records = db.relationship('PromptRecord', backref='chat', lazy=True, cascade='all, delete-orphan')
-    
-    # Access control methods moved to access_control.py
-    # Use can_access_chat(user, chat) and can_edit_chat(user, chat) instead
+    creator = db.relationship('User', backref='created_chats', foreign_keys=[created_by])
     
     def __repr__(self):
         return f"<Chat {self.id} {self.title!r}>"
-
-class ChatShare(db.Model):
-    """Represents a user's access to a shared chat."""
-    
-    id = db.Column(db.Integer, primary_key=True)
-    chat_id = db.Column(db.Integer, db.ForeignKey('chat.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    can_edit = db.Column(db.Boolean, default=False, nullable=False)
-    shared_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    
-    __table_args__ = (db.UniqueConstraint('chat_id', 'user_id', name='unique_chat_user'),)
-    
-    def __repr__(self):
-        return f"<ChatShare chat_id={self.chat_id} user_id={self.user_id}>"
 
 class Message(db.Model):
     """A single turn in the conversation (user or assistant)."""
@@ -106,12 +122,14 @@ class PromptRecord(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     chat_id = db.Column(db.Integer, db.ForeignKey('chat.id'), nullable=False)
+    room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
     mode = db.Column(db.String(32), nullable=False)  # The mode when the prompt was sent
     prompt_content = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     
     # Relationships
     user = db.relationship('User', backref='prompt_records')
+    room = db.relationship('Room', backref='prompt_records')
     
     def __repr__(self):
         return f"<PromptRecord {self.id} mode={self.mode}>"

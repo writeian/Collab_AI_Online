@@ -34,7 +34,7 @@ def register():
         # Log in the user
         session['user_id'] = user.id
         flash("Registration successful! Welcome to AI Collab.")
-        return redirect(url_for("chat.index"))
+        return redirect(url_for("room.index"))
     
     return render_template("register.html")
 
@@ -48,7 +48,7 @@ def login():
         if user and user.check_password(password):
             session['user_id'] = user.id
             flash(f"Welcome back, {user.display_name}!")
-            return redirect(url_for("chat.index"))
+            return redirect(url_for("room.index"))
         else:
             flash("Invalid username or password.")
             return redirect(url_for("auth.login"))
@@ -59,7 +59,7 @@ def login():
 def logout():
     session.pop('user_id', None)
     flash("You have been logged out.")
-    return redirect(url_for("chat.index"))
+    return redirect(url_for("room.index"))
 
 @auth.route("/profile")
 @require_login

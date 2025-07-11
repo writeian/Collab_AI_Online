@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Edit Chat{% endblock %}
+{% block content %}
+  <h2>Edit Chat: {{ chat.title }}</h2>
+  
+  <form method="POST">
+    <div class="form-group">
+      <label for="title">Chat Title *</label>
+      <input type="text" id="title" name="title" value="{{ chat.title }}" required class="form-control">
+    </div>
+    
+    <div class="form-group">
+      <label for="mode">Writing Mode</label>
+      <select id="mode" name="mode" class="form-control">
+        {% for mode_key, mode_info in modes.items() %}
+          <option value="{{ mode_key }}" {% if chat.mode == mode_key %}selected{% endif %}>
+            {{ mode_info.label }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Update Chat</button>
+      <a href="{{ url_for('chat.view_chat', chat_id=chat.id) }}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+{% endblock %} 
