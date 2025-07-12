@@ -16,7 +16,7 @@ def get_google_docs_service():
         service = build('docs', 'v1', credentials=credentials)
         return service
     except Exception as e:
-        print(f"Error setting up Google Docs service: {e}")
+        # print(f"Error setting up Google Docs service: {e}")
         return None
 
 def extract_document_id(url):

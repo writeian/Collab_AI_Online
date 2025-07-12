@@ -13,7 +13,7 @@ def register():
         password = request.form["password"]
         
         # Debug logging
-        print(f"Registration attempt for username: {username}, email: {email}")
+        # print(f"Registration attempt for username: {username}, email: {email}")
         
         # Validate input
         if not all([username, email, display_name, password]):
@@ -64,11 +64,13 @@ def register():
         
         try:
             # Create new user
-            user = User(username=username, email=email, display_name=display_name)
+            user = User()
+            user.username = username
+            user.email = email
+            user.display_name = display_name
             user.set_password(password)
             db.session.add(user)
             db.session.commit()
-            
             # Log in the user
             session['user_id'] = user.id
             session['username'] = user.username
@@ -92,7 +94,7 @@ def login():
         password = request.form["password"]
         
         # Debug logging
-        print(f"Login attempt for username: {username}")
+        # print(f"Login attempt for username: {username}")
         
         # Validate input
         if not username or not password:
@@ -102,11 +104,7 @@ def login():
         # Check if user exists and password is correct
         try:
             user = User.query.filter_by(username=username).first()
-            print(f"User found: {user is not None}")
-            
-            if user:
-                print(f"Password check result: {user.check_password(password)}")
-                print(f"User is_active: {user.is_active}")
+            # print(f"User found: {user is not None}")
             
             if user and user.check_password(password):
                 if not user.is_active:
@@ -117,7 +115,7 @@ def login():
                 session['user_id'] = user.id
                 session['username'] = user.username  # For easier access
                 
-                print(f"Login successful for user: {user.username}")
+                # print(f"Login successful for user: {user.username}")
                 flash(f"Welcome back, {user.display_name}!", "success")
                 return redirect(url_for("room.index"))
             else:
@@ -125,7 +123,7 @@ def login():
                 flash("Invalid username or password.", "error")
                 return render_template("login.html", username=username)
         except Exception as e:
-            print(f"Database error during login: {e}")
+            # print(f"Database error during login: {e}")
             flash("An error occurred during login. Please try again.", "error")
             return render_template("login.html", username=username)
     

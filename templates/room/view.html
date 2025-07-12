@@ -17,6 +17,7 @@
       <a href="{{ url_for('room.edit_room', room_id=room.id) }}" class="btn btn-secondary">Edit Room</a>
       <a href="{{ url_for('room.invite_member', room_id=room.id) }}" class="btn btn-info">Invite Members</a>
       <a href="{{ url_for('room.view_members', room_id=room.id) }}" class="btn btn-outline">View Members</a>
+      <a href="{{ url_for('room.delete_room', room_id=room.id) }}" class="btn btn-danger">Delete Room</a>
     {% else %}
       <a href="{{ url_for('room.invite_member', room_id=room.id) }}" class="btn btn-info">Invite Members</a>
       <a href="{{ url_for('room.view_members', room_id=room.id) }}" class="btn btn-outline">View Members</a>

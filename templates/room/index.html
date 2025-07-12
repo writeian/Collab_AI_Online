@@ -24,6 +24,7 @@
             <div class="room-actions">
               <a href="{{ url_for('room.edit_room', room_id=room.id) }}" class="btn btn-sm btn-secondary">Edit</a>
               <a href="{{ url_for('room.invite_member', room_id=room.id) }}" class="btn btn-sm btn-info">Invite</a>
+              <a href="{{ url_for('room.delete_room', room_id=room.id) }}" class="btn btn-sm btn-danger">Delete</a>
             </div>
           </div>
         {% endfor %}
