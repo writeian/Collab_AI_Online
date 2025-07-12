@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Create Chat{% endblock %}
+{% block content %}
+  <h2>Create New Chat in: {{ room.name }}</h2>
+  
+  <form method="POST">
+    <div class="form-group">
+      <label for="title">Chat Title *</label>
+      <input type="text" id="title" name="title" required class="form-control" placeholder="Enter chat title">
+    </div>
+    
+    <div class="form-group">
+      <label for="mode">Writing Mode</label>
+      <select id="mode" name="mode" class="form-control">
+        {% for mode_key, mode_info in modes.items() %}
+          <option value="{{ mode_key }}">{{ mode_info.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label for="google_doc_url">Google Doc URL (Optional)</label>
+      <input type="url" id="google_doc_url" name="google_doc_url" class="form-control" placeholder="https://docs.google.com/document/d/...">
+      <small class="form-text text-muted">Paste a Google Doc URL to import its content into the chat</small>
+    </div>
+    
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Create Chat</button>
+      <a href="{{ url_for('room.view_room', room_id=room.id) }}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+{% endblock %} 

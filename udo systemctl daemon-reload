@@ -1,0 +1,8 @@
+● ai_collab_online.service - AI Collab Online Flask Application
+     Loaded: loaded (]8;;file://ubuntu-s-1vcpu-2gb-nyc3-01/etc/systemd/system/ai_collab_online.service/etc/systemd/system/ai_collab_online.service]8;;; [0;1;32menabled[0m; preset: [0;1;32menabled[0m)
+     Active: activating (auto-restart) (Result: exit-code) since Sat 2025-07-12 13:21:49 UTC; 41ms ago
+ Invocation: 1e9113873ae54ffc9b1a10e791cd01d3
+    Process: 28932 ExecStart=/opt/Collab_AI_Online/venv/bin/gunicorn --config deployment/gunicorn.conf.py wsgi:app [0;1;31m(code=exited, status=1/FAILURE)[0m
+   Main PID: 28932 (code=exited, status=1/FAILURE)
+   Mem peak: 56.4M
+        CPU: 1.164s

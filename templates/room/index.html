@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}My Rooms{% endblock %}
+{% block content %}
+  {% if user %}
+    <h2>Welcome, {{ user.display_name }}!</h2>
+    
+    <div class="room-actions">
+      <a href="{{ url_for('room.create_room') }}" class="btn btn-primary">Create New Room</a>
+    </div>
+    
+    {% if owned_rooms %}
+      <h3>My Rooms</h3>
+      <div class="room-grid">
+        {% for room in owned_rooms %}
+          <div class="room-card">
+            <h4><a href="{{ url_for('room.view_room', room_id=room.id) }}">{{ room.name }}</a></h4>
+            {% if room.description %}
+              <p>{{ room.description }}</p>
+            {% endif %}
+            {% if room.goals %}
+              <p><strong>Goals:</strong> {{ room.goals }}</p>
+            {% endif %}
+            <small>Created {{ room.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+            <div class="room-actions">
+              <a href="{{ url_for('room.edit_room', room_id=room.id) }}" class="btn btn-sm btn-secondary">Edit</a>
+              <a href="{{ url_for('room.invite_member', room_id=room.id) }}" class="btn btn-sm btn-info">Invite</a>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    
+    {% if member_rooms %}
+      <h3>Rooms I'm In</h3>
+      <div class="room-grid">
+        {% for room in member_rooms %}
+          <div class="room-card">
+            <h4><a href="{{ url_for('room.view_room', room_id=room.id) }}">{{ room.name }}</a></h4>
+            {% if room.description %}
+              <p>{{ room.description }}</p>
+            {% endif %}
+            {% if room.goals %}
+              <p><strong>Goals:</strong> {{ room.goals }}</p>
+            {% endif %}
+            <small>Created by {{ room.owner.display_name }} on {{ room.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    
+    {% if not owned_rooms and not member_rooms %}
+      <p>No rooms yet. <a href="{{ url_for('room.create_room') }}">Create your first room!</a></p>
+    {% endif %}
+  {% else %}
+    <h2>Welcome to AI Collab Teams</h2>
+    <p>Join collaborative learning spaces! <a href="{{ url_for('auth.register') }}">Register</a> or <a href="{{ url_for('auth.login') }}">login</a> to get started.</p>
+  {% endif %}
+{% endblock %} 

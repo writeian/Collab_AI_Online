@@ -54,6 +54,12 @@ def create_app(config_name=None):
         users = User.query.all()
         return render_template('admin_users.html', users=users)
 
+    # Context processor to make current user available to all templates
+    @app.context_processor
+    def inject_user():
+        from access_control import get_current_user
+        return dict(user=get_current_user())
+
     return app
 
 

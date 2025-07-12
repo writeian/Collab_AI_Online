@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Invite Member{% endblock %}
+{% block content %}
+  <h2>Invite Member to: {{ room.name }}</h2>
+  
+  <form method="POST">
+    <div class="form-group">
+      <label for="username">Username *</label>
+      <input type="text" id="username" name="username" required class="form-control" placeholder="Enter the username to invite">
+    </div>
+    
+    <div class="form-group">
+      <label>
+        <input type="checkbox" name="can_create_chats" checked>
+        Can create chats in this room
+      </label>
+    </div>
+    
+    <div class="form-group">
+      <label>
+        <input type="checkbox" name="can_invite_members">
+        Can invite other members to this room
+      </label>
+    </div>
+    
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Send Invitation</button>
+      <a href="{{ url_for('room.view_room', room_id=room.id) }}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+{% endblock %} 
