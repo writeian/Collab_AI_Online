@@ -52,7 +52,8 @@ def create_app(config_name=None):
             from models import db
             if app.config.get('SQLALCHEMY_DATABASE_URI'):
                 with app.app_context():
-                    db.engine.execute('SELECT 1')
+                    with db.engine.connect() as conn:
+                        conn.execute(db.text('SELECT 1'))
                 return {'status': 'healthy', 'message': 'App is running', 'database': 'connected'}, 200
             else:
                 return {'status': 'healthy', 'message': 'App is running', 'database': 'not configured'}, 200
