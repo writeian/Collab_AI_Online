@@ -176,13 +176,42 @@ Generate contextual writing modes that would help students achieve these learnin
         return BASE_MODES
 
 def get_modes_for_room(room):
-    """Get writing modes for a specific room, generating contextual modes if needed."""
-    if not room.goals:
-        return BASE_MODES
+    """Get writing modes for a specific room, prioritizing saved custom prompts."""
+    from models import CustomPrompt
     
-    # For now, return base modes. In a full implementation, you might want to cache
-    # generated modes or generate them on-demand
-    return generate_room_modes(room)
+    # First, check for saved custom prompts for this room
+    custom_prompts = CustomPrompt.query.filter_by(
+        room_id=room.id, 
+        is_active=True
+    ).all()
+    
+    if custom_prompts:
+        # Convert custom prompts to the same format as BASE_MODES
+        room_modes = {}
+        for cp in custom_prompts:
+            room_modes[cp.mode_key] = {
+                'label': cp.label,
+                'prompt': cp.prompt
+            }
+        return room_modes
+    
+    # If no custom prompts exist, generate contextual modes if room has goals
+    if room.goals:
+        try:
+            contextual_modes = generate_room_modes(room)
+            # Convert to the same format as BASE_MODES
+            room_modes = {}
+            for mode_key, mode_info in contextual_modes.items():
+                room_modes[mode_key] = {
+                    'label': mode_info.label,
+                    'prompt': mode_info.prompt
+                }
+            return room_modes
+        except Exception as e:
+            current_app.logger.error(f"Error generating room modes: {e}")
+    
+    # Fallback to base modes
+    return BASE_MODES
 
 def get_mode_system_prompt(mode, room_id=None):
     """Return a system prompt tailored to the writing stage."""

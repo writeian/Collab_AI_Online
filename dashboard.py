@@ -99,18 +99,9 @@ def system_instructions():
     if selected_room_id:
         selected_room = Room.query.get(selected_room_id)
         if selected_room and selected_room.id in user_room_ids:
-            # Get custom prompts for this room
-            custom_prompts = CustomPrompt.query.filter_by(
-                room_id=selected_room_id, 
-                is_active=True
-            ).all()
-            
-            # Convert to the same format as base_modes for consistency
-            for cp in custom_prompts:
-                room_specific_modes[cp.mode_key] = {
-                    'label': cp.label,
-                    'prompt': cp.prompt
-                }
+            # Use the same function that chat creation uses for consistency
+            from openai_utils import get_modes_for_room
+            room_specific_modes = get_modes_for_room(selected_room)
     
     # Get custom prompts for the selected room (or global if no room selected)
     custom_prompts = {}
@@ -132,7 +123,6 @@ def system_instructions():
     return render_template("dashboard/system_instructions.html",
                          user=user,
                          rooms=rooms,
-                         base_modes=base_modes,
                          room_specific_modes=room_specific_modes,
                          selected_room_id=selected_room_id,
                          selected_room=selected_room,

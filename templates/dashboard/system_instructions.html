@@ -15,12 +15,12 @@
     
     <!-- Room Selection -->
     <div class="dashboard-section">
-        <h2>Select Room for Context-Specific Modes</h2>
+        <h2>Select Room for System Instructions</h2>
         <form method="GET" class="filters-form">
             <div class="filter-group">
                 <label for="room">Choose Room:</label>
                 <select name="room" id="room" onchange="this.form.submit()">
-                    <option value="">All Rooms (Base Modes)</option>
+                    <option value="">Select a room...</option>
                     {% for room in rooms %}
                     <option value="{{ room.id }}" {% if selected_room_id|string == room.id|string %}selected{% endif %}>
                         {{ room.name }}
@@ -31,69 +31,10 @@
         </form>
     </div>
     
-    <!-- Custom Prompts -->
-    {% if custom_prompts %}
-        <div class="dashboard-section">
-            <h2>Custom System Instructions</h2>
-            <p>These are custom instructions that override the default modes.</p>
-            
-            <div class="modes-grid">
-                {% for mode_key, custom_prompt in custom_prompts.items() %}
-                <div class="mode-instruction-card custom-prompt">
-                    <div class="mode-header">
-                        <h3>{{ custom_prompt.label }}</h3>
-                        <span class="mode-key">{{ mode_key }}</span>
-                        <span class="custom-badge">Custom</span>
-                    </div>
-                    <div class="instruction-preview">
-                        {{ custom_prompt.prompt[:200] }}{% if custom_prompt.prompt|length > 200 %}...{% endif %}
-                    </div>
-                    <div class="mode-actions">
-                        <button type="button" class="btn btn-sm btn-primary" 
-                                onclick="editInstruction('{{ mode_key }}', '{{ custom_prompt.label }}', `{{ custom_prompt.prompt|replace('\n', '\\n')|replace('`', '\`') }}`)">
-                            Edit Instructions
-                        </button>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    {% endif %}
-    
-    <!-- Base Modes -->
-    {% if not selected_room_id %}
-        <div class="dashboard-section">
-            <h2>Base System Instructions</h2>
-            <p>These are the default AI behaviors for standard writing modes. You can customize these for specific rooms.</p>
-            
-            <div class="modes-grid">
-                {% for mode_key, mode_info in base_modes.items() %}
-                <div class="mode-instruction-card">
-                    <div class="mode-header">
-                        <h3>{{ mode_info.label }}</h3>
-                        <span class="mode-key">{{ mode_key }}</span>
-                    </div>
-                    <div class="instruction-preview">
-                        {{ mode_info.prompt[:200] }}{% if mode_info.prompt|length > 200 %}...{% endif %}
-                    </div>
-                    <div class="mode-actions">
-                        <button type="button" class="btn btn-sm btn-primary edit-instruction-btn" 
-                                data-mode-key="{{ mode_key }}"
-                                data-label="{{ mode_info.label }}"
-                                data-prompt="{{ mode_info.prompt }}">
-                            Edit Instructions
-                        </button>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    {% endif %}
-    
-    <!-- Room-Specific Modes -->
+    <!-- Room-Specific Instructions -->
     {% if selected_room_id and room_specific_modes %}
         <div class="dashboard-section">
-            <h2>Room-Specific Instructions for "{{ selected_room.name }}"</h2>
+            <h2>System Instructions for "{{ selected_room.name }}"</h2>
             <p>These modes are customized for this room based on its learning goals: <em>{{ selected_room.goals }}</em></p>
             
             <div class="modes-grid">
@@ -112,8 +53,10 @@
                         {{ mode_info.prompt[:200] }}{% if mode_info.prompt|length > 200 %}...{% endif %}
                     </div>
                     <div class="mode-actions">
-                        <button type="button" class="btn btn-sm btn-primary" 
-                                onclick="editInstruction('{{ mode_key }}', '{{ mode_info.label }}', `{{ mode_info.prompt|replace('\n', '\\n')|replace('`', '\`') }}`)">
+                        <button type="button" class="btn btn-sm btn-primary edit-instruction-btn" 
+                                data-mode-key="{{ mode_key }}"
+                                data-label="{{ mode_info.label }}"
+                                data-prompt="{{ mode_info.prompt }}">
                             Edit Instructions
                         </button>
                     </div>
@@ -123,7 +66,7 @@
         </div>
     {% elif selected_room_id %}
         <div class="dashboard-section">
-            <h2>Room-Specific Instructions for "{{ selected_room.name }}"</h2>
+            <h2>System Instructions for "{{ selected_room.name }}"</h2>
             <div class="empty-state">
                 <p>This room uses the base modes. No custom instructions have been generated yet.</p>
                 {% if selected_room.goals %}
@@ -136,6 +79,14 @@
                     <p>To generate contextual instructions, add learning goals to the room and they will be automatically created.</p>
                     <a href="{{ url_for('room.edit_room', room_id=selected_room.id) }}" class="btn btn-primary">Edit Room Goals</a>
                 {% endif %}
+            </div>
+        </div>
+    {% else %}
+        <div class="dashboard-section">
+            <h2>System Instructions Management</h2>
+            <div class="empty-state">
+                <p>Select a room above to view and edit its system instructions.</p>
+                <p>Each room can have its own customized AI behaviors based on the room's learning goals.</p>
             </div>
         </div>
     {% endif %}
