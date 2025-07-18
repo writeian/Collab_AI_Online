@@ -4,7 +4,24 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>AI Collab – {% block title %}{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=2" />
+    
+    <!-- Simple Analytics -->
+    <script>
+      // Track page views
+      fetch('/analytics/pageview', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          page: window.location.pathname,
+          user_agent: navigator.userAgent,
+          timestamp: new Date().toISOString()
+        })
+      }).catch(err => console.log('Analytics error:', err));
+    </script>
   </head>
   <body>
     <div class="container">

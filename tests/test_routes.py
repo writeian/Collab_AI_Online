@@ -25,7 +25,7 @@ class TestRoutes(unittest.TestCase):
     def create_test_user(self, username='testuser', email='test@example.com', password='password'):
         """Helper method to create a test user"""
         with self.app.app_context():
-            user = User(username=username, email=email)
+            user = User(username=username, email=email, display_name=username)
             user.set_password(password)
             db.session.add(user)
             db.session.commit()
@@ -54,6 +54,7 @@ class TestRoutes(unittest.TestCase):
         response = self.client.post('/auth/register', data={
             'username': 'newuser',
             'email': 'newuser@example.com',
+            'display_name': 'New User',
             'password': 'password123',
             'confirm_password': 'password123'
         }, follow_redirects=True)
@@ -65,6 +66,7 @@ class TestRoutes(unittest.TestCase):
             user = User.query.filter_by(username='newuser').first()
             self.assertIsNotNone(user)
             self.assertEqual(user.email, 'newuser@example.com')
+            self.assertEqual(user.display_name, 'New User')
     
     def test_login_route(self):
         """Test user login"""
@@ -124,7 +126,7 @@ class TestRoutes(unittest.TestCase):
             room = Room(
                 name='Test Room',
                 description='A test room',
-                creator_id=user.id,
+                owner_id=user.id,
                 is_public=True
             )
             db.session.add(room)
@@ -144,7 +146,7 @@ class TestRoutes(unittest.TestCase):
             room = Room(
                 name='Test Room',
                 description='A test room',
-                creator_id=user.id,
+                owner_id=user.id,
                 is_public=True
             )
             db.session.add(room)
@@ -171,7 +173,7 @@ class TestRoutes(unittest.TestCase):
             room = Room(
                 name='Test Room',
                 description='A test room',
-                creator_id=user.id,
+                owner_id=user.id,
                 is_public=True
             )
             chat = Chat(
@@ -207,7 +209,7 @@ class TestRoutes(unittest.TestCase):
             room = Room(
                 name='Test Room',
                 description='A test room',
-                creator_id=user.id,
+                owner_id=user.id,
                 is_public=True
             )
             chat = Chat(
@@ -252,7 +254,7 @@ class TestRoutes(unittest.TestCase):
             room = Room(
                 name='Test Room',
                 description='A test room',
-                creator_id=creator.id,
+                owner_id=creator.id,
                 is_public=True
             )
             db.session.add(room)
@@ -281,7 +283,7 @@ class TestRoutes(unittest.TestCase):
             room = Room(
                 name='Test Room',
                 description='A test room',
-                creator_id=user.id,
+                owner_id=user.id,
                 is_public=True
             )
             db.session.add(room)

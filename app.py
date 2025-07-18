@@ -9,6 +9,7 @@ from room import room
 from chat import chat
 from dashboard import dashboard
 from google_auth import google_auth
+from analytics import analytics
 
 
 def create_app(config_name=None):
@@ -47,6 +48,7 @@ def create_app(config_name=None):
     app.register_blueprint(chat, url_prefix='/chat')
     app.register_blueprint(dashboard, url_prefix='/dashboard')
     app.register_blueprint(google_auth, url_prefix='/auth/google')
+    app.register_blueprint(analytics, url_prefix='/analytics')
     
     # Health check endpoint for Railway
     @app.route('/health')
@@ -108,6 +110,12 @@ def create_app(config_name=None):
         from flask import render_template
         users = User.query.all()
         return render_template('admin_users.html', users=users)
+    
+    # Admin route to view analytics
+    @app.route('/admin/analytics')
+    def admin_analytics():
+        from flask import render_template
+        return render_template('admin_analytics.html')
 
     # Context processor to make current user available to all templates
     @app.context_processor

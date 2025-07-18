@@ -79,7 +79,8 @@ def register():
             return redirect(url_for("room.index"))
         except Exception as e:
             db.session.rollback()
-            flash("An error occurred during registration. Please try again.", "error")
+            print(f"Registration error: {e}")
+            flash(f"An error occurred during registration: {str(e)}", "error")
             return render_template("register.html", 
                                 username=username, 
                                 email=email, 
