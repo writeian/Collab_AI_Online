@@ -1,6 +1,24 @@
-# AI Collab Teams 🤖💬👥
+# AI Collab Online 🤖
 
-A modern, room-based collaborative AI chat application built with Flask, SQLAlchemy, and AI services. Designed specifically for educational writing support, AI Collab Teams helps students and instructors work together through intelligent AI feedback across different writing stages.
+**A collaborative AI-powered writing platform for teams and educators**
+
+[![Live Demo](https://img.shields.io/badge/Live-Demo-blue?style=for-the-badge)](https://your-railway-url.railway.app)
+[![GitHub](https://img.shields.io/badge/GitHub-Open%20Source-green?style=for-the-badge)](https://github.com/writeian/Collab_AI_Online)
+[![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
+
+## 🚀 **Looking for Test Users!**
+
+We're actively seeking educators, writing teams, and content creators to help improve this platform. Your feedback will shape the future of collaborative AI writing!
+
+**Perfect for:**
+- 📚 **Educators** - AI-assisted writing instruction
+- ✍️ **Writing Teams** - Collaborative content creation  
+- 🎯 **Content Creators** - AI-powered writing assistance
+- 🔬 **Researchers** - Collaborative document writing
+
+**[Try it now](https://your-railway-url.railway.app)** | **[View on GitHub](https://github.com/writeian/Collab_AI_Online)**
+
+---
 
 ## ✨ Features
 

@@ -19,27 +19,35 @@
         <div class="features-grid">
             <div class="feature-card">
                 <h4>🏠 Room-Based Collaboration</h4>
-                <p>Create dedicated spaces for your teams, classes, or projects. Each room provides a focused environment for collaborative writing.</p>
+                <p>Create dedicated spaces for your teams, classes, or projects. Each room provides a focused environment for collaborative writing with member management and permissions.</p>
             </div>
             <div class="feature-card">
                 <h4>🤖 AI Writing Assistant</h4>
-                <p>Powered by advanced AI models (OpenAI GPT-4o and Anthropic Claude), providing intelligent feedback across all writing stages.</p>
+                <p>Powered by advanced AI models (Anthropic Claude and OpenAI GPT-4o), providing intelligent feedback and guidance throughout the writing process.</p>
             </div>
             <div class="feature-card">
-                <h4>📝 Writing Mode System</h4>
-                <p>10 specialized writing modes from brainstorming to final polish, each with tailored AI prompts and guidance.</p>
+                <h4>📝 Dynamic Writing Modes</h4>
+                <p>10 specialized writing modes from brainstorming to final polish, with contextual modes generated based on room learning goals and custom prompts.</p>
             </div>
             <div class="feature-card">
                 <h4>📊 Instructor Dashboard</h4>
-                <p>Comprehensive analytics and management tools for instructors to track progress and guide student development.</p>
+                <p>Comprehensive analytics and management tools for instructors to track student progress, monitor AI usage patterns, and manage custom prompts.</p>
             </div>
             <div class="feature-card">
                 <h4>💬 Interactive Comments</h4>
-                <p>Students can comment on specific dialogue points, creating threaded discussions around AI feedback.</p>
+                <p>Students can comment on specific dialogue points, creating threaded discussions around AI feedback and collaborative learning.</p>
             </div>
             <div class="feature-card">
                 <h4>🔗 Google Docs Integration</h4>
-                <p>Seamlessly import and analyze Google Docs content directly into your collaborative sessions.</p>
+                <p>Import and analyze Google Docs content directly into your collaborative sessions for AI-powered feedback and improvement.</p>
+            </div>
+            <div class="feature-card">
+                <h4>🎯 Custom Prompts</h4>
+                <p>Instructors can create and customize AI prompts for specific writing modes and rooms, tailoring the AI assistance to their teaching goals.</p>
+            </div>
+            <div class="feature-card">
+                <h4>📈 Learning Analytics</h4>
+                <p>Track student engagement, writing mode preferences, and AI interaction patterns to optimize the learning experience.</p>
             </div>
         </div>
     </div>
@@ -62,14 +70,14 @@
                 <span class="step-number">1</span>
                 <div class="step-content">
                     <h4>Create an Account</h4>
-                    <p>Register for free and set up your profile</p>
+                    <p>Register for free and set up your profile with your role and institution</p>
                 </div>
             </div>
             <div class="step">
                 <span class="step-number">2</span>
                 <div class="step-content">
                     <h4>Join or Create a Room</h4>
-                    <p>Start collaborating with your team or class</p>
+                    <p>Start collaborating with your team or class in a dedicated space</p>
                 </div>
             </div>
             <div class="step">
@@ -83,14 +91,14 @@
                 <span class="step-number">4</span>
                 <div class="step-content">
                     <h4>Collaborate & Learn</h4>
-                    <p>Work together, get feedback, and improve your writing skills</p>
+                    <p>Work together, get AI feedback, and improve your writing skills</p>
                 </div>
             </div>
             <div class="step">
                 <span class="step-number">5</span>
                 <div class="step-content">
-                    <h4>Share with Researchers</h4>
-                    <p>Invite your research team to collaborate on academic projects</p>
+                    <h4>Customize & Analyze</h4>
+                    <p>Create custom prompts and track progress through the instructor dashboard</p>
                 </div>
             </div>
         </div>
@@ -103,10 +111,10 @@
                 <strong>Backend:</strong> Flask, SQLAlchemy
             </div>
             <div class="tech-item">
-                <strong>Database:</strong> PostgreSQL (Railway)
+                <strong>Database:</strong> SQLite (local) / PostgreSQL (Railway)
             </div>
             <div class="tech-item">
-                <strong>AI Services:</strong> Anthropic Claude (OpenAI available)
+                <strong>AI Services:</strong> Anthropic Claude, OpenAI GPT-4o
             </div>
             <div class="tech-item">
                 <strong>Deployment:</strong> Railway (HTTPS enabled)
@@ -119,6 +127,9 @@
             </div>
             <div class="tech-item">
                 <strong>Authentication:</strong> Flask-SQLAlchemy with password hashing
+            </div>
+            <div class="tech-item">
+                <strong>Analytics:</strong> Custom dashboard with SQLAlchemy queries
             </div>
         </div>
     </div>
