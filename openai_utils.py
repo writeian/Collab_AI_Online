@@ -184,7 +184,7 @@ def get_modes_for_room(room):
     # generated modes or generate them on-demand
     return generate_room_modes(room)
 
-def get_mode_system_prompt(mode):
+def get_mode_system_prompt(mode, room_id=None):
     """Return a system prompt tailored to the writing stage."""
     # First check for custom prompts in the database
     from models import CustomPrompt
@@ -192,8 +192,20 @@ def get_mode_system_prompt(mode):
     
     try:
         # Check for room-specific custom prompt first
+        if room_id:
+            custom_prompt = CustomPrompt.query.filter_by(
+                mode_key=mode, 
+                room_id=room_id,
+                is_active=True
+            ).first()
+            
+            if custom_prompt:
+                return custom_prompt.prompt
+        
+        # Check for global custom prompt (room_id is null)
         custom_prompt = CustomPrompt.query.filter_by(
             mode_key=mode, 
+            room_id=None,
             is_active=True
         ).first()
         
@@ -203,11 +215,11 @@ def get_mode_system_prompt(mode):
         current_app.logger.error(f"Error checking custom prompts: {e}")
     
     # Fallback to default modes
-    if mode in MODES:
-        return MODES[mode].prompt
+    if mode in BASE_MODES:
+        return BASE_MODES[mode].prompt
     else:
         # Default to explore mode if mode is not found
-        return MODES["explore"].prompt
+        return BASE_MODES["explore"].prompt
 
 
 def call_anthropic_api(messages, system_prompt, max_tokens=300):
@@ -338,7 +350,7 @@ def get_ai_response(
         return "⚠️ No AI API key configured. Please set ANTHROPIC_API_KEY, OPENAI_API_KEY, or USE_OLLAMA=true environment variable."
     
     # Get mode-specific system prompt
-    system_prompt = get_mode_system_prompt(chat.mode)
+    system_prompt = get_mode_system_prompt(chat.mode, chat.room_id)
     
     messages_payload = [
         {"role": m.role, "content": m.content}

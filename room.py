@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
-from models import db, Room, RoomMember, Chat, User, Message, PromptRecord
+from models import db, Room, RoomMember, Chat, User, Message, PromptRecord, CustomPrompt
 from access_control import (
     get_current_user, 
     require_login, 
@@ -70,7 +70,31 @@ def create_room():
         db.session.add(room_obj)
         db.session.commit()
         
-        flash(f"Room '{name}' created successfully!")
+        # Generate contextual modes if room has goals
+        if goals:
+            try:
+                from openai_utils import generate_room_modes
+                contextual_modes = generate_room_modes(room_obj)
+                
+                # Save generated modes as custom prompts
+                for mode_key, mode_info in contextual_modes.items():
+                    custom_prompt = CustomPrompt(
+                        mode_key=mode_key,
+                        label=mode_info.label,
+                        prompt=mode_info.prompt,
+                        room_id=room_obj.id,
+                        created_by=user.id
+                    )
+                    db.session.add(custom_prompt)
+                
+                db.session.commit()
+                flash(f"Room '{name}' created successfully with {len(contextual_modes)} contextual modes!")
+            except Exception as e:
+                # If mode generation fails, still create the room but with base modes
+                flash(f"Room '{name}' created successfully! (Mode generation failed: {str(e)})")
+        else:
+            flash(f"Room '{name}' created successfully!")
+        
         return redirect(url_for("room.view_room", room_id=room_obj.id))
     
     return render_template("room/create.html")

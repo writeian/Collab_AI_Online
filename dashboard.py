@@ -88,16 +88,29 @@ def system_instructions():
     rooms = Room.query.filter(Room.id.in_(user_room_ids)).all()
     
     # Get base modes
+    from openai_utils import BASE_MODES
     base_modes = BASE_MODES
     
     # Get room-specific modes if a room is selected
     selected_room_id = request.args.get('room', '')
     room_specific_modes = {}
+    selected_room = None
     
     if selected_room_id:
         selected_room = Room.query.get(selected_room_id)
         if selected_room and selected_room.id in user_room_ids:
-            room_specific_modes = get_modes_for_room(selected_room)
+            # Get custom prompts for this room
+            custom_prompts = CustomPrompt.query.filter_by(
+                room_id=selected_room_id, 
+                is_active=True
+            ).all()
+            
+            # Convert to the same format as base_modes for consistency
+            for cp in custom_prompts:
+                room_specific_modes[cp.mode_key] = {
+                    'label': cp.label,
+                    'prompt': cp.prompt
+                }
     
     # Get custom prompts for the selected room (or global if no room selected)
     custom_prompts = {}
@@ -122,6 +135,7 @@ def system_instructions():
                          base_modes=base_modes,
                          room_specific_modes=room_specific_modes,
                          selected_room_id=selected_room_id,
+                         selected_room=selected_room,
                          custom_prompts=custom_prompts_dict)
 
 @dashboard.route("/system-instructions/edit", methods=["POST"])
@@ -180,6 +194,60 @@ def edit_system_instructions():
         return redirect(url_for("dashboard.system_instructions", room=room_id))
     else:
         return redirect(url_for("dashboard.system_instructions"))
+
+@dashboard.route("/system-instructions/regenerate", methods=["POST"])
+@require_login
+def regenerate_room_modes():
+    """Regenerate contextual modes for a room based on its goals."""
+    user = get_current_user()
+    
+    room_id = request.form.get('room_id')
+    if not room_id:
+        flash("Room ID is required.")
+        return redirect(url_for("dashboard.system_instructions"))
+    
+    room = Room.query.get(room_id)
+    if not room:
+        flash("Room not found.")
+        return redirect(url_for("dashboard.system_instructions"))
+    
+    # Check if user has access to this room
+    if room.owner_id != user.id and not RoomMember.query.filter_by(room_id=room_id, user_id=user.id).first():
+        flash("You don't have permission to edit prompts for this room.")
+        return redirect(url_for("dashboard.system_instructions"))
+    
+    if not room.goals:
+        flash("Room must have learning goals to generate contextual modes.")
+        return redirect(url_for("dashboard.system_instructions", room=room_id))
+    
+    try:
+        from openai_utils import generate_room_modes
+        
+        # Delete existing custom prompts for this room
+        CustomPrompt.query.filter_by(room_id=room_id).delete()
+        
+        # Generate new contextual modes
+        contextual_modes = generate_room_modes(room)
+        
+        # Save generated modes as custom prompts
+        for mode_key, mode_info in contextual_modes.items():
+            custom_prompt = CustomPrompt(
+                mode_key=mode_key,
+                label=mode_info.label,
+                prompt=mode_info.prompt,
+                room_id=room_id,
+                created_by=user.id
+            )
+            db.session.add(custom_prompt)
+        
+        db.session.commit()
+        flash(f"Generated {len(contextual_modes)} contextual modes for '{room.name}'!")
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error generating modes: {str(e)}")
+    
+    return redirect(url_for("dashboard.system_instructions", room=room_id))
 
 @dashboard.route("/room/<int:room_id>")
 @require_login

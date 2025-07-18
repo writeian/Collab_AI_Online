@@ -77,8 +77,10 @@
                         {{ mode_info.prompt[:200] }}{% if mode_info.prompt|length > 200 %}...{% endif %}
                     </div>
                     <div class="mode-actions">
-                        <button type="button" class="btn btn-sm btn-primary" 
-                                onclick="editInstruction('{{ mode_key }}', '{{ mode_info.label }}', `{{ mode_info.prompt|replace('\n', '\\n')|replace('`', '\`') }}`)">
+                        <button type="button" class="btn btn-sm btn-primary edit-instruction-btn" 
+                                data-mode-key="{{ mode_key }}"
+                                data-label="{{ mode_info.label }}"
+                                data-prompt="{{ mode_info.prompt }}">
                             Edit Instructions
                         </button>
                     </div>
@@ -91,15 +93,20 @@
     <!-- Room-Specific Modes -->
     {% if selected_room_id and room_specific_modes %}
         <div class="dashboard-section">
-            <h2>Room-Specific Instructions</h2>
-            <p>These modes are customized for the selected room based on its learning goals.</p>
+            <h2>Room-Specific Instructions for "{{ selected_room.name }}"</h2>
+            <p>These modes are customized for this room based on its learning goals: <em>{{ selected_room.goals }}</em></p>
             
             <div class="modes-grid">
                 {% for mode_key, mode_info in room_specific_modes.items() %}
-                <div class="mode-instruction-card">
+                <div class="mode-instruction-card {% if mode_key in custom_prompts %}custom-prompt{% endif %}">
                     <div class="mode-header">
                         <h3>{{ mode_info.label }}</h3>
                         <span class="mode-key">{{ mode_key }}</span>
+                        {% if mode_key in custom_prompts %}
+                            <span class="custom-badge">Custom</span>
+                        {% else %}
+                            <span class="generated-badge">Generated</span>
+                        {% endif %}
                     </div>
                     <div class="instruction-preview">
                         {{ mode_info.prompt[:200] }}{% if mode_info.prompt|length > 200 %}...{% endif %}
@@ -116,10 +123,19 @@
         </div>
     {% elif selected_room_id %}
         <div class="dashboard-section">
-            <h2>Room-Specific Instructions</h2>
+            <h2>Room-Specific Instructions for "{{ selected_room.name }}"</h2>
             <div class="empty-state">
                 <p>This room uses the base modes. No custom instructions have been generated yet.</p>
-                <p>Custom instructions are generated based on the room's learning goals.</p>
+                {% if selected_room.goals %}
+                    <p>This room has learning goals and can generate contextual instructions.</p>
+                    <form method="POST" action="{{ url_for('dashboard.regenerate_room_modes') }}" style="display: inline;">
+                        <input type="hidden" name="room_id" value="{{ selected_room.id }}">
+                        <button type="submit" class="btn btn-primary">Generate Contextual Modes</button>
+                    </form>
+                {% else %}
+                    <p>To generate contextual instructions, add learning goals to the room and they will be automatically created.</p>
+                    <a href="{{ url_for('room.edit_room', room_id=selected_room.id) }}" class="btn btn-primary">Edit Room Goals</a>
+                {% endif %}
             </div>
         </div>
     {% endif %}
@@ -204,6 +220,15 @@
     font-weight: 600;
 }
 
+.generated-badge {
+    background: #007bff;
+    color: #fff;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
 .instruction-preview {
     color: #6c757d;
     line-height: 1.5;
@@ -273,6 +298,18 @@
 </style>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add event listeners to all edit buttons
+    document.querySelectorAll('.edit-instruction-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const modeKey = this.getAttribute('data-mode-key');
+            const label = this.getAttribute('data-label');
+            const prompt = this.getAttribute('data-prompt');
+            editInstruction(modeKey, label, prompt);
+        });
+    });
+});
+
 function editInstruction(modeKey, label, prompt) {
     document.getElementById('modeKey').value = modeKey;
     document.getElementById('label').value = label;
