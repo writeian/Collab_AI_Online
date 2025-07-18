@@ -252,10 +252,18 @@ def forgot_password():
             user.reset_token_expiry = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
             db.session.commit()
             
-            # In a real app, you would send an email here
-            # For now, we'll just show the reset link
+            # Create reset URL
             reset_url = url_for('auth.reset_password', token=token, _external=True)
-            flash(f"Password reset link: {reset_url}", "success")
+            
+            # In a real app, you would send an email here
+            # For development, we'll show the link and log it
+            print(f"=== PASSWORD RESET LINK FOR {user.email} ===")
+            print(f"Reset URL: {reset_url}")
+            print(f"Token: {token}")
+            print("=== END PASSWORD RESET LINK ===")
+            
+            flash(f"Password reset link generated! Check the console/logs for the reset URL.", "success")
+            flash(f"Reset URL: {reset_url}", "info")
         else:
             flash("If an account with that email exists, a reset link has been sent.", "info")
         

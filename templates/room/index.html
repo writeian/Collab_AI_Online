@@ -8,6 +8,28 @@
       <a href="{{ url_for('room.create_room') }}" class="btn btn-primary">Create New Room</a>
     </div>
     
+    {% if recent_invitations %}
+      <div class="invitations-section" style="background-color: #e8f4fd; padding: 15px; border-radius: 8px; margin: 20px 0;">
+        <h3>🎉 Recent Invitations</h3>
+        <p>You've been invited to these rooms recently:</p>
+        <div class="room-grid">
+          {% for invitation in recent_invitations %}
+            {% set room = invitation.room %}
+            <div class="room-card" style="border: 2px solid #007bff;">
+              <h4><a href="{{ url_for('room.view_room', room_id=room.id) }}">{{ room.name }}</a></h4>
+              {% if room.description %}
+                <p>{{ room.description }}</p>
+              {% endif %}
+              <small>Invited by {{ room.owner.display_name }} on {{ invitation.joined_at.strftime('%Y-%m-%d %H:%M') }}</small>
+              <div class="room-actions">
+                <a href="{{ url_for('room.view_room', room_id=room.id) }}" class="btn btn-sm btn-primary">Join Room</a>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+    
     {% if owned_rooms %}
       <h3>My Rooms</h3>
       <div class="room-grid">

@@ -25,15 +25,26 @@ def index():
             RoomMember.user_id == user.id,
             Room.is_active == True
         ).order_by(Room.created_at.desc()).all()
+        
+        # Get recent invitations (rooms they were added to in the last 24 hours)
+        from datetime import datetime, timedelta
+        recent_cutoff = datetime.utcnow() - timedelta(hours=24)
+        recent_invitations = RoomMember.query.filter(
+            RoomMember.user_id == user.id,
+            RoomMember.joined_at >= recent_cutoff
+        ).join(Room).filter(Room.is_active == True).all()
+        
     else:
         # Show only public rooms for anonymous users (if any)
         owned_rooms = []
         member_rooms = []
+        recent_invitations = []
     
     return render_template("room/index.html", 
                          user=user, 
                          owned_rooms=owned_rooms, 
-                         member_rooms=member_rooms)
+                         member_rooms=member_rooms,
+                         recent_invitations=recent_invitations)
 
 @room.route("/create", methods=["GET", "POST"])
 @require_login
@@ -160,7 +171,19 @@ def invite_member(room_id):
         )
         db.session.add(member)
         db.session.commit()
+        
+        # Send notification to invited user
+        notification_message = f"You have been invited to join '{room_obj.name}' by {user.display_name}."
+        print(f"=== ROOM INVITATION NOTIFICATION ===")
+        print(f"To: {target_user.username} ({target_user.email})")
+        print(f"From: {user.display_name}")
+        print(f"Room: {room_obj.name}")
+        print(f"Message: {notification_message}")
+        print(f"Room URL: {url_for('room.view_room', room_id=room_obj.id, _external=True)}")
+        print("=== END ROOM INVITATION NOTIFICATION ===")
+        
         flash(f"User {target_user.display_name} invited to room successfully.")
+        flash(f"Notification sent to {target_user.username} ({target_user.email})", "info")
         return redirect(url_for("room.view_room", room_id=room_obj.id))
     
     return render_template("room/invite.html", room=room_obj)

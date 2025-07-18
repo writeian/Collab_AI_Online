@@ -133,6 +133,41 @@ def create_app(config_name=None):
         except Exception as e:
             return f"Migration error: {str(e)}"
     
+    # Database reset endpoint (WARNING: This will delete all data!)
+    @app.route('/reset-db')
+    def reset_database():
+        """Reset database - DELETE ALL DATA!"""
+        try:
+            from models import db, User, Room, RoomMember, Chat, Message, Comment, CustomPrompt, PromptRecord, GoogleAuth
+            
+            with app.app_context():
+                # Delete all data in the correct order (respecting foreign keys)
+                db.session.query(Comment).delete()
+                db.session.query(Message).delete()
+                db.session.query(PromptRecord).delete()
+                db.session.query(Chat).delete()
+                db.session.query(RoomMember).delete()
+                db.session.query(CustomPrompt).delete()
+                db.session.query(Room).delete()
+                db.session.query(GoogleAuth).delete()
+                db.session.query(User).delete()
+                
+                # Commit the changes
+                db.session.commit()
+                
+                return {
+                    'status': 'success', 
+                    'message': 'Database reset successfully. All users and data have been deleted.',
+                    'warning': 'You will need to register again to use the app.'
+                }
+                
+        except Exception as e:
+            db.session.rollback()
+            return {
+                'status': 'error', 
+                'message': f'Database reset failed: {str(e)}'
+            }
+    
     # Debug static files endpoint
     @app.route('/debug-static')
     def debug_static():
