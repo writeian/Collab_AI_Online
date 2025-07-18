@@ -24,8 +24,15 @@ def create_app(config_name=None):
     # Initialize database
     db.init_app(app)
     
-    with app.app_context():
-        db.create_all()
+    # Only create tables if database URL is available
+    if app.config.get('SQLALCHEMY_DATABASE_URI'):
+        try:
+            with app.app_context():
+                db.create_all()
+        except Exception as e:
+            print(f"Warning: Could not initialize database: {e}")
+    else:
+        print("Warning: No database URL configured")
 
     # Register Blueprints
     app.register_blueprint(auth, url_prefix='/auth')

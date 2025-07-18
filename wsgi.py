@@ -15,12 +15,21 @@ print(f"DATABASE_URL: {'set' if os.getenv('DATABASE_URL') else 'not set'}")
 try:
     from app import create_app
     
+    print("Creating Flask application...")
     # Create the Flask application
     app = create_app(os.getenv('FLASK_ENV', 'production'))
     print("Flask app created successfully!")
     
+    # Test basic app functionality
+    print("Testing app routes...")
+    with app.test_client() as client:
+        response = client.get('/health')
+        print(f"Health check response: {response.status_code}")
+    
 except Exception as e:
     print(f"Error creating Flask app: {e}")
+    import traceback
+    traceback.print_exc()
     sys.exit(1)
 
 if __name__ == "__main__":
