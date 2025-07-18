@@ -153,5 +153,17 @@
         form.style.display = 'none';
       }
     }
+    
+    // Auto-scroll to bottom when page loads to show latest messages
+    document.addEventListener('DOMContentLoaded', function() {
+      // Scroll to the bottom of the chat messages
+      const chatMessages = document.querySelector('.chat-messages');
+      if (chatMessages) {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+      
+      // Also scroll the entire page to the bottom
+      window.scrollTo(0, document.body.scrollHeight);
+    });
   </script>
 {% endblock %} 
