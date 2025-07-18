@@ -37,7 +37,13 @@ def create_app(config_name=None):
     # Health check endpoint for Railway
     @app.route('/health')
     def health():
-        return {'status': 'healthy'}, 200
+        try:
+            # Test basic app functionality
+            from models import db
+            db.engine.execute('SELECT 1')  # Test database connection
+            return {'status': 'healthy', 'database': 'connected'}, 200
+        except Exception as e:
+            return {'status': 'unhealthy', 'error': str(e)}, 500
     
     # Redirect root to room index
     @app.route('/')
