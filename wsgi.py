@@ -11,6 +11,7 @@ print("Starting Flask application...")
 print(f"FLASK_ENV: {os.getenv('FLASK_ENV', 'not set')}")
 print(f"SECRET_KEY: {'set' if os.getenv('SECRET_KEY') else 'not set'}")
 print(f"DATABASE_URL: {'set' if os.getenv('DATABASE_URL') else 'not set'}")
+print(f"PORT: {os.getenv('PORT', 'not set')}")
 
 try:
     from app import create_app
