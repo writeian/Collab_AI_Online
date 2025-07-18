@@ -17,6 +17,18 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     
+    # Registration questions (optional fields)
+    full_name = db.Column(db.String(100), nullable=True)
+    institution = db.Column(db.String(200), nullable=True)
+    department = db.Column(db.String(200), nullable=True)
+    research_area = db.Column(db.String(200), nullable=True)
+    role = db.Column(db.String(50), nullable=True)  # Student, Professor, Researcher, etc.
+    primary_use_case = db.Column(db.String(100), nullable=True)
+    team_size = db.Column(db.String(50), nullable=True)
+    heard_from = db.Column(db.String(100), nullable=True)
+    receive_updates = db.Column(db.Boolean, default=False, nullable=True)
+    contact_for_research = db.Column(db.Boolean, default=False, nullable=True)
+    
     # Relationships
     owned_rooms = db.relationship('Room', backref='owner', lazy=True, foreign_keys='Room.owner_id')
     room_memberships = db.relationship('RoomMember', backref='user', lazy=True)

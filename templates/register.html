@@ -5,15 +5,22 @@
     <h2>Create Account</h2>
     
     <form method="post" class="auth-form">
+      <h3>Required Information</h3>
+      
       <div class="form-group">
-        <label for="username">Username</label>
+        <label for="username">Username *</label>
         <input type="text" id="username" name="username" value="{{ username or '' }}" required>
         <small>Letters, numbers, and underscores only</small>
       </div>
 
       <div class="form-group">
-        <label for="email">Email</label>
+        <label for="email">Email *</label>
         <input type="email" id="email" name="email" value="{{ email or '' }}" required>
+      </div>
+
+      <div class="form-group">
+        <label for="full_name">Full Name *</label>
+        <input type="text" id="full_name" name="full_name" value="{{ full_name or '' }}" required>
       </div>
 
       <div class="form-group">
@@ -22,9 +29,85 @@
       </div>
 
       <div class="form-group">
-        <label for="password">Password</label>
+        <label for="password">Password *</label>
         <input type="password" id="password" name="password" required>
         <small>At least 6 characters</small>
+      </div>
+
+      <h3>Optional Information</h3>
+      
+      <div class="form-group">
+        <label for="institution">Institution/University</label>
+        <input type="text" id="institution" name="institution" value="{{ institution or '' }}">
+      </div>
+
+      <div class="form-group">
+        <label for="department">Department/Field of Study</label>
+        <input type="text" id="department" name="department" value="{{ department or '' }}">
+      </div>
+
+      <div class="form-group">
+        <label for="research_area">Research Area</label>
+        <input type="text" id="research_area" name="research_area" value="{{ research_area or '' }}" placeholder="e.g., Computer Science, Education, etc.">
+      </div>
+
+      <div class="form-group">
+        <label for="role">Role</label>
+        <select id="role" name="role">
+          <option value="">Select your role</option>
+          <option value="Student" {{ 'selected' if role == 'Student' else '' }}>Student</option>
+          <option value="Professor" {{ 'selected' if role == 'Professor' else '' }}>Professor</option>
+          <option value="Researcher" {{ 'selected' if role == 'Researcher' else '' }}>Researcher</option>
+          <option value="Administrator" {{ 'selected' if role == 'Administrator' else '' }}>Administrator</option>
+          <option value="Other" {{ 'selected' if role == 'Other' else '' }}>Other</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="primary_use_case">Primary Use Case</label>
+        <select id="primary_use_case" name="primary_use_case">
+          <option value="">Select primary use</option>
+          <option value="Research" {{ 'selected' if primary_use_case == 'Research' else '' }}>Research</option>
+          <option value="Teaching" {{ 'selected' if primary_use_case == 'Teaching' else '' }}>Teaching</option>
+          <option value="Personal Projects" {{ 'selected' if primary_use_case == 'Personal Projects' else '' }}>Personal Projects</option>
+          <option value="Other" {{ 'selected' if primary_use_case == 'Other' else '' }}>Other</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="team_size">Expected Team Size</label>
+        <select id="team_size" name="team_size">
+          <option value="">Select team size</option>
+          <option value="Individual" {{ 'selected' if team_size == 'Individual' else '' }}>Individual</option>
+          <option value="Small Group (2-5)" {{ 'selected' if team_size == 'Small Group (2-5)' else '' }}>Small Group (2-5)</option>
+          <option value="Large Class (6+)" {{ 'selected' if team_size == 'Large Class (6+)' else '' }}>Large Class (6+)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="heard_from">How did you hear about us?</label>
+        <select id="heard_from" name="heard_from">
+          <option value="">Select option</option>
+          <option value="Colleague/Peer" {{ 'selected' if heard_from == 'Colleague/Peer' else '' }}>Colleague/Peer</option>
+          <option value="Conference/Event" {{ 'selected' if heard_from == 'Conference/Event' else '' }}>Conference/Event</option>
+          <option value="Social Media" {{ 'selected' if heard_from == 'Social Media' else '' }}>Social Media</option>
+          <option value="Search Engine" {{ 'selected' if heard_from == 'Search Engine' else '' }}>Search Engine</option>
+          <option value="Other" {{ 'selected' if heard_from == 'Other' else '' }}>Other</option>
+        </select>
+      </div>
+
+      <div class="form-group checkbox-group">
+        <label>
+          <input type="checkbox" name="receive_updates" value="1" {{ 'checked' if receive_updates else '' }}>
+          I would like to receive updates about new features
+        </label>
+      </div>
+
+      <div class="form-group checkbox-group">
+        <label>
+          <input type="checkbox" name="contact_for_research" value="1" {{ 'checked' if contact_for_research else '' }}>
+          I am willing to be contacted for research feedback
+        </label>
       </div>
 
       <button type="submit" class="btn-primary">Create Account</button>
