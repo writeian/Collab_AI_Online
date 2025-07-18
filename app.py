@@ -34,6 +34,11 @@ def create_app(config_name=None):
     app.register_blueprint(dashboard, url_prefix='/dashboard')
     app.register_blueprint(google_auth, url_prefix='/auth/google')
     
+    # Health check endpoint for Railway
+    @app.route('/health')
+    def health():
+        return {'status': 'healthy'}, 200
+    
     # Redirect root to room index
     @app.route('/')
     def root():
