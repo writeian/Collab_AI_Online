@@ -24,8 +24,7 @@ class LoadingManager {
         button.dataset.originalText = button.textContent;
         button.dataset.originalDisabled = button.disabled;
         
-        // Disable button and show loading state
-        button.disabled = true;
+        // Show loading state but don't disable immediately for form submission
         button.textContent = loadingText;
         
         // Add loading class for styling
@@ -38,6 +37,13 @@ class LoadingManager {
             spinner.innerHTML = '⏳';
             button.insertBefore(spinner, button.firstChild);
         }
+        
+        // Disable button after a short delay to allow form submission
+        setTimeout(() => {
+            if (this.loadingButtons.has(button)) {
+                button.disabled = true;
+            }
+        }, 100);
     }
 
     /**
@@ -106,8 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle all forms with loading states
     document.querySelectorAll('form').forEach(form => {
         form.addEventListener('submit', function(e) {
-            // Don't prevent default - let the form submit normally
-            // Just set loading state
+            // Set loading state but allow form to submit
             loadingManager.setFormLoading(form);
         });
     });

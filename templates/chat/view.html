@@ -128,8 +128,10 @@
         // Set loading state
         loadingManager.setLoading(sendButton, 'Sending...');
         
-        // Disable textarea to prevent multiple submissions
-        textarea.disabled = true;
+        // Disable textarea after a short delay to allow form submission
+        setTimeout(() => {
+          textarea.disabled = true;
+        }, 100);
         
         // Add AI loading indicator
         const aiLoading = document.createElement('div');
