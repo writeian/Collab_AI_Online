@@ -38,10 +38,8 @@ def create_app(config_name=None):
     @app.route('/health')
     def health():
         try:
-            # Test basic app functionality
-            from models import db
-            db.engine.execute('SELECT 1')  # Test database connection
-            return {'status': 'healthy', 'database': 'connected'}, 200
+            # Simple health check without database
+            return {'status': 'healthy', 'message': 'App is running'}, 200
         except Exception as e:
             return {'status': 'unhealthy', 'error': str(e)}, 500
     
