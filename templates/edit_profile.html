@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Edit Profile{% endblock %}
+{% block content %}
+  <div class="auth-container">
+    <h2>Edit Profile</h2>
+    
+    <form method="post" class="auth-form">
+      <h3>Personal Information</h3>
+      
+      <div class="form-group">
+        <label for="full_name">Full Name</label>
+        <input type="text" id="full_name" name="full_name" value="{{ user.full_name or '' }}">
+      </div>
+
+      <div class="form-group">
+        <label for="display_name">Display Name *</label>
+        <input type="text" id="display_name" name="display_name" value="{{ user.display_name }}" required>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email *</label>
+        <input type="email" id="email" name="email" value="{{ user.email }}" required>
+      </div>
+
+      <h3>Academic Information</h3>
+      
+      <div class="form-group">
+        <label for="institution">Institution/University</label>
+        <input type="text" id="institution" name="institution" value="{{ user.institution or '' }}">
+      </div>
+
+      <div class="form-group">
+        <label for="department">Department/Field of Study</label>
+        <input type="text" id="department" name="department" value="{{ user.department or '' }}">
+      </div>
+
+      <div class="form-group">
+        <label for="research_area">Research Area</label>
+        <input type="text" id="research_area" name="research_area" value="{{ user.research_area or '' }}" placeholder="e.g., Computer Science, Education, etc.">
+      </div>
+
+      <div class="form-group">
+        <label for="role">Role</label>
+        <select id="role" name="role">
+          <option value="">Select your role</option>
+          <option value="Student" {{ 'selected' if user.role == 'Student' else '' }}>Student</option>
+          <option value="Professor" {{ 'selected' if user.role == 'Professor' else '' }}>Professor</option>
+          <option value="Researcher" {{ 'selected' if user.role == 'Researcher' else '' }}>Researcher</option>
+          <option value="Administrator" {{ 'selected' if user.role == 'Administrator' else '' }}>Administrator</option>
+          <option value="Other" {{ 'selected' if user.role == 'Other' else '' }}>Other</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="primary_use_case">Primary Use Case</label>
+        <select id="primary_use_case" name="primary_use_case">
+          <option value="">Select primary use</option>
+          <option value="Research" {{ 'selected' if user.primary_use_case == 'Research' else '' }}>Research</option>
+          <option value="Teaching" {{ 'selected' if user.primary_use_case == 'Teaching' else '' }}>Teaching</option>
+          <option value="Personal Projects" {{ 'selected' if user.primary_use_case == 'Personal Projects' else '' }}>Personal Projects</option>
+          <option value="Other" {{ 'selected' if user.primary_use_case == 'Other' else '' }}>Other</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="team_size">Expected Team Size</label>
+        <select id="team_size" name="team_size">
+          <option value="">Select team size</option>
+          <option value="Individual" {{ 'selected' if user.team_size == 'Individual' else '' }}>Individual</option>
+          <option value="Small Group (2-5)" {{ 'selected' if user.team_size == 'Small Group (2-5)' else '' }}>Small Group (2-5)</option>
+          <option value="Large Class (6+)" {{ 'selected' if user.team_size == 'Large Class (6+)' else '' }}>Large Class (6+)</option>
+        </select>
+      </div>
+
+      <h3>Preferences</h3>
+      
+      <div class="form-group">
+        <label for="heard_from">How did you hear about us?</label>
+        <select id="heard_from" name="heard_from">
+          <option value="">Select option</option>
+          <option value="Colleague/Peer" {{ 'selected' if user.heard_from == 'Colleague/Peer' else '' }}>Colleague/Peer</option>
+          <option value="Conference/Event" {{ 'selected' if user.heard_from == 'Conference/Event' else '' }}>Conference/Event</option>
+          <option value="Social Media" {{ 'selected' if user.heard_from == 'Social Media' else '' }}>Social Media</option>
+          <option value="Search Engine" {{ 'selected' if user.heard_from == 'Search Engine' else '' }}>Search Engine</option>
+          <option value="Other" {{ 'selected' if user.heard_from == 'Other' else '' }}>Other</option>
+        </select>
+      </div>
+
+      <div class="form-group checkbox-group">
+        <label>
+          <input type="checkbox" name="receive_updates" value="1" {{ 'checked' if user.receive_updates else '' }}>
+          I would like to receive updates about new features
+        </label>
+      </div>
+
+      <div class="form-group checkbox-group">
+        <label>
+          <input type="checkbox" name="contact_for_research" value="1" {{ 'checked' if user.contact_for_research else '' }}>
+          I am willing to be contacted for research feedback
+        </label>
+      </div>
+
+      <button type="submit" class="btn-primary">Update Profile</button>
+    </form>
+    
+    <div class="auth-links">
+      <p><a href="{{ url_for('auth.profile') }}">← Back to Profile</a></p>
+    </div>
+  </div>
+{% endblock %} 

@@ -32,7 +32,7 @@ def register():
         
         # Validate required input
         if not all([username, email, full_name, display_name, password]):
-            flash("All required fields are needed.", "error")
+            flash("All required fields (Username, Email, Full Name, Display Name, and Password) are needed.", "error")
             return render_template("register.html", 
                                 username=username, 
                                 email=email,
@@ -53,39 +53,89 @@ def register():
             flash("Username can only contain letters, numbers, and underscores.", "error")
             return render_template("register.html", 
                                 username=username, 
-                                email=email, 
-                                display_name=display_name)
+                                email=email,
+                                full_name=full_name,
+                                display_name=display_name,
+                                institution=institution,
+                                department=department,
+                                research_area=research_area,
+                                role=role,
+                                primary_use_case=primary_use_case,
+                                team_size=team_size,
+                                heard_from=heard_from,
+                                receive_updates=receive_updates,
+                                contact_for_research=contact_for_research)
         
         # Validate email format
         if '@' not in email or '.' not in email:
             flash("Please enter a valid email address.", "error")
             return render_template("register.html", 
                                 username=username, 
-                                email=email, 
-                                display_name=display_name)
+                                email=email,
+                                full_name=full_name,
+                                display_name=display_name,
+                                institution=institution,
+                                department=department,
+                                research_area=research_area,
+                                role=role,
+                                primary_use_case=primary_use_case,
+                                team_size=team_size,
+                                heard_from=heard_from,
+                                receive_updates=receive_updates,
+                                contact_for_research=contact_for_research)
         
         # Validate password strength
         if len(password) < 6:
             flash("Password must be at least 6 characters long.", "error")
             return render_template("register.html", 
                                 username=username, 
-                                email=email, 
-                                display_name=display_name)
+                                email=email,
+                                full_name=full_name,
+                                display_name=display_name,
+                                institution=institution,
+                                department=department,
+                                research_area=research_area,
+                                role=role,
+                                primary_use_case=primary_use_case,
+                                team_size=team_size,
+                                heard_from=heard_from,
+                                receive_updates=receive_updates,
+                                contact_for_research=contact_for_research)
         
         # Check if username or email already exists
         if User.query.filter_by(username=username).first():
             flash("Username already exists.", "error")
             return render_template("register.html", 
                                 username=username, 
-                                email=email, 
-                                display_name=display_name)
+                                email=email,
+                                full_name=full_name,
+                                display_name=display_name,
+                                institution=institution,
+                                department=department,
+                                research_area=research_area,
+                                role=role,
+                                primary_use_case=primary_use_case,
+                                team_size=team_size,
+                                heard_from=heard_from,
+                                receive_updates=receive_updates,
+                                contact_for_research=contact_for_research)
         
         if User.query.filter_by(email=email).first():
             flash("Email already registered.", "error")
             return render_template("register.html", 
                                 username=username, 
-                                email=email, 
-                                display_name=display_name)
+                                email=email,
+                                full_name=full_name,
+                                display_name=display_name,
+                                institution=institution,
+                                department=department,
+                                research_area=research_area,
+                                role=role,
+                                primary_use_case=primary_use_case,
+                                team_size=team_size,
+                                heard_from=heard_from,
+                                receive_updates=receive_updates,
+                                contact_for_research=contact_for_research)
         
         try:
             # Create new user
@@ -115,6 +165,8 @@ def register():
         except Exception as e:
             db.session.rollback()
             print(f"Registration error: {e}")
+            import traceback
+            print(f"Full traceback: {traceback.format_exc()}")
             flash(f"An error occurred during registration: {str(e)}", "error")
             return render_template("register.html", 
                                 username=username, 
@@ -247,4 +299,97 @@ def reset_password(token):
 @require_login
 def profile():
     user = get_current_user()
-    return render_template("profile.html", user=user) 
+    return render_template("profile.html", user=user)
+
+@auth.route("/edit-profile", methods=["GET", "POST"])
+@require_login
+def edit_profile():
+    user = get_current_user()
+    
+    if request.method == "POST":
+        # Get form data
+        full_name = request.form.get("full_name", "").strip()
+        display_name = request.form.get("display_name", "").strip()
+        email = request.form.get("email", "").strip()
+        institution = request.form.get("institution", "").strip()
+        department = request.form.get("department", "").strip()
+        research_area = request.form.get("research_area", "").strip()
+        role = request.form.get("role", "").strip()
+        primary_use_case = request.form.get("primary_use_case", "").strip()
+        team_size = request.form.get("team_size", "").strip()
+        heard_from = request.form.get("heard_from", "").strip()
+        receive_updates = request.form.get("receive_updates") == "1"
+        contact_for_research = request.form.get("contact_for_research") == "1"
+        
+        # Validate required fields
+        if not all([display_name, email]):
+            flash("Display Name and Email are required.", "error")
+            return render_template("edit_profile.html", user=user)
+        
+        # Check if email is already taken by another user
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user and existing_user.id != user.id:
+            flash("Email is already registered by another user.", "error")
+            return render_template("edit_profile.html", user=user)
+        
+        try:
+            # Update user information
+            user.full_name = full_name
+            user.display_name = display_name
+            user.email = email
+            user.institution = institution
+            user.department = department
+            user.research_area = research_area
+            user.role = role
+            user.primary_use_case = primary_use_case
+            user.team_size = team_size
+            user.heard_from = heard_from
+            user.receive_updates = receive_updates
+            user.contact_for_research = contact_for_research
+            
+            db.session.commit()
+            flash("Profile updated successfully!", "success")
+            return redirect(url_for("auth.profile"))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"An error occurred while updating your profile: {str(e)}", "error")
+            return render_template("edit_profile.html", user=user)
+    
+    return render_template("edit_profile.html", user=user)
+
+@auth.route("/change-password", methods=["GET", "POST"])
+@require_login
+def change_password():
+    user = get_current_user()
+    
+    if request.method == "POST":
+        current_password = request.form.get("current_password")
+        new_password = request.form.get("new_password")
+        confirm_password = request.form.get("confirm_password")
+        
+        # Validate current password
+        if not user.check_password(current_password):
+            flash("Current password is incorrect.", "error")
+            return render_template("change_password.html")
+        
+        # Validate new password
+        if len(new_password) < 6:
+            flash("New password must be at least 6 characters long.", "error")
+            return render_template("change_password.html")
+        
+        if new_password != confirm_password:
+            flash("New passwords do not match.", "error")
+            return render_template("change_password.html")
+        
+        try:
+            # Update password
+            user.set_password(new_password)
+            db.session.commit()
+            flash("Password updated successfully!", "success")
+            return redirect(url_for("auth.profile"))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"An error occurred while updating your password: {str(e)}", "error")
+            return render_template("change_password.html")
+    
+    return render_template("change_password.html") 

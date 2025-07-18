@@ -408,6 +408,145 @@ form textarea {
   padding: 0.5rem;
 }
 
+/* Profile Styles */
+.profile-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.profile-header h1 {
+  margin: 0 0 0.5rem 0;
+  color: #0660d4;
+}
+
+.profile-subtitle {
+  color: #666;
+  margin: 0;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.profile-section {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.profile-section h2 {
+  margin: 0 0 1rem 0;
+  color: #495057;
+  font-size: 1.2rem;
+  border-bottom: 2px solid #e9ecef;
+  padding-bottom: 0.5rem;
+}
+
+.profile-info {
+  margin-bottom: 1rem;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-row label {
+  font-weight: 600;
+  color: #495057;
+  min-width: 120px;
+}
+
+.info-row span {
+  color: #666;
+  text-align: right;
+}
+
+.profile-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.profile-actions .btn {
+  flex: 1;
+  text-align: center;
+}
+
+.activity-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.activity-stats .stat-item {
+  text-align: center;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.activity-stats .stat-number {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #0660d4;
+  display: block;
+}
+
+.activity-stats .stat-label {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+.room-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.room-item {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 1rem;
+}
+
+.room-item h4 {
+  margin: 0 0 0.5rem 0;
+}
+
+.room-item h4 a {
+  color: #0660d4;
+  text-decoration: none;
+}
+
+.room-item h4 a:hover {
+  text-decoration: underline;
+}
+
+.room-item p {
+  margin: 0 0 0.5rem 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.room-item small {
+  color: #999;
+  font-size: 0.8rem;
+}
+
 .btn-primary {
   width: 100%;
   padding: 0.75rem;

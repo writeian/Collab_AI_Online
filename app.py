@@ -123,6 +123,52 @@ def create_app(config_name=None):
         from access_control import get_current_user
         return dict(user=get_current_user())
 
+    @app.route("/migrate-db")
+    def migrate_database():
+        """Migrate database to add new profile fields"""
+        try:
+            # Import the User model to ensure it's loaded
+            from models import User, db
+            
+            # Create all tables (this will add missing columns)
+            db.create_all()
+            
+            # Check if we need to add columns manually
+            with db.engine.connect() as conn:
+                # Check if new columns exist
+                result = conn.execute(db.text("PRAGMA table_info(user)"))
+                columns = [row[1] for row in result.fetchall()]
+                
+                missing_columns = []
+                expected_columns = [
+                    'full_name', 'institution', 'department', 'research_area', 
+                    'role', 'primary_use_case', 'team_size', 'heard_from',
+                    'receive_updates', 'contact_for_research', 'reset_token', 
+                    'reset_token_expiry'
+                ]
+                
+                for col in expected_columns:
+                    if col not in columns:
+                        missing_columns.append(col)
+                
+                if missing_columns:
+                    # Add missing columns
+                    for col in missing_columns:
+                        if col in ['receive_updates', 'contact_for_research']:
+                            conn.execute(db.text(f"ALTER TABLE user ADD COLUMN {col} BOOLEAN DEFAULT FALSE"))
+                        elif col == 'reset_token_expiry':
+                            conn.execute(db.text(f"ALTER TABLE user ADD COLUMN {col} DATETIME"))
+                        else:
+                            conn.execute(db.text(f"ALTER TABLE user ADD COLUMN {col} VARCHAR(200)"))
+                    
+                    conn.commit()
+                    return f"Database migrated successfully. Added columns: {', '.join(missing_columns)}"
+                else:
+                    return "Database is already up to date."
+                    
+        except Exception as e:
+            return f"Migration error: {str(e)}"
+
     return app
 
 
