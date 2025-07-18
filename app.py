@@ -14,6 +14,10 @@ from google_auth import google_auth
 def create_app(config_name=None):
     app = Flask(__name__, static_folder='static', static_url_path='/static')
     
+    # Ensure static files are served in production
+    if app.config.get('ENV') == 'production':
+        app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+    
     # Get configuration
     if config_name is None:
         config_name = os.getenv('FLASK_ENV', 'development')
@@ -70,6 +74,20 @@ def create_app(config_name=None):
             return {'status': 'success', 'message': 'Database tables created'}, 200
         except Exception as e:
             return {'status': 'error', 'message': str(e)}, 500
+    
+    # Debug static files endpoint
+    @app.route('/debug-static')
+    def debug_static():
+        import os
+        static_path = os.path.join(app.root_path, 'static')
+        css_path = os.path.join(static_path, 'style.css')
+        return {
+            'static_folder': app.static_folder,
+            'static_url_path': app.static_url_path,
+            'static_path_exists': os.path.exists(static_path),
+            'css_file_exists': os.path.exists(css_path),
+            'css_file_size': os.path.getsize(css_path) if os.path.exists(css_path) else 0
+        }
     
     # Redirect root to room index
     @app.route('/')
