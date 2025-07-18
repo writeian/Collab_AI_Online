@@ -12,7 +12,7 @@ from google_auth import google_auth
 
 
 def create_app(config_name=None):
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder='static', static_url_path='/static')
     
     # Get configuration
     if config_name is None:
@@ -58,6 +58,17 @@ def create_app(config_name=None):
                 return {'status': 'healthy', 'message': 'App is running', 'database': 'not configured'}, 200
         except Exception as e:
             return {'status': 'unhealthy', 'error': str(e), 'database': 'error'}, 500
+    
+    # Database setup endpoint
+    @app.route('/setup-db')
+    def setup_database():
+        try:
+            from models import db
+            with app.app_context():
+                db.create_all()
+            return {'status': 'success', 'message': 'Database tables created'}, 200
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}, 500
     
     # Redirect root to room index
     @app.route('/')
