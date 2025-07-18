@@ -1,6 +1,8 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from models import db, User
 from access_control import get_current_user, require_login
+import datetime
+import secrets
 
 auth = Blueprint('auth', __name__)
 
@@ -178,6 +180,68 @@ def logout():
     session.pop('user_id', None)
     flash("You have been logged out.")
     return redirect(url_for("room.index"))
+
+@auth.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if request.method == "POST":
+        email = request.form["email"].strip()
+        
+        if not email:
+            flash("Please enter your email address.", "error")
+            return render_template("forgot_password.html", email=email)
+        
+        # Find user by email
+        user = User.query.filter_by(email=email).first()
+        
+        if user:
+            # Generate reset token
+            token = secrets.token_urlsafe(32)
+            user.reset_token = token
+            user.reset_token_expiry = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+            db.session.commit()
+            
+            # In a real app, you would send an email here
+            # For now, we'll just show the reset link
+            reset_url = url_for('auth.reset_password', token=token, _external=True)
+            flash(f"Password reset link: {reset_url}", "success")
+        else:
+            flash("If an account with that email exists, a reset link has been sent.", "info")
+        
+        return redirect(url_for("auth.login"))
+    
+    return render_template("forgot_password.html")
+
+@auth.route("/reset-password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    # Find user by reset token
+    user = User.query.filter_by(reset_token=token).first()
+    
+    if not user or user.reset_token_expiry < datetime.datetime.utcnow():
+        flash("Invalid or expired reset link.", "error")
+        return redirect(url_for("auth.login"))
+    
+    if request.method == "POST":
+        password = request.form["password"]
+        confirm_password = request.form["confirm_password"]
+        
+        if password != confirm_password:
+            flash("Passwords do not match.", "error")
+            return render_template("reset_password.html")
+        
+        if len(password) < 6:
+            flash("Password must be at least 6 characters long.", "error")
+            return render_template("reset_password.html")
+        
+        # Update password and clear reset token
+        user.set_password(password)
+        user.reset_token = None
+        user.reset_token_expiry = None
+        db.session.commit()
+        
+        flash("Password has been reset successfully. You can now login.", "success")
+        return redirect(url_for("auth.login"))
+    
+    return render_template("reset_password.html")
 
 @auth.route("/profile")
 @require_login

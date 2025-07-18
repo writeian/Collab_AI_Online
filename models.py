@@ -29,6 +29,10 @@ class User(db.Model):
     receive_updates = db.Column(db.Boolean, default=False, nullable=True)
     contact_for_research = db.Column(db.Boolean, default=False, nullable=True)
     
+    # Password reset fields
+    reset_token = db.Column(db.String(100), nullable=True)
+    reset_token_expiry = db.Column(db.DateTime, nullable=True)
+    
     # Relationships
     owned_rooms = db.relationship('Room', backref='owner', lazy=True, foreign_keys='Room.owner_id')
     room_memberships = db.relationship('RoomMember', backref='user', lazy=True)
