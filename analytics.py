@@ -92,19 +92,21 @@ def get_admin_stats():
         recent_page_views = PageView.query.filter(PageView.timestamp >= week_ago).count()
         total_page_views = PageView.query.count()
         
-        # Most active users (by message count)
+        # Most active users (by message count) - Fixed ambiguous join
         active_users_list = db.session.query(
             User.display_name,
             db.func.count(Message.id).label('message_count')
-        ).join(Message).group_by(User.id, User.display_name).order_by(
-            db.func.count(Message.id).desc()
-        ).limit(10).all()
+        ).select_from(User).join(Message, User.id == Message.user_id).group_by(
+            User.id, User.display_name
+        ).order_by(db.func.count(Message.id).desc()).limit(10).all()
         
-        # Most active rooms (by message count)
+        # Most active rooms (by message count) - Fixed ambiguous join
         active_rooms_list = db.session.query(
             Room.name,
             db.func.count(Message.id).label('message_count')
-        ).join(Chat).join(Message).group_by(Room.id, Room.name).order_by(
+        ).select_from(Room).join(Chat, Room.id == Chat.room_id).join(
+            Message, Chat.id == Message.chat_id
+        ).group_by(Room.id, Room.name).order_by(
             db.func.count(Message.id).desc()
         ).limit(10).all()
         
