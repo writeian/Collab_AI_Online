@@ -188,3 +188,19 @@ class PromptRecord(db.Model):
     
     def __repr__(self):
         return f"<PromptRecord {self.id} mode={self.mode}>"
+
+class PageView(db.Model):
+    """Track page views for analytics."""
+    
+    id = db.Column(db.Integer, primary_key=True)
+    page = db.Column(db.String(200), nullable=False)
+    user_agent = db.Column(db.Text, nullable=True)
+    ip_address = db.Column(db.String(45), nullable=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    
+    # Relationship
+    user = db.relationship('User', backref='page_views')
+    
+    def __repr__(self):
+        return f"<PageView {self.id} page={self.page}>"
