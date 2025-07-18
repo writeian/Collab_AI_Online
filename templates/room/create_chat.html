@@ -3,7 +3,7 @@
 {% block content %}
   <h2>Create New Chat in: {{ room.name }}</h2>
   
-  <form method="POST">
+  <form method="POST" id="createChatForm">
     <div class="form-group">
       <label for="title">Chat Title *</label>
       <input type="text" id="title" name="title" required class="form-control" placeholder="Enter chat title">
@@ -25,8 +25,15 @@
     </div>
     
     <div class="form-actions">
-      <button type="submit" class="btn btn-primary">Create Chat</button>
+      <button type="submit" class="btn btn-primary" id="createButton">Create Chat</button>
       <a href="{{ url_for('room.view_room', room_id=room.id) }}" class="btn btn-secondary">Cancel</a>
     </div>
   </form>
+  
+  <script>
+    document.getElementById('createChatForm').addEventListener('submit', function(e) {
+      const button = document.getElementById('createButton');
+      loadingManager.setLoading(button, 'Creating Chat...');
+    });
+  </script>
 {% endblock %} 

@@ -71,10 +71,16 @@
                 <p>This room uses the base modes. No custom instructions have been generated yet.</p>
                 {% if selected_room.goals %}
                     <p>This room has learning goals and can generate contextual instructions.</p>
-                    <form method="POST" action="{{ url_for('dashboard.regenerate_room_modes') }}" style="display: inline;">
+                    <form method="POST" action="{{ url_for('dashboard.regenerate_room_modes') }}" style="display: inline;" id="regenerateForm">
                         <input type="hidden" name="room_id" value="{{ selected_room.id }}">
-                        <button type="submit" class="btn btn-primary">Generate Contextual Modes</button>
+                        <button type="submit" class="btn btn-primary" id="regenerateButton">Generate Contextual Modes</button>
                     </form>
+                    <script>
+                        document.getElementById('regenerateForm').addEventListener('submit', function(e) {
+                            const button = document.getElementById('regenerateButton');
+                            loadingManager.setLoading(button, 'Generating Modes...');
+                        });
+                    </script>
                 {% else %}
                     <p>To generate contextual instructions, add learning goals to the room and they will be automatically created.</p>
                     <a href="{{ url_for('room.edit_room', room_id=selected_room.id) }}" class="btn btn-primary">Edit Room Goals</a>

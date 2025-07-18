@@ -111,13 +111,33 @@
   </div>
   
   {% if user %}
-    <form method="POST" class="message-form">
+    <form method="POST" class="message-form" id="messageForm">
       <div class="form-group">
         <label for="content">Your message:</label>
         <textarea id="content" name="content" required class="form-control" rows="3" placeholder="Type your message here..."></textarea>
       </div>
-      <button type="submit" class="btn btn-primary">Send Message</button>
+      <button type="submit" class="btn btn-primary" id="sendButton">Send Message</button>
     </form>
+    
+    <script>
+      // Enhanced loading for message form
+      document.getElementById('messageForm').addEventListener('submit', function(e) {
+        const sendButton = document.getElementById('sendButton');
+        const textarea = document.getElementById('content');
+        
+        // Set loading state
+        loadingManager.setLoading(sendButton, 'Sending...');
+        
+        // Disable textarea to prevent multiple submissions
+        textarea.disabled = true;
+        
+        // Add AI loading indicator
+        const aiLoading = document.createElement('div');
+        aiLoading.className = 'ai-loading';
+        aiLoading.innerHTML = '<span class="spinner">⏳</span> AI is thinking...';
+        this.parentNode.insertBefore(aiLoading, this.nextSibling);
+      });
+    </script>
   {% else %}
     <p><a href="{{ url_for('auth.login') }}">Log in</a> to send messages.</p>
   {% endif %}
