@@ -48,10 +48,16 @@ def create_app(config_name=None):
     @app.route('/health')
     def health():
         try:
-            # Simple health check without database
-            return {'status': 'healthy', 'message': 'App is running'}, 200
+            # Test database connection
+            from models import db
+            if app.config.get('SQLALCHEMY_DATABASE_URI'):
+                with app.app_context():
+                    db.engine.execute('SELECT 1')
+                return {'status': 'healthy', 'message': 'App is running', 'database': 'connected'}, 200
+            else:
+                return {'status': 'healthy', 'message': 'App is running', 'database': 'not configured'}, 200
         except Exception as e:
-            return {'status': 'unhealthy', 'error': str(e)}, 500
+            return {'status': 'unhealthy', 'error': str(e), 'database': 'error'}, 500
     
     # Redirect root to room index
     @app.route('/')
