@@ -66,6 +66,11 @@ def create_app(config_name=None):
         except Exception as e:
             return {'status': 'unhealthy', 'error': str(e), 'database': 'error'}, 500
     
+    # Test route to verify app is working
+    @app.route('/test')
+    def test():
+        return {'status': 'ok', 'message': 'App is working', 'routes': ['/health', '/setup-db', '/migrate-db']}
+    
     # Database setup endpoint
     @app.route('/setup-db')
     def setup_database():
@@ -77,53 +82,8 @@ def create_app(config_name=None):
         except Exception as e:
             return {'status': 'error', 'message': str(e)}, 500
     
-    # Debug static files endpoint
-    @app.route('/debug-static')
-    def debug_static():
-        import os
-        static_path = os.path.join(app.root_path, 'static')
-        css_path = os.path.join(static_path, 'style.css')
-        return {
-            'static_folder': app.static_folder,
-            'static_url_path': app.static_url_path,
-            'static_path_exists': os.path.exists(static_path),
-            'css_file_exists': os.path.exists(css_path),
-            'css_file_size': os.path.getsize(css_path) if os.path.exists(css_path) else 0
-        }
-    
-    # Redirect root to room index
-    @app.route('/')
-    def root():
-        from flask import redirect, url_for
-        return redirect(url_for('room.index'))
-
-    # About page
-    @app.route('/about')
-    def about():
-        from flask import render_template
-        return render_template('about.html')
-
-    # Admin route to view users
-    @app.route('/admin/users')
-    def admin_users():
-        from models import User
-        from flask import render_template
-        users = User.query.all()
-        return render_template('admin_users.html', users=users)
-    
-    # Admin route to view analytics
-    @app.route('/admin/analytics')
-    def admin_analytics():
-        from flask import render_template
-        return render_template('admin_analytics.html')
-
-    # Context processor to make current user available to all templates
-    @app.context_processor
-    def inject_user():
-        from access_control import get_current_user
-        return dict(user=get_current_user())
-
-    @app.route("/migrate-db")
+    # Database migration endpoint
+    @app.route('/migrate-db')
     def migrate_database():
         """Migrate database to add new profile fields"""
         try:
@@ -172,6 +132,52 @@ def create_app(config_name=None):
                     
         except Exception as e:
             return f"Migration error: {str(e)}"
+    
+    # Debug static files endpoint
+    @app.route('/debug-static')
+    def debug_static():
+        import os
+        static_path = os.path.join(app.root_path, 'static')
+        css_path = os.path.join(static_path, 'style.css')
+        return {
+            'static_folder': app.static_folder,
+            'static_url_path': app.static_url_path,
+            'static_path_exists': os.path.exists(static_path),
+            'css_file_exists': os.path.exists(css_path),
+            'css_file_size': os.path.getsize(css_path) if os.path.exists(css_path) else 0
+        }
+    
+    # Redirect root to room index
+    @app.route('/')
+    def root():
+        from flask import redirect, url_for
+        return redirect(url_for('room.index'))
+
+    # About page
+    @app.route('/about')
+    def about():
+        from flask import render_template
+        return render_template('about.html')
+
+    # Admin route to view users
+    @app.route('/admin/users')
+    def admin_users():
+        from models import User
+        from flask import render_template
+        users = User.query.all()
+        return render_template('admin_users.html', users=users)
+    
+    # Admin route to view analytics
+    @app.route('/admin/analytics')
+    def admin_analytics():
+        from flask import render_template
+        return render_template('admin_analytics.html')
+
+    # Context processor to make current user available to all templates
+    @app.context_processor
+    def inject_user():
+        from access_control import get_current_user
+        return dict(user=get_current_user())
 
     return app
 
