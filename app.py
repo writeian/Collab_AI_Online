@@ -2,6 +2,7 @@ from flask import Flask
 from models import db
 import os
 from config import config
+from sqlalchemy import create_engine, text
 
 # Import Blueprints
 from auth import auth
@@ -11,8 +12,29 @@ from dashboard import dashboard
 from google_auth import google_auth
 from analytics import analytics
 
+# Ensure message table has required columns in production
+
+def ensure_message_columns():
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        return
+    engine = create_engine(db_url)
+    with engine.connect() as conn:
+        # Check if columns exist
+        result = conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name='message'"))
+        columns = [row[0] for row in result.fetchall()]
+        if 'parent_message_id' not in columns:
+            print("Adding parent_message_id column to message table...")
+            conn.execute(text("ALTER TABLE message ADD COLUMN parent_message_id INTEGER"))
+            conn.execute(text("ALTER TABLE message ADD CONSTRAINT fk_message_parent_message_id_message FOREIGN KEY(parent_message_id) REFERENCES message(id)"))
+        if 'is_truncated' not in columns:
+            print("Adding is_truncated column to message table...")
+            conn.execute(text("ALTER TABLE message ADD COLUMN is_truncated BOOLEAN NOT NULL DEFAULT FALSE"))
+        conn.commit()
+
 # Automatically run Alembic migrations in production (e.g., on Railway)
 if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("FLASK_ENV") == "production":
+    ensure_message_columns()
     try:
         from alembic.config import Config
         from alembic import command
