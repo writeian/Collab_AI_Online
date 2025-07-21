@@ -246,17 +246,20 @@ def call_anthropic_api(messages, system_prompt, max_tokens=300):
     try:
         response = requests.post(url, headers=headers, json=payload)
         response.raise_for_status()
-        return response.json()["content"][0]["text"]
+        text = response.json()["content"][0]["text"]
+        # Anthropic API may include a 'stop_reason' field
+        is_truncated = response.json().get("stop_reason") == "max_tokens"
+        return text, is_truncated
     except requests.exceptions.HTTPError as e:
         print("Anthropic API HTTPError:", e)
         print("Status code:", e.response.status_code)
         print("Response text:", e.response.text)
         current_app.logger.error("Anthropic API failure: %s", e)
-        return f"⚠️ Anthropic API error: {e.response.text}"
+        return f"⚠️ Anthropic API error: {e.response.text}", False
     except Exception as e:
         print("Anthropic API Exception:", e)
         current_app.logger.error("Anthropic API failure: %s", e)
-        return "⚠️ Sorry — I couldn't reach the AI service just now."
+        return "⚠️ Sorry — I couldn't reach the AI service just now.", False
 
 
 def call_openai_api(messages, max_tokens=300):
@@ -273,10 +276,12 @@ def call_openai_api(messages, max_tokens=300):
             max_tokens=max_tokens,
         )
         content = response.choices[0].message.content
-        return content.strip() if content else ""
+        finish_reason = response.choices[0].finish_reason
+        is_truncated = finish_reason == "length"
+        return (content.strip() if content else "", is_truncated)
     except Exception as e:
         current_app.logger.error("OpenAI API failure: %s", e)
-        return "⚠️ Sorry — I couldn't reach the AI service just now."
+        return ("⚠️ Sorry — I couldn't reach the AI service just now.", False)
 
 
 def call_ollama_api(messages, system_prompt, max_tokens=300):
@@ -318,17 +323,19 @@ def call_ollama_api(messages, system_prompt, max_tokens=300):
         if response.status_code == 200:
             result = response.json()
             current_app.logger.info(f"Ollama response time: {end_time - start_time:.2f}s")
-            return result.get('response', '').strip()
+            text = result.get('response', '').strip()
+            is_truncated = result.get('done', True) is False or result.get('truncated', False)
+            return text, is_truncated
         else:
             current_app.logger.error(f"Ollama API error: {response.status_code}")
-            return "I'm sorry, I'm having trouble processing your request right now."
+            return ("I'm sorry, I'm having trouble processing your request right now.", False)
             
     except requests.exceptions.Timeout:
         current_app.logger.error("Ollama request timed out")
-        return "I'm sorry, the request took too long to process. Please try again."
+        return ("I'm sorry, the request took too long to process. Please try again.", False)
     except Exception as e:
         current_app.logger.error(f"Ollama API error: {e}")
-        return "I'm sorry, I encountered an error processing your request."
+        return ("I'm sorry, I encountered an error processing your request.", False)
 
 
 def get_ai_response(
@@ -338,10 +345,10 @@ def get_ai_response(
     temperature=0.7,  # Ignored for Anthropic
     max_tokens=300,
 ):
-    """Return the assistant's reply text for a given Chat row."""
+    """Return the assistant's reply text and truncation status for a given Chat row."""
     client_type = get_client_type()
     if not client_type:
-        return "⚠️ No AI API key configured. Please set ANTHROPIC_API_KEY, OPENAI_API_KEY, or USE_OLLAMA=true environment variable."
+        return ("⚠️ No AI API key configured. Please set ANTHROPIC_API_KEY, OPENAI_API_KEY, or USE_OLLAMA=true environment variable.", False)
     
     # Get mode-specific system prompt
     system_prompt = get_mode_system_prompt(chat.mode, chat.room_id)

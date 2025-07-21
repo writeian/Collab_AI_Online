@@ -59,6 +59,11 @@
         <div class="message-content">
           {{ message.content }}
         </div>
+        {% if message.role == 'assistant' and message.is_truncated %}
+          <form method="post" action="{{ url_for('chat.continue_message', chat_id=chat.id, message_id=message.id) }}" style="display:inline; margin-top:8px;">
+            <button type="submit" class="btn btn-warning btn-sm">Continue</button>
+          </form>
+        {% endif %}
         
         <!-- Comments for this dialogue -->
         {% set dialogue_comments = comments|selectattr('dialogue_number', 'equalto', dialogue_number)|list %}

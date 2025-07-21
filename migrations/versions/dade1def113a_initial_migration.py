@@ -1,8 +1,8 @@
-"""Add parent_message_id and is_truncated to Message
+"""Initial migration
 
-Revision ID: 88fe3e584d9f
+Revision ID: dade1def113a
 Revises: 
-Create Date: 2025-07-21 10:48:53.919591
+Create Date: 2025-07-21 12:55:47.891444
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '88fe3e584d9f'
+revision: str = 'dade1def113a'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

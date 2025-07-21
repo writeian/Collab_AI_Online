@@ -46,8 +46,8 @@ class DevelopmentConfig(Config):
     DEBUG = True
     LOG_LEVEL = 'DEBUG'
     
-    # SQLite for development
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///ai_collab.db'
+    # SQLite for development (absolute path)
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///C:/Users/write/Projects/AI_Collab_Online/instance/ai_collab.db'
     
     # Development-specific settings
     SESSION_COOKIE_SECURE = False

@@ -25,6 +25,7 @@ def create_app(config_name=None):
     
     app.config.from_object(config[config_name])
     config[config_name].init_app(app)
+    print("SQLALCHEMY_DATABASE_URI:", app.config.get('SQLALCHEMY_DATABASE_URI'))
 
     # Initialize database only if database URL is available
     if app.config.get('SQLALCHEMY_DATABASE_URI'):

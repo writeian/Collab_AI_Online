@@ -47,8 +47,14 @@ def view_chat(chat_id):
             db.session.commit()
 
             # ask GPT‑4o and store assistant reply
-            ai_content = get_ai_response(chat_obj)
-            ai_msg = Message(chat_id=chat_obj.id, role="assistant", content=ai_content)
+            ai_content, is_truncated = get_ai_response(chat_obj)
+            ai_msg = Message(
+                chat_id=chat_obj.id,
+                role="assistant",
+                content=ai_content,
+                is_truncated=is_truncated,
+                parent_message_id=None
+            )
             db.session.add(ai_msg)
             db.session.commit()
         return redirect(url_for("chat.view_chat", chat_id=chat_obj.id))
@@ -146,3 +152,26 @@ def delete_chat(chat_id):
         return redirect(url_for("room.view_room", room_id=room_id))
     
     return render_template("chat/delete.html", chat=chat_obj) 
+
+@require_chat_access
+@chat.route("/<int:chat_id>/continue/<int:message_id>", methods=["POST"])
+def continue_message(chat_id, message_id):
+    print(f"continue_message called with chat_id={chat_id}, message_id={message_id}")
+    prev_msg = Message.query.get_or_404(message_id)
+    chat_obj = Chat.query.get_or_404(chat_id)
+    ai_content, is_truncated = get_ai_response(chat_obj)
+    print(f"get_ai_response returned: {ai_content[:40]}, truncated: {is_truncated}")
+    try:
+        new_msg = Message(
+            chat_id=chat_obj.id,
+            role="assistant",
+            content=ai_content,
+            is_truncated=is_truncated,
+            parent_message_id=prev_msg.id
+        )
+        db.session.add(new_msg)
+        db.session.commit()
+        print(f"Created continued message: {new_msg.id}, parent: {new_msg.parent_message_id}, truncated: {new_msg.is_truncated}, content: {new_msg.content[:40]}")
+    except Exception as e:
+        print(f"Exception while creating continued message: {e}")
+    return redirect(url_for("chat.view_chat", chat_id=chat_obj.id)) 

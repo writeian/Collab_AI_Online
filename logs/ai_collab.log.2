@@ -1,101 +1,139 @@
-2025-07-12 14:27:42,400 ERROR: Exception on /auth/register [POST] [in /opt/Collab_AI_Online/venv/lib/python3.12/site-packages/flask/app.py:825]
+2025-07-21 12:56:59,103 ERROR: Exception on /room/ [GET] [in C:\Users\write\Projects\AI_Collab_Online\venv\Lib\site-packages\flask\app.py:875]
 Traceback (most recent call last):
-  File "/opt/Collab_AI_Online/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1963, in _exec_single_context
+  File "C:\Users\write\Projects\AI_Collab_Online\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1963, in _exec_single_context
     self.dialect.do_execute(
-  File "/opt/Collab_AI_Online/venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 943, in do_execute
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\write\Projects\AI_Collab_Online\venv\Lib\site-packages\sqlalchemy\engine\default.py", line 943, in do_execute
     cursor.execute(statement, parameters)
-psycopg2.OperationalError: SSL error: decryption failed or bad record mac
-
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such table: user
 
 The above exception was the direct cause of the following exception:
 
 Traceback (most recent call last):
-  File "/opt/Collab_AI_Online/venv/lib/python3.12/site-packages/flask/app.py", line 1455, in wsgi_app
+  File "C:\Users\write\Projects\AI_Collab_Online\venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
     response = self.full_dispatch_request()
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/Collab_AI_Online/venv/lib/python3.12/site-packages/flask/app.py", line 869, in full_dispatch_request
+  File "C:\Users\write\Projects\AI_Collab_Online\venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
     rv = self.handle_user_exception(e)
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/Collab_AI_Online/venv/lib/python3.12/site-packages/flask/app.py", line 867, in full_dispatch_request
+  File "C:\Users\write\Projects\AI_Collab_Online\venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
     rv = self.dispatch_request()
-         ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/Collab_AI_Online/venv/lib/python3.12/site-packages/flask/app.py", line 852, in dispatch_request
-    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/Collab_AI_Online/auth.py", line 20, in register
-    if User.query.filter_by(username=username).first():
-       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/Collab_AI_Online/venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2759, in first
-    return self.limit(1)._iter().first()  # type: ignore
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/Collab_AI_Online/venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
-    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
-                                                  ^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/Collab_AI_Online/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2365, in execute
+  File "C:\Users\write\Projects\AI_Collab_Online\venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\write\Projects\AI_Collab_Online\room.py", line 20, in index
+    user = get_current_user()
+  File "C:\Users\write\Projects\AI_Collab_Online\access_control.py", line 14, in get_current_user
+    return User.query.get(session['user_id'])
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in get
+  File "C:\Users\write\Projects\AI_Collab_Online\venv\Lib\site-packages\sqlalchemy\util\deprecations.py", line 386, in warned
+    return fn(*args, **kwargs)  # type: ignore[no-any-return]
+  File "C:\Users\write\Projects\AI_Collab_Online\venv\Lib\site-packages\sqlalchemy\orm\query.py", line 1126, in get
+    return self._get_impl(ident, loading.load_on_pk_identity)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\write\Projects\AI_Collab_Online\venv\Lib\site-packages\sqlalchemy\orm\query.py", line 1135, in _get_impl
+    return self.session._get_impl(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        mapper,
+        ^^^^^^^
+    ...<6 lines>...
+        execution_options=self._execution_options,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\write\Projects\AI_Collab_Online\venv\Lib\site-packages\sqlalchemy\orm\session.py", line 3873, in _get_impl
+    return db_load_fn(
+        self,
+    ...<5 lines>...
+        bind_arguments=bind_arguments,
+    )
+  File "C:\Users\write\Projects\AI_Collab_Online\venv\Lib\site-packages\sqlalchemy\orm\loading.py", line 694, in load_on_pk_identity
+    session.execute(
+    ~~~~~~~~~~~~~~~^
+        q,
+        ^^
+    ...<2 lines>...
+        bind_arguments=bind_arguments,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\write\Projects\AI_Collab_Online\venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2365, in execute
     return self._execute_internal(
-           ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/Collab_AI_Online/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2251, in _execute_internal
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+    ...<4 lines>...
+        _add_event=_add_event,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\write\Projects\AI_Collab_Online\venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2251, in _execute_internal
     result: Result[Any] = compile_state_cls.orm_execute_statement(
-                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/Collab_AI_Online/venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self,
+        ^^^^^
+    ...<4 lines>...
+        conn,
+        ^^^^^
+    )
+    ^
+  File "C:\Users\write\Projects\AI_Collab_Online\venv\Lib\site-packages\sqlalchemy\orm\context.py", line 306, in orm_execute_statement
     result = conn.execute(
-             ^^^^^^^^^^^^^
-  File "/opt/Collab_AI_Online/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1415, in execute
+        statement, params or {}, execution_options=execution_options
+    )
+  File "C:\Users\write\Projects\AI_Collab_Online\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1415, in execute
     return meth(
-           ^^^^^
-  File "/opt/Collab_AI_Online/venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 523, in _execute_on_connection
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "C:\Users\write\Projects\AI_Collab_Online\venv\Lib\site-packages\sqlalchemy\sql\elements.py", line 523, in _execute_on_connection
     return connection._execute_clauseelement(
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/Collab_AI_Online/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1637, in _execute_clauseelement
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\write\Projects\AI_Collab_Online\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1637, in _execute_clauseelement
     ret = self._execute_context(
-          ^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/Collab_AI_Online/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1842, in _execute_context
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "C:\Users\write\Projects\AI_Collab_Online\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1842, in _execute_context
     return self._exec_single_context(
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/Collab_AI_Online/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1982, in _exec_single_context
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\write\Projects\AI_Collab_Online\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1982, in _exec_single_context
     self._handle_dbapi_exception(
-  File "/opt/Collab_AI_Online/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2351, in _handle_dbapi_exception
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\write\Projects\AI_Collab_Online\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2351, in _handle_dbapi_exception
     raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
-  File "/opt/Collab_AI_Online/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1963, in _exec_single_context
+  File "C:\Users\write\Projects\AI_Collab_Online\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1963, in _exec_single_context
     self.dialect.do_execute(
-  File "/opt/Collab_AI_Online/venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 943, in do_execute
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\write\Projects\AI_Collab_Online\venv\Lib\site-packages\sqlalchemy\engine\default.py", line 943, in do_execute
     cursor.execute(statement, parameters)
-sqlalchemy.exc.OperationalError: (psycopg2.OperationalError) SSL error: decryption failed or bad record mac
-
-[SQL: SELECT "user".id AS user_id, "user".username AS user_username, "user".email AS user_email, "user".password_hash AS user_password_hash, "user".display_name AS user_display_name, "user".created_at AS user_created_at, "user".is_active AS user_is_active 
-FROM "user" 
-WHERE "user".username = %(username_1)s 
- LIMIT %(param_1)s]
-[parameters: {'username_1': 'TestUser', 'param_1': 1}]
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such table: user
+[SQL: SELECT user.id AS user_id, user.username AS user_username, user.email AS user_email, user.password_hash AS user_password_hash, user.display_name AS user_display_name, user.created_at AS user_created_at, user.is_active AS user_is_active, user.full_name AS user_full_name, user.institution AS user_institution, user.department AS user_department, user.research_area AS user_research_area, user.role AS user_role, user.primary_use_case AS user_primary_use_case, user.team_size AS user_team_size, user.heard_from AS user_heard_from, user.receive_updates AS user_receive_updates, user.contact_for_research AS user_contact_for_research, user.reset_token AS user_reset_token, user.reset_token_expiry AS user_reset_token_expiry 
+FROM user 
+WHERE user.id = ?]
+[parameters: (1,)]
 (Background on this error at: https://sqlalche.me/e/20/e3q8)
-2025-07-12 14:29:57,668 INFO: AI Collab Online startup [in /opt/Collab_AI_Online/config.py:90]
-2025-07-12 14:36:13,498 INFO: AI Collab Online startup [in /opt/Collab_AI_Online/config.py:90]
-2025-07-12 16:58:40,618 INFO: AI Collab Online startup [in /opt/Collab_AI_Online/config.py:90]
-2025-07-12 17:06:44,771 INFO: AI Collab Online startup [in /opt/Collab_AI_Online/config.py:90]
-2025-07-12 17:17:43,026 INFO: AI Collab Online startup [in /opt/Collab_AI_Online/config.py:90]
-2025-07-12 17:22:37,486 INFO: AI Collab Online startup [in /opt/Collab_AI_Online/config.py:90]
-2025-07-12 19:35:38,186 ERROR: Error generating room modes: The api_key client option must be set either by passing api_key to the client or by setting the OPENAI_API_KEY environment variable [in /opt/Collab_AI_Online/openai_utils.py:175]
-2025-07-12 19:36:04,972 ERROR: Error generating room modes: The api_key client option must be set either by passing api_key to the client or by setting the OPENAI_API_KEY environment variable [in /opt/Collab_AI_Online/openai_utils.py:175]
-2025-07-12 19:36:49,250 ERROR: Ollama API error: 500 [in /opt/Collab_AI_Online/openai_utils.py:317]
-2025-07-12 19:36:49,919 ERROR: Error generating room modes: The api_key client option must be set either by passing api_key to the client or by setting the OPENAI_API_KEY environment variable [in /opt/Collab_AI_Online/openai_utils.py:175]
-2025-07-12 19:40:04,944 ERROR: Error generating room modes: The api_key client option must be set either by passing api_key to the client or by setting the OPENAI_API_KEY environment variable [in /opt/Collab_AI_Online/openai_utils.py:175]
-2025-07-12 21:03:31,488 INFO: AI Collab Online startup [in /opt/Collab_AI_Online/config.py:90]
-2025-07-12 21:12:28,580 ERROR: Error generating room modes: The api_key client option must be set either by passing api_key to the client or by setting the OPENAI_API_KEY environment variable [in /opt/Collab_AI_Online/openai_utils.py:175]
-2025-07-12 21:12:36,802 ERROR: Error generating room modes: The api_key client option must be set either by passing api_key to the client or by setting the OPENAI_API_KEY environment variable [in /opt/Collab_AI_Online/openai_utils.py:175]
-2025-07-12 21:12:41,561 ERROR: Error generating room modes: The api_key client option must be set either by passing api_key to the client or by setting the OPENAI_API_KEY environment variable [in /opt/Collab_AI_Online/openai_utils.py:175]
-2025-07-12 21:12:46,603 ERROR: Error generating room modes: The api_key client option must be set either by passing api_key to the client or by setting the OPENAI_API_KEY environment variable [in /opt/Collab_AI_Online/openai_utils.py:175]
-2025-07-12 21:12:50,095 ERROR: Error generating room modes: The api_key client option must be set either by passing api_key to the client or by setting the OPENAI_API_KEY environment variable [in /opt/Collab_AI_Online/openai_utils.py:175]
-2025-07-12 21:13:32,108 ERROR: Ollama API error: 500 [in /opt/Collab_AI_Online/openai_utils.py:317]
-2025-07-12 21:13:32,165 ERROR: Error generating room modes: The api_key client option must be set either by passing api_key to the client or by setting the OPENAI_API_KEY environment variable [in /opt/Collab_AI_Online/openai_utils.py:175]
-2025-07-12 21:17:11,559 INFO: AI Collab Online startup [in /opt/Collab_AI_Online/config.py:90]
-2025-07-12 21:17:39,133 ERROR: Ollama API error: 500 [in /opt/Collab_AI_Online/openai_utils.py:317]
-2025-07-12 21:17:39,794 ERROR: Error generating room modes: The api_key client option must be set either by passing api_key to the client or by setting the OPENAI_API_KEY environment variable [in /opt/Collab_AI_Online/openai_utils.py:175]
-2025-07-12 21:17:44,428 ERROR: Error generating room modes: The api_key client option must be set either by passing api_key to the client or by setting the OPENAI_API_KEY environment variable [in /opt/Collab_AI_Online/openai_utils.py:175]
-2025-07-12 21:17:52,194 ERROR: Error generating room modes: The api_key client option must be set either by passing api_key to the client or by setting the OPENAI_API_KEY environment variable [in /opt/Collab_AI_Online/openai_utils.py:175]
-2025-07-12 21:18:01,302 ERROR: Ollama API error: 500 [in /opt/Collab_AI_Online/openai_utils.py:317]
-2025-07-12 21:18:01,946 ERROR: Error generating room modes: The api_key client option must be set either by passing api_key to the client or by setting the OPENAI_API_KEY environment variable [in /opt/Collab_AI_Online/openai_utils.py:175]
-2025-07-12 21:18:59,818 INFO: AI Collab Online startup [in /opt/Collab_AI_Online/config.py:90]
-2025-07-12 21:19:25,643 ERROR: Error generating room modes: The api_key client option must be set either by passing api_key to the client or by setting the OPENAI_API_KEY environment variable [in /opt/Collab_AI_Online/openai_utils.py:175]
-2025-07-12 21:19:33,981 ERROR: Ollama API error: 500 [in /opt/Collab_AI_Online/openai_utils.py:317]
-2025-07-12 21:19:34,038 ERROR: Error generating room modes: The api_key client option must be set either by passing api_key to the client or by setting the OPENAI_API_KEY environment variable [in /opt/Collab_AI_Online/openai_utils.py:175]
-2025-07-12 21:19:47,555 ERROR: Error generating room modes: The api_key client option must be set either by passing api_key to the client or by setting the OPENAI_API_KEY environment variable [in /opt/Collab_AI_Online/openai_utils.py:175]
+2025-07-21 13:00:36,615 INFO: AI Collab Online startup [in C:\Users\write\Projects\AI_Collab_Online\config.py:90]
