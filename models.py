@@ -127,6 +127,8 @@ class Message(db.Model):
     role = db.Column(db.String(20), nullable=False)  # 'user' or 'assistant'
     content = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    parent_message_id = db.Column(db.Integer, db.ForeignKey('message.id'), nullable=True, default=None)
+    is_truncated = db.Column(db.Boolean, default=False, nullable=False)
     
     # Relationship
     user = db.relationship('User', backref='messages')
