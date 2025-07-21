@@ -11,6 +11,18 @@ from dashboard import dashboard
 from google_auth import google_auth
 from analytics import analytics
 
+# Automatically run Alembic migrations in production (e.g., on Railway)
+if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("FLASK_ENV") == "production":
+    try:
+        from alembic.config import Config
+        from alembic import command
+        print("Running Alembic migrations...")
+        alembic_cfg = Config("alembic.ini")
+        command.upgrade(alembic_cfg, "head")
+        print("Alembic migrations complete.")
+    except Exception as e:
+        print("Alembic migration failed:", e)
+
 
 def create_app(config_name=None):
     app = Flask(__name__, static_folder='static', static_url_path='/static')
