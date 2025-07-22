@@ -2,7 +2,6 @@ from flask import Flask
 from models import db
 import os
 from config import config
-from sqlalchemy import create_engine, text
 
 # Import Blueprints
 from auth import auth
@@ -12,29 +11,8 @@ from dashboard import dashboard
 from google_auth import google_auth
 from analytics import analytics
 
-# Ensure message table has required columns in production
-
-def ensure_message_columns():
-    db_url = os.getenv("DATABASE_URL")
-    if not db_url:
-        return
-    engine = create_engine(db_url)
-    with engine.connect() as conn:
-        # Check if columns exist
-        result = conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name='message'"))
-        columns = [row[0] for row in result.fetchall()]
-        if 'parent_message_id' not in columns:
-            print("Adding parent_message_id column to message table...")
-            conn.execute(text("ALTER TABLE message ADD COLUMN parent_message_id INTEGER"))
-            conn.execute(text("ALTER TABLE message ADD CONSTRAINT fk_message_parent_message_id_message FOREIGN KEY(parent_message_id) REFERENCES message(id)"))
-        if 'is_truncated' not in columns:
-            print("Adding is_truncated column to message table...")
-            conn.execute(text("ALTER TABLE message ADD COLUMN is_truncated BOOLEAN NOT NULL DEFAULT FALSE"))
-        conn.commit()
-
 # Automatically run Alembic migrations in production (e.g., on Railway)
 if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("FLASK_ENV") == "production":
-    ensure_message_columns()
     try:
         from alembic.config import Config
         from alembic import command
@@ -101,121 +79,122 @@ def create_app(config_name=None):
         except Exception as e:
             return {'status': 'unhealthy', 'error': str(e), 'database': 'error'}, 500
     
-    # Test route to verify app is working
-    @app.route('/test')
-    def test():
-        return {'status': 'ok', 'message': 'App is working', 'routes': ['/health', '/setup-db', '/migrate-db']}
-    
-    # Database setup endpoint
-    @app.route('/setup-db')
-    def setup_database():
-        try:
-            from models import db
-            with app.app_context():
+    if app.config.get('ENV') != 'production':
+        # Test route to verify app is working
+        @app.route('/test')
+        def test():
+            return {'status': 'ok', 'message': 'App is working', 'routes': ['/health', '/setup-db', '/migrate-db']}
+        
+        # Database setup endpoint
+        @app.route('/setup-db')
+        def setup_database():
+            try:
+                from models import db
+                with app.app_context():
+                    db.create_all()
+                return {'status': 'success', 'message': 'Database tables created'}, 200
+            except Exception as e:
+                return {'status': 'error', 'message': str(e)}, 500
+        
+        # Database migration endpoint
+        @app.route('/migrate-db')
+        def migrate_database():
+            """Migrate database to add new profile fields"""
+            try:
+                # Import the User model to ensure it's loaded
+                from models import User, db
+                
+                # Create all tables (this will add missing columns)
                 db.create_all()
-            return {'status': 'success', 'message': 'Database tables created'}, 200
-        except Exception as e:
-            return {'status': 'error', 'message': str(e)}, 500
-    
-    # Database migration endpoint
-    @app.route('/migrate-db')
-    def migrate_database():
-        """Migrate database to add new profile fields"""
-        try:
-            # Import the User model to ensure it's loaded
-            from models import User, db
-            
-            # Create all tables (this will add missing columns)
-            db.create_all()
-            
-            # Check if we need to add columns manually
-            with db.engine.connect() as conn:
-                # Check if new columns exist (PostgreSQL syntax)
-                result = conn.execute(db.text("""
-                    SELECT column_name 
-                    FROM information_schema.columns 
-                    WHERE table_name = 'user' AND table_schema = 'public'
-                """))
-                columns = [row[0] for row in result.fetchall()]
                 
-                missing_columns = []
-                expected_columns = [
-                    'full_name', 'institution', 'department', 'research_area', 
-                    'role', 'primary_use_case', 'team_size', 'heard_from',
-                    'receive_updates', 'contact_for_research', 'reset_token', 
-                    'reset_token_expiry'
-                ]
-                
-                for col in expected_columns:
-                    if col not in columns:
-                        missing_columns.append(col)
-                
-                if missing_columns:
-                    # Add missing columns
-                    for col in missing_columns:
-                        if col in ['receive_updates', 'contact_for_research']:
-                            conn.execute(db.text(f"ALTER TABLE \"user\" ADD COLUMN {col} BOOLEAN DEFAULT FALSE"))
-                        elif col == 'reset_token_expiry':
-                            conn.execute(db.text(f"ALTER TABLE \"user\" ADD COLUMN {col} TIMESTAMP"))
-                        else:
-                            conn.execute(db.text(f"ALTER TABLE \"user\" ADD COLUMN {col} VARCHAR(200)"))
+                # Check if we need to add columns manually
+                with db.engine.connect() as conn:
+                    # Check if new columns exist (PostgreSQL syntax)
+                    result = conn.execute(db.text("""
+                        SELECT column_name 
+                        FROM information_schema.columns 
+                        WHERE table_name = 'user' AND table_schema = 'public'
+                    """))
+                    columns = [row[0] for row in result.fetchall()]
                     
-                    conn.commit()
-                    return f"Database migrated successfully. Added columns: {', '.join(missing_columns)}"
-                else:
-                    return "Database is already up to date."
+                    missing_columns = []
+                    expected_columns = [
+                        'full_name', 'institution', 'department', 'research_area', 
+                        'role', 'primary_use_case', 'team_size', 'heard_from',
+                        'receive_updates', 'contact_for_research', 'reset_token', 
+                        'reset_token_expiry'
+                    ]
                     
-        except Exception as e:
-            return f"Migration error: {str(e)}"
-    
-    # Database reset endpoint (WARNING: This will delete all data!)
-    @app.route('/reset-db')
-    def reset_database():
-        """Reset database - DELETE ALL DATA!"""
-        try:
-            from models import db, User, Room, RoomMember, Chat, Message, Comment, CustomPrompt, PromptRecord, GoogleAuth
-            
-            with app.app_context():
-                # Delete all data in the correct order (respecting foreign keys)
-                db.session.query(Comment).delete()
-                db.session.query(Message).delete()
-                db.session.query(PromptRecord).delete()
-                db.session.query(Chat).delete()
-                db.session.query(RoomMember).delete()
-                db.session.query(CustomPrompt).delete()
-                db.session.query(Room).delete()
-                db.session.query(GoogleAuth).delete()
-                db.session.query(User).delete()
+                    for col in expected_columns:
+                        if col not in columns:
+                            missing_columns.append(col)
+                    
+                    if missing_columns:
+                        # Add missing columns
+                        for col in missing_columns:
+                            if col in ['receive_updates', 'contact_for_research']:
+                                conn.execute(db.text(f"ALTER TABLE \"user\" ADD COLUMN {col} BOOLEAN DEFAULT FALSE"))
+                            elif col == 'reset_token_expiry':
+                                conn.execute(db.text(f"ALTER TABLE \"user\" ADD COLUMN {col} TIMESTAMP"))
+                            else:
+                                conn.execute(db.text(f"ALTER TABLE \"user\" ADD COLUMN {col} VARCHAR(200)"))
+                        
+                        conn.commit()
+                        return f"Database migrated successfully. Added columns: {', '.join(missing_columns)}"
+                    else:
+                        return "Database is already up to date."
+                        
+            except Exception as e:
+                return f"Migration error: {str(e)}"
+        
+        # Database reset endpoint (WARNING: This will delete all data!)
+        @app.route('/reset-db')
+        def reset_database():
+            """Reset database - DELETE ALL DATA!"""
+            try:
+                from models import db, User, Room, RoomMember, Chat, Message, Comment, CustomPrompt, PromptRecord, GoogleAuth
                 
-                # Commit the changes
-                db.session.commit()
-                
+                with app.app_context():
+                    # Delete all data in the correct order (respecting foreign keys)
+                    db.session.query(Comment).delete()
+                    db.session.query(Message).delete()
+                    db.session.query(PromptRecord).delete()
+                    db.session.query(Chat).delete()
+                    db.session.query(RoomMember).delete()
+                    db.session.query(CustomPrompt).delete()
+                    db.session.query(Room).delete()
+                    db.session.query(GoogleAuth).delete()
+                    db.session.query(User).delete()
+                    
+                    # Commit the changes
+                    db.session.commit()
+                    
+                    return {
+                        'status': 'success', 
+                        'message': 'Database reset successfully. All users and data have been deleted.',
+                        'warning': 'You will need to register again to use the app.'
+                    }
+                    
+            except Exception as e:
+                db.session.rollback()
                 return {
-                    'status': 'success', 
-                    'message': 'Database reset successfully. All users and data have been deleted.',
-                    'warning': 'You will need to register again to use the app.'
+                    'status': 'error', 
+                    'message': f'Database reset failed: {str(e)}'
                 }
-                
-        except Exception as e:
-            db.session.rollback()
+        
+        # Debug static files endpoint
+        @app.route('/debug-static')
+        def debug_static():
+            import os
+            static_path = os.path.join(app.root_path, 'static')
+            css_path = os.path.join(static_path, 'style.css')
             return {
-                'status': 'error', 
-                'message': f'Database reset failed: {str(e)}'
+                'static_folder': app.static_folder,
+                'static_url_path': app.static_url_path,
+                'static_path_exists': os.path.exists(static_path),
+                'css_file_exists': os.path.exists(css_path),
+                'css_file_size': os.path.getsize(css_path) if os.path.exists(css_path) else 0
             }
-    
-    # Debug static files endpoint
-    @app.route('/debug-static')
-    def debug_static():
-        import os
-        static_path = os.path.join(app.root_path, 'static')
-        css_path = os.path.join(static_path, 'style.css')
-        return {
-            'static_folder': app.static_folder,
-            'static_url_path': app.static_url_path,
-            'static_path_exists': os.path.exists(static_path),
-            'css_file_exists': os.path.exists(css_path),
-            'css_file_size': os.path.getsize(css_path) if os.path.exists(css_path) else 0
-        }
     
     # Redirect root to room index
     @app.route('/')
