@@ -24,6 +24,25 @@ if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("FLASK_ENV") == "production":
     except Exception as e:
         print("Alembic migration failed:", e)
         # Continue anyway - the app will handle table creation
+    
+    # Also ensure achievement tables exist
+    try:
+        print("Ensuring achievement tables exist...")
+        from models import db, UserModeUsage, Achievement
+        
+        # Create a temporary app context
+        temp_app = Flask(__name__)
+        temp_app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+        temp_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+        db.init_app(temp_app)
+        
+        with temp_app.app_context():
+            # Create achievement tables if they don't exist
+            UserModeUsage.__table__.create(db.engine, checkfirst=True)
+            Achievement.__table__.create(db.engine, checkfirst=True)
+            print("✓ Achievement tables ensured")
+    except Exception as e:
+        print(f"Achievement table creation failed: {e}")
 
 
 def create_app(config_name=None):
@@ -81,78 +100,21 @@ def create_app(config_name=None):
         except Exception as e:
             return {'status': 'unhealthy', 'error': str(e), 'database': 'error'}, 500
     
-    # Database migration endpoint (available in all environments)
+    # Simple migration endpoint
     @app.route('/migrate-db')
     def migrate_database():
-        """Migrate database to add new profile fields and achievement tables"""
+        """Simple migration to create achievement tables"""
         try:
-            # Import all models to ensure they're loaded
-            from models import User, UserModeUsage, Achievement, db
+            from models import db, UserModeUsage, Achievement
             
-            # Create all tables (this will add missing columns and tables)
-            db.create_all()
+            # Create achievement tables
+            UserModeUsage.__table__.create(db.engine, checkfirst=True)
+            Achievement.__table__.create(db.engine, checkfirst=True)
             
-            # Check if we need to add columns manually
-            with db.engine.connect() as conn:
-                # Check if new columns exist (PostgreSQL syntax)
-                result = conn.execute(db.text("""
-                    SELECT column_name 
-                    FROM information_schema.columns 
-                    WHERE table_name = 'user' AND table_schema = 'public'
-                """))
-                columns = [row[0] for row in result.fetchall()]
-                
-                missing_columns = []
-                expected_columns = [
-                    'full_name', 'institution', 'department', 'research_area', 
-                    'role', 'primary_use_case', 'team_size', 'heard_from',
-                    'receive_updates', 'contact_for_research', 'reset_token', 
-                    'reset_token_expiry'
-                ]
-                
-                for col in expected_columns:
-                    if col not in columns:
-                        missing_columns.append(col)
-                
-                # Check if achievement tables exist
-                result = conn.execute(db.text("""
-                    SELECT table_name 
-                    FROM information_schema.tables 
-                    WHERE table_schema = 'public' AND table_name IN ('user_mode_usage', 'achievement')
-                """))
-                existing_tables = [row[0] for row in result.fetchall()]
-                
-                missing_tables = []
-                if 'user_mode_usage' not in existing_tables:
-                    missing_tables.append('user_mode_usage')
-                if 'achievement' not in existing_tables:
-                    missing_tables.append('achievement')
-                
-                if missing_columns:
-                    # Add missing columns
-                    for col in missing_columns:
-                        if col in ['receive_updates', 'contact_for_research']:
-                            conn.execute(db.text(f"ALTER TABLE \"user\" ADD COLUMN {col} BOOLEAN DEFAULT FALSE"))
-                        elif col == 'reset_token_expiry':
-                            conn.execute(db.text(f"ALTER TABLE \"user\" ADD COLUMN {col} TIMESTAMP"))
-                        else:
-                            conn.execute(db.text(f"ALTER TABLE \"user\" ADD COLUMN {col} VARCHAR(200)"))
-                
-                if missing_tables:
-                    # Create missing tables using SQLAlchemy
-                    if 'user_mode_usage' in missing_tables:
-                        UserModeUsage.__table__.create(db.engine, checkfirst=True)
-                    if 'achievement' in missing_tables:
-                        Achievement.__table__.create(db.engine, checkfirst=True)
-                
-                if missing_columns or missing_tables:
-                    conn.commit()
-                    return f"Database migrated successfully. Added columns: {', '.join(missing_columns)}, Added tables: {', '.join(missing_tables)}"
-                else:
-                    return "Database is already up to date."
-                    
+            return "✅ Achievement tables created successfully!"
+            
         except Exception as e:
-            return f"Migration error: {str(e)}"
+            return f"❌ Migration error: {str(e)}"
     
     # Debug database endpoint (available in all environments)
     @app.route('/debug-db')
@@ -178,9 +140,23 @@ def create_app(config_name=None):
                 """))
                 user_columns = [row[0] for row in result.fetchall()]
                 
+                # Check if there are any achievements in the database
+                achievement_count = 0
+                if 'achievement' in existing_tables:
+                    result = conn.execute(db.text("SELECT COUNT(*) FROM achievement"))
+                    achievement_count = result.fetchone()[0]
+                
+                # Check if there are any mode usage records
+                usage_count = 0
+                if 'user_mode_usage' in existing_tables:
+                    result = conn.execute(db.text("SELECT COUNT(*) FROM user_mode_usage"))
+                    usage_count = result.fetchone()[0]
+                
                 return {
                     'achievement_tables_exist': 'user_mode_usage' in existing_tables and 'achievement' in existing_tables,
                     'existing_tables': existing_tables,
+                    'achievement_count': achievement_count,
+                    'usage_count': usage_count,
                     'user_columns': user_columns,
                     'database_url': str(db.engine.url).replace(db.engine.url.password, '***') if db.engine.url.password else str(db.engine.url)
                 }
