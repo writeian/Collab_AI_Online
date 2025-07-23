@@ -100,6 +100,19 @@ def create_app(config_name=None):
         except Exception as e:
             return {'status': 'unhealthy', 'error': str(e), 'database': 'error'}, 500
     
+    # Test endpoint to list all routes
+    @app.route('/routes')
+    def list_routes():
+        """List all available routes for debugging"""
+        routes = []
+        for rule in app.url_map.iter_rules():
+            routes.append({
+                'endpoint': rule.endpoint,
+                'methods': list(rule.methods),
+                'rule': str(rule)
+            })
+        return {'routes': routes}
+    
     # Simple migration endpoint
     @app.route('/migrate-db')
     def migrate_database():
