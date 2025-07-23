@@ -29,6 +29,7 @@ We're actively seeking educators, writing teams, and content creators to help im
 - **Chat Management**: Create, edit, delete, and organize conversations within rooms
 - **Interactive Comments**: Students can comment on specific dialogue points for threaded discussions
 - **Public/Private Rooms**: Make rooms public for community discovery or keep them private
+- **Achievement System**: Track user progress and award badges for participation milestones
 
 ### Educational Writing Support
 - **Writing Mode System**: 10 different writing stages (Explore, Focus, Outline, Draft, Revise, Polish, etc.)
@@ -60,6 +61,42 @@ We're actively seeking educators, writing teams, and content creators to help im
 - OpenAI API key or Anthropic API key
 - Google Cloud Project (for Google Docs integration)
 - Git
+
+## 🚀 **Railway Deployment**
+
+### **IMPORTANT: Deployment Branch Configuration**
+
+**Always deploy from the `clean-deploy` branch to avoid confusion!**
+
+#### **Railway Settings:**
+- **Repository**: `writeian/Collab_AI_Online`
+- **Branch**: `clean-deploy` 
+- **Root Directory**: (leave empty or set to `/`)
+- **Auto Deploy**: `ON`
+
+#### **Environment Variables for Railway:**
+```
+FLASK_ENV=production
+SECRET_KEY=your_secret_key_here
+DATABASE_URL=your_railway_postgresql_url
+PORT=8080
+```
+
+#### **Deployment Process:**
+1. **Make changes** in your local `clean-deploy` branch
+2. **Commit and push** to GitHub:
+   ```bash
+   git add .
+   git commit -m "Your commit message"
+   git push origin clean-deploy
+   ```
+3. **Railway automatically deploys** from the `clean-deploy` branch
+4. **Monitor deployment logs** in Railway dashboard
+
+#### **⚠️ Common Deployment Issues:**
+- **Wrong branch**: Ensure Railway is set to `clean-deploy`, not `main` or `dev`
+- **Cached deployments**: If changes don't appear, check Railway is connected to the correct repository
+- **Database migrations**: Achievement tables are created automatically via the `/health` endpoint
 
 ### Installation
 
@@ -221,6 +258,13 @@ AI Collab Teams supports 10 different writing stages:
 - **Threaded Discussions**: Build conversations around AI feedback
 - **User Attribution**: Track who made which comments
 - **Comment Management**: Add and delete comments as needed
+
+### Achievement System
+
+- **Progress Tracking**: Automatically tracks user participation and writing mode usage
+- **Achievement Badges**: Earn badges for milestones like first chat, multiple modes used, etc.
+- **Room Achievements**: View your achievements in each room's interface
+- **Motivation**: Gamified system encourages continued participation and exploration
 
 ### Google Docs Integration
 
