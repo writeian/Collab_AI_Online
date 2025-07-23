@@ -132,11 +132,12 @@ def create_app(config_name=None):
                 
                 return {
                     'status': 'healthy', 
-                    'message': 'App is running - ACHIEVEMENTS FIXED', 
+                    'message': 'App is running - ACHIEVEMENTS FIXED - AUTO DEPLOY TEST', 
                     'database': 'connected',
                     'achievement_tables': achievement_status,
-                    'version': '3.0',
-                    'deployment_test': 'NEW CODE DEPLOYED'
+                    'version': '4.0',
+                    'deployment_test': 'AUTO DEPLOY WORKING',
+                    'timestamp': '2024-07-23 22:45'
                 }, 200
             else:
                 return {'status': 'healthy', 'message': 'App is running', 'database': 'not configured'}, 200
