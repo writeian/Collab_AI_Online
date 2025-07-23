@@ -275,6 +275,11 @@ def create_app(config_name=None):
         from access_control import get_current_user
         return dict(user=get_current_user())
 
+    # Add a simple test route at the end
+    @app.route('/test-simple')
+    def test_simple():
+        return "Hello from Flask! App is working."
+
     return app
 
 
