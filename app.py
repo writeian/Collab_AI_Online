@@ -99,12 +99,12 @@ def create_app(config_name=None):
         # Database migration endpoint
         @app.route('/migrate-db')
         def migrate_database():
-            """Migrate database to add new profile fields"""
+            """Migrate database to add new profile fields and achievement tables"""
             try:
-                # Import the User model to ensure it's loaded
-                from models import User, db
+                # Import all models to ensure they're loaded
+                from models import User, UserModeUsage, Achievement, db
                 
-                # Create all tables (this will add missing columns)
+                # Create all tables (this will add missing columns and tables)
                 db.create_all()
                 
                 # Check if we need to add columns manually
@@ -129,6 +129,20 @@ def create_app(config_name=None):
                         if col not in columns:
                             missing_columns.append(col)
                     
+                    # Check if achievement tables exist
+                    result = conn.execute(db.text("""
+                        SELECT table_name 
+                        FROM information_schema.tables 
+                        WHERE table_schema = 'public' AND table_name IN ('user_mode_usage', 'achievement')
+                    """))
+                    existing_tables = [row[0] for row in result.fetchall()]
+                    
+                    missing_tables = []
+                    if 'user_mode_usage' not in existing_tables:
+                        missing_tables.append('user_mode_usage')
+                    if 'achievement' not in existing_tables:
+                        missing_tables.append('achievement')
+                    
                     if missing_columns:
                         # Add missing columns
                         for col in missing_columns:
@@ -138,9 +152,17 @@ def create_app(config_name=None):
                                 conn.execute(db.text(f"ALTER TABLE \"user\" ADD COLUMN {col} TIMESTAMP"))
                             else:
                                 conn.execute(db.text(f"ALTER TABLE \"user\" ADD COLUMN {col} VARCHAR(200)"))
-                        
+                    
+                    if missing_tables:
+                        # Create missing tables using SQLAlchemy
+                        if 'user_mode_usage' in missing_tables:
+                            UserModeUsage.__table__.create(db.engine, checkfirst=True)
+                        if 'achievement' in missing_tables:
+                            Achievement.__table__.create(db.engine, checkfirst=True)
+                    
+                    if missing_columns or missing_tables:
                         conn.commit()
-                        return f"Database migrated successfully. Added columns: {', '.join(missing_columns)}"
+                        return f"Database migrated successfully. Added columns: {', '.join(missing_columns)}, Added tables: {', '.join(missing_tables)}"
                     else:
                         return "Database is already up to date."
                         
