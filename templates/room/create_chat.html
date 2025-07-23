@@ -12,7 +12,7 @@
     <div class="form-group">
       <label for="mode">Writing Mode</label>
       <select id="mode" name="mode" class="form-control">
-        {% for mode_key, mode_info in modes.items() %}
+        {% for mode_key, mode_info in modes.items()|sort(attribute='1.label') %}
           <option value="{{ mode_key }}">{{ mode_info.label }}</option>
         {% endfor %}
       </select>

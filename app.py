@@ -325,6 +325,17 @@ def create_app(config_name=None):
     def test_simple():
         return "Hello from Flask! App is working."
 
+    # Force deploy test route
+    @app.route('/force-deploy-test')
+    def force_deploy_test():
+        return {
+            'message': 'FORCE DEPLOY TEST - NEW CODE IS RUNNING',
+            'version': '5.0',
+            'timestamp': '2024-07-23 22:58',
+            'commit': 'f3d9d79',
+            'status': 'NEW CODE DEPLOYED'
+        }, 200
+
     return app
 
 

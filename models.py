@@ -206,3 +206,41 @@ class PageView(db.Model):
     
     def __repr__(self):
         return f"<PageView {self.id} page={self.page}>"
+
+class UserModeUsage(db.Model):
+    """Track which modes each user has used in each room for achievements."""
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
+    mode = db.Column(db.String(32), nullable=False)  # The mode that was used
+    first_used_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    last_used_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    usage_count = db.Column(db.Integer, default=1, nullable=False)  # How many times this mode was used
+    
+    # Relationships
+    user = db.relationship('User', backref='mode_usage')
+    room = db.relationship('Room', backref='user_mode_usage')
+    
+    __table_args__ = (db.UniqueConstraint('user_id', 'room_id', 'mode', name='unique_user_room_mode'),)
+    
+    def __repr__(self):
+        return f"<UserModeUsage user_id={self.user_id} room_id={self.room_id} mode={self.mode}>"
+
+class Achievement(db.Model):
+    """Track user achievements/milestones in rooms."""
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
+    achievement_type = db.Column(db.String(50), nullable=False)  # 'first_steps', 'explorer', 'collaborator', etc.
+    earned_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    user = db.relationship('User', backref='achievements')
+    room = db.relationship('Room', backref='achievements')
+    
+    __table_args__ = (db.UniqueConstraint('user_id', 'room_id', 'achievement_type', name='unique_user_room_achievement'),)
+    
+    def __repr__(self):
+        return f"<Achievement {self.achievement_type} for user {self.user_id} in room {self.room_id}>"

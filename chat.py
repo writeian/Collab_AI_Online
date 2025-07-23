@@ -11,6 +11,7 @@ from access_control import (
     can_edit_chat
 )
 from google_docs import validate_google_docs_url, get_document_content
+from achievements import track_mode_usage
 
 chat = Blueprint('chat', __name__)
 
@@ -34,6 +35,9 @@ def view_chat(chat_id):
             # save user message
             user_msg = Message(chat_id=chat_obj.id, user_id=user.id, role="user", content=content)
             db.session.add(user_msg)
+            
+            # Track mode usage for achievements
+            track_mode_usage(user.id, chat_obj.room_id, chat_obj.mode)
             
             # Record the prompt for dashboard analytics
             prompt_record = PromptRecord(

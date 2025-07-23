@@ -27,7 +27,7 @@
                 <div class="form-group">
                     <label for="mode">Analysis Mode:</label>
                     <select class="form-control" id="mode" name="mode">
-                        {% for mode_key, mode_data in modes.items() %}
+                        {% for mode_key, mode_data in modes.items()|sort(attribute='1.label') %}
                         <option value="{{ mode_key }}" {% if mode_key == 'revise' %}selected{% endif %}>
                             {{ mode_data.label }}
                         </option>

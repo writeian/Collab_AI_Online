@@ -25,6 +25,43 @@
     <a href="{{ url_for('room.create_chat', room_id=room.id) }}" class="btn btn-primary">Create Chat</a>
   </div>
   
+  <!-- Achievements Section -->
+  {% if user %}
+    <div class="achievements-section">
+      <h3>🏆 Your Achievements</h3>
+      {% set user_achievements = user.achievements|selectattr('room_id', 'equalto', room.id)|list %}
+      {% if user_achievements %}
+        <div class="achievements-grid">
+          {% for achievement in user_achievements %}
+            <div class="achievement-badge">
+              {% if achievement.achievement_type == 'first_steps' %}
+                🎯 First Steps
+                <small>Sent your first message</small>
+              {% elif achievement.achievement_type == 'explorer' %}
+                🗺️ Explorer
+                <small>Used 24%+ of available modes</small>
+              {% elif achievement.achievement_type == 'ai_whisperer' %}
+                🤖 AI Whisperer
+                <small>10+ AI conversations</small>
+              {% elif achievement.achievement_type == 'collaborator' %}
+                👥 Collaborator
+                <small>Helped 50%+ of room members</small>
+              {% elif achievement.achievement_type == 'learning_master' %}
+                🎓 Learning Master
+                <small>Used 74%+ of available modes</small>
+              {% else %}
+                🏆 {{ achievement.achievement_type|title }}
+              {% endif %}
+              <small>Earned {{ achievement.earned_at.strftime('%Y-%m-%d') }}</small>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="no-achievements">No achievements yet. Start participating to earn badges!</p>
+      {% endif %}
+    </div>
+  {% endif %}
+  
   <div class="room-content">
     <h3>Chats in this Room</h3>
     
