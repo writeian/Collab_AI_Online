@@ -97,18 +97,45 @@ def create_app(config_name=None):
                 
                 # Also check and create achievement tables
                 try:
-                    from models import UserModeUsage, Achievement
-                    UserModeUsage.__table__.create(db.engine, checkfirst=True)
-                    Achievement.__table__.create(db.engine, checkfirst=True)
+                    # Create tables directly using SQL to avoid import issues
+                    with db.engine.connect() as conn:
+                        # Create user_mode_usage table
+                        conn.execute(db.text("""
+                            CREATE TABLE IF NOT EXISTS user_mode_usage (
+                                id SERIAL PRIMARY KEY,
+                                user_id INTEGER NOT NULL REFERENCES "user"(id),
+                                room_id INTEGER NOT NULL REFERENCES room(id),
+                                mode VARCHAR(32) NOT NULL,
+                                first_used_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+                                last_used_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+                                usage_count INTEGER NOT NULL DEFAULT 1,
+                                UNIQUE(user_id, room_id, mode)
+                            )
+                        """))
+                        
+                        # Create achievement table
+                        conn.execute(db.text("""
+                            CREATE TABLE IF NOT EXISTS achievement (
+                                id SERIAL PRIMARY KEY,
+                                user_id INTEGER NOT NULL REFERENCES "user"(id),
+                                room_id INTEGER NOT NULL REFERENCES room(id),
+                                achievement_type VARCHAR(50) NOT NULL,
+                                earned_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+                                UNIQUE(user_id, room_id, achievement_type)
+                            )
+                        """))
+                        
+                        conn.commit()
                     achievement_status = "✓ Achievement tables ensured"
                 except Exception as e:
                     achievement_status = f"⚠ Achievement tables error: {str(e)}"
                 
                 return {
                     'status': 'healthy', 
-                    'message': 'App is running', 
+                    'message': 'App is running - UPDATED VERSION', 
                     'database': 'connected',
-                    'achievement_tables': achievement_status
+                    'achievement_tables': achievement_status,
+                    'version': '2.0'
                 }, 200
             else:
                 return {'status': 'healthy', 'message': 'App is running', 'database': 'not configured'}, 200
