@@ -94,7 +94,22 @@ def create_app(config_name=None):
                 with app.app_context():
                     with db.engine.connect() as conn:
                         conn.execute(db.text('SELECT 1'))
-                return {'status': 'healthy', 'message': 'App is running', 'database': 'connected'}, 200
+                
+                # Also check and create achievement tables
+                try:
+                    from models import UserModeUsage, Achievement
+                    UserModeUsage.__table__.create(db.engine, checkfirst=True)
+                    Achievement.__table__.create(db.engine, checkfirst=True)
+                    achievement_status = "✓ Achievement tables ensured"
+                except Exception as e:
+                    achievement_status = f"⚠ Achievement tables error: {str(e)}"
+                
+                return {
+                    'status': 'healthy', 
+                    'message': 'App is running', 
+                    'database': 'connected',
+                    'achievement_tables': achievement_status
+                }, 200
             else:
                 return {'status': 'healthy', 'message': 'App is running', 'database': 'not configured'}, 200
         except Exception as e:
