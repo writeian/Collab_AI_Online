@@ -18,10 +18,12 @@ if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("FLASK_ENV") == "production":
         from alembic import command
         print("Running Alembic migrations...")
         alembic_cfg = Config("alembic.ini")
+        # Only run migrations if tables don't exist to avoid conflicts
         command.upgrade(alembic_cfg, "head")
         print("Alembic migrations complete.")
     except Exception as e:
         print("Alembic migration failed:", e)
+        # Continue anyway - the app will handle table creation
 
 
 def create_app(config_name=None):
@@ -251,39 +253,6 @@ def create_app(config_name=None):
                 'css_file_exists': os.path.exists(css_path),
                 'css_file_size': os.path.getsize(css_path) if os.path.exists(css_path) else 0
             }
-        
-        @app.route('/debug-db')
-        def debug_database():
-            """Check database tables and schema"""
-            try:
-                from models import db, UserModeUsage, Achievement
-                
-                with db.engine.connect() as conn:
-                    # Check if achievement tables exist
-                    result = conn.execute(db.text("""
-                        SELECT table_name 
-                        FROM information_schema.tables 
-                        WHERE table_schema = 'public' AND table_name IN ('user_mode_usage', 'achievement')
-                    """))
-                    existing_tables = [row[0] for row in result.fetchall()]
-                    
-                    # Check user table columns
-                    result = conn.execute(db.text("""
-                        SELECT column_name 
-                        FROM information_schema.columns 
-                        WHERE table_name = 'user' AND table_schema = 'public'
-                    """))
-                    user_columns = [row[0] for row in result.fetchall()]
-                    
-                    return {
-                        'achievement_tables_exist': 'user_mode_usage' in existing_tables and 'achievement' in existing_tables,
-                        'existing_tables': existing_tables,
-                        'user_columns': user_columns,
-                        'database_url': str(db.engine.url).replace(db.engine.url.password, '***') if db.engine.url.password else str(db.engine.url)
-                    }
-                    
-            except Exception as e:
-                return {'error': str(e)}
     
     # Redirect root to room index
     @app.route('/')
