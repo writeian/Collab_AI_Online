@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template, redirect, url_for
 from models import db
 import os
 from config import config
@@ -295,7 +295,6 @@ def create_app(config_name=None):
             from access_control import get_current_user
             user = get_current_user()
             if user:
-                from flask import redirect, url_for
                 return redirect(url_for('room.index'))
         except Exception:
             pass
