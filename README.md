@@ -98,6 +98,46 @@ PORT=8080
 - **Cached deployments**: If changes don't appear, check Railway is connected to the correct repository
 - **Database migrations**: Achievement tables are created automatically via the `/health` endpoint
 
+## 🔧 **Development Workflow**
+
+### **Branch Strategy**
+
+**Current Development Setup:**
+- **Feature Development**: `feature/new-chat-interface` - Your new modern chat interface with Tailwind CSS
+- **Production Deployment**: `clean-deploy` - Stable version deployed to Railway
+- **Main Branch**: `main` - Base development branch
+
+### **Development Process:**
+
+1. **Feature Development** (Local):
+   ```bash
+   # Work on new features in feature branch
+   git checkout feature/new-chat-interface
+   # Make your changes, test locally
+   python app.py
+   ```
+
+2. **Testing** (Local):
+   - Test thoroughly on local server
+   - Ensure all functionality works with new interface
+   - Fix any issues before deployment
+
+3. **Production Deployment** (When Ready):
+   ```bash
+   # Switch to clean-deploy branch
+   git checkout clean-deploy
+   # Merge your feature branch
+   git merge feature/new-chat-interface
+   # Push to trigger Railway deployment
+   git push origin clean-deploy
+   ```
+
+### **⚠️ Important Notes:**
+- **Never deploy directly from feature branches** - always use `clean-deploy`
+- **Test thoroughly locally** before merging to `clean-deploy`
+- **Keep feature development separate** from production deployment
+- **Railway auto-deploys** from `clean-deploy` branch only
+
 ### Installation
 
 1. **Clone the repository**

@@ -1,61 +1,31 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>AI Collab – {% block title %}{% endblock %}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=2" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AI Collab Online{% endblock %}</title>
     
-    <!-- Simple Analytics -->
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- New Design System CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/globals.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
+    <!-- Your existing styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-background text-foreground">
+    {% block content %}{% endblock %}
+    
+    <!-- Initialize Lucide icons -->
     <script>
-      // Track page views
-      fetch('/analytics/pageview', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          page: window.location.pathname,
-          user_agent: navigator.userAgent,
-          timestamp: new Date().toISOString()
-        })
-      }).catch(err => console.log('Analytics error:', err));
+        lucide.createIcons();
     </script>
-  </head>
-  <body>
-    <div class="container">
-      <h1><a href="{{ url_for('room.index') }}" style="text-decoration:none; color:inherit">AI Collab</a></h1>
-      <nav>
-        <a href="{{ url_for('room.index') }}">All Rooms</a>
-        {% if user %}
-          <a href="{{ url_for('dashboard.index') }}">Dashboard</a>
-          <a href="{{ url_for('auth.profile') }}">Profile</a>
-          <a href="{{ url_for('auth.logout') }}">Logout</a>
-        {% else %}
-          <a href="{{ url_for('auth.login') }}">Login</a>
-          <a href="{{ url_for('auth.register') }}">Register</a>
-        {% endif %}
-        <a href="{{ url_for('about') }}">About</a>
-      </nav>
-
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          <div class="flash-messages">
-            {% for category, msg in messages %}
-              <div class="flash flash-{{ category if category != 'message' else 'info' }}">
-                {{ msg }}
-                <button class="flash-close" onclick="this.parentElement.remove()">&times;</button>
-              </div>
-            {% endfor %}
-          </div>
-        {% endif %}
-      {% endwith %}
-
-      {% block content %}{% endblock %}
-    </div>
-    
-    <!-- Loading state management -->
-    <script src="{{ url_for('static', filename='loading.js') }}"></script>
-  </body>
+    {% block extra_js %}{% endblock %}
+</body>
 </html>

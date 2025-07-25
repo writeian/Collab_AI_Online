@@ -295,7 +295,7 @@ def create_app(config_name=None):
             from access_control import get_current_user
             user = get_current_user()
             if user:
-        return redirect(url_for('room.index'))
+                return redirect(url_for('room.index'))
         except Exception:
             pass
         return render_template('landing.html')
@@ -330,6 +330,10 @@ def create_app(config_name=None):
     @app.route('/test-simple')
     def test_simple():
         return "Hello from Flask! App is working."
+    
+    @app.route('/test_simple_chat.html')
+    def test_simple_chat():
+        return render_template('test_simple_chat.html')
 
     # Force deploy test route
     @app.route('/force-deploy-test')
