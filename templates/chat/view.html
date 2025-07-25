@@ -79,7 +79,7 @@
         </div>
 
         <!-- Messages Area -->
-        <div class="flex-1 overflow-y-auto p-4 space-y-4">
+        <div class="flex-1 overflow-y-auto p-4 space-y-4" id="chat-messages">
             {% for message in messages %}
             <div class="flex {% if message.role == 'user' %}justify-end{% else %}justify-start{% endif %}">
                 <div class="max-w-[70%] {% if message.role == 'user' %}bg-primary text-primary-foreground{% else %}bg-muted{% endif %} rounded-lg p-3">
@@ -152,6 +152,14 @@
             {% endfor %}
         </div>
 
+        <!-- Scroll to Bottom Button (hidden by default) -->
+        <button id="scroll-to-bottom" 
+                class="fixed bottom-20 right-6 bg-primary text-primary-foreground rounded-full p-3 shadow-lg hover:bg-primary/90 transition-all duration-200 opacity-0 pointer-events-none"
+                onclick="scrollToBottom()"
+                title="Scroll to bottom">
+            <i data-lucide="arrow-down" class="w-5 h-5"></i>
+        </button>
+
         <!-- Message Input -->
         <div class="p-4 border-t border-border bg-card">
             <form method="POST" action="{{ url_for('chat.view_chat', chat_id=chat.id) }}" class="flex gap-2" id="message-form">
@@ -182,8 +190,99 @@
         }
     }
 
-    // Prevent double submission: disable send button and input on submit
+    // Smart auto-scroll function
+    function smartScrollToBottom(chatMessages) {
+        if (!chatMessages) return;
+        
+        // Check if user is already near the bottom (within 100px)
+        const isNearBottom = (chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight) < 100;
+        
+        if (isNearBottom) {
+            // User is near bottom, auto-scroll to show new messages
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        // If user is scrolled up, don't auto-scroll - let them read in peace
+    }
+
+    // Scroll to bottom function
+    function scrollToBottom() {
+        const chatMessages = document.getElementById('chat-messages');
+        if (chatMessages) {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    }
+
+    // Show/hide scroll to bottom button based on scroll position
+    function updateScrollButton() {
+        const chatMessages = document.getElementById('chat-messages');
+        const scrollButton = document.getElementById('scroll-to-bottom');
+        
+        if (chatMessages && scrollButton) {
+            const isNearBottom = (chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight) < 100;
+            
+            if (isNearBottom) {
+                // Hide button when near bottom
+                scrollButton.style.opacity = '0';
+                scrollButton.style.pointerEvents = 'none';
+            } else {
+                // Show button when scrolled up
+                scrollButton.style.opacity = '1';
+                scrollButton.style.pointerEvents = 'auto';
+            }
+        }
+    }
+
+    // Auto-scroll to bottom when page loads to show latest messages
     document.addEventListener('DOMContentLoaded', function() {
+        // Try multiple selectors to find the chat messages container
+        let chatMessages = document.querySelector('.flex-1.overflow-y-auto.p-4.space-y-4');
+        if (!chatMessages) {
+            chatMessages = document.querySelector('.flex-1.overflow-y-auto');
+        }
+        if (!chatMessages) {
+            // Fallback: look for any scrollable container with messages
+            chatMessages = document.querySelector('[class*="overflow-y-auto"]');
+        }
+        
+        console.log('Chat messages container found:', chatMessages);
+        
+        if (chatMessages) {
+            console.log('Scrolling to bottom...');
+            console.log('Initial scrollTop:', chatMessages.scrollTop);
+            console.log('ScrollHeight:', chatMessages.scrollHeight);
+            
+            // Always scroll to bottom on page load to show latest messages
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            console.log('After scroll - scrollTop:', chatMessages.scrollTop);
+            
+            // Also scroll after a short delay to ensure all content is loaded
+            setTimeout(() => {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                console.log('After 100ms scroll - scrollTop:', chatMessages.scrollTop);
+            }, 100);
+            
+            // Scroll again after images and other content load
+            setTimeout(() => {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                console.log('After 500ms scroll - scrollTop:', chatMessages.scrollTop);
+            }, 500);
+            
+            // One more scroll after everything should be loaded
+            setTimeout(() => {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                console.log('After 1000ms scroll - scrollTop:', chatMessages.scrollTop);
+            }, 1000);
+            
+            // Add scroll event listener to show/hide scroll-to-bottom button
+            chatMessages.addEventListener('scroll', updateScrollButton);
+            
+            // Initial check for scroll button visibility
+            updateScrollButton();
+        } else {
+            console.error('Could not find chat messages container');
+        }
+        
+        // Prevent double submission: disable send button and input on submit
         const form = document.getElementById('message-form');
         if (form) {
             form.addEventListener('submit', function() {
@@ -201,12 +300,6 @@
                 // if (icon) icon.classList.add('hidden');
                 // if (sendingText) sendingText.classList.remove('hidden');
             });
-        }
-        
-        // Auto-scroll to bottom when page loads to show latest messages
-        const chatMessages = document.querySelector('.flex-1.overflow-y-auto');
-        if (chatMessages) {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
     });
 </script>
