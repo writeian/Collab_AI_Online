@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Chat Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .chat-container { max-width: 600px; margin: 0 auto; }
+        .message { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .user { background: #e3f2fd; text-align: right; }
+        .ai { background: #f5f5f5; }
+        .input-form { margin-top: 20px; }
+        input[type="text"] { width: 70%; padding: 10px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <h2>Simple Chat Test</h2>
+        
+        <div id="messages">
+            <div class="message ai">
+                <strong>AI:</strong> Hello! I'm here to help you test the chat functionality.
+            </div>
+        </div>
+        
+        <form method="POST" action="/chat/6" class="input-form">
+            <input type="text" name="content" placeholder="Type your message..." required>
+            <button type="submit">Send</button>
+        </form>
+        
+        <div style="margin-top: 20px;">
+            <h3>Debug Info:</h3>
+            <p>This is a simple test form. If this works, the issue is with the main chat interface.</p>
+            <p>Form action: /chat/6</p>
+            <p>Method: POST</p>
+            <p>Field name: content</p>
+        </div>
+    </div>
+</body>
+</html> 

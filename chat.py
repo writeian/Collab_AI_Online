@@ -37,6 +37,21 @@ def view_chat(chat_id):
         current_app.logger.info(f"Received message content: '{content}' (length: {len(content)})")
         
         if content:
+            # Backend duplicate detection: Check for recent identical messages
+            from datetime import datetime, timedelta
+            recent_duplicate = Message.query.filter(
+                Message.chat_id == chat_obj.id,
+                Message.user_id == user.id,
+                Message.content == content,
+                Message.role == "user",
+                Message.timestamp >= datetime.utcnow() - timedelta(seconds=5)
+            ).first()
+            
+            if recent_duplicate:
+                current_app.logger.info(f"Duplicate message detected and ignored: '{content}'")
+                flash("Message sent successfully! (Duplicate prevented)")
+                return redirect(url_for("chat.view_chat", chat_id=chat_obj.id), code=303)
+            
             # save user message
             user_msg = Message(chat_id=chat_obj.id, user_id=user.id, role="user", content=content)
             db.session.add(user_msg)
@@ -85,6 +100,7 @@ def view_chat(chat_id):
             flash("Message sent successfully!")
         else:
             flash("Please enter a message to send.")
+            current_app.logger.info(f"Empty message rejected for user {user.id} in chat {chat_obj.id}")
         
         return redirect(url_for("chat.view_chat", chat_id=chat_obj.id), code=303)
 

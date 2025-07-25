@@ -282,23 +282,37 @@
             console.error('Could not find chat messages container');
         }
         
-        // Prevent double submission: disable send button and input on submit
+        // Simple double submission prevention - only disable after validation
         const form = document.getElementById('message-form');
         if (form) {
-            form.addEventListener('submit', function() {
+            form.addEventListener('submit', function(e) {
                 const btn = document.getElementById('send-button');
                 const input = document.getElementById('message-input');
-                const icon = document.getElementById('send-icon');
-                const sendingText = document.getElementById('sending-text');
                 
-                // Temporarily disable form disabling to debug
-                console.log('Form submitted, input value:', input ? input.value : 'undefined');
+                // Get the message content
+                const messageContent = input ? input.value.trim() : '';
                 
-                // Disable the form to prevent double submission
-                // if (btn) btn.disabled = true;
-                // if (input) input.disabled = true;
-                // if (icon) icon.classList.add('hidden');
-                // if (sendingText) sendingText.classList.remove('hidden');
+                // Only proceed if there's actual content
+                if (!messageContent) {
+                    e.preventDefault();
+                    console.log('Empty message prevented');
+                    return false;
+                }
+                
+                // Check if already submitting
+                if (btn && btn.disabled) {
+                    e.preventDefault();
+                    console.log('Already submitting, prevented');
+                    return false;
+                }
+                
+                // Disable button only after validation passes
+                if (btn) {
+                    btn.disabled = true;
+                    btn.textContent = 'Sending...';
+                }
+                
+                console.log('Form submitted with content:', messageContent);
             });
         }
     });
