@@ -3,6 +3,21 @@
 {% block title %}Chat - {{ chat.title }}{% endblock %}
 
 {% block content %}
+<!-- Navigation Breadcrumb -->
+<div class="navigation-breadcrumb px-4 pt-4">
+  <a href="{{ url_for('dashboard.index') }}" class="breadcrumb-link">
+    <i data-lucide="home" class="w-4 h-4"></i>
+    Dashboard
+  </a>
+  <span class="breadcrumb-separator">/</span>
+  <a href="{{ url_for('room.view_room', room_id=room.id) }}" class="breadcrumb-link">
+    <i data-lucide="users" class="w-4 h-4"></i>
+    {{ room.name }}
+  </a>
+  <span class="breadcrumb-separator">/</span>
+  <span class="breadcrumb-current">{{ chat.title }}</span>
+</div>
+
 <div class="size-full flex bg-background h-screen">
     <!-- Sidebar -->
     <div class="w-80 bg-card border-r border-border flex flex-col h-full">
