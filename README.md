@@ -142,10 +142,38 @@ PORT=8080
 7. **Open your browser**
    Navigate to `http://127.0.0.1:5000`
 
+## 🌈 Visual Landing Page
+
+The homepage features a modern, animated landing page that tells the story of AI Collab’s mission through six images and captions. The background transitions from a rainbow gradient to black & white as you scroll.
+
+### How it works:
+- Six images (without embedded text) are displayed in sequence, each with a caption.
+- The background animates from color to grayscale as you scroll.
+- A call-to-action button links to registration.
+
+### Important:
+- The following images must be present in the `static/` directory and committed to git:
+  - Landing page image no text 1.png
+  - Landing page image no text 2.png
+  - Landing page image no text 3.png
+  - Landing page image no text 4.png
+  - Landing page image no text 5.png
+  - Landing page image no text 6.png
+
+If you add or update images, always run:
+```bash
+git add static/Landing\ page\ image\ no\ text\ *.png
+git commit -m "Update landing page images"
+git push origin clean-deploy
+```
+
+### Troubleshooting:
+- If images do not appear on the live site, ensure they are committed and pushed to the repository.
+
 ## 📁 Project Structure
 
 ```
-AI_Collab_Teams/
+AI_Collab_Online/
 ├── app.py                 # Main Flask application
 ├── models.py              # SQLAlchemy database models
 ├── openai_utils.py        # AI API integration & writing modes
@@ -154,34 +182,69 @@ AI_Collab_Teams/
 ├── auth.py                # Authentication routes
 ├── room.py                # Room management and collaboration
 ├── dashboard.py           # Instructor dashboard and analytics
+├── analytics.py           # Analytics functionality
+├── achievements.py        # Achievement system
 ├── access_control.py      # Permission decorators
+├── config.py              # Application configuration
+├── wsgi.py               # WSGI entry point for production
 ├── requirements.txt       # Python dependencies
+├── requirements_production.txt # Production dependencies
 ├── .env                   # Environment variables (create this)
 ├── .gitignore            # Git ignore rules
 ├── README.md             # This file
 ├── GOOGLE_DOCS_SETUP.md  # Google Docs setup guide
-├── Static/
-│   └── style.css         # CSS styling
-└── Templates/
-    ├── base.html         # Base template
-    ├── about.html        # About page
-    ├── login.html        # Login page
-    ├── register.html     # Registration page
-    ├── profile.html      # User profile
-    ├── room/
-    │   ├── index.html    # Room listing
-    │   ├── create.html   # Create room
-    │   ├── view.html     # View room details
-    │   └── members.html  # Room member management
-    ├── chat/
-    │   ├── create.html   # Create new chat
-    │   ├── view.html     # View chat conversation
-    │   └── edit.html     # Edit chat settings
-    └── dashboard/
-        ├── index.html    # Dashboard overview
-        ├── prompts.html  # Prompt analytics
-        ├── room_detail.html # Room-specific analytics
-        └── system_instructions.html # System instructions management
+├── RAILWAY_DEPLOYMENT.md # Railway deployment guide
+├── alembic.ini           # Database migration configuration
+├── deployment/            # Deployment configuration files
+│   ├── ai_collab_online.service
+│   ├── deploy.sh
+│   ├── gunicorn.conf.py
+│   ├── nginx.conf
+│   └── README.md
+├── migrations/            # Database migration files
+│   ├── env.py
+│   ├── script.py.mako
+│   └── versions/
+├── static/               # Static assets
+│   ├── style.css         # Main CSS styling
+│   ├── landing.css       # Landing page styles
+│   ├── landing.js        # Landing page JavaScript
+│   ├── loading.js        # Loading animations
+│   └── *.png             # Landing page images
+├── templates/            # HTML templates
+│   ├── base.html         # Base template
+│   ├── about.html        # About page
+│   ├── login.html        # Login page
+│   ├── register.html     # Registration page
+│   ├── profile.html      # User profile
+│   ├── landing.html      # Landing page
+│   ├── room/
+│   │   ├── index.html    # Room listing
+│   │   ├── create.html   # Create room
+│   │   ├── view.html     # View room details
+│   │   ├── edit.html     # Edit room
+│   │   ├── delete.html   # Delete room
+│   │   ├── invite.html   # Invite members
+│   │   ├── members.html  # Room member management
+│   │   └── create_chat.html # Create chat in room
+│   ├── chat/
+│   │   ├── view.html     # View chat conversation
+│   │   ├── edit.html     # Edit chat settings
+│   │   └── delete.html   # Delete chat
+│   └── dashboard/
+│       ├── index.html    # Dashboard overview
+│       ├── prompts.html  # Prompt analytics
+│       ├── room_detail.html # Room-specific analytics
+│       └── system_instructions.html # System instructions management
+├── tests/                # Test files
+│   ├── test_basic.py     # Core functionality tests
+│   ├── test_models.py    # Database model tests
+│   ├── test_routes.py    # Route functionality tests
+│   ├── test_dashboard.py # Dashboard and analytics tests
+│   ├── test_ai_integration.py # AI service integration tests
+│   └── README.md         # Test documentation
+├── logs/                 # Application logs
+└── instance/             # Instance-specific files (database, etc.)
 ```
 
 ## 🔧 Configuration

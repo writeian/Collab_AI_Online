@@ -295,7 +295,7 @@ def create_app(config_name=None):
             from access_control import get_current_user
             user = get_current_user()
             if user:
-                return redirect(url_for('room.index'))
+        return redirect(url_for('room.index'))
         except Exception:
             pass
         return render_template('landing.html')
