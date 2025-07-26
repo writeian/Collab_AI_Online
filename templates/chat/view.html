@@ -98,15 +98,24 @@
             {% for message in messages %}
             <div class="flex {% if message.role == 'user' %}justify-end{% else %}justify-start{% endif %}">
                 <div class="message-bubble {% if message.role == 'user' %}user{% else %}assistant{% endif %}">
+                    {% if message.role == 'assistant' %}
                     <div class="flex items-start gap-3">
-                        {% if message.role == 'assistant' %}
                         <div class="ai-avatar">
                             AI
                         </div>
-                        {% endif %}
-                        
                         <div class="flex-1">
-                            <div class="message-content {% if message.role == 'user' %}text-right{% endif %}">
+                            <div class="message-content">
+                                <p>{{ message.content }}</p>
+                                <p class="message-timestamp">
+                                    {{ message.timestamp.strftime('%I:%M %p') }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="flex items-start gap-3">
+                        <div class="flex-1">
+                            <div class="message-content text-right">
                                 <p>{{ message.content }}</p>
                                 <p class="message-timestamp">
                                     {{ message.timestamp.strftime('%I:%M %p') }}
@@ -118,52 +127,58 @@
                                     {% endif %}
                                 </p>
                             </div>
-                            
-                            <!-- Comments for this message -->
-                            {% set message_comments = comments|selectattr('dialogue_number', 'equalto', loop.index)|list %}
-                            {% if message_comments %}
-                            <div class="comment-section">
-                                {% for comment in message_comments %}
-                                <div class="comment-item">
-                                    <div class="flex items-center justify-between">
-                                        <p class="font-medium">{{ comment.user.display_name }}</p>
-                                        {% if user and (comment.user_id == user.id or chat.created_by == user.id) %}
-                                        <form method="POST" action="{{ url_for('chat.delete_comment', chat_id=chat.id, comment_id=comment.id) }}" 
-                                              style="display: inline;" onsubmit="return confirm('Delete this comment?')">
-                                            <button type="submit" class="delete-comment-btn" style="background: #fff; color: #dc2626; padding: 0.25rem 0.5rem; border-radius: 0.375rem; border: none;">
-                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                            </button>
-                                        </form>
-                                        {% endif %}
-                                    </div>
-                                    <p class="mt-1">{{ comment.content }}</p>
-                                    <p class="text-xs text-muted-foreground mt-1">{{ comment.timestamp.strftime('%I:%M %p') }}</p>
-                                </div>
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                            
-                            <!-- Add Comment Form -->
-                            {% if user %}
-                            <form method="POST" action="{{ url_for('chat.add_comment', chat_id=chat.id) }}" 
-                                  class="comment-form" id="comment-form-{{ loop.index }}" style="display: none;">
-                                <input type="hidden" name="dialogue_number" value="{{ loop.index }}">
-                                <textarea name="comment_content" required 
-                                          class="comment-textarea w-full"
-                                          rows="2" placeholder="Add your comment here..."></textarea>
-                                <div class="flex gap-1 mt-1">
-                                    <button type="submit" class="px-2 py-1 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90">
-                                        Add
-                                    </button>
-                                    <button type="button" class="px-2 py-1 text-xs bg-muted text-muted-foreground rounded hover:bg-muted/80"
-                                            onclick="toggleCommentForm({{ loop.index }})">
-                                        Cancel
-                                    </button>
-                                </div>
-                            </form>
-                            {% endif %}
                         </div>
+                        {% if message.user %}
+                        <div class="user-avatar">
+                            <span class="avatar-text">{{ message.user.display_name[:2].upper() }}</span>
+                        </div>
+                        {% endif %}
                     </div>
+                    {% endif %}
+                    
+                    <!-- Comments for this message -->
+                    {% set message_comments = comments|selectattr('dialogue_number', 'equalto', loop.index)|list %}
+                    {% if message_comments %}
+                    <div class="comment-section">
+                        {% for comment in message_comments %}
+                        <div class="comment-item">
+                            <div class="flex items-center justify-between">
+                                <p class="font-medium">{{ comment.user.display_name }}</p>
+                                {% if user and (comment.user_id == user.id or chat.created_by == user.id) %}
+                                <form method="POST" action="{{ url_for('chat.delete_comment', chat_id=chat.id, comment_id=comment.id) }}" 
+                                      style="display: inline;" onsubmit="return confirm('Delete this comment?')">
+                                    <button type="submit" class="delete-comment-btn" style="background: #fff; color: #dc2626; padding: 0.25rem 0.5rem; border-radius: 0.375rem; border: none;">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                            <p class="mt-1">{{ comment.content }}</p>
+                            <p class="text-xs text-muted-foreground mt-1">{{ comment.timestamp.strftime('%I:%M %p') }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Add Comment Form -->
+                    {% if user %}
+                    <form method="POST" action="{{ url_for('chat.add_comment', chat_id=chat.id) }}" 
+                          class="comment-form" id="comment-form-{{ loop.index }}" style="display: none;">
+                        <input type="hidden" name="dialogue_number" value="{{ loop.index }}">
+                        <textarea name="comment_content" required 
+                                  class="comment-textarea w-full"
+                                  rows="2" placeholder="Add your comment here..."></textarea>
+                        <div class="flex gap-1 mt-1">
+                            <button type="submit" class="px-2 py-1 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90">
+                                Add
+                            </button>
+                            <button type="button" class="px-2 py-1 text-xs bg-muted text-muted-foreground rounded hover:bg-muted/80"
+                                    onclick="toggleCommentForm({{ loop.index }})">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                    {% endif %}
                 </div>
             </div>
             {% endfor %}
@@ -333,3 +348,4 @@
     });
 </script>
 {% endblock %}
+

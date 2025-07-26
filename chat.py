@@ -13,6 +13,7 @@ from access_control import (
 )
 from google_docs import validate_google_docs_url, get_document_content
 from achievements import track_mode_usage
+from sqlalchemy.orm import joinedload
 
 chat = Blueprint('chat', __name__)
 
@@ -104,9 +105,9 @@ def view_chat(chat_id):
         
         return redirect(url_for("chat.view_chat", chat_id=chat_obj.id), code=303)
 
-    messages = Message.query.filter_by(chat_id=chat_obj.id).order_by(Message.timestamp).all()
+    messages = Message.query.options(joinedload(Message.user)).filter_by(chat_id=chat_obj.id).order_by(Message.timestamp).all()
     # Get comments for this chat
-    comments = Comment.query.filter_by(chat_id=chat_obj.id).order_by(Comment.timestamp).all()
+    comments = Comment.query.options(joinedload(Comment.user)).filter_by(chat_id=chat_obj.id).order_by(Comment.timestamp).all()
     # Get dynamic modes for this chat's room
     modes = get_modes_for_room(chat_obj.room)
     return render_template("chat/view.html", chat=chat_obj, room=chat_obj.room, messages=messages, comments=comments, user=user, modes=modes)
