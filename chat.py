@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, current_app
 from datetime import datetime
-from models import db, Chat, Message, User, PromptRecord, Room, Comment
+from models import db, Chat, Message, User, PromptRecord, Room, Comment, RoomMember
 from openai_utils import get_ai_response, get_modes_for_room, BASE_MODES
 from access_control import (
     get_current_user, 
@@ -108,9 +108,19 @@ def view_chat(chat_id):
     messages = Message.query.options(joinedload(Message.user)).filter_by(chat_id=chat_obj.id).order_by(Message.timestamp).all()
     # Get comments for this chat
     comments = Comment.query.options(joinedload(Comment.user)).filter_by(chat_id=chat_obj.id).order_by(Comment.timestamp).all()
+    
+    # Get room members for sidebar display
+    room_members = RoomMember.query.options(joinedload(RoomMember.user)).filter_by(room_id=chat_obj.room_id).all()
+    member_users = [member.user for member in room_members]
+    
+    # Add room owner to member list if not already included
+    owner = User.query.get(chat_obj.room.owner_id)
+    if owner and owner not in member_users:
+        member_users.append(owner)
+    
     # Get dynamic modes for this chat's room
     modes = get_modes_for_room(chat_obj.room)
-    return render_template("chat/view.html", chat=chat_obj, room=chat_obj.room, messages=messages, comments=comments, user=user, modes=modes)
+    return render_template("chat/view.html", chat=chat_obj, room=chat_obj.room, messages=messages, comments=comments, user=user, modes=modes, room_members=member_users)
 
 @chat.route("/<int:chat_id>/comment", methods=["POST"])
 @require_chat_access
