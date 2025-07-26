@@ -118,9 +118,12 @@ def view_chat(chat_id):
     if owner and owner not in member_users:
         member_users.append(owner)
     
+    # Get other chats in the same room (excluding current chat)
+    other_chats = Chat.query.filter_by(room_id=chat_obj.room_id).filter(Chat.id != chat_obj.id).order_by(Chat.created_at.desc()).all()
+    
     # Get dynamic modes for this chat's room
     modes = get_modes_for_room(chat_obj.room)
-    return render_template("chat/view.html", chat=chat_obj, room=chat_obj.room, messages=messages, comments=comments, user=user, modes=modes, room_members=member_users)
+    return render_template("chat/view.html", chat=chat_obj, room=chat_obj.room, messages=messages, comments=comments, user=user, modes=modes, room_members=member_users, other_chats=other_chats)
 
 @chat.route("/<int:chat_id>/comment", methods=["POST"])
 @require_chat_access
