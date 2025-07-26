@@ -18,9 +18,9 @@
   <span class="breadcrumb-current">{{ chat.title }}</span>
 </div>
 
-<div class="size-full flex bg-background h-screen">
+<div class="size-full flex bg-background h-screen chat-container">
     <!-- Sidebar -->
-    <div class="w-80 bg-card border-r border-border flex flex-col h-full">
+    <div class="w-80 chat-sidebar flex flex-col h-full">
         <!-- Header -->
         <div class="p-4 border-b border-border">
             <div class="flex items-center justify-between mb-4">
@@ -47,11 +47,11 @@
                 {% endif %}
                 
                 <!-- System Instructions Dropdown -->
-                <details class="mt-4">
+                <details class="mt-4 system-instructions">
                     <summary class="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground">
                         🤖 AI Assistant Role
                     </summary>
-                    <div class="mt-2 p-3 bg-muted rounded-md text-xs">
+                    <div class="mt-2 p-3 bg-muted rounded-md text-xs system-instructions">
                         {% if chat.mode in modes %}
                             {{ modes[chat.mode].prompt }}
                         {% else %}
@@ -73,9 +73,9 @@
     </div>
     
     <!-- Main Chat Area -->
-    <div class="flex-1 flex flex-col">
+    <div class="flex-1 flex flex-col chat-main">
         <!-- Chat Header -->
-        <div class="p-4 border-b border-border bg-card">
+        <div class="p-4 border-b border-border chat-header">
             <div class="flex items-center justify-between">
                 <div>
                     <h1 class="text-lg font-medium">{{ chat.title }}</h1>
@@ -97,18 +97,18 @@
         <div class="flex-1 overflow-y-auto p-4 space-y-4" id="chat-messages">
             {% for message in messages %}
             <div class="flex {% if message.role == 'user' %}justify-end{% else %}justify-start{% endif %}">
-                <div class="max-w-[70%] {% if message.role == 'user' %}bg-primary text-primary-foreground{% else %}bg-muted{% endif %} rounded-lg p-3">
+                <div class="message-bubble {% if message.role == 'user' %}user{% else %}assistant{% endif %}">
                     <div class="flex items-start gap-3">
                         {% if message.role == 'assistant' %}
-                        <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-sm font-medium">
+                        <div class="ai-avatar">
                             AI
                         </div>
                         {% endif %}
                         
                         <div class="flex-1">
-                            <div class="{% if message.role == 'user' %}text-right{% endif %}">
-                                <p class="text-sm">{{ message.content }}</p>
-                                <p class="text-xs text-muted-foreground mt-1">
+                            <div class="message-content {% if message.role == 'user' %}text-right{% endif %}">
+                                <p>{{ message.content }}</p>
+                                <p class="message-timestamp">
                                     {{ message.timestamp.strftime('%I:%M %p') }}
                                 </p>
                             </div>
@@ -116,9 +116,9 @@
                             <!-- Comments for this message -->
                             {% set message_comments = comments|selectattr('dialogue_number', 'equalto', loop.index)|list %}
                             {% if message_comments %}
-                            <div class="mt-2 space-y-2">
+                            <div class="comment-section">
                                 {% for comment in message_comments %}
-                                <div class="bg-background rounded p-2 text-xs">
+                                <div class="comment-item">
                                     <div class="flex items-center justify-between">
                                         <p class="font-medium">{{ comment.user.display_name }}</p>
                                         {% if user and (comment.user_id == user.id or chat.created_by == user.id) %}
@@ -143,10 +143,10 @@
                                     💬 Add Comment
                                 </button>
                                 <form method="POST" action="{{ url_for('chat.add_comment', chat_id=chat.id) }}" 
-                                      class="comment-form mt-2" id="comment-form-{{ loop.index }}" style="display: none;">
+                                      class="comment-form" id="comment-form-{{ loop.index }}" style="display: none;">
                                     <input type="hidden" name="dialogue_number" value="{{ loop.index }}">
                                     <textarea name="comment_content" required 
-                                              class="w-full px-2 py-1 text-xs border border-border rounded bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                                              class="comment-textarea w-full"
                                               rows="2" placeholder="Add your comment here..."></textarea>
                                     <div class="flex gap-1 mt-1">
                                         <button type="submit" class="px-2 py-1 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90">
@@ -169,26 +169,26 @@
 
         <!-- Scroll to Bottom Button (hidden by default) -->
         <button id="scroll-to-bottom" 
-                class="fixed bottom-20 right-6 bg-primary text-primary-foreground rounded-full p-3 shadow-lg hover:bg-primary/90 transition-all duration-200 opacity-0 pointer-events-none"
+                class="scroll-to-bottom"
                 onclick="scrollToBottom()"
                 title="Scroll to bottom">
             <i data-lucide="arrow-down" class="w-5 h-5"></i>
         </button>
 
         <!-- Message Input -->
-        <div class="p-4 border-t border-border bg-card">
-            <form method="POST" action="{{ url_for('chat.view_chat', chat_id=chat.id) }}" class="flex gap-2" id="message-form">
+        <div class="p-4 border-t border-border chat-input-container">
+            <form method="POST" action="{{ url_for('chat.view_chat', chat_id=chat.id) }}" class="flex gap-3" id="message-form">
                 <input type="text" name="content" 
                        placeholder="Type your message..." 
-                       class="flex-1 px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                       class="chat-input flex-1"
                        required
                        id="message-input"
                        autocomplete="off">
                 <button type="submit" 
-                        class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        class="send-button"
                         id="send-button">
                     <i data-lucide="send" class="w-4 h-4" id="send-icon"></i>
-                    <span id="sending-text" class="hidden">Sending...</span>
+                    <span id="sending-text" class="hidden sending-text">Sending...</span>
                 </button>
             </form>
         </div>
@@ -237,12 +237,10 @@
             
             if (isNearBottom) {
                 // Hide button when near bottom
-                scrollButton.style.opacity = '0';
-                scrollButton.style.pointerEvents = 'none';
+                scrollButton.classList.remove('visible');
             } else {
                 // Show button when scrolled up
-                scrollButton.style.opacity = '1';
-                scrollButton.style.pointerEvents = 'auto';
+                scrollButton.classList.add('visible');
             }
         }
     }
