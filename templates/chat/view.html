@@ -108,8 +108,15 @@
                         <div class="flex-1">
                             <div class="message-content {% if message.role == 'user' %}text-right{% endif %}">
                                 <p>{{ message.content }}</p>
-                                <p class="message-timestamp">
+                                <p class="message-timestamp d-flex align-items-center" style="display: inline;">
                                     {{ message.timestamp.strftime('%I:%M %p') }}
+                                    {% if user %}
+                                    <button type="button" class="text-xs text-muted-foreground hover:text-foreground ml-2"
+                                            style="margin-left: 0.5rem; display: inline;"
+                                            onclick="toggleCommentForm({{ loop.index }})">
+                                        💬 Add Comment
+                                    </button>
+                                    {% endif %}
                                 </p>
                             </div>
                             
@@ -124,7 +131,9 @@
                                         {% if user and (comment.user_id == user.id or chat.created_by == user.id) %}
                                         <form method="POST" action="{{ url_for('chat.delete_comment', chat_id=chat.id, comment_id=comment.id) }}" 
                                               style="display: inline;" onsubmit="return confirm('Delete this comment?')">
-                                            <button type="submit" class="text-xs text-destructive hover:text-destructive/80">Delete</button>
+                                            <button type="submit" class="delete-comment-btn" title="Delete comment">
+                                                <i data-lucide="trash-2" class="w-3 h-3"></i>
+                                            </button>
                                         </form>
                                         {% endif %}
                                     </div>
@@ -138,10 +147,6 @@
                             <!-- Add Comment Button -->
                             {% if user %}
                             <div class="mt-2">
-                                <button type="button" class="text-xs text-muted-foreground hover:text-foreground"
-                                        onclick="toggleCommentForm({{ loop.index }})">
-                                    💬 Add Comment
-                                </button>
                                 <form method="POST" action="{{ url_for('chat.add_comment', chat_id=chat.id) }}" 
                                       class="comment-form" id="comment-form-{{ loop.index }}" style="display: none;">
                                     <input type="hidden" name="dialogue_number" value="{{ loop.index }}">
