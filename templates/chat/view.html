@@ -166,6 +166,12 @@
                                 <p>{{ message.content }}</p>
                                 <p class="message-timestamp">
                                     {{ message.timestamp.strftime('%I:%M %p') }}
+                                    {% if user %}
+                                    <button type="button" class="text-xs text-muted-foreground hover:text-foreground ml-2"
+                                            onclick="toggleCommentForm({{ loop.index }})">
+                                        💬 Add Comment
+                                    </button>
+                                    {% endif %}
                                 </p>
                             </div>
                         </div>

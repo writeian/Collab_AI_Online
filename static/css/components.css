@@ -312,24 +312,24 @@
   font-size: 0.75rem;
   border: none;
   border-radius: 0.25rem;
-  background: #f3f4f6;
+  background: #E5E7EB; /* Light grey for Send Message button */
   color: #6b7280;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .member-action-btn:hover {
-  background: #e5e7eb;
+  background: #D1D5DB; /* Slightly darker grey on hover */
   color: #374151;
 }
 
 .member-action-btn.primary {
-  background: #3b82f6;
-  color: white;
+  background: #DBEAFE; /* Much lighter blue for View Profile button */
+  color: #1E40AF; /* Darker blue text for contrast */
 }
 
 .member-action-btn.primary:hover {
-  background: #2563eb;
+  background: #BFDBFE; /* Slightly darker light blue on hover */
 }
 
 /* Modern Input Area */
@@ -388,7 +388,7 @@
 }
 
 .comment-item {
-  background: #FCA4DF;
+  background: #FED5F4;
   color: #000;
   border-radius: 0.75rem;
   padding: 0.75rem 1rem;

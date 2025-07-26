@@ -12,7 +12,14 @@
       
       <!-- Navigation Links -->
       <nav class="flex items-center space-x-8">
-        <a href="{{ url_for('room.index') }}" class="text-primary hover:text-primary/80 transition-colors">Home</a>
+        <a href="{{ url_for('room.index') }}" class="text-primary hover:text-primary/80 transition-colors relative">
+          Home
+          {% if invitation_count > 0 %}
+          <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+            {{ invitation_count }}
+          </span>
+          {% endif %}
+        </a>
         {% if user %}
         <a href="{{ url_for('dashboard.index') }}" class="text-muted-foreground hover:text-foreground transition-colors">Dashboard</a>
         <a href="{{ url_for('auth.profile') }}" class="text-muted-foreground hover:text-foreground transition-colors">Profile</a>
@@ -45,6 +52,31 @@
         Create New Room
       </a>
     </div>
+
+    <!-- Invitation Notification Banner -->
+    {% if recent_invitations %}
+    <div class="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg p-6">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="flex-shrink-0">
+            <i data-lucide="bell" class="w-6 h-6 text-blue-600"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold text-blue-900">
+              🎉 You have {{ recent_invitations|length }} new invitation{{ 's' if recent_invitations|length > 1 else '' }}!
+            </h3>
+            <p class="text-blue-700 text-sm">
+              You've been invited to join {{ recent_invitations|length }} room{{ 's' if recent_invitations|length > 1 else '' }}. 
+              Check them out below!
+            </p>
+          </div>
+        </div>
+        <button onclick="this.parentElement.parentElement.remove()" class="text-blue-600 hover:text-blue-800 transition-colors">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+    {% endif %}
 
     <!-- Recent Invitations Section -->
     {% if recent_invitations %}

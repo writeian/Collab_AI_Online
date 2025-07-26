@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, session
 from models import db, Room, RoomMember, Chat, User, Message, PromptRecord, CustomPrompt
 from access_control import (
     get_current_user, 
@@ -11,6 +11,7 @@ from access_control import (
 )
 from openai_utils import get_ai_response, get_modes_for_room, BASE_MODES
 from google_docs import validate_google_docs_url, get_document_content
+from datetime import datetime, timedelta
 
 room = Blueprint('room', __name__)
 
@@ -27,7 +28,6 @@ def index():
         ).order_by(Room.created_at.desc()).all()
         
         # Get recent invitations (rooms they were added to in the last 24 hours)
-        from datetime import datetime, timedelta
         recent_cutoff = datetime.utcnow() - timedelta(hours=24)
         recent_invitations = RoomMember.query.filter(
             RoomMember.user_id == user.id,
@@ -44,7 +44,8 @@ def index():
                          user=user, 
                          owned_rooms=owned_rooms, 
                          member_rooms=member_rooms,
-                         recent_invitations=recent_invitations)
+                         recent_invitations=recent_invitations,
+                         invitation_count=len(recent_invitations))
 
 @room.route("/create", methods=["GET", "POST"])
 @require_login
@@ -167,11 +168,13 @@ def invite_member(room_id):
         return redirect(url_for("room.view_room", room_id=room_obj.id))
 
     if request.method == "POST":
-        username = request.form["username"].strip()
+        # Change: invite by display name instead of username
+        display_name = request.form["display_name"].strip()
         can_create_chats = request.form.get("can_create_chats") == "on"
         can_invite_members = request.form.get("can_invite_members") == "on"
         
-        target_user = User.query.filter_by(username=username).first()
+        # Look up user by display name
+        target_user = User.query.filter_by(display_name=display_name).first()
         if not target_user:
             flash("User not found.")
             return redirect(url_for("room.invite_member", room_id=room_obj.id))
@@ -199,7 +202,7 @@ def invite_member(room_id):
         # Send notification to invited user
         notification_message = f"You have been invited to join '{room_obj.name}' by {user.display_name}."
         print(f"=== ROOM INVITATION NOTIFICATION ===")
-        print(f"To: {target_user.username} ({target_user.email})")
+        print(f"To: {target_user.display_name} ({target_user.email})")
         print(f"From: {user.display_name}")
         print(f"Room: {room_obj.name}")
         print(f"Message: {notification_message}")
@@ -207,7 +210,7 @@ def invite_member(room_id):
         print("=== END ROOM INVITATION NOTIFICATION ===")
         
         flash(f"User {target_user.display_name} invited to room successfully.")
-        flash(f"Notification sent to {target_user.username} ({target_user.email})", "info")
+        flash(f"Notification sent to {target_user.display_name} ({target_user.email})", "info")
         return redirect(url_for("room.view_room", room_id=room_obj.id))
     
     return render_template("room/invite.html", room=room_obj)
