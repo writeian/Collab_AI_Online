@@ -1,81 +1,183 @@
 {% extends "base.html" %}
-{% block title %}My Rooms{% endblock %}
+{% block title %}AI Collab - Home{% endblock %}
 {% block content %}
-  {% if user %}
-    <h2>Welcome, {{ user.display_name }}!</h2>
-    
-    <div class="room-actions">
-      <a href="{{ url_for('room.create_room') }}" class="btn btn-primary">Create New Room</a>
+<!-- Navigation Header -->
+<header class="bg-card border-b border-border">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-16">
+      <!-- Logo and Title -->
+      <div class="flex items-center">
+        <h1 class="text-2xl font-bold text-foreground">AI Collab</h1>
+      </div>
+      
+      <!-- Navigation Links -->
+      <nav class="flex items-center space-x-8">
+        <a href="{{ url_for('room.index') }}" class="text-primary hover:text-primary/80 transition-colors">Home</a>
+        {% if user %}
+        <a href="{{ url_for('dashboard.index') }}" class="text-muted-foreground hover:text-foreground transition-colors">Dashboard</a>
+        <a href="{{ url_for('auth.profile') }}" class="text-muted-foreground hover:text-foreground transition-colors">Profile</a>
+        <a href="{{ url_for('auth.logout') }}" class="text-muted-foreground hover:text-foreground transition-colors">Logout</a>
+        {% endif %}
+        <a href="{{ url_for('about') }}" class="text-muted-foreground hover:text-foreground transition-colors">About</a>
+      </nav>
     </div>
-    
+  </div>
+</header>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  {% if user %}
+    <!-- Welcome Banner -->
+    <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-8 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <i data-lucide="user" class="w-5 h-5 text-green-600"></i>
+        <span class="text-green-800 font-medium">Welcome back, {{ user.display_name }}!</span>
+      </div>
+      <button class="text-green-600 hover:text-green-800 transition-colors" onclick="this.parentElement.remove()">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Main Welcome Section -->
+    <div class="mb-8">
+      <h2 class="text-3xl font-bold text-foreground mb-4">Welcome, {{ user.display_name }}!</h2>
+      <a href="{{ url_for('room.create_room') }}" class="inline-flex items-center px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors">
+        <i data-lucide="plus" class="w-5 h-5 mr-2"></i>
+        Create New Room
+      </a>
+    </div>
+
+    <!-- Recent Invitations Section -->
     {% if recent_invitations %}
-      <div class="invitations-section" style="background-color: #e8f4fd; padding: 15px; border-radius: 8px; margin: 20px 0;">
-        <h3>🎉 Recent Invitations</h3>
-        <p>You've been invited to these rooms recently:</p>
-        <div class="room-grid">
-          {% for invitation in recent_invitations %}
-            {% set room = invitation.room %}
-            <div class="room-card" style="border: 2px solid #007bff;">
-              <h4><a href="{{ url_for('room.view_room', room_id=room.id) }}">{{ room.name }}</a></h4>
-              {% if room.description %}
-                <p>{{ room.description }}</p>
-              {% endif %}
-              <small>Invited by {{ room.owner.display_name }} on {{ invitation.joined_at.strftime('%Y-%m-%d %H:%M') }}</small>
-              <div class="room-actions">
-                <a href="{{ url_for('room.view_room', room_id=room.id) }}" class="btn btn-sm btn-primary">Join Room</a>
-              </div>
+    <div class="mb-8">
+      <h3 class="text-xl font-semibold text-foreground mb-4">🎉 Recent Invitations</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for invitation in recent_invitations %}
+          {% set room = invitation.room %}
+          <div class="bg-card border-2 border-primary rounded-lg p-6 shadow-sm">
+            <div class="flex items-start justify-between mb-3">
+              <h4 class="text-lg font-semibold text-foreground">
+                <a href="{{ url_for('room.view_room', room_id=room.id) }}" class="text-primary hover:text-primary/80 transition-colors">
+                  {{ room.name }}
+                </a>
+              </h4>
+              <span class="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">New</span>
             </div>
-          {% endfor %}
-        </div>
+            {% if room.description %}
+              <p class="text-muted-foreground text-sm mb-3">{{ room.description }}</p>
+            {% endif %}
+            <p class="text-xs text-muted-foreground mb-4">
+              Invited by {{ room.owner.display_name }} on {{ invitation.joined_at.strftime('%Y-%m-%d %H:%M') }}
+            </p>
+            <a href="{{ url_for('room.view_room', room_id=room.id) }}" class="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:bg-primary/90 transition-colors">
+              <i data-lucide="arrow-right" class="w-4 h-4 mr-1"></i>
+              Join Room
+            </a>
+          </div>
+        {% endfor %}
       </div>
+    </div>
     {% endif %}
-    
+
+    <!-- My Rooms Section -->
     {% if owned_rooms %}
-      <h3>My Rooms</h3>
-      <div class="room-grid">
+    <div class="mb-8">
+      <h3 class="text-xl font-semibold text-foreground mb-4">My Rooms</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for room in owned_rooms %}
-          <div class="room-card">
-            <h4><a href="{{ url_for('room.view_room', room_id=room.id) }}">{{ room.name }}</a></h4>
-            {% if room.description %}
-              <p>{{ room.description }}</p>
-            {% endif %}
-            {% if room.goals %}
-              <p><strong>Goals:</strong> {{ room.goals }}</p>
-            {% endif %}
-            <small>Created {{ room.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
-            <div class="room-actions">
-              <a href="{{ url_for('room.edit_room', room_id=room.id) }}" class="btn btn-sm btn-secondary">Edit</a>
-              <a href="{{ url_for('room.invite_member', room_id=room.id) }}" class="btn btn-sm btn-info">Invite</a>
-              <a href="{{ url_for('room.delete_room', room_id=room.id) }}" class="btn btn-sm btn-danger">Delete</a>
-            </div>
+        <div class="bg-card border border-border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div class="flex items-start justify-between mb-3">
+            <h4 class="text-lg font-semibold text-foreground">
+              <a href="{{ url_for('room.view_room', room_id=room.id) }}" class="text-primary hover:text-primary/80 transition-colors">
+                {{ room.name }}
+              </a>
+            </h4>
           </div>
+          {% if room.description %}
+            <p class="text-muted-foreground text-sm mb-3">{{ room.description }}</p>
+          {% endif %}
+          {% if room.goals %}
+            <p class="text-sm mb-3">
+              <span class="font-medium text-foreground">Goals:</span> 
+              <span class="text-muted-foreground">{{ room.goals }}</span>
+            </p>
+          {% endif %}
+          <p class="text-xs text-muted-foreground mb-4">Created {{ room.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+          <div class="flex items-center space-x-2">
+            <a href="{{ url_for('room.edit_room', room_id=room.id) }}" class="inline-flex items-center px-3 py-1.5 bg-secondary text-secondary-foreground text-xs font-medium rounded-md hover:bg-secondary/80 transition-colors">
+              Edit
+            </a>
+            <a href="{{ url_for('room.invite_member', room_id=room.id) }}" class="inline-flex items-center px-3 py-1.5 bg-cyan-500 text-white text-xs font-medium rounded-md hover:bg-cyan-600 transition-colors">
+              Invite
+            </a>
+            <a href="{{ url_for('room.delete_room', room_id=room.id) }}" class="inline-flex items-center px-3 py-1.5 bg-destructive text-destructive-foreground text-xs font-medium rounded-md hover:bg-destructive/90 transition-colors">
+              Delete
+            </a>
+          </div>
+        </div>
         {% endfor %}
       </div>
+    </div>
     {% endif %}
-    
+
+    <!-- Rooms I'm In Section -->
     {% if member_rooms %}
-      <h3>Rooms I'm In</h3>
-      <div class="room-grid">
+    <div class="mb-8">
+      <h3 class="text-xl font-semibold text-foreground mb-4">Rooms I'm In</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for room in member_rooms %}
-          <div class="room-card">
-            <h4><a href="{{ url_for('room.view_room', room_id=room.id) }}">{{ room.name }}</a></h4>
-            {% if room.description %}
-              <p>{{ room.description }}</p>
-            {% endif %}
-            {% if room.goals %}
-              <p><strong>Goals:</strong> {{ room.goals }}</p>
-            {% endif %}
-            <small>Created by {{ room.owner.display_name }} on {{ room.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
-          </div>
+        <div class="bg-card border border-border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+          <h4 class="text-lg font-semibold text-foreground mb-3">
+            <a href="{{ url_for('room.view_room', room_id=room.id) }}" class="text-primary hover:text-primary/80 transition-colors">
+              {{ room.name }}
+            </a>
+          </h4>
+          {% if room.description %}
+            <p class="text-muted-foreground text-sm mb-3">{{ room.description }}</p>
+          {% endif %}
+          {% if room.goals %}
+            <p class="text-sm mb-3">
+              <span class="font-medium text-foreground">Goals:</span> 
+              <span class="text-muted-foreground">{{ room.goals }}</span>
+            </p>
+          {% endif %}
+          <p class="text-xs text-muted-foreground">
+            Created by {{ room.owner.display_name }} on {{ room.created_at.strftime('%Y-%m-%d %H:%M') }}
+          </p>
+        </div>
         {% endfor %}
       </div>
+    </div>
     {% endif %}
-    
-    {% if not owned_rooms and not member_rooms %}
-      <p>No rooms yet. <a href="{{ url_for('room.create_room') }}">Create your first room!</a></p>
+
+    <!-- Empty State -->
+    {% if not owned_rooms and not member_rooms and not recent_invitations %}
+    <div class="text-center py-12">
+      <i data-lucide="users" class="w-16 h-16 text-muted-foreground mx-auto mb-4"></i>
+      <h3 class="text-xl font-semibold text-foreground mb-2">No rooms yet</h3>
+      <p class="text-muted-foreground mb-6">Create your first room to get started with collaborative learning!</p>
+      <a href="{{ url_for('room.create_room') }}" class="inline-flex items-center px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors">
+        <i data-lucide="plus" class="w-5 h-5 mr-2"></i>
+        Create Your First Room
+      </a>
+    </div>
     {% endif %}
+
   {% else %}
-    <h2>Welcome to AI Collab Teams</h2>
-    <p>Join collaborative learning spaces! <a href="{{ url_for('auth.register') }}">Register</a> or <a href="{{ url_for('auth.login') }}">login</a> to get started.</p>
+    <!-- Guest Welcome -->
+    <div class="text-center py-12">
+      <h2 class="text-3xl font-bold text-foreground mb-4">Welcome to AI Collab</h2>
+      <p class="text-xl text-muted-foreground mb-8">Join collaborative learning spaces!</p>
+      <div class="flex items-center justify-center space-x-4">
+        <a href="{{ url_for('auth.register') }}" class="inline-flex items-center px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors">
+          <i data-lucide="user-plus" class="w-5 h-5 mr-2"></i>
+          Register
+        </a>
+        <a href="{{ url_for('auth.login') }}" class="inline-flex items-center px-6 py-3 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-secondary/80 transition-colors">
+          <i data-lucide="log-in" class="w-5 h-5 mr-2"></i>
+          Login
+        </a>
+      </div>
+    </div>
   {% endif %}
+</div>
 {% endblock %} 

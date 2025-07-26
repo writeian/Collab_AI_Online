@@ -98,315 +98,7 @@ PORT=8080
 - **Cached deployments**: If changes don't appear, check Railway is connected to the correct repository
 - **Database migrations**: Achievement tables are created automatically via the `/health` endpoint
 
-## 🔧 **Development Workflow**
-
-### **Branch Strategy**
-
-**Current Development Setup:**
-- **Feature Development**: `feature/new-chat-interface` - Your new modern chat interface with Tailwind CSS
-- **Production Deployment**: `clean-deploy` - Stable version deployed to Railway
-- **Main Branch**: `main` - Base development branch
-
-### **Development Process:**
-
-1. **Feature Development** (Local):
-   ```bash
-   # Work on new features in feature branch
-   git checkout feature/new-chat-interface
-   # Make your changes, test locally
-   python app.py
-   ```
-
-2. **Testing** (Local):
-   - Test thoroughly on local server
-   - Ensure all functionality works with new interface
-   - Fix any issues before deployment
-
-3. **Production Deployment** (When Ready):
-   ```bash
-   # Switch to clean-deploy branch
-   git checkout clean-deploy
-   # Merge your feature branch
-   git merge feature/new-chat-interface
-   # Push to trigger Railway deployment
-   git push origin clean-deploy
-   ```
-
-### **⚠️ Important Notes:**
-- **Never deploy directly from feature branches** - always use `clean-deploy`
-- **Test thoroughly locally** before merging to `clean-deploy`
-- **Keep feature development separate** from production deployment
-- **Railway auto-deploys** from `clean-deploy` branch only
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/writeian/AI_Collab_Teams.git
-   cd AI_Collab_Teams
-   ```
-
-2. **Create and activate virtual environment**
-   ```bash
-   python -m venv venv
-   # On Windows:
-   venv\Scripts\activate
-   # On macOS/Linux:
-   source venv/bin/activate
-   ```
-
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Set up environment variables**
-   Create a `.env` file in the project root:
-   ```env
-   # Choose one or both AI services:
-   ANTHROPIC_API_KEY=your_anthropic_api_key_here  # Recommended (cheaper)
-   OPENAI_API_KEY=your_openai_api_key_here        # Alternative
-   SECRET_KEY=your_secret_key_here
-   GOOGLE_SERVICE_ACCOUNT_FILE=service-account-key.json
-   ```
-
-5. **Set up Google Docs Integration (Optional)**
-   - Follow the setup guide in `GOOGLE_DOCS_SETUP.md`
-   - Place your service account key file as `service-account-key.json`
-
-6. **Run the application**
-   ```bash
-   python app.py
-   ```
-
-7. **Open your browser**
-   Navigate to `http://127.0.0.1:5000`
-
-## 🌈 Visual Landing Page
-
-The homepage features a modern, animated landing page that tells the story of AI Collab’s mission through six images and captions. The background transitions from a rainbow gradient to black & white as you scroll.
-
-### How it works:
-- Six images (without embedded text) are displayed in sequence, each with a caption.
-- The background animates from color to grayscale as you scroll.
-- A call-to-action button links to registration.
-
-### Important:
-- The following images must be present in the `static/` directory and committed to git:
-  - Landing page image no text 1.png
-  - Landing page image no text 2.png
-  - Landing page image no text 3.png
-  - Landing page image no text 4.png
-  - Landing page image no text 5.png
-  - Landing page image no text 6.png
-
-If you add or update images, always run:
-```bash
-git add static/Landing\ page\ image\ no\ text\ *.png
-git commit -m "Update landing page images"
-git push origin clean-deploy
-```
-
-### Troubleshooting:
-- If images do not appear on the live site, ensure they are committed and pushed to the repository.
-
-## 📁 Project Structure
-
-```
-AI_Collab_Online/
-├── app.py                 # Main Flask application
-├── models.py              # SQLAlchemy database models
-├── openai_utils.py        # AI API integration & writing modes
-├── google_docs.py         # Google Docs integration utilities
-├── chat.py                # Chat routes and functionality
-├── auth.py                # Authentication routes
-├── room.py                # Room management and collaboration
-├── dashboard.py           # Instructor dashboard and analytics
-├── analytics.py           # Analytics functionality
-├── achievements.py        # Achievement system
-├── access_control.py      # Permission decorators
-├── config.py              # Application configuration
-├── wsgi.py               # WSGI entry point for production
-├── requirements.txt       # Python dependencies
-├── requirements_production.txt # Production dependencies
-├── .env                   # Environment variables (create this)
-├── .gitignore            # Git ignore rules
-├── README.md             # This file
-├── GOOGLE_DOCS_SETUP.md  # Google Docs setup guide
-├── RAILWAY_DEPLOYMENT.md # Railway deployment guide
-├── alembic.ini           # Database migration configuration
-├── deployment/            # Deployment configuration files
-│   ├── ai_collab_online.service
-│   ├── deploy.sh
-│   ├── gunicorn.conf.py
-│   ├── nginx.conf
-│   └── README.md
-├── migrations/            # Database migration files
-│   ├── env.py
-│   ├── script.py.mako
-│   └── versions/
-├── static/               # Static assets
-│   ├── style.css         # Main CSS styling
-│   ├── landing.css       # Landing page styles
-│   ├── landing.js        # Landing page JavaScript
-│   ├── loading.js        # Loading animations
-│   └── *.png             # Landing page images
-├── templates/            # HTML templates
-│   ├── base.html         # Base template
-│   ├── about.html        # About page
-│   ├── login.html        # Login page
-│   ├── register.html     # Registration page
-│   ├── profile.html      # User profile
-│   ├── landing.html      # Landing page
-│   ├── room/
-│   │   ├── index.html    # Room listing
-│   │   ├── create.html   # Create room
-│   │   ├── view.html     # View room details
-│   │   ├── edit.html     # Edit room
-│   │   ├── delete.html   # Delete room
-│   │   ├── invite.html   # Invite members
-│   │   ├── members.html  # Room member management
-│   │   └── create_chat.html # Create chat in room
-│   ├── chat/
-│   │   ├── view.html     # View chat conversation
-│   │   ├── edit.html     # Edit chat settings
-│   │   └── delete.html   # Delete chat
-│   └── dashboard/
-│       ├── index.html    # Dashboard overview
-│       ├── prompts.html  # Prompt analytics
-│       ├── room_detail.html # Room-specific analytics
-│       └── system_instructions.html # System instructions management
-├── tests/                # Test files
-│   ├── test_basic.py     # Core functionality tests
-│   ├── test_models.py    # Database model tests
-│   ├── test_routes.py    # Route functionality tests
-│   ├── test_dashboard.py # Dashboard and analytics tests
-│   ├── test_ai_integration.py # AI service integration tests
-│   └── README.md         # Test documentation
-├── logs/                 # Application logs
-└── instance/             # Instance-specific files (database, etc.)
-```
-
-## 🔧 Configuration
-
-### Environment Variables
-
-Create a `.env` file with the following variables:
-
-- `ANTHROPIC_API_KEY`: Your Anthropic API key (recommended)
-- `OPENAI_API_KEY`: Your OpenAI API key (alternative)
-- `SECRET_KEY`: Flask secret key for sessions (optional, defaults to "dev")
-- `GOOGLE_SERVICE_ACCOUNT_FILE`: Path to Google service account key (optional)
-
-### Database
-
-The application uses SQLite by default. The database file (`ai_collab.db`) will be created automatically in the project root on first run.
-
-### Google Docs Integration
-
-For Google Docs functionality:
-1. Create a Google Cloud Project
-2. Enable Google Docs API
-3. Create a service account
-4. Download the JSON key file
-5. Share documents with the service account email
-
-See `GOOGLE_DOCS_SETUP.md` for detailed instructions.
-
-## 🎯 Usage
-
-### Getting Started
-
-1. **Register an account** at `/register`
-2. **Create or join a room** at `/room`
-3. **Start a chat** within your room
-4. **Select a writing mode** (Explore, Focus, Outline, etc.)
-5. **Optionally add a Google Doc URL** to import content
-6. **Start chatting** with the AI assistant
-7. **Add comments** on specific dialogue points for discussion
-
-### Room-Based Collaboration
-
-- **Create Rooms**: Set up dedicated spaces for your teams or classes
-- **Join Rooms**: Participate in existing collaborative environments
-- **Member Management**: Add/remove members and manage permissions
-- **Room Analytics**: Track activity and engagement within each room
-
-### Writing Modes
-
-AI Collab Teams supports 10 different writing stages:
-
-1. **Explore** - Brainstorming and idea generation
-2. **Focus** - Narrowing down topics and research questions
-3. **Outline** - Creating structure and organization
-4. **Draft** - Initial writing and content creation
-5. **Revise** - Improving content and structure
-6. **Polish** - Final editing and refinement
-7. **Proposal** - Writing proposals and pitches
-8. **Research** - Finding and evaluating sources
-9. **Context** - Understanding background information
-10. **Feedback** - Getting and incorporating feedback
-
-### Instructor Dashboard
-
-- **Room Overview**: See all rooms and their activity levels
-- **Member Management**: Track student participation and engagement
-- **Chat Analytics**: Monitor AI usage patterns and writing mode preferences
-- **Prompt History**: Detailed logs of all student-AI interactions
-- **System Instructions**: Customize AI prompts for different modes and rooms
-
-### Interactive Comments
-
-- **Dialogue Comments**: Students can comment on specific AI responses
-- **Threaded Discussions**: Build conversations around AI feedback
-- **User Attribution**: Track who made which comments
-- **Comment Management**: Add and delete comments as needed
-
-### Achievement System
-
-- **Progress Tracking**: Automatically tracks user participation and writing mode usage
-- **Achievement Badges**: Earn badges for milestones like first chat, multiple modes used, etc.
-- **Room Achievements**: View your achievements in each room's interface
-- **Motivation**: Gamified system encourages continued participation and exploration
-
-### Google Docs Integration
-
-1. **Share your Google Doc** with the service account email
-2. **Copy the sharing link** from Google Docs
-3. **Paste the URL** in the "Google Doc URL" field when creating a chat
-4. **The AI will analyze** your document and provide feedback
-5. **Continue the conversation** to get more specific guidance
-
-## 🛠️ Technology Stack
-
-- **Backend**: Flask, SQLAlchemy
-- **Database**: SQLite
-- **AI Services**: OpenAI GPT-4o, Anthropic Claude
-- **Google Integration**: Google Docs API with service account
-- **Frontend**: HTML, CSS, JavaScript
-- **Authentication**: Flask-SQLAlchemy with password hashing
-- **Access Control**: Custom decorators for permissions
-- **Analytics**: Dashboard for tracking student usage and room activity
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- OpenAI for providing the GPT-4o API
-- Anthropic for providing the Claude API
-- Google Cloud for Google Docs API
-- Flask community for the excellent web framework
-- SQLAlchemy for robust database management
+---
 
 ## 🧪 Testing
 
@@ -482,6 +174,38 @@ If you encounter any issues or have questions:
 - [ ] Integration with learning management systems
 - [ ] Video conferencing integration
 - [ ] Advanced room templates
+
+---
+
+## 🆕 Recent Improvements (July 2025)
+
+### Phase 2: Modern Home Page & Navigation ✅
+- **Modern home page design** with clean navigation header
+- **Welcome banner** with dismissible notification
+- **"My Rooms" section** showing rooms the user owns with action buttons
+- **"Rooms I'm In" section** showing rooms the user has been invited to
+- **Recent invitations** highlighted with special styling and "New" badges
+- **Improved navigation** with All Rooms, Dashboard, Profile, Logout, About links
+- **Responsive grid layout** for room cards with hover effects
+- **Modern button styling** with icons and proper color schemes
+- **Empty state design** for users with no rooms yet
+
+### Phase 1: Modern Chat Interface & UX ✅
+- **Modern chat bubbles:**
+  - User messages: purple gradient (#6F49AD)
+  - AI messages: solid white background
+  - Comments: rose color (#FCA4DF) with black text
+- **Add Comment:** Button now appears inline with message timestamp for easy access
+- **Delete Comment:** Small trash can icon with white background and red icon for clean, non-intrusive deletion
+- **Double-submission prevention:** Send button disables and shows "Sending..." after click, preventing accidental duplicates
+- **Autoscroll:** Chat autoscrolls to the latest message after sending/receiving
+- **System Instructions Dropdown:** AI system instructions are always accessible in the left pane
+- **Improved accessibility:** Higher contrast, better font weights, and more readable color palette
+
+### Project Cleanup
+- **Removed 22+ debug/test files** from the main directory (now in `cleanup_files/`)
+- **Large backup files and setup scripts** moved out of the way
+- **Project structure is now clean and production-ready**
 
 ---
 
