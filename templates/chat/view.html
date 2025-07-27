@@ -143,9 +143,9 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <a href="{{ url_for('chat.edit_chat', chat_id=chat.id) }}" 
-                       class="btn btn-secondary btn-sm">
-                        <i data-lucide="settings" class="w-4 h-4"></i>
-                        Settings
+                       class="text-muted-foreground hover:text-foreground transition-colors"
+                       title="Edit Chat Details">
+                        <i data-lucide="edit" class="w-4 h-4"></i>
                     </a>
                 </div>
             </div>
@@ -277,7 +277,6 @@
                     <label for="ai-response-toggle" class="text-sm font-medium text-foreground">
                         🤖 AI Response
                     </label>
-                    <span class="text-xs text-muted-foreground">(Uncheck to send message without AI response)</span>
                 </div>
                 
                 <div class="flex gap-3">
