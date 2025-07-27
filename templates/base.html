@@ -31,8 +31,8 @@
                     </a>
                 </div>
                 
-                <!-- Navigation Links -->
-                <nav class="flex items-center space-x-2 sm:space-x-4 md:space-x-8">
+                <!-- Desktop Navigation Links (hidden on mobile) -->
+                <nav class="hidden md:flex items-center space-x-4 lg:space-x-8">
                     {% if user %}
                         <a href="{{ url_for('room.index') }}" class="text-primary hover:text-primary/80 transition-colors relative text-sm sm:text-base">
                             Home
@@ -42,17 +42,81 @@
                             </span>
                             {% endif %}
                         </a>
-                        <a href="{{ url_for('dashboard.index') }}" class="text-muted-foreground hover:text-foreground transition-colors text-sm sm:text-base hidden sm:inline">Dashboard</a>
-                        <a href="{{ url_for('auth.profile') }}" class="text-muted-foreground hover:text-foreground transition-colors text-sm sm:text-base hidden sm:inline">Profile</a>
+                        <a href="{{ url_for('dashboard.index') }}" class="text-muted-foreground hover:text-foreground transition-colors text-sm sm:text-base">Dashboard</a>
+                        <a href="{{ url_for('auth.profile') }}" class="text-muted-foreground hover:text-foreground transition-colors text-sm sm:text-base">Profile</a>
                         <a href="{{ url_for('auth.logout') }}" class="text-muted-foreground hover:text-foreground transition-colors text-sm sm:text-base">Logout</a>
                     {% else %}
                         <a href="{{ url_for('auth.login') }}" class="text-muted-foreground hover:text-foreground transition-colors text-sm sm:text-base">Login</a>
-                        <a href="{{ url_for('auth.register') }}" class="text-muted-foreground hover:text-foreground transition-colors text-sm sm:text-base hidden sm:inline">Register</a>
+                        <a href="{{ url_for('auth.register') }}" class="text-muted-foreground hover:text-foreground transition-colors text-sm sm:text-base">Register</a>
                     {% endif %}
                 </nav>
+
+                <!-- Mobile Menu Button (hidden on desktop) -->
+                <button id="mobile-menu-button" class="md:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" aria-label="Open mobile menu">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
             </div>
         </div>
     </header>
+
+    <!-- Mobile Navigation Overlay (hidden on desktop) -->
+    <div id="mobile-menu-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-50 md:hidden hidden">
+        <div class="fixed inset-y-0 right-0 w-80 bg-white/95 backdrop-blur-sm border-l border-border shadow-xl transform translate-x-full transition-transform duration-300 ease-in-out">
+            <div class="flex flex-col h-full">
+                <!-- Mobile Menu Header -->
+                <div class="flex items-center justify-between p-4 border-b border-border">
+                    <h2 class="text-lg font-semibold text-foreground">Menu</h2>
+                    <button id="mobile-menu-close" class="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" aria-label="Close mobile menu">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+
+                <!-- Mobile Navigation Links -->
+                <nav class="flex-1 p-4 space-y-4">
+                    {% if user %}
+                        <a href="{{ url_for('room.index') }}" class="flex items-center space-x-3 p-3 rounded-lg text-foreground hover:bg-muted transition-colors">
+                            <i data-lucide="home" class="w-5 h-5"></i>
+                            <span class="font-medium">Home</span>
+                            {% if invitation_count > 0 %}
+                            <span class="ml-auto bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                                {{ invitation_count }}
+                            </span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ url_for('dashboard.index') }}" class="flex items-center space-x-3 p-3 rounded-lg text-foreground hover:bg-muted transition-colors">
+                            <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+                            <span class="font-medium">Dashboard</span>
+                        </a>
+                        <a href="{{ url_for('auth.profile') }}" class="flex items-center space-x-3 p-3 rounded-lg text-foreground hover:bg-muted transition-colors">
+                            <i data-lucide="user" class="w-5 h-5"></i>
+                            <span class="font-medium">Profile</span>
+                        </a>
+                        <a href="{{ url_for('auth.logout') }}" class="flex items-center space-x-3 p-3 rounded-lg text-red-600 hover:bg-red-50 transition-colors">
+                            <i data-lucide="log-out" class="w-5 h-5"></i>
+                            <span class="font-medium">Logout</span>
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('auth.login') }}" class="flex items-center space-x-3 p-3 rounded-lg text-foreground hover:bg-muted transition-colors">
+                            <i data-lucide="log-in" class="w-5 h-5"></i>
+                            <span class="font-medium">Login</span>
+                        </a>
+                        <a href="{{ url_for('auth.register') }}" class="flex items-center space-x-3 p-3 rounded-lg text-foreground hover:bg-muted transition-colors">
+                            <i data-lucide="user-plus" class="w-5 h-5"></i>
+                            <span class="font-medium">Register</span>
+                        </a>
+                    {% endif %}
+                </nav>
+
+                <!-- Mobile Menu Footer -->
+                <div class="p-4 border-t border-border">
+                    <div class="text-sm text-muted-foreground">
+                        <p>AI Collab Online</p>
+                        <p class="text-xs">Collaborative AI-powered writing</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     {% block content %}{% endblock %}
     
@@ -60,6 +124,61 @@
     <script>
         lucide.createIcons();
     </script>
+
+    <!-- Mobile Menu JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenuClose = document.getElementById('mobile-menu-close');
+            const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
+            const mobileMenuPanel = mobileMenuOverlay.querySelector('div');
+
+            function openMobileMenu() {
+                mobileMenuOverlay.classList.remove('hidden');
+                // Use setTimeout to ensure the overlay is visible before animating
+                setTimeout(() => {
+                    mobileMenuPanel.classList.remove('translate-x-full');
+                }, 10);
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeMobileMenu() {
+                mobileMenuPanel.classList.add('translate-x-full');
+                setTimeout(() => {
+                    mobileMenuOverlay.classList.add('hidden');
+                    document.body.style.overflow = '';
+                }, 300);
+            }
+
+            // Open mobile menu
+            mobileMenuButton.addEventListener('click', openMobileMenu);
+
+            // Close mobile menu
+            mobileMenuClose.addEventListener('click', closeMobileMenu);
+
+            // Close mobile menu when clicking overlay
+            mobileMenuOverlay.addEventListener('click', function(e) {
+                if (e.target === mobileMenuOverlay) {
+                    closeMobileMenu();
+                }
+            });
+
+            // Close mobile menu on escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && !mobileMenuOverlay.classList.contains('hidden')) {
+                    closeMobileMenu();
+                }
+            });
+
+            // Close mobile menu when window is resized to desktop
+            window.addEventListener('resize', function() {
+                if (window.innerWidth >= 768 && !mobileMenuOverlay.classList.contains('hidden')) {
+                    closeMobileMenu();
+                }
+            });
+        });
+    </script>
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -135,11 +135,17 @@
         <!-- Chat Header -->
         <div class="p-4 border-b border-border chat-header">
             <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-lg font-medium">{{ chat.title }}</h1>
-                    <p class="text-sm text-muted-foreground">
-                        {{ chat.created_at.strftime('%B %d, %Y') }}
-                    </p>
+                <div class="flex items-center gap-3">
+                    <!-- Mobile Sidebar Toggle (hidden on desktop) -->
+                    <button id="chat-sidebar-toggle" class="md:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" aria-label="Toggle sidebar">
+                        <i data-lucide="panel-left" class="w-5 h-5"></i>
+                    </button>
+                    <div>
+                        <h1 class="text-lg font-medium">{{ chat.title }}</h1>
+                        <p class="text-sm text-muted-foreground">
+                            {{ chat.created_at.strftime('%B %d, %Y') }}
+                        </p>
+                    </div>
                 </div>
                 <div class="flex items-center gap-2">
                     <a href="{{ url_for('chat.edit_chat', chat_id=chat.id) }}" 
@@ -350,6 +356,42 @@
 
     // Auto-scroll to bottom when page loads to show latest messages
     document.addEventListener('DOMContentLoaded', function() {
+        // Chat Sidebar Toggle functionality (mobile only)
+        const chatSidebarToggle = document.getElementById('chat-sidebar-toggle');
+        const chatSidebar = document.querySelector('.chat-sidebar');
+        
+        if (chatSidebarToggle && chatSidebar) {
+            chatSidebarToggle.addEventListener('click', function() {
+                chatSidebar.classList.toggle('open');
+                
+                // Update the icon
+                const icon = chatSidebarToggle.querySelector('i');
+                if (chatSidebar.classList.contains('open')) {
+                    icon.setAttribute('data-lucide', 'x');
+                } else {
+                    icon.setAttribute('data-lucide', 'panel-left');
+                }
+                
+                // Reinitialize Lucide icons
+                lucide.createIcons();
+            });
+            
+            // Close sidebar when clicking outside (mobile only)
+            document.addEventListener('click', function(e) {
+                if (window.innerWidth <= 768 && 
+                    !chatSidebar.contains(e.target) && 
+                    !chatSidebarToggle.contains(e.target) &&
+                    chatSidebar.classList.contains('open')) {
+                    chatSidebar.classList.remove('open');
+                    
+                    // Update the icon
+                    const icon = chatSidebarToggle.querySelector('i');
+                    icon.setAttribute('data-lucide', 'panel-left');
+                    lucide.createIcons();
+                }
+            });
+        }
+        
         // AI Response Toggle functionality
         const aiToggle = document.getElementById('ai-response-toggle');
         const toggleLabel = document.querySelector('label[for="ai-response-toggle"]');

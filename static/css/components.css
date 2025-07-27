@@ -562,6 +562,105 @@
   }
 }
 
+/* Mobile Navigation Styles */
+#mobile-menu-button {
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#mobile-menu-overlay {
+  backdrop-filter: blur(4px);
+}
+
+#mobile-menu-overlay > div {
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+}
+
+/* Ensure text is readable on the light background */
+#mobile-menu-overlay nav a {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  color: #1f2937; /* Dark text for better readability */
+}
+
+#mobile-menu-overlay nav a:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  transform: translateX(2px);
+}
+
+#mobile-menu-overlay nav a:active {
+  transform: translateX(1px);
+}
+
+/* Ensure header text is readable */
+#mobile-menu-overlay h2 {
+  color: #1f2937;
+}
+
+/* Ensure footer text is readable */
+#mobile-menu-overlay .text-sm {
+  color: #6b7280;
+}
+
+#mobile-menu-overlay nav a {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+#mobile-menu-overlay nav a:hover {
+  background-color: hsl(var(--muted));
+  transform: translateX(2px);
+}
+
+#mobile-menu-overlay nav a:active {
+  transform: translateX(1px);
+}
+
+/* Mobile menu close button */
+#mobile-menu-close {
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ensure mobile menu is above everything */
+#mobile-menu-overlay {
+  z-index: 9999;
+}
+
+/* Chat Sidebar Toggle Button Styles */
+#chat-sidebar-toggle {
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+#chat-sidebar-toggle:hover {
+  background-color: hsl(var(--muted));
+  transform: scale(1.05);
+}
+
+#chat-sidebar-toggle:active {
+  transform: scale(0.95);
+}
+
 /* Room Page Layout Improvements - Clean Minimal Theme */
 .room-header {
   margin-bottom: 2rem;
