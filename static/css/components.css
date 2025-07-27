@@ -494,9 +494,29 @@
   pointer-events: none;
 }
 
-.sending-text {
-  font-size: 0.875rem;
-  font-weight: 500;
+/* Loading animation for send button */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Loading state for send button */
+.send-button:disabled {
+  opacity: 0.8;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.send-button:disabled #loading-icon {
+  animation: spin 1s linear infinite;
 }
 
 /* Responsive Design */
@@ -944,4 +964,189 @@
 .message-bubble.user .message-content,
 .message-bubble.user .message-timestamp {
   color: #fff !important;
+}
+
+/* Mobile-Optimized Form Styles */
+@media (max-width: 768px) {
+  /* Larger form inputs for mobile */
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    min-height: 48px;
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 2px solid #e2e8f0;
+    transition: all 0.2s ease;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    outline: none;
+  }
+
+  /* Better spacing for mobile forms */
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group label {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: #1f2937;
+  }
+
+  /* Larger buttons for mobile */
+  .btn,
+  button[type="submit"],
+  input[type="submit"] {
+    min-height: 48px;
+    font-size: 16px;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+
+  /* Improved checkbox and radio buttons */
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-width: 20px;
+    min-height: 20px;
+    margin-right: 12px;
+  }
+
+  /* Better select dropdowns */
+  .form-group select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 12px center;
+    background-repeat: no-repeat;
+    background-size: 16px;
+    padding-right: 40px;
+    appearance: none;
+  }
+
+  /* Auth form improvements */
+  .auth-form {
+    padding: 1.5rem;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+  }
+
+  .auth-container {
+    padding: 1rem;
+    max-width: 100%;
+  }
+
+  .auth-container h2 {
+    font-size: 1.75rem;
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+
+  /* Better form validation messages */
+  .form-group small {
+    font-size: 14px;
+    margin-top: 0.5rem;
+    color: #6b7280;
+  }
+
+  /* Improved textarea for mobile */
+  .form-group textarea {
+    min-height: 80px;
+    resize: vertical;
+  }
+
+  /* Enhanced touch feedback */
+  .btn:active,
+  button[type="submit"]:active,
+  input[type="submit"]:active {
+    transform: scale(0.98);
+  }
+
+  /* Better form sections */
+  .auth-form h3 {
+    font-size: 1.25rem;
+    margin: 2rem 0 1rem 0;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e5e7eb;
+  }
+
+  /* Improved checkbox groups */
+  .checkbox-group {
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  .checkbox-group label {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  /* Enhanced Chat Input for Mobile */
+  .chat-input {
+    min-height: 48px;
+    font-size: 16px;
+    padding: 12px 16px;
+    border-radius: 24px;
+    border: 2px solid #e2e8f0;
+  }
+
+  .chat-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .send-button {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .send-button:active {
+    transform: scale(0.95);
+  }
+
+  /* Ensure loading icon is properly sized on mobile */
+  .send-button #loading-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Better AI toggle for mobile */
+  .ai-toggle {
+    padding: 12px 0;
+    margin-bottom: 16px;
+  }
+
+  .ai-toggle input[type="checkbox"] {
+    min-width: 20px;
+    min-height: 20px;
+  }
+
+  .ai-toggle label {
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  /* Improved comment system for mobile */
+  .comment-textarea {
+    min-height: 60px;
+    font-size: 16px;
+    padding: 12px;
+    border-radius: 8px;
+  }
+
+  .comment-item {
+    padding: 12px 16px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+  }
 }

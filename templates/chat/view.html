@@ -296,7 +296,7 @@
                         class="send-button"
                         id="send-button">
                     <i data-lucide="send" class="w-4 h-4" id="send-icon"></i>
-                    <span id="sending-text" class="hidden sending-text">Sending...</span>
+                    <i data-lucide="loader-2" class="w-4 h-4 animate-spin hidden" id="loading-icon"></i>
                 </button>
                 </div>
             </form>
@@ -510,7 +510,18 @@
                 // Disable button only after validation passes
                 if (btn) {
                     btn.disabled = true;
-                    btn.textContent = 'Sending...';
+                    
+                    // Hide the send icon and show loading spinner
+                    const sendIcon = btn.querySelector('#send-icon');
+                    const loadingIcon = btn.querySelector('#loading-icon');
+                    
+                    if (sendIcon) {
+                        sendIcon.style.display = 'none';
+                    }
+                    
+                    if (loadingIcon) {
+                        loadingIcon.classList.remove('hidden');
+                    }
                 }
                 
                 console.log('Form submitted with content:', messageContent);
