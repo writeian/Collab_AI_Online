@@ -541,7 +541,24 @@
 /* Desktop buffer improvements */
 @media (min-width: 769px) {
   #chat-messages {
-    padding-bottom: 100px; /* Adequate bottom buffer for desktop */
+    padding-bottom: 100px !important; /* Adequate bottom buffer for desktop */
+  }
+}
+
+/* Force the bottom padding to be applied */
+#chat-messages {
+  padding-bottom: 100px !important;
+}
+
+/* More specific selector to override any conflicts */
+.chat-main #chat-messages {
+  padding-bottom: 100px !important;
+}
+
+/* Mobile specific override */
+@media (max-width: 768px) {
+  #chat-messages {
+    padding-bottom: 120px !important; /* Increased bottom buffer for mobile */
   }
 }
 
