@@ -44,8 +44,7 @@ def index():
                          user=user, 
                          owned_rooms=owned_rooms, 
                          member_rooms=member_rooms,
-                         recent_invitations=recent_invitations,
-                         invitation_count=len(recent_invitations))
+                         recent_invitations=recent_invitations)
 
 @room.route("/create", methods=["GET", "POST"])
 @require_login

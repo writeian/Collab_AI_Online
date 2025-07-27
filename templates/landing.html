@@ -8,7 +8,29 @@
 </head>
 <body>
     <div class="landing-bg"></div>
-    <header class="landing-hero">
+    
+    <!-- Navigation Header -->
+    <header class="bg-card border-b border-border" style="position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo and Title -->
+                <div class="flex items-center">
+                    <a href="{{ url_for('room.index') }}" class="text-2xl font-bold text-foreground hover:text-primary transition-colors">
+                        AI Collab
+                    </a>
+                </div>
+                
+                <!-- Navigation Links -->
+                <nav class="flex items-center space-x-8">
+                    <a href="{{ url_for('auth.login') }}" class="text-muted-foreground hover:text-foreground transition-colors">Login</a>
+                    <a href="{{ url_for('auth.register') }}" class="text-muted-foreground hover:text-foreground transition-colors">Register</a>
+                    <a href="{{ url_for('about') }}" class="text-muted-foreground hover:text-foreground transition-colors">About</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+    
+    <header class="landing-hero" style="margin-top: 4rem;">
         <div class="hero-content">
             <h1>AI Collaboration, Reimagined</h1>
             <div class="badge">Non-profit & Open Source</div>

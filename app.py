@@ -320,11 +320,26 @@ def create_app(config_name=None):
         from flask import render_template
         return render_template('admin_analytics.html')
 
-    # Context processor to make current user available to all templates
+    # Context processor to make current user and invitation count available to all templates
     @app.context_processor
     def inject_user():
         from access_control import get_current_user
-        return dict(user=get_current_user())
+        from models import RoomMember, Room
+        from datetime import datetime, timedelta
+        
+        user = get_current_user()
+        invitation_count = 0
+        
+        if user:
+            # Get recent invitations (rooms they were added to in the last 24 hours)
+            recent_cutoff = datetime.utcnow() - timedelta(hours=24)
+            recent_invitations = RoomMember.query.filter(
+                RoomMember.user_id == user.id,
+                RoomMember.joined_at >= recent_cutoff
+            ).join(Room).filter(Room.is_active == True).all()
+            invitation_count = len(recent_invitations)
+        
+        return dict(user=user, invitation_count=invitation_count)
 
     # Add a simple test route at the end
     @app.route('/test-simple')
