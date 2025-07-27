@@ -562,6 +562,269 @@
   }
 }
 
+/* Room Page Layout Improvements */
+.room-header {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.05) 0%, hsl(var(--primary) / 0.02) 100%);
+  border-radius: 12px;
+  border: 1px solid hsl(var(--border));
+}
+
+.room-header h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.875rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.room-description {
+  margin: 0.75rem 0;
+  color: hsl(var(--muted-foreground));
+  line-height: 1.6;
+}
+
+.room-goals {
+  margin: 0.75rem 0;
+  padding: 0.75rem;
+  background: hsl(var(--accent));
+  border-radius: 8px;
+  border-left: 4px solid hsl(var(--primary));
+}
+
+.room-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+}
+
+.room-content {
+  margin: 2rem 0;
+}
+
+.room-content h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chat-list {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.chat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.chat-item:hover {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 4px 12px hsl(var(--primary) / 0.1);
+}
+
+.chat-item h4 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.chat-item h4 a {
+  color: hsl(var(--primary));
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.chat-item h4 a:hover {
+  color: hsl(var(--primary) / 0.8);
+}
+
+.chat-mode {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.chat-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.room-members {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+}
+
+.room-members h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.room-members ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.room-members li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background: hsl(var(--background));
+  border-radius: 8px;
+  border: 1px solid hsl(var(--border));
+}
+
+/* Achievements Section Improvements */
+.achievements-section {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(var(--accent) / 0.5) 100%);
+  border-radius: 12px;
+  border: 1px solid hsl(var(--border));
+}
+
+.achievements-section h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.achievement-badge {
+  padding: 1rem;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.achievement-badge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px hsl(var(--primary) / 0.15);
+}
+
+.achievement-badge small {
+  display: block;
+  margin-top: 0.5rem;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.875rem;
+}
+
+.no-achievements {
+  text-align: center;
+  color: hsl(var(--muted-foreground));
+  font-style: italic;
+  padding: 1rem;
+}
+
+/* Navigation Breadcrumb Improvements */
+.navigation-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 0;
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.breadcrumb-link {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: hsl(var(--primary));
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.breadcrumb-link:hover {
+  color: hsl(var(--primary) / 0.8);
+}
+
+.breadcrumb-separator {
+  color: hsl(var(--muted-foreground));
+}
+
+.breadcrumb-current {
+  color: hsl(var(--foreground));
+  font-weight: 500;
+}
+
+/* Responsive Design for Room Page */
+@media (max-width: 768px) {
+  .room-header {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .room-header h2 {
+    font-size: 1.5rem;
+  }
+  
+  .room-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .room-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .chat-list {
+    gap: 0.75rem;
+  }
+  
+  .chat-item {
+    padding: 1rem;
+  }
+  
+  .achievements-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .room-members ul {
+    gap: 0.5rem;
+  }
+}
+
 /* Dark Mode Enhancements */
 .dark .message-bubble.assistant {
   background: hsl(var(--muted));
