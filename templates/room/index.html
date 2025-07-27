@@ -4,15 +4,31 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
   {% if user %}
     <!-- Welcome Banner -->
-    <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-8 flex items-center justify-between">
+    <div id="welcome-banner" class="bg-green-50 border border-green-200 rounded-lg p-4 mb-8 flex items-center justify-between" style="display: none;">
       <div class="flex items-center space-x-3">
         <i data-lucide="user" class="w-5 h-5 text-green-600"></i>
         <span class="text-green-800 font-medium">Welcome back, {{ user.display_name }}!</span>
       </div>
-      <button class="text-green-600 hover:text-green-800 transition-colors" onclick="this.parentElement.remove()">
+      <button class="text-green-600 hover:text-green-800 transition-colors" onclick="dismissWelcomeBanner()">
         <i data-lucide="x" class="w-4 h-4"></i>
       </button>
     </div>
+
+    <script>
+      function dismissWelcomeBanner() {
+        // Hide the banner
+        document.getElementById('welcome-banner').style.display = 'none';
+        // Store dismissal in sessionStorage (clears when browser tab is closed)
+        sessionStorage.setItem('welcomeBannerDismissed', 'true');
+      }
+
+      // Check if banner was dismissed in this session
+      window.addEventListener('DOMContentLoaded', function() {
+        if (!sessionStorage.getItem('welcomeBannerDismissed')) {
+          document.getElementById('welcome-banner').style.display = 'flex';
+        }
+      });
+    </script>
 
     <!-- Main Welcome Section -->
     <div class="mb-8">
