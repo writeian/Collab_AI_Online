@@ -26,6 +26,7 @@ We're actively seeking educators, writing teams, and content creators to help im
 - **Room-Based Collaboration**: Create dedicated spaces for teams, classes, or projects
 - **Multi-User Support**: Register, login, and manage user profiles with role-based access
 - **AI Chat Integration**: Powered by OpenAI GPT-4o and Anthropic Claude for intelligent responses
+- **AI Response Toggle**: Users can enable/disable AI responses per chat with persistent state
 - **Chat Management**: Create, edit, delete, and organize conversations within rooms
 - **Interactive Comments**: Students can comment on specific dialogue points for threaded discussions
 - **Public/Private Rooms**: Make rooms public for community discovery or keep them private
@@ -37,6 +38,13 @@ We're actively seeking educators, writing teams, and content creators to help im
 - **Custom System Instructions**: Instructors can edit AI prompts for different modes and rooms
 - **Google Docs Integration**: Import and analyze Google Docs directly into chats
 - **Document Analysis**: Get AI feedback on your writing without importing text
+
+### AI Response Control
+- **Toggle System**: Enable/disable AI responses with a simple checkbox
+- **Persistent Preferences**: Your AI response settings are saved per chat
+- **Default Behavior**: AI responses are enabled by default for new conversations
+- **Per-Chat Settings**: Each chat maintains independent AI response preferences
+- **Visual Feedback**: Clear labels indicate current toggle state and functionality
 
 ### Instructor Dashboard & Analytics
 - **Comprehensive Dashboard**: Room overview, member management, and analytics
@@ -290,6 +298,7 @@ If you encounter any issues or have questions:
 - [x] Comprehensive test suite
 - [x] Modern chat interface with improved UX
 - [x] Modern home page with proper navigation structure
+- [x] AI response toggle with persistent state
 - [ ] Real-time messaging with WebSockets
 - [ ] Advanced chat analytics
 - [ ] Mobile-responsive design improvements
@@ -302,6 +311,14 @@ If you encounter any issues or have questions:
 ---
 
 ## 🆕 Recent Improvements (July 2025)
+
+### Phase 4: AI Response Toggle System ✅
+- **AI Response Toggle**: Users can now enable/disable AI responses on a per-chat basis
+- **Persistent State**: Toggle state is saved in localStorage and persists between page refreshes
+- **Per-Chat Settings**: Each chat maintains its own AI response preference
+- **Default Behavior**: AI responses are enabled by default for new chats
+- **User-Friendly Interface**: Clear toggle with descriptive labels and visual feedback
+- **Seamless Integration**: Toggle is integrated into the chat form for easy access
 
 ### Phase 3: Invitation Acceptance System ✅
 - **Smart invitation tracking**: Invitations are automatically marked as accepted when users visit invited rooms
