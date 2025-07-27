@@ -3,6 +3,16 @@ from models import db
 import os
 from config import config
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+    print("✓ Loaded environment variables from .env file")
+except ImportError:
+    print("⚠️ python-dotenv not installed - environment variables may not be loaded from .env")
+except Exception as e:
+    print(f"⚠️ Could not load .env file: {e}")
+
 # Import Blueprints
 from auth import auth
 from room import room

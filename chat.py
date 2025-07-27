@@ -33,9 +33,10 @@ def view_chat(chat_id):
             return redirect(url_for("auth.login"))
         
         content = request.form.get("content", "").strip()
+        ai_response_enabled = request.form.get("ai_response") == "1"  # Check if AI response is enabled
         
         # Debug logging
-        current_app.logger.info(f"Received message content: '{content}' (length: {len(content)})")
+        current_app.logger.info(f"Received message content: '{content}' (length: {len(content)}), AI response enabled: {ai_response_enabled}")
         
         if content:
             # Backend duplicate detection: Check for recent identical messages
@@ -79,26 +80,32 @@ def view_chat(chat_id):
             # Double-check that the message is in the database
             db.session.flush()
             
-            # ask GPT‑4o and store assistant reply
-            try:
-                ai_content, is_truncated = get_ai_response(chat_obj)
-            except Exception as e:
-                # If AI response fails, provide a helpful message
-                ai_content = "Hello! I'm here to help you with your research. What would you like to explore today?"
-                is_truncated = False
-                current_app.logger.error(f"AI response failed: {e}")
-            
-            ai_msg = Message(
-                chat_id=chat_obj.id,
-                role="assistant",
-                content=ai_content,
-                is_truncated=is_truncated,
-                parent_message_id=None
-            )
-            db.session.add(ai_msg)
-            db.session.commit()
-            current_app.logger.info(f"AI message committed with ID: {ai_msg.id}")
-            flash("Message sent successfully!")
+            # Only get AI response if toggle is enabled
+            if ai_response_enabled:
+                # ask GPT‑4o and store assistant reply
+                try:
+                    ai_content, is_truncated = get_ai_response(chat_obj)
+                except Exception as e:
+                    # If AI response fails, provide a helpful message
+                    ai_content = "Hello! I'm here to help you with your research. What would you like to explore today?"
+                    is_truncated = False
+                    current_app.logger.error(f"AI response failed: {e}")
+                
+                ai_msg = Message(
+                    chat_id=chat_obj.id,
+                    role="assistant",
+                    content=ai_content,
+                    is_truncated=is_truncated,
+                    parent_message_id=None
+                )
+                db.session.add(ai_msg)
+                db.session.commit()
+                current_app.logger.info(f"AI message committed with ID: {ai_msg.id}")
+                flash("Message sent successfully!")
+            else:
+                # No AI response requested
+                flash("Message sent successfully! (No AI response)")
+                current_app.logger.info(f"User message sent without AI response: '{content}'")
         else:
             flash("Please enter a message to send.")
             current_app.logger.info(f"Empty message rejected for user {user.id} in chat {chat_obj.id}")

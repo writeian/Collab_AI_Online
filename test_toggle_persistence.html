@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toggle Persistence Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .toggle-container { margin: 10px 0; }
+        .log { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 3px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>Toggle State Persistence Test</h1>
+    
+    <div class="test-section">
+        <h3>AI Response Toggle</h3>
+        <div class="toggle-container">
+            <input type="checkbox" 
+                   id="ai-response-toggle" 
+                   name="ai_response" 
+                   value="1" 
+                   checked
+                   class="w-4 h-4">
+            <label for="ai-response-toggle">
+                🤖 AI Response
+            </label>
+        </div>
+        <p>Toggle the checkbox and refresh the page to test persistence.</p>
+    </div>
+    
+    <div class="test-section">
+        <h3>Debug Information</h3>
+        <div id="debug-info" class="log"></div>
+        <button onclick="showDebugInfo()">Show Debug Info</button>
+        <button onclick="clearStorage()">Clear Storage</button>
+    </div>
+
+    <script>
+        // Simulate the chat page functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const aiToggle = document.getElementById('ai-response-toggle');
+            const toggleLabel = document.querySelector('label[for="ai-response-toggle"]');
+            
+            if (aiToggle && toggleLabel) {
+                // Get chat ID for localStorage key (simulating chat ID 11)
+                const chatId = '11'; // Simulated chat ID
+                const storageKey = `ai_response_${chatId}`;
+                
+                console.log('Storage key:', storageKey);
+                
+                // Load saved toggle state from localStorage
+                const savedState = localStorage.getItem(storageKey);
+                console.log('Saved state:', savedState);
+                
+                if (savedState !== null) {
+                    aiToggle.checked = savedState === 'true';
+                    console.log('Loaded saved state:', aiToggle.checked);
+                } else {
+                    console.log('No saved state, using default (checked)');
+                }
+                
+                // Update label text based on toggle state
+                function updateToggleLabel() {
+                    if (aiToggle.checked) {
+                        toggleLabel.innerHTML = '🤖 AI Response <span style="color: #666; font-size: 0.8em;">(Uncheck to send message without AI response)</span>';
+                    } else {
+                        toggleLabel.innerHTML = '🤖 AI Response <span style="color: #666; font-size: 0.8em;">(Check to enable AI responses)</span>';
+                    }
+                }
+                
+                // Save toggle state to localStorage when it changes
+                function saveToggleState() {
+                    localStorage.setItem(storageKey, aiToggle.checked.toString());
+                    console.log('Saved toggle state:', aiToggle.checked);
+                    updateToggleLabel();
+                }
+                
+                // Initialize label
+                updateToggleLabel();
+                
+                // Update label and save state when toggle changes
+                aiToggle.addEventListener('change', saveToggleState);
+                
+                console.log('Toggle persistence initialized');
+            }
+        });
+        
+        function showDebugInfo() {
+            const debugDiv = document.getElementById('debug-info');
+            const chatId = '11';
+            const storageKey = `ai_response_${chatId}`;
+            const savedState = localStorage.getItem(storageKey);
+            const aiToggle = document.getElementById('ai-response-toggle');
+            
+            debugDiv.innerHTML = `
+                <strong>Debug Information:</strong><br>
+                Storage Key: ${storageKey}<br>
+                Saved State: ${savedState}<br>
+                Current Toggle State: ${aiToggle.checked}<br>
+                All localStorage keys: ${Object.keys(localStorage).join(', ')}
+            `;
+        }
+        
+        function clearStorage() {
+            const chatId = '11';
+            const storageKey = `ai_response_${chatId}`;
+            localStorage.removeItem(storageKey);
+            console.log('Cleared storage for key:', storageKey);
+            showDebugInfo();
+        }
+        
+        // Show debug info on load
+        setTimeout(showDebugInfo, 100);
+    </script>
+</body>
+</html> 

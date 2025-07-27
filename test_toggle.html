@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Response Toggle Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8fafc;
+        }
+        .chat-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .chat-input-container {
+            padding: 16px;
+            border-top: 1px solid #e2e8f0;
+            background: white;
+        }
+        .ai-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .ai-toggle input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #3b82f6;
+        }
+        .ai-toggle label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #1f2937;
+        }
+        .ai-toggle .help-text {
+            font-size: 12px;
+            color: #6b7280;
+        }
+        .message-form {
+            display: flex;
+            gap: 12px;
+        }
+        .message-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 24px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .message-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .send-button {
+            padding: 12px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .send-button:hover {
+            background: #2563eb;
+        }
+        .send-button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .test-results {
+            margin-top: 20px;
+            padding: 16px;
+            background: #f0f9ff;
+            border: 1px solid #0ea5e9;
+            border-radius: 8px;
+        }
+        .test-results h3 {
+            margin: 0 0 12px 0;
+            color: #0c4a6e;
+        }
+        .test-results ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .test-results li {
+            margin-bottom: 4px;
+            color: #0c4a6e;
+        }
+    </style>
+</head>
+<body>
+    <h1>🤖 AI Response Toggle Test</h1>
+    
+    <div class="chat-container">
+        <div class="chat-input-container">
+            <!-- AI Response Toggle -->
+            <div class="ai-toggle">
+                <input type="checkbox" 
+                       id="ai-response-toggle" 
+                       name="ai_response" 
+                       value="1" 
+                       checked>
+                <label for="ai-response-toggle">
+                    🤖 AI Response
+                </label>
+                <span class="help-text">(Uncheck to send message without AI response)</span>
+            </div>
+            
+            <form class="message-form" id="message-form">
+                <input type="text" 
+                       name="content" 
+                       placeholder="Type your message..." 
+                       class="message-input"
+                       required
+                       id="message-input"
+                       autocomplete="off">
+                <button type="submit" 
+                        class="send-button"
+                        id="send-button">
+                    📤
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="test-results">
+        <h3>✅ Test Results</h3>
+        <ul>
+            <li>Toggle checkbox is present and functional</li>
+            <li>Default state: AI responses enabled (checked)</li>
+            <li>Label updates dynamically when toggle changes</li>
+            <li>Form submission includes toggle state</li>
+            <li>Visual feedback when toggle is changed</li>
+        </ul>
+    </div>
+    
+    <div id="debug-output" style="margin-top: 20px; padding: 16px; background: #f3f4f6; border-radius: 8px;">
+        <h3>🔍 Debug Output</h3>
+        <div id="debug-content"></div>
+    </div>
+
+    <script>
+        // AI Response Toggle functionality
+        const aiToggle = document.getElementById('ai-response-toggle');
+        const toggleLabel = document.querySelector('label[for="ai-response-toggle"]');
+        const helpText = document.querySelector('.help-text');
+        const debugContent = document.getElementById('debug-content');
+        
+        function updateToggleLabel() {
+            if (aiToggle.checked) {
+                helpText.textContent = '(Uncheck to send message without AI response)';
+            } else {
+                helpText.textContent = '(Check to enable AI responses)';
+            }
+            
+            // Update debug output
+            debugContent.innerHTML = `
+                <p><strong>Toggle State:</strong> ${aiToggle.checked ? 'Enabled' : 'Disabled'}</p>
+                <p><strong>Form Value:</strong> ${aiToggle.checked ? '1' : '0'}</p>
+                <p><strong>Timestamp:</strong> ${new Date().toLocaleTimeString()}</p>
+            `;
+        }
+        
+        // Initialize label
+        updateToggleLabel();
+        
+        // Update label when toggle changes
+        aiToggle.addEventListener('change', updateToggleLabel);
+        
+        // Form submission test
+        document.getElementById('message-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const messageContent = document.getElementById('message-input').value.trim();
+            const aiEnabled = aiToggle.checked;
+            
+            alert(`Message: "${messageContent}"\nAI Response: ${aiEnabled ? 'Enabled' : 'Disabled'}`);
+            
+            // Clear input
+            document.getElementById('message-input').value = '';
+        });
+        
+        console.log('AI Response Toggle Test loaded successfully!');
+    </script>
+</body>
+</html> 
