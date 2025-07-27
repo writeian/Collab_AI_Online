@@ -62,6 +62,128 @@ We're actively seeking educators, writing teams, and content creators to help im
 - Google Cloud Project (for Google Docs integration)
 - Git
 
+## 🗄️ Database Migration System
+
+### **Local Development with SQLite**
+
+The application uses **Alembic** for database migrations, ensuring smooth deployment to Railway's PostgreSQL while maintaining local SQLite compatibility.
+
+#### **Local Setup:**
+```bash
+# Set environment variables for local development
+$env:DATABASE_URL="sqlite:///instance/ai_collab.db"  # Windows
+export DATABASE_URL="sqlite:///instance/ai_collab.db"  # macOS/Linux
+
+# Check current migration status
+alembic current
+
+# Apply all migrations
+alembic upgrade head
+
+# Check for pending migrations
+alembic check
+```
+
+#### **Migration Commands:**
+```bash
+# View migration history
+alembic history
+
+# Create new migration (after model changes)
+alembic revision --autogenerate -m "Description of changes"
+
+# Rollback one migration
+alembic downgrade -1
+
+# Rollback to specific migration
+alembic downgrade dade1def113a
+```
+
+### **Production Deployment with PostgreSQL**
+
+When deploying to Railway, the system automatically:
+- ✅ **Detects PostgreSQL** and creates foreign key constraints
+- ✅ **Maintains SQLite compatibility** for local development
+- ✅ **Applies all migrations** in the correct order
+- ✅ **Handles database differences** between SQLite and PostgreSQL
+
+#### **Current Migration Chain:**
+1. `dade1def113a` - Initial migration (users, rooms, chats)
+2. `12722155fa55` - Add parent_message_id and is_truncated to messages
+3. `achievement_models_001` - Add achievement and user_mode_usage tables
+4. `a8c4d37510b7` - Add accepted_at field to room_member (invitation tracking)
+
+### **Database Schema**
+
+**Core Tables:**
+- `user` - User accounts and profiles
+- `room` - Collaboration spaces
+- `room_member` - Room memberships (with `accepted_at` for invitation tracking)
+- `chat` - Conversations within rooms
+- `message` - Individual messages (with parent_message_id for threading)
+- `comment` - Comments on specific messages
+
+**Analytics Tables:**
+- `prompt_record` - Student prompt analytics
+- `user_mode_usage` - Writing mode usage tracking
+- `achievement` - User achievement badges
+- `page_view` - Page view tracking
+
+**Integration Tables:**
+- `google_auth` - Google OAuth tokens for Docs integration
+- `custom_prompt` - Custom system instructions
+
+### **Development Workflow**
+
+#### **Making Database Changes:**
+1. **Update models** in `models.py`
+2. **Generate migration**:
+   ```bash
+   alembic revision --autogenerate -m "Description of changes"
+   ```
+3. **Test locally** with SQLite:
+   ```bash
+   alembic upgrade head
+   ```
+4. **Verify production compatibility** - migrations work with PostgreSQL
+5. **Commit and deploy** - Railway will apply migrations automatically
+
+#### **Testing Migrations:**
+```bash
+# Test migration system
+python test_migration_system.py
+
+# Test invitation acceptance (new feature)
+python test_invitation_acceptance.py
+```
+
+### **Migration Safety Features**
+
+- ✅ **Rollback support** - All migrations have downgrade functions
+- ✅ **Data integrity** - No data loss during migrations
+- ✅ **Cross-database compatibility** - Works with SQLite and PostgreSQL
+- ✅ **Environment detection** - Automatically handles database differences
+- ✅ **Foreign key handling** - Creates constraints on PostgreSQL, skips on SQLite
+
+### **Troubleshooting**
+
+#### **Common Issues:**
+- **Migration conflicts**: Run `alembic stamp head` to sync migration state
+- **SQLite constraints**: Foreign keys are skipped on SQLite (expected behavior)
+- **PostgreSQL errors**: Check `DATABASE_URL` format and permissions
+
+#### **Verification Commands:**
+```bash
+# Check database tables
+python -c "from app import create_app; from models import db; app = create_app(); app.app_context().push(); from sqlalchemy import inspect; inspector = inspect(db.engine); print('Tables:', inspector.get_table_names())"
+
+# Check migration status
+alembic current
+
+# Verify all migrations applied
+alembic upgrade head
+```
+
 ## 🚀 **Railway Deployment**
 
 ### **IMPORTANT: Deployment Branch Configuration**
@@ -180,6 +302,14 @@ If you encounter any issues or have questions:
 ---
 
 ## 🆕 Recent Improvements (July 2025)
+
+### Phase 3: Invitation Acceptance System ✅
+- **Smart invitation tracking**: Invitations are automatically marked as accepted when users visit invited rooms
+- **Notification clearing**: Nav bar and home page notifications clear when invitations are accepted
+- **Database migration system**: Production-ready Alembic migrations for Railway deployment
+- **Cross-database compatibility**: Works seamlessly with SQLite (development) and PostgreSQL (production)
+- **Migration safety**: All migrations have rollback support and maintain data integrity
+- **Environment detection**: Automatically handles database differences between development and production
 
 ### Phase 2: Modern Home Page & Navigation ✅
 - **Proper navigation structure**: Rooms page now serves as the main "Home" page

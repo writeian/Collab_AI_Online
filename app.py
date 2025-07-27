@@ -331,11 +331,12 @@ def create_app(config_name=None):
         invitation_count = 0
         
         if user:
-            # Get recent invitations (rooms they were added to in the last 24 hours)
+            # Get recent unaccepted invitations (rooms they were added to in the last 24 hours)
             recent_cutoff = datetime.utcnow() - timedelta(hours=24)
             recent_invitations = RoomMember.query.filter(
                 RoomMember.user_id == user.id,
-                RoomMember.joined_at >= recent_cutoff
+                RoomMember.joined_at >= recent_cutoff,
+                RoomMember.accepted_at.is_(None)  # Only show unaccepted invitations
             ).join(Room).filter(Room.is_active == True).all()
             invitation_count = len(recent_invitations)
         

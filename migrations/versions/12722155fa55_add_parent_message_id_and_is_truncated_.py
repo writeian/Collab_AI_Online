@@ -22,17 +22,24 @@ def upgrade() -> None:
     """Upgrade schema."""
     op.add_column('message', sa.Column('parent_message_id', sa.Integer(), nullable=True))
     op.add_column('message', sa.Column('is_truncated', sa.Boolean(), nullable=False, server_default=sa.text('false')))
-    op.create_foreign_key(
-        'fk_message_parent_message_id_message',
-        'message', 'message',
-        ['parent_message_id'], ['id'],
-    )
+    
+    # Only create foreign key if not using SQLite (which doesn't support ALTER TABLE for constraints)
+    connection = op.get_bind()
+    if connection.dialect.name != 'sqlite':
+        op.create_foreign_key(
+            'fk_message_parent_message_id_message',
+            'message', 'message',
+            ['parent_message_id'], ['id'],
+        )
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.drop_constraint('fk_message_parent_message_id_message', 'message', type_='foreignkey')
+    # Only drop foreign key if not using SQLite
+    connection = op.get_bind()
+    if connection.dialect.name != 'sqlite':
+        op.drop_constraint('fk_message_parent_message_id_message', 'message', type_='foreignkey')
     op.drop_column('message', 'parent_message_id')
     op.drop_column('message', 'is_truncated')
     # ### end Alembic commands ###

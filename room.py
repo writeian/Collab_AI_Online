@@ -27,11 +27,12 @@ def index():
             Room.is_active == True
         ).order_by(Room.created_at.desc()).all()
         
-        # Get recent invitations (rooms they were added to in the last 24 hours)
+        # Get recent unaccepted invitations (rooms they were added to in the last 24 hours)
         recent_cutoff = datetime.utcnow() - timedelta(hours=24)
         recent_invitations = RoomMember.query.filter(
             RoomMember.user_id == user.id,
-            RoomMember.joined_at >= recent_cutoff
+            RoomMember.joined_at >= recent_cutoff,
+            RoomMember.accepted_at.is_(None)  # Only show unaccepted invitations
         ).join(Room).filter(Room.is_active == True).all()
         
     else:
@@ -105,6 +106,13 @@ def view_room(room_id):
     """View a room and its chats."""
     room_obj = Room.query.get_or_404(room_id)
     user = get_current_user()
+    
+    # Mark invitation as accepted if user is a member and hasn't accepted yet
+    if user and user.id != room_obj.owner_id:
+        membership = RoomMember.query.filter_by(room_id=room_obj.id, user_id=user.id).first()
+        if membership and membership.accepted_at is None:
+            membership.accepted_at = datetime.utcnow()
+            db.session.commit()
     
     # Get all chats in this room
     chats = Chat.query.filter_by(room_id=room_obj.id).order_by(Chat.created_at.desc()).all()

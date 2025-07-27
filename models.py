@@ -87,6 +87,7 @@ class RoomMember(db.Model):
     room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     joined_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    accepted_at = db.Column(db.DateTime, nullable=True)  # When user first accessed the room
     can_create_chats = db.Column(db.Boolean, default=True, nullable=False)
     can_invite_members = db.Column(db.Boolean, default=False, nullable=False)
     
