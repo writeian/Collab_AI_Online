@@ -1,15 +1,17 @@
 {% extends "base.html" %}
 {% block title %}{{ room.name }}{% endblock %}
 {% block content %}
-  <!-- Navigation Breadcrumb -->
-  <div class="navigation-breadcrumb">
-    <a href="{{ url_for('room.index') }}" class="breadcrumb-link">
-      <i data-lucide="home" class="w-4 h-4"></i>
-      Home
-    </a>
-    <span class="breadcrumb-separator">/</span>
-    <span class="breadcrumb-current">{{ room.name }}</span>
-  </div>
+  <!-- Main Content Container -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Navigation Breadcrumb -->
+    <div class="navigation-breadcrumb">
+      <a href="{{ url_for('room.index') }}" class="breadcrumb-link">
+        <i data-lucide="home" class="w-4 h-4"></i>
+        Home
+      </a>
+      <span class="breadcrumb-separator">/</span>
+      <span class="breadcrumb-current">{{ room.name }}</span>
+    </div>
 
   <div class="room-header">
     <h2>{{ room.name }}</h2>
@@ -113,4 +115,5 @@
       {% endfor %}
     </ul>
   </div>
+  </div> <!-- End of main content container -->
 {% endblock %} 
