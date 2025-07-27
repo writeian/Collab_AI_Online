@@ -562,34 +562,34 @@
   }
 }
 
-/* Room Page Layout Improvements */
+/* Room Page Layout Improvements - Clean Minimal Theme */
 .room-header {
   margin-bottom: 2rem;
   padding: 1.5rem;
-  background: linear-gradient(135deg, hsl(var(--primary) / 0.05) 0%, hsl(var(--primary) / 0.02) 100%);
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   border-radius: 12px;
-  border: 1px solid hsl(var(--border));
+  border: 1px solid #e2e8f0;
 }
 
 .room-header h2 {
   margin: 0 0 0.5rem 0;
   font-size: 1.875rem;
   font-weight: 600;
-  color: hsl(var(--foreground));
+  color: #1e293b;
 }
 
 .room-description {
   margin: 0.75rem 0;
-  color: hsl(var(--muted-foreground));
+  color: #64748b;
   line-height: 1.6;
 }
 
 .room-goals {
   margin: 0.75rem 0;
   padding: 0.75rem;
-  background: hsl(var(--accent));
+  background: #f0f9ff;
   border-radius: 8px;
-  border-left: 4px solid hsl(var(--primary));
+  border-left: 4px solid #3b82f6;
 }
 
 .room-actions {
@@ -598,8 +598,8 @@
   flex-wrap: wrap;
   margin: 1.5rem 0;
   padding: 1rem;
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
 }
 
@@ -611,7 +611,7 @@
   margin: 0 0 1rem 0;
   font-size: 1.25rem;
   font-weight: 600;
-  color: hsl(var(--foreground));
+  color: #1e293b;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -628,15 +628,15 @@
   flex-direction: column;
   gap: 0.75rem;
   padding: 1.25rem;
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 12px;
   transition: all 0.2s ease;
 }
 
 .chat-item:hover {
-  border-color: hsl(var(--primary));
-  box-shadow: 0 4px 12px hsl(var(--primary) / 0.1);
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
 }
 
 .chat-item h4 {
@@ -646,20 +646,20 @@
 }
 
 .chat-item h4 a {
-  color: hsl(var(--primary));
+  color: #3b82f6;
   text-decoration: none;
   transition: color 0.2s ease;
 }
 
 .chat-item h4 a:hover {
-  color: hsl(var(--primary) / 0.8);
+  color: #2563eb;
 }
 
 .chat-mode {
   display: inline-block;
   padding: 0.25rem 0.75rem;
-  background: hsl(var(--accent));
-  color: hsl(var(--accent-foreground));
+  background: #f0f9ff;
+  color: #0369a1;
   border-radius: 20px;
   font-size: 0.875rem;
   font-weight: 500;
@@ -674,8 +674,8 @@
 .room-members {
   margin: 2rem 0;
   padding: 1.5rem;
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 12px;
 }
 
@@ -683,7 +683,7 @@
   margin: 0 0 1rem 0;
   font-size: 1.25rem;
   font-weight: 600;
-  color: hsl(var(--foreground));
+  color: #1e293b;
 }
 
 .room-members ul {
@@ -699,25 +699,25 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem;
-  background: hsl(var(--background));
+  background: #f8fafc;
   border-radius: 8px;
-  border: 1px solid hsl(var(--border));
+  border: 1px solid #e2e8f0;
 }
 
 /* Achievements Section Improvements */
 .achievements-section {
   margin: 2rem 0;
   padding: 1.5rem;
-  background: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(var(--accent) / 0.5) 100%);
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
   border-radius: 12px;
-  border: 1px solid hsl(var(--border));
+  border: 1px solid #e2e8f0;
 }
 
 .achievements-section h3 {
   margin: 0 0 1rem 0;
   font-size: 1.25rem;
   font-weight: 600;
-  color: hsl(var(--foreground));
+  color: #1e293b;
 }
 
 .achievements-grid {
@@ -728,8 +728,8 @@
 
 .achievement-badge {
   padding: 1rem;
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
   text-align: center;
   transition: all 0.2s ease;
@@ -737,19 +737,19 @@
 
 .achievement-badge:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px hsl(var(--primary) / 0.15);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
 }
 
 .achievement-badge small {
   display: block;
   margin-top: 0.5rem;
-  color: hsl(var(--muted-foreground));
+  color: #64748b;
   font-size: 0.875rem;
 }
 
 .no-achievements {
   text-align: center;
-  color: hsl(var(--muted-foreground));
+  color: #64748b;
   font-style: italic;
   padding: 1rem;
 }
@@ -762,28 +762,28 @@
   margin-bottom: 2rem;
   padding: 0.75rem 0;
   font-size: 0.875rem;
-  color: hsl(var(--muted-foreground));
+  color: #64748b;
 }
 
 .breadcrumb-link {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  color: hsl(var(--primary));
+  color: #3b82f6;
   text-decoration: none;
   transition: color 0.2s ease;
 }
 
 .breadcrumb-link:hover {
-  color: hsl(var(--primary) / 0.8);
+  color: #2563eb;
 }
 
 .breadcrumb-separator {
-  color: hsl(var(--muted-foreground));
+  color: #64748b;
 }
 
 .breadcrumb-current {
-  color: hsl(var(--foreground));
+  color: #1e293b;
   font-weight: 500;
 }
 
