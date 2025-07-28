@@ -1,133 +1,124 @@
 {% extends "base.html" %}
 {% block title %}Profile - {{ user.display_name }}{% endblock %}
 {% block content %}
-  <div class="container">
-    <div class="profile-header">
-      <h1>Profile</h1>
-      <p class="profile-subtitle">Manage your account and preferences</p>
+  <!-- Main Content Container -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Page Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-foreground mb-2">Profile</h1>
+      <p class="text-muted-foreground">Manage your account and preferences</p>
     </div>
 
-    <div class="profile-grid">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <!-- Personal Information Section -->
-      <div class="profile-section">
-        <h2>Personal Information</h2>
-        <div class="profile-info">
-          <div class="info-row">
-            <label>Username:</label>
-            <span>{{ user.username }}</span>
+      <div class="bg-card border border-border rounded-lg p-6">
+        <h2 class="text-xl font-semibold text-foreground mb-4">Personal Information</h2>
+        <div class="space-y-4">
+          <div class="flex justify-between items-center py-2 border-b border-border/50">
+            <span class="text-sm font-medium text-muted-foreground">Username:</span>
+            <span class="text-foreground">{{ user.username }}</span>
           </div>
-          <div class="info-row">
-            <label>Full Name:</label>
-            <span>{{ user.full_name or 'Not provided' }}</span>
+          <div class="flex justify-between items-center py-2 border-b border-border/50">
+            <span class="text-sm font-medium text-muted-foreground">Full Name:</span>
+            <span class="text-foreground">{{ user.full_name or 'Not provided' }}</span>
           </div>
-          <div class="info-row">
-            <label>Display Name:</label>
-            <span>{{ user.display_name }}</span>
+          <div class="flex justify-between items-center py-2 border-b border-border/50">
+            <span class="text-sm font-medium text-muted-foreground">Display Name:</span>
+            <span class="text-foreground">{{ user.display_name }}</span>
           </div>
-          <div class="info-row">
-            <label>Email:</label>
-            <span>{{ user.email }}</span>
+          <div class="flex justify-between items-center py-2 border-b border-border/50">
+            <span class="text-sm font-medium text-muted-foreground">Email:</span>
+            <span class="text-foreground">{{ user.email }}</span>
           </div>
-          <div class="info-row">
-            <label>Member Since:</label>
-            <span>{{ user.created_at.strftime('%B %d, %Y') }}</span>
+          <div class="flex justify-between items-center py-2">
+            <span class="text-sm font-medium text-muted-foreground">Member Since:</span>
+            <span class="text-foreground">{{ user.created_at.strftime('%B %d, %Y') }}</span>
           </div>
         </div>
-        <div class="profile-actions">
-          <a href="{{ url_for('auth.edit_profile') }}" class="btn btn-primary">Edit Profile</a>
-          <a href="{{ url_for('auth.change_password') }}" class="btn btn-secondary">Change Password</a>
+        <div class="flex items-center gap-4 mt-6">
+          <a href="{{ url_for('auth.edit_profile') }}" 
+             class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors font-medium">
+            Edit Profile
+          </a>
+          <a href="{{ url_for('auth.change_password') }}" 
+             class="px-4 py-2 border border-border rounded-md text-foreground hover:bg-muted transition-colors font-medium">
+            Change Password
+          </a>
         </div>
       </div>
 
       <!-- Academic Information Section -->
-      <div class="profile-section">
-        <h2>Academic Information</h2>
-        <div class="profile-info">
-          <div class="info-row">
-            <label>Institution:</label>
-            <span>{{ user.institution or 'Not provided' }}</span>
+      <div class="bg-card border border-border rounded-lg p-6">
+        <h2 class="text-xl font-semibold text-foreground mb-4">Academic Information</h2>
+        <div class="space-y-4">
+          <div class="flex justify-between items-center py-2 border-b border-border/50">
+            <span class="text-sm font-medium text-muted-foreground">Institution:</span>
+            <span class="text-foreground">{{ user.institution or 'Not provided' }}</span>
           </div>
-          <div class="info-row">
-            <label>Department:</label>
-            <span>{{ user.department or 'Not provided' }}</span>
+          <div class="flex justify-between items-center py-2 border-b border-border/50">
+            <span class="text-sm font-medium text-muted-foreground">Department:</span>
+            <span class="text-foreground">{{ user.department or 'Not provided' }}</span>
           </div>
-          <div class="info-row">
-            <label>Research Area:</label>
-            <span>{{ user.research_area or 'Not provided' }}</span>
+          <div class="flex justify-between items-center py-2 border-b border-border/50">
+            <span class="text-sm font-medium text-muted-foreground">Research Area:</span>
+            <span class="text-foreground">{{ user.research_area or 'Not provided' }}</span>
           </div>
-          <div class="info-row">
-            <label>Role:</label>
-            <span>{{ user.role or 'Not specified' }}</span>
+          <div class="flex justify-between items-center py-2 border-b border-border/50">
+            <span class="text-sm font-medium text-muted-foreground">Role:</span>
+            <span class="text-foreground">{{ user.role or 'Not specified' }}</span>
           </div>
-          <div class="info-row">
-            <label>Primary Use Case:</label>
-            <span>{{ user.primary_use_case or 'Not specified' }}</span>
+          <div class="flex justify-between items-center py-2 border-b border-border/50">
+            <span class="text-sm font-medium text-muted-foreground">Primary Use Case:</span>
+            <span class="text-foreground">{{ user.primary_use_case or 'Not specified' }}</span>
           </div>
-          <div class="info-row">
-            <label>Team Size:</label>
-            <span>{{ user.team_size or 'Not specified' }}</span>
+          <div class="flex justify-between items-center py-2">
+            <span class="text-sm font-medium text-muted-foreground">Team Size:</span>
+            <span class="text-foreground">{{ user.team_size or 'Not specified' }}</span>
           </div>
         </div>
       </div>
 
       <!-- Preferences Section -->
-      <div class="profile-section">
-        <h2>Preferences</h2>
-        <div class="profile-info">
-          <div class="info-row">
-            <label>Receive Updates:</label>
-            <span>{{ 'Yes' if user.receive_updates else 'No' }}</span>
+      <div class="bg-card border border-border rounded-lg p-6">
+        <h2 class="text-xl font-semibold text-foreground mb-4">Preferences</h2>
+        <div class="space-y-4">
+          <div class="flex justify-between items-center py-2 border-b border-border/50">
+            <span class="text-sm font-medium text-muted-foreground">Receive Updates:</span>
+            <span class="text-foreground">{{ 'Yes' if user.receive_updates else 'No' }}</span>
           </div>
-          <div class="info-row">
-            <label>Contact for Research:</label>
-            <span>{{ 'Yes' if user.contact_for_research else 'No' }}</span>
+          <div class="flex justify-between items-center py-2 border-b border-border/50">
+            <span class="text-sm font-medium text-muted-foreground">Contact for Research:</span>
+            <span class="text-foreground">{{ 'Yes' if user.contact_for_research else 'No' }}</span>
           </div>
-          <div class="info-row">
-            <label>Heard From:</label>
-            <span>{{ user.heard_from or 'Not specified' }}</span>
+          <div class="flex justify-between items-center py-2">
+            <span class="text-sm font-medium text-muted-foreground">Heard From:</span>
+            <span class="text-foreground">{{ user.heard_from or 'Not specified' }}</span>
           </div>
         </div>
       </div>
 
       <!-- Activity Summary Section -->
-      <div class="profile-section">
-        <h2>Activity Summary</h2>
-        <div class="activity-stats">
-          <div class="stat-item">
-            <div class="stat-number">{{ user.owned_rooms|length }}</div>
-            <div class="stat-label">Rooms Created</div>
+      <div class="bg-card border border-border rounded-lg p-6">
+        <h2 class="text-xl font-semibold text-foreground mb-4">Activity Summary</h2>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="text-center p-4 bg-muted/50 rounded-lg">
+            <div class="text-2xl font-bold text-primary">{{ user.owned_rooms|length }}</div>
+            <div class="text-sm text-muted-foreground">Rooms Created</div>
           </div>
-          <div class="stat-item">
-            <div class="stat-number">{{ user.room_memberships|length }}</div>
-            <div class="stat-label">Room Memberships</div>
+          <div class="text-center p-4 bg-muted/50 rounded-lg">
+            <div class="text-2xl font-bold text-primary">{{ user.member_rooms|length }}</div>
+            <div class="text-sm text-muted-foreground">Rooms Joined</div>
           </div>
-          <div class="stat-item">
-            <div class="stat-number">{{ user.messages|length }}</div>
-            <div class="stat-label">Messages Sent</div>
+          <div class="text-center p-4 bg-muted/50 rounded-lg">
+            <div class="text-2xl font-bold text-primary">{{ total_chats }}</div>
+            <div class="text-sm text-muted-foreground">Total Chats</div>
+          </div>
+          <div class="text-center p-4 bg-muted/50 rounded-lg">
+            <div class="text-2xl font-bold text-primary">{{ total_messages }}</div>
+            <div class="text-sm text-muted-foreground">Messages Sent</div>
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- Recent Activity -->
-    <div class="profile-section">
-      <h2>Recent Activity</h2>
-      {% if user.owned_rooms %}
-        <div class="recent-rooms">
-          <h3>Your Rooms</h3>
-          <div class="room-list">
-            {% for room in user.owned_rooms[:5] %}
-              <div class="room-item">
-                <h4><a href="{{ url_for('room.view_room', room_id=room.id) }}">{{ room.name }}</a></h4>
-                <p>{{ room.description or 'No description' }}</p>
-                <small>Created {{ room.created_at.strftime('%B %d, %Y') }}</small>
-              </div>
-            {% endfor %}
-          </div>
-        </div>
-      {% else %}
-        <p>No rooms created yet. <a href="{{ url_for('room.create_room') }}">Create your first room</a></p>
-      {% endif %}
     </div>
   </div>
 {% endblock %} 
