@@ -13,34 +13,166 @@
       <span class="breadcrumb-current">{{ room.name }}</span>
     </div>
 
-  <div class="room-header">
-    <h2>{{ room.name }}</h2>
-    {% if room.description %}
-      <p class="room-description">{{ room.description }}</p>
-    {% endif %}
-    {% if room.goals %}
-      <p class="room-goals"><strong>Learning Goals:</strong> {{ room.goals }}</p>
-    {% endif %}
-    <small>Created by {{ room.owner.display_name }} on {{ room.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+  <!-- Room Info Section (Expandable - Expanded by default) -->
+  <div class="expandable-section bg-card border border-border rounded-lg mb-8">
+    <button class="expandable-header w-full p-6 text-left flex items-center justify-between hover:bg-muted/50 transition-colors" onclick="toggleSection('room-info')">
+      <div class="flex items-center gap-3">
+        <i data-lucide="info" class="w-6 h-6 text-blue-600"></i>
+        <h3 class="text-lg font-semibold">Room Info</h3>
+      </div>
+      <i data-lucide="chevron-down" class="w-5 h-5 transition-transform" id="room-info-icon"></i>
+    </button>
+    
+    <div class="expandable-content p-6 pt-0" id="room-info-content">
+      <div class="flex items-start justify-between">
+        <div class="room-header flex-1">
+          <h2 class="text-2xl font-bold text-foreground mb-3">{{ room.name }}</h2>
+          {% if room.description %}
+            <p class="room-description text-muted-foreground mb-4">{{ room.description }}</p>
+          {% endif %}
+          {% if room.goals %}
+            <div class="room-goals bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg mb-4">
+              <p class="text-sm font-medium text-foreground mb-1">Learning Goals:</p>
+              <p class="text-sm text-muted-foreground italic">{{ room.goals }}</p>
+            </div>
+          {% endif %}
+          <p class="text-xs text-muted-foreground">
+            Created by {{ room.owner.display_name }} on {{ room.created_at.strftime('%Y-%m-%d %H:%M') }}
+          </p>
+        </div>
+        
+        <div class="room-actions-dropdown ml-6">
+          <button class="settings-icon-btn" onclick="toggleRoomActions()" title="Room Settings">
+            <i data-lucide="settings" class="w-5 h-5"></i>
+          </button>
+          
+          <div class="dropdown-menu" id="room-actions-menu">
+            <!-- Owner-only actions -->
+            {% if user.id == room.owner_id %}
+              <a href="{{ url_for('room.edit_room', room_id=room.id) }}" class="dropdown-item">
+                <i data-lucide="edit" class="w-4 h-4"></i>
+                Edit Room
+              </a>
+              <a href="{{ url_for('room.invite_member', room_id=room.id) }}" class="dropdown-item">
+                <i data-lucide="user-plus" class="w-4 h-4"></i>
+                Invite Members
+              </a>
+              <a href="{{ url_for('room.view_members', room_id=room.id) }}" class="dropdown-item">
+                <i data-lucide="users" class="w-4 h-4"></i>
+                View Members
+              </a>
+              <a href="{{ url_for('room.delete_room', room_id=room.id) }}" class="dropdown-item text-red-600" onclick="return confirm('Are you sure you want to delete this room? This action cannot be undone.')">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                Delete Room
+              </a>
+              <div class="dropdown-divider"></div>
+            {% else %}
+              <!-- Member actions -->
+              <a href="{{ url_for('room.invite_member', room_id=room.id) }}" class="dropdown-item">
+                <i data-lucide="user-plus" class="w-4 h-4"></i>
+                Invite Members
+              </a>
+              <a href="{{ url_for('room.view_members', room_id=room.id) }}" class="dropdown-item">
+                <i data-lucide="users" class="w-4 h-4"></i>
+                View Members
+              </a>
+              <div class="dropdown-divider"></div>
+            {% endif %}
+            
+            <!-- Common action -->
+            <a href="{{ url_for('room.create_chat', room_id=room.id) }}" class="dropdown-item text-primary">
+              <i data-lucide="message-circle" class="w-4 h-4"></i>
+              Create Chat
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-  
-  <div class="room-actions">
-    {% if user.id == room.owner_id %}
-      <a href="{{ url_for('room.edit_room', room_id=room.id) }}" class="btn btn-secondary">Edit Room</a>
-      <a href="{{ url_for('room.invite_member', room_id=room.id) }}" class="btn btn-info">Invite Members</a>
-      <a href="{{ url_for('room.view_members', room_id=room.id) }}" class="btn btn-outline">View Members</a>
-      <a href="{{ url_for('room.delete_room', room_id=room.id) }}" class="btn btn-danger">Delete Room</a>
-    {% else %}
-      <a href="{{ url_for('room.invite_member', room_id=room.id) }}" class="btn btn-info">Invite Members</a>
-      <a href="{{ url_for('room.view_members', room_id=room.id) }}" class="btn btn-outline">View Members</a>
-    {% endif %}
-    <a href="{{ url_for('room.create_chat', room_id=room.id) }}" class="btn btn-primary">Create Chat</a>
+
+  <!-- Your Chats Section (Expandable - Expanded by default) -->
+  <div class="expandable-section bg-card border border-border rounded-lg mb-8">
+    <button class="expandable-header w-full p-6 text-left flex items-center justify-between hover:bg-muted/50 transition-colors" onclick="toggleSection('your-chats')">
+      <div class="flex items-center gap-3">
+        <i data-lucide="message-circle" class="w-6 h-6 text-primary"></i>
+        <h3 class="text-lg font-semibold">Your Chats</h3>
+      </div>
+      <i data-lucide="chevron-down" class="w-5 h-5 transition-transform" id="your-chats-icon"></i>
+    </button>
+    
+    <div class="expandable-content p-6 pt-0" id="your-chats-content">
+    
+    {% if chats %}
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {% for chat in chats %}
+          <div class="chat-card-large bg-card border border-border rounded-xl p-6 hover:border-primary/50 hover:shadow-lg transition-all duration-200 cursor-pointer group">
+            <a href="{{ url_for('chat.view_chat', chat_id=chat.id) }}" class="block h-full">
+              <div class="flex items-start justify-between mb-4">
+                <h3 class="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
+                  {{ chat.title }}
+                </h3>
+                <div class="flex items-center gap-2">
+                  {% if chat.unread_count and chat.unread_count > 0 %}
+                    <span class="unread-badge">{{ chat.unread_count }}</span>
+                  {% endif %}
+                  <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <a href="{{ url_for('chat.edit_chat', chat_id=chat.id) }}" class="text-muted-foreground hover:text-foreground transition-colors" title="Edit Chat">
+                      <i data-lucide="edit" class="w-4 h-4"></i>
+                    </a>
+                    <a href="{{ url_for('chat.delete_chat', chat_id=chat.id) }}" class="text-red-600 hover:text-red-700 transition-colors" title="Delete Chat" onclick="return confirm('Are you sure you want to delete this chat?')">
+                      <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </a>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="space-y-3">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary">
+                  {% if chat.mode in modes %}
+                    {{ modes[chat.mode].label }}
+                  {% else %}
+                    {{ chat.mode }}
+                  {% endif %}
+                </span>
+                
+                <p class="text-sm text-muted-foreground">
+                  Created by {{ chat.creator.display_name }}
+                </p>
+              </div>
+            </a>
+          </div>
+        {% endfor %}
+      </div>
+          {% else %}
+        <div class="text-center py-16 bg-card border border-border rounded-xl">
+          <i data-lucide="message-circle" class="w-16 h-16 text-muted-foreground mx-auto mb-4"></i>
+          <h3 class="text-xl font-semibold mb-2">No chats yet</h3>
+          <p class="text-muted-foreground mb-6">Start collaborating by creating your first chat.</p>
+        </div>
+      {% endif %}
+      
+      <!-- New Chat Button at Bottom -->
+      <div class="mt-6 text-center">
+        <a href="{{ url_for('room.create_chat', room_id=room.id) }}" class="btn btn-primary">
+          <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+          New Chat
+        </a>
+      </div>
+    </div>
   </div>
-  
-  <!-- Achievements Section -->
+
+  <!-- Achievements Section (Expandable) -->
   {% if user %}
-    <div class="achievements-section">
-      <h3>🏆 Your Achievements</h3>
+  <div class="expandable-section bg-card border border-border rounded-lg mb-8">
+    <button class="expandable-header w-full p-6 text-left flex items-center justify-between hover:bg-muted/50 transition-colors" onclick="toggleSection('achievements')">
+      <div class="flex items-center gap-3">
+        <i data-lucide="trophy" class="w-6 h-6 text-yellow-600"></i>
+        <h3 class="text-lg font-semibold">Your Achievements</h3>
+      </div>
+      <i data-lucide="chevron-down" class="w-5 h-5 transition-transform" id="achievements-icon"></i>
+    </button>
+    
+    <div class="expandable-content hidden p-6 pt-0" id="achievements-content">
       {% set user_achievements = user.achievements|selectattr('room_id', 'equalto', room.id)|list %}
       {% if user_achievements %}
         <div class="achievements-grid">
@@ -69,51 +201,156 @@
           {% endfor %}
         </div>
       {% else %}
-        <p class="no-achievements">No achievements yet. Start participating to earn badges!</p>
+        <p class="text-muted-foreground">No achievements yet. Start participating to earn badges!</p>
       {% endif %}
     </div>
+  </div>
   {% endif %}
-  
-  <div class="room-content">
-    <h3>Chats in this Room</h3>
-    
-    {% if chats %}
-      <div class="chat-list">
-        {% for chat in chats %}
-          <div class="chat-item">
-            <h4><a href="{{ url_for('chat.view_chat', chat_id=chat.id) }}">{{ chat.title }}</a></h4>
-            <span class="chat-mode">
-              {% if chat.mode in modes %}
-                {{ modes[chat.mode].label }}
-              {% else %}
-                {{ chat.mode }}
-              {% endif %}
-            </span>
-            <small>Created by {{ chat.creator.display_name }} on {{ chat.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
-            <div class="chat-actions">
-              <a href="{{ url_for('chat.edit_chat', chat_id=chat.id) }}" class="btn btn-sm btn-secondary">Edit</a>
-              <a href="{{ url_for('chat.delete_chat', chat_id=chat.id) }}" class="btn btn-sm btn-danger">Delete</a>
-            </div>
-          </div>
-        {% endfor %}
+
+  <!-- Room Members Section (Expandable) -->
+  <div class="expandable-section bg-card border border-border rounded-lg mb-8">
+    <button class="expandable-header w-full p-6 text-left flex items-center justify-between hover:bg-muted/50 transition-colors" onclick="toggleSection('members')">
+      <div class="flex items-center gap-3">
+        <i data-lucide="users" class="w-6 h-6 text-blue-600"></i>
+        <h3 class="text-lg font-semibold">Room Members</h3>
       </div>
-    {% else %}
-      <p>No chats yet. <a href="{{ url_for('room.create_chat', room_id=room.id) }}">Create the first chat!</a></p>
-    {% endif %}
+      <i data-lucide="chevron-down" class="w-5 h-5 transition-transform" id="members-icon"></i>
+    </button>
+    
+    <div class="expandable-content hidden p-6 pt-0" id="members-content">
+      {% if members %}
+        <div class="member-list">
+          {% for member in members %}
+            {% set color_class = 'avatar-color-' ~ ((member.id % 6) + 1) %}
+            <div class="member-item">
+              <div class="member-avatar {{ color_class }}">
+                <span class="avatar-text">
+                  {% if ' ' in member.display_name %}
+                    {{ member.display_name.split(' ')[0][0] }}{{ member.display_name.split(' ')[1][0] }}
+                  {% else %}
+                    {{ member.display_name[:2] }}
+                  {% endif %}
+                </span>
+              </div>
+              <div class="member-info">
+                <p class="member-name">{{ member.display_name }}</p>
+                {% if member.id == room.owner_id %}
+                  <span class="text-xs text-primary font-medium">Owner</span>
+                {% endif %}
+              </div>
+              <div class="member-actions">
+                <a href="{{ url_for('auth.profile') }}" 
+                   class="member-action-btn primary" title="View Profile">
+                  👤
+                </a>
+                <button class="member-action-btn" title="Message (Coming Soon)" disabled>
+                  💬
+                </button>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-muted-foreground">No members found.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Quick Stats Section (Expandable) -->
+  <div class="expandable-section bg-card border border-border rounded-lg mb-8">
+    <button class="expandable-header w-full p-6 text-left flex items-center justify-between hover:bg-muted/50 transition-colors" onclick="toggleSection('stats')">
+      <div class="flex items-center gap-3">
+        <i data-lucide="bar-chart-3" class="w-6 h-6 text-green-600"></i>
+        <h3 class="text-lg font-semibold">Room Stats</h3>
+      </div>
+      <i data-lucide="chevron-down" class="w-5 h-5 transition-transform" id="stats-icon"></i>
+    </button>
+    
+    <div class="expandable-content hidden p-6 pt-0" id="stats-content">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="stat-item">
+          <div class="stat-value text-2xl font-bold text-primary">{{ members|length }}</div>
+          <div class="stat-label text-sm text-muted-foreground">Members</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value text-2xl font-bold text-primary">{{ chats|length if chats else 0 }}</div>
+          <div class="stat-label text-sm text-muted-foreground">Chats</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value text-2xl font-bold text-green-600">Active</div>
+          <div class="stat-label text-sm text-muted-foreground">Status</div>
+        </div>
+      </div>
+    </div>
   </div>
   
-  <div class="room-members">
-    <h3>Room Members</h3>
-    <ul>
-      {% for member in members %}
-        <li>
-          {{ member.display_name }}
-          {% if member.id == room.owner_id %}
-            <span class="badge badge-primary">Owner</span>
-          {% endif %}
-        </li>
-      {% endfor %}
-    </ul>
-  </div>
+
+  
+
+  
+
   </div> <!-- End of main content container -->
+
+<script>
+  function toggleRoomActions() {
+    const menu = document.getElementById('room-actions-menu');
+    const isOpen = menu.classList.contains('open');
+    
+    if (isOpen) {
+      // Close dropdown
+      menu.classList.remove('open');
+      menu.style.display = 'none';
+    } else {
+      // Open dropdown
+      menu.style.display = 'block';
+      // Use setTimeout to ensure display: block is applied before adding the open class
+      setTimeout(() => {
+        menu.classList.add('open');
+      }, 10);
+    }
+    
+    // Close when clicking outside
+    document.addEventListener('click', function closeMenu(e) {
+      if (!e.target.closest('.room-actions-dropdown')) {
+        menu.classList.remove('open');
+        menu.style.display = 'none';
+        document.removeEventListener('click', closeMenu);
+      }
+    });
+  }
+  
+  // Expandable sections functionality
+  function toggleSection(sectionId) {
+    const content = document.getElementById(sectionId + '-content');
+    const icon = document.getElementById(sectionId + '-icon');
+    
+    if (content.classList.contains('hidden')) {
+      // Expand section
+      content.classList.remove('hidden');
+      icon.style.transform = 'rotate(180deg)';
+    } else {
+      // Collapse section
+      content.classList.add('hidden');
+      icon.style.transform = 'rotate(0deg)';
+    }
+  }
+  
+  // Initialize Lucide icons and expandable sections
+  document.addEventListener('DOMContentLoaded', function() {
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
+    
+    // Set default states: Room Info and Your Chats expanded, others collapsed
+    const roomInfoIcon = document.getElementById('room-info-icon');
+    const yourChatsIcon = document.getElementById('your-chats-icon');
+    
+    if (roomInfoIcon) {
+      roomInfoIcon.style.transform = 'rotate(180deg)';
+    }
+    if (yourChatsIcon) {
+      yourChatsIcon.style.transform = 'rotate(180deg)';
+    }
+  });
+</script>
 {% endblock %} 

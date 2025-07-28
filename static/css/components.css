@@ -1499,3 +1499,600 @@
         transform: translateZ(0);
     }
 }
+
+/* 4.3 Room Actions Dropdown Styles */
+.room-actions-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 44px; /* Touch-friendly target */
+}
+
+.dropdown-toggle:hover {
+    background: var(--primary/90);
+    transform: translateY(-1px);
+}
+
+.dropdown-toggle:active {
+    transform: translateY(0);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    min-width: 220px;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: all 0.2s ease;
+    z-index: 1000;
+    margin-top: 0.5rem;
+    display: none;
+}
+
+.dropdown-menu.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: var(--foreground);
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+    font-size: 0.875rem;
+    min-height: 44px; /* Touch-friendly target */
+}
+
+.dropdown-item:hover {
+    background: var(--muted);
+}
+
+.dropdown-item.text-red-600 {
+    color: #dc2626;
+}
+
+.dropdown-item.text-red-600:hover {
+    background: #fef2f2;
+}
+
+.dropdown-item.text-primary {
+    color: var(--primary);
+    font-weight: 500;
+}
+
+.dropdown-item.text-primary:hover {
+    background: var(--primary/5);
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0.5rem 0;
+}
+
+/* Mobile optimizations for dropdown */
+@media (max-width: 768px) {
+    .dropdown-menu {
+        min-width: 200px;
+        right: 0;
+        left: auto;
+    }
+    
+    .dropdown-toggle {
+        width: 100%;
+        justify-content: center;
+        padding: 1rem;
+        font-size: 1rem;
+    }
+    
+    .dropdown-item {
+        padding: 1rem;
+        font-size: 1rem;
+    }
+    
+    /* Ensure dropdown doesn't go off-screen on mobile */
+    .room-actions-dropdown {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
+/* Dark mode support */
+.dark .dropdown-menu {
+    background: var(--card);
+    border-color: var(--border);
+}
+
+.dark .dropdown-item:hover {
+    background: var(--muted);
+}
+
+.dark .dropdown-item.text-red-600:hover {
+    background: rgba(220, 38, 38, 0.1);
+}
+
+.dark .dropdown-item.text-primary:hover {
+    background: var(--primary/10);
+}
+
+/* 4.4 Room Layout Improvements */
+.chat-card {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.chat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.chat-card a {
+    text-decoration: none;
+}
+
+.chat-card h4 a:hover {
+    color: var(--primary);
+}
+
+/* Quick Stats Improvements */
+.quick-stats {
+    background: linear-gradient(135deg, var(--card) 0%, var(--background) 100%);
+}
+
+/* Room Header Improvements */
+.room-header h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--foreground);
+    margin-bottom: 0.5rem;
+}
+
+.room-header .room-description {
+    font-size: 1.1rem;
+    color: var(--muted-foreground);
+    margin-bottom: 1rem;
+}
+
+.room-header .room-goals {
+    background: var(--primary/5);
+    border-left: 4px solid var(--primary);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.room-header small {
+    color: var(--muted-foreground);
+    font-size: 0.875rem;
+}
+
+/* Mobile optimizations for new layout */
+@media (max-width: 768px) {
+    .room-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .grid.grid-cols-1.lg\:grid-cols-3 {
+        grid-template-columns: 1fr;
+    }
+    
+    .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-3 {
+        grid-template-columns: 1fr;
+    }
+    
+    .chat-card {
+        margin-bottom: 1rem;
+    }
+    
+    .flex.items-start.justify-between {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .room-actions-dropdown {
+        align-self: flex-start;
+        margin-left: 0;
+    }
+}
+
+/* 4.5 Chat-Centric Layout Styles */
+.chat-hero-section {
+    margin-bottom: 2rem;
+}
+
+.chat-card-large {
+    transition: all 0.2s ease;
+    cursor: pointer;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-card-large:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.chat-card-large a {
+    text-decoration: none;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-card-large h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.unread-badge {
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    min-width: 20px;
+}
+
+/* Expandable Sections */
+.expandable-section {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.expandable-header {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+}
+
+.expandable-header:hover {
+    background: var(--muted/30);
+}
+
+.expandable-content {
+    border-top: 1px solid var(--border);
+    transition: all 0.3s ease;
+}
+
+.expandable-content.hidden {
+    display: none;
+}
+
+/* Stats Items */
+.stat-item {
+    text-align: center;
+    padding: 1rem;
+    background: var(--muted/20);
+    border-radius: 8px;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+}
+
+/* Responsive Grid for Chat Cards */
+@media (max-width: 640px) {
+    .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-3.xl\:grid-cols-4 {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+    .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-3.xl\:grid-cols-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-3.xl\:grid-cols-4 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 1025px) {
+    .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-3.xl\:grid-cols-4 {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Improved Button Styles */
+.btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+/* Empty State Improvements */
+.text-center.py-16 {
+    padding: 4rem 2rem;
+}
+
+.text-center.py-16 i {
+    opacity: 0.5;
+}
+
+/* Icon Colors for Sections */
+.text-yellow-600 {
+    color: #ca8a04;
+}
+
+.text-blue-600 {
+    color: #2563eb;
+}
+
+.text-green-600 {
+    color: #16a34a;
+}
+
+/* 4.6 Improved Room Layout Styling */
+.room-header h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--foreground);
+    margin-bottom: 0.75rem;
+}
+
+.room-header .room-description {
+    font-size: 1.1rem;
+    color: var(--muted-foreground);
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.room-header .room-goals {
+    background: var(--primary/5);
+    border-left: 4px solid var(--primary);
+    padding: 1rem;
+    border-radius: 0 0.5rem 0.5rem 0;
+    margin-bottom: 1rem;
+}
+
+.room-header .room-goals p:first-child {
+    color: var(--foreground);
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.room-header .room-goals p:last-child {
+    color: var(--muted-foreground);
+    font-style: italic;
+    line-height: 1.4;
+}
+
+.room-header small {
+    color: var(--muted-foreground);
+    font-size: 0.875rem;
+}
+
+/* Room Actions Button Styling */
+.room-actions-dropdown .btn-outline {
+    background: var(--background);
+    border: 1px solid var(--border);
+    color: var(--foreground);
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.room-actions-dropdown .btn-outline:hover {
+    background: var(--muted);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.room-actions-dropdown .btn-outline:active {
+    transform: translateY(1px);
+}
+
+/* Simple Settings Icon Button */
+.settings-icon-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted-foreground);
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+}
+
+.settings-icon-btn:hover {
+    background: var(--muted);
+    color: var(--foreground);
+    transform: scale(1.05);
+}
+
+.settings-icon-btn:active {
+    transform: scale(0.95);
+}
+
+.settings-icon-btn i {
+    transition: transform 0.2s ease;
+}
+
+.settings-icon-btn:hover i {
+    transform: rotate(90deg);
+}
+
+/* Improved Section Spacing */
+.bg-card.border.border-border.rounded-lg.p-6.mb-8 {
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Chat Cards Improved Styling */
+.chat-card-large {
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+.chat-card-large::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary), var(--primary/70));
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.chat-card-large:hover::before {
+    opacity: 1;
+}
+
+.chat-card-large:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary/30);
+}
+
+.chat-card-large a {
+    text-decoration: none;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-card-large h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--foreground);
+    margin-bottom: 0.5rem;
+}
+
+.chat-card-large h3:hover {
+    color: var(--primary);
+}
+
+/* Empty State Improvements */
+.text-center.py-16 {
+    padding: 4rem 2rem;
+    background: var(--muted/20);
+    border-radius: 0.75rem;
+    border: 2px dashed var(--border);
+}
+
+.text-center.py-16 i {
+    opacity: 0.5;
+    color: var(--muted-foreground);
+}
+
+.text-center.py-16 h3 {
+    color: var(--foreground);
+    margin-bottom: 0.5rem;
+}
+
+.text-center.py-16 p {
+    color: var(--muted-foreground);
+    margin-bottom: 1.5rem;
+}
+
+/* Section Headers Improved */
+.bg-card.border.border-border.rounded-lg.p-6.mb-8 h2 {
+    color: var(--foreground);
+    font-weight: 700;
+    margin-bottom: 0;
+}
+
+.bg-card.border.border-border.rounded-lg.p-6.mb-8 h2 i {
+    color: var(--primary);
+}
+
+/* Mobile Responsive Improvements */
+@media (max-width: 768px) {
+    .room-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .room-actions-dropdown {
+        margin-left: 1rem;
+    }
+    
+    .room-actions-dropdown .settings-icon-btn {
+        padding: 0.375rem;
+        min-width: 2.25rem;
+        min-height: 2.25rem;
+    }
+    
+    .room-actions-dropdown .settings-icon-btn i {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+    
+    .flex.items-start.justify-between {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .room-actions-dropdown {
+        align-self: flex-end;
+        margin-left: 0;
+    }
+    
+    .chat-card-large {
+        padding: 1rem;
+        min-height: 140px;
+    }
+    
+    .chat-card-large h3 {
+        font-size: 1.125rem;
+    }
+}
