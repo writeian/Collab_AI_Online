@@ -5,9 +5,9 @@
 {% block content %}
 <!-- Navigation Breadcrumb -->
 <div class="navigation-breadcrumb px-4 pt-4">
-  <a href="{{ url_for('dashboard.index') }}" class="breadcrumb-link">
+  <a href="{{ url_for('room.index') }}" class="breadcrumb-link">
     <i data-lucide="home" class="w-4 h-4"></i>
-    Dashboard
+    Home
   </a>
   <span class="breadcrumb-separator">/</span>
   <a href="{{ url_for('room.view_room', room_id=room.id) }}" class="breadcrumb-link">
@@ -354,8 +354,203 @@
         }
     }
 
-    // Auto-scroll to bottom when page loads to show latest messages
+    // Touch-Optimized Scrolling and Pull-to-Refresh
+    class ChatTouchOptimizer {
+        constructor() {
+            this.chatMessages = document.getElementById('chat-messages');
+            this.isPulling = false;
+            this.startY = 0;
+            this.currentY = 0;
+            this.pullDistance = 0;
+            this.isScrolling = false;
+            this.scrollVelocity = 0;
+            this.lastScrollTop = 0;
+            this.lastScrollTime = 0;
+            
+            this.init();
+        }
+        
+        init() {
+            if (!this.chatMessages) return;
+            
+            // Add pull-to-refresh indicator
+            this.createPullIndicator();
+            
+            // Add touch event listeners
+            this.chatMessages.addEventListener('touchstart', this.handleTouchStart.bind(this));
+            this.chatMessages.addEventListener('touchmove', this.handleTouchMove.bind(this));
+            this.chatMessages.addEventListener('touchend', this.handleTouchEnd.bind(this));
+            
+            // Add momentum scrolling
+            this.addMomentumScrolling();
+            
+            // Add scroll event listener for velocity calculation
+            this.chatMessages.addEventListener('scroll', this.handleScroll.bind(this));
+        }
+        
+        createPullIndicator() {
+            // Create pull indicator element
+            const indicator = document.createElement('div');
+            indicator.className = 'pull-indicator';
+            indicator.innerHTML = `
+                <div class="pull-content">
+                    <i data-lucide="refresh-cw" class="w-5 h-5 animate-spin"></i>
+                    <span>Pull to refresh messages</span>
+                </div>
+            `;
+            
+            // Insert at the top of chat messages
+            this.chatMessages.insertBefore(indicator, this.chatMessages.firstChild);
+            this.pullIndicator = indicator;
+            
+            // Initialize Lucide icons for the new element
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+        
+        handleTouchStart(e) {
+            this.startY = e.touches[0].clientY;
+            this.isPulling = false;
+            this.isScrolling = true;
+            this.lastScrollTop = this.chatMessages.scrollTop;
+            this.lastScrollTime = Date.now();
+        }
+        
+        handleTouchMove(e) {
+            this.currentY = e.touches[0].clientY;
+            const deltaY = this.currentY - this.startY;
+            
+            // Check if we're at the top and pulling down
+            if (this.chatMessages.scrollTop === 0 && deltaY > 0) {
+                this.isPulling = true;
+                this.pullDistance = Math.min(deltaY * 0.5, 80); // Limit pull distance
+                
+                // Show pull indicator
+                this.showPullIndicator();
+                e.preventDefault();
+            } else if (this.isPulling) {
+                // Continue pull gesture
+                this.pullDistance = Math.min(deltaY * 0.5, 80);
+                this.updatePullIndicator();
+                e.preventDefault();
+            }
+        }
+        
+        handleTouchEnd(e) {
+            if (this.isPulling && this.pullDistance > 50) {
+                // Trigger refresh
+                this.refreshMessages();
+            }
+            
+            // Hide pull indicator
+            this.hidePullIndicator();
+            this.isPulling = false;
+            this.isScrolling = false;
+        }
+        
+        handleScroll() {
+            if (!this.isScrolling) return;
+            
+            // Calculate scroll velocity for momentum
+            const currentTime = Date.now();
+            const timeDelta = currentTime - this.lastScrollTime;
+            const scrollDelta = this.chatMessages.scrollTop - this.lastScrollTop;
+            
+            if (timeDelta > 0) {
+                this.scrollVelocity = scrollDelta / timeDelta;
+            }
+            
+            this.lastScrollTop = this.chatMessages.scrollTop;
+            this.lastScrollTime = currentTime;
+            
+            // Update scroll button visibility
+            updateScrollButton();
+        }
+        
+        showPullIndicator() {
+            if (this.pullIndicator) {
+                this.pullIndicator.style.transform = `translateY(${this.pullDistance}px)`;
+                this.pullIndicator.style.opacity = '1';
+            }
+        }
+        
+        updatePullIndicator() {
+            if (this.pullIndicator) {
+                this.pullIndicator.style.transform = `translateY(${this.pullDistance}px)`;
+            }
+        }
+        
+        hidePullIndicator() {
+            if (this.pullIndicator) {
+                this.pullIndicator.style.transform = 'translateY(-100%)';
+                this.pullIndicator.style.opacity = '0';
+            }
+        }
+        
+        refreshMessages() {
+            // Show loading state
+            if (this.pullIndicator) {
+                this.pullIndicator.innerHTML = `
+                    <div class="pull-content">
+                        <i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i>
+                        <span>Refreshing messages...</span>
+                    </div>
+                `;
+                lucide.createIcons();
+            }
+            
+            // Fetch new messages
+            fetch(window.location.href)
+                .then(response => response.text())
+                .then(html => {
+                    // Parse the HTML and extract new messages
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newMessages = doc.getElementById('chat-messages');
+                    
+                    if (newMessages) {
+                        // Update messages (this is a simplified version)
+                        // In a real implementation, you'd want to compare message IDs
+                        window.location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to refresh messages:', error);
+                    // Restore original pull indicator
+                    this.pullIndicator.innerHTML = `
+                        <div class="pull-content">
+                            <i data-lucide="refresh-cw" class="w-5 h-5 animate-spin"></i>
+                            <span>Pull to refresh messages</span>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                });
+        }
+        
+        addMomentumScrolling() {
+            // Add CSS for smooth scrolling
+            this.chatMessages.style.cssText += `
+                -webkit-overflow-scrolling: touch;
+                scroll-behavior: smooth;
+                overscroll-behavior: contain;
+                scroll-snap-type: y proximity;
+            `;
+        }
+    }
+
+    // Initialize touch optimization when DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize touch-optimized scrolling
+        new ChatTouchOptimizer();
+        
+        // Initialize existing scroll button functionality
+        const chatMessagesElement = document.getElementById('chat-messages');
+        if (chatMessagesElement) {
+            chatMessagesElement.addEventListener('scroll', updateScrollButton);
+            updateScrollButton(); // Initial check
+        }
+        
         // Chat Sidebar Toggle functionality (mobile only)
         const chatSidebarToggle = document.getElementById('chat-sidebar-toggle');
         const chatSidebar = document.querySelector('.chat-sidebar');

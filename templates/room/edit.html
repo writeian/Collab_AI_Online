@@ -3,9 +3,9 @@
 {% block content %}
   <!-- Navigation Breadcrumb -->
   <div class="navigation-breadcrumb">
-    <a href="{{ url_for('dashboard.index') }}" class="breadcrumb-link">
+    <a href="{{ url_for('room.index') }}" class="breadcrumb-link">
       <i data-lucide="home" class="w-4 h-4"></i>
-      Dashboard
+      Home
     </a>
     <span class="breadcrumb-separator">/</span>
     <a href="{{ url_for('room.view_room', room_id=room.id) }}" class="breadcrumb-link">

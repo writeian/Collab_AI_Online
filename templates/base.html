@@ -42,7 +42,7 @@
                             </span>
                             {% endif %}
                         </a>
-                        <a href="{{ url_for('dashboard.index') }}" class="text-muted-foreground hover:text-foreground transition-colors text-sm sm:text-base">Dashboard</a>
+                        <a href="{{ url_for('room.index') }}" class="text-muted-foreground hover:text-foreground transition-colors text-sm sm:text-base">Home</a>
                         <a href="{{ url_for('auth.profile') }}" class="text-muted-foreground hover:text-foreground transition-colors text-sm sm:text-base">Profile</a>
                         <a href="{{ url_for('auth.logout') }}" class="text-muted-foreground hover:text-foreground transition-colors text-sm sm:text-base">Logout</a>
                     {% else %}
@@ -83,9 +83,9 @@
                             </span>
                             {% endif %}
                         </a>
-                        <a href="{{ url_for('dashboard.index') }}" class="flex items-center space-x-3 p-3 rounded-lg text-foreground hover:bg-muted transition-colors">
-                            <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
-                            <span class="font-medium">Dashboard</span>
+                        <a href="{{ url_for('room.index') }}" class="flex items-center space-x-3 p-3 rounded-lg text-foreground hover:bg-muted transition-colors">
+                            <i data-lucide="home" class="w-5 h-5"></i>
+                            <span class="font-medium">Home</span>
                         </a>
                         <a href="{{ url_for('auth.profile') }}" class="flex items-center space-x-3 p-3 rounded-lg text-foreground hover:bg-muted transition-colors">
                             <i data-lucide="user" class="w-5 h-5"></i>

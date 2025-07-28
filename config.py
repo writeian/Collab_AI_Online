@@ -1,17 +1,34 @@
 import os
 from dotenv import load_dotenv
+from datetime import timedelta
 
 # Load environment variables from .env file
 load_dotenv()
 
 class Config:
-    """Base configuration class."""
-    
-    # Flask settings
-    SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
-    
-    # Database settings
+    """Base configuration class"""
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///C:/Users/write/Projects/AI_Collab_Online/instance/ai_collab.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    
+    # Static asset configuration for production
+    STATIC_FOLDER = 'static'
+    STATIC_URL_PATH = '/static'
+    
+    # Cache configuration for mobile assets
+    SEND_FILE_MAX_AGE_DEFAULT = 31536000  # 1 year for static assets
+    
+    # Mobile-specific settings
+    MOBILE_CACHE_VERSION = '2.0'  # Version for cache busting
+    MOBILE_FEATURES_ENABLED = True
+    
+    # Production-specific settings
+    PRODUCTION_MODE = os.environ.get('FLASK_ENV') == 'production'
+    
+    # Asset compression settings
+    COMPRESS_HTML = True
+    COMPRESS_CSS = True
+    COMPRESS_JS = True
     
     # AI Service settings
     ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
@@ -41,27 +58,30 @@ class Config:
         pass
 
 class DevelopmentConfig(Config):
-    """Development configuration."""
-    
+    """Development configuration"""
     DEBUG = True
-    LOG_LEVEL = 'DEBUG'
+    TESTING = False
     
-    # SQLite for development (absolute path)
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///C:/Users/write/Projects/AI_Collab_Online/instance/ai_collab.db'
-    
-    # Development-specific settings
-    SESSION_COOKIE_SECURE = False
+    # Development-specific mobile settings
+    MOBILE_CACHE_VERSION = 'dev'
+    MOBILE_FEATURES_ENABLED = True
 
 class ProductionConfig(Config):
-    """Production configuration."""
+    """Production configuration"""
+    DEBUG = False
+    TESTING = False
     
-    # PostgreSQL for production
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
+    # Production-specific mobile settings
+    MOBILE_CACHE_VERSION = '2.0'
+    MOBILE_FEATURES_ENABLED = True
     
-    # Production security settings
-    SESSION_COOKIE_SECURE = False  # Set to False for HTTP, True for HTTPS
+    # Enhanced security for production
+    SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = 'Lax'  # Changed from 'Strict' to 'Lax' for better compatibility
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    
+    # Static asset optimization
+    SEND_FILE_MAX_AGE_DEFAULT = 31536000  # 1 year
     
     # Production logging
     LOG_LEVEL = 'WARNING'
@@ -90,16 +110,13 @@ class ProductionConfig(Config):
             app.logger.info('AI Collab Online startup')
 
 class TestingConfig(Config):
-    """Testing configuration."""
-    
+    """Testing configuration"""
     TESTING = True
     DEBUG = True
-    
-    # In-memory SQLite for testing
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
     
-    # Disable CSRF for testing
-    WTF_CSRF_ENABLED = False
+    # Disable mobile features for testing
+    MOBILE_FEATURES_ENABLED = False
 
 # Configuration dictionary
 config = {

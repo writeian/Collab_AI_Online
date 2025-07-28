@@ -1376,3 +1376,126 @@
     margin-top: 1rem;
   }
 }
+
+/* Improved empty state for mobile */
+@media (max-width: 768px) {
+    .empty-state {
+        padding: 2rem 1rem;
+        text-align: center;
+    }
+    
+    .empty-state h3 {
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .empty-state p {
+        font-size: 0.875rem;
+        color: var(--muted-foreground);
+    }
+}
+
+/* 4.1 Pull-to-Refresh and Touch-Optimized Scrolling */
+.pull-indicator {
+    position: absolute;
+    top: -60px;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: var(--background);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateY(-100%);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    z-index: 10;
+}
+
+.pull-indicator.visible {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.pull-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--muted-foreground);
+    font-size: 0.875rem;
+}
+
+.pull-content i {
+    color: var(--primary);
+}
+
+/* Touch-optimized scrolling for chat messages */
+#chat-messages {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    overscroll-behavior: contain;
+    scroll-snap-type: y proximity;
+    position: relative;
+}
+
+/* Message bubbles with scroll snap */
+.message-bubble {
+    scroll-snap-align: start;
+}
+
+/* Momentum scrolling improvements */
+#chat-messages::-webkit-scrollbar {
+    width: 0;
+    background: transparent;
+}
+
+/* Mobile-specific pull-to-refresh enhancements */
+@media (max-width: 768px) {
+    .pull-indicator {
+        height: 80px;
+        top: -80px;
+    }
+    
+    .pull-content {
+        font-size: 1rem;
+    }
+    
+    /* Enhanced touch feedback */
+    #chat-messages {
+        touch-action: pan-y;
+    }
+    
+    /* Better pull gesture feedback */
+    .pull-indicator {
+        background: linear-gradient(to bottom, var(--background), transparent);
+    }
+}
+
+/* 4.2 Enhanced Mobile Scrolling Performance */
+@media (max-width: 768px) {
+    /* Optimize scrolling performance */
+    #chat-messages {
+        will-change: scroll-position;
+        transform: translateZ(0);
+        backface-visibility: hidden;
+    }
+    
+    /* Smooth momentum scrolling */
+    #chat-messages {
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+    }
+    
+    /* Better scroll snap for messages */
+    .message-bubble {
+        scroll-snap-align: start;
+        margin-bottom: 1rem;
+    }
+    
+    /* Optimize pull-to-refresh animation */
+    .pull-indicator {
+        will-change: transform, opacity;
+        transform: translateZ(0);
+    }
+}
