@@ -338,10 +338,17 @@
   border-top: 1px solid hsl(var(--border));
   backdrop-filter: blur(10px);
   box-shadow: 0 -1px 3px 0 rgba(0, 0, 0, 0.05);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 1rem;
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom));
 }
 
 .chat-input {
-  background: hsl(var(--background));
+  background: #ffffff; /* Solid white background */
   border: 1px solid hsl(var(--border));
   border-radius: 1.5rem;
   padding: 0.75rem 1rem;
@@ -354,6 +361,7 @@
   outline: none;
   border-color: hsl(var(--primary));
   box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
+  background: #ffffff; /* Ensure solid white on focus */
 }
 
 .send-button {
@@ -449,7 +457,7 @@
 /* Scroll to Bottom Button */
 .scroll-to-bottom {
   position: fixed;
-  bottom: 7rem; /* Increased to account for larger bottom buffer */
+  bottom: 9rem; /* Increased to clear the fixed input bar */
   right: 1.5rem;
   background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.9) 100%);
   color: hsl(var(--primary-foreground));
@@ -551,6 +559,8 @@
     padding-left: 12px;
     padding-right: 12px;
     padding-bottom: 120px; /* Increased bottom buffer for mobile */
+    max-width: 100%; /* Ensure container doesn't overflow */
+    overflow-x: hidden; /* Prevent horizontal scrolling */
   }
   
   .chat-input-container {
@@ -561,24 +571,24 @@
 /* Desktop buffer improvements */
 @media (min-width: 769px) {
   #chat-messages {
-    padding-bottom: 100px !important; /* Adequate bottom buffer for desktop */
+    padding-bottom: 200px !important; /* Increased for fixed input bar */
   }
 }
 
 /* Force the bottom padding to be applied */
 #chat-messages {
-  padding-bottom: 100px !important;
+  padding-bottom: 200px !important; /* Increased for fixed input bar */
 }
 
 /* More specific selector to override any conflicts */
 .chat-main #chat-messages {
-  padding-bottom: 100px !important;
+  padding-bottom: 200px !important; /* Increased for fixed input bar */
 }
 
 /* Mobile specific override */
 @media (max-width: 768px) {
   #chat-messages {
-    padding-bottom: 120px !important; /* Increased bottom buffer for mobile */
+    padding-bottom: 250px !important; /* Increased for fixed input bar on mobile */
   }
 }
 
@@ -1120,6 +1130,54 @@
     height: 20px;
   }
 
+  /* Phase 3: Responsive Layout Improvements */
+  
+  /* 3.1 Room/Home Page Layout Improvements */
+  .max-w-7xl {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  /* Better room card spacing on mobile */
+  .grid {
+    gap: 1rem;
+  }
+  
+  /* Improved room cards for mobile */
+  .bg-card {
+    padding: 1rem;
+    border-radius: 12px;
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Better button spacing in room cards */
+  .flex.items-center.space-x-2 {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .flex.items-center.space-x-2 > * {
+    flex: 1;
+    min-width: 80px;
+    justify-content: center;
+  }
+  
+  /* Improved invitation banner for mobile */
+  .bg-gradient-to-r.from-blue-50.to-indigo-50 {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Better welcome section for mobile */
+  .mb-8 {
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Improved empty state for mobile */
+  .text-center.py-12 {
+    padding: 2rem 1rem;
+  }
+
   /* Better AI toggle for mobile */
   .ai-toggle {
     padding: 12px 0;
@@ -1147,6 +1205,174 @@
   .comment-item {
     padding: 12px 16px;
     border-radius: 12px;
-    margin-bottom: 8px;
+    margin: 0 0 8px 0; /* Remove horizontal margins to prevent overflow */
+    max-width: 100%; /* Ensure comment doesn't overflow container */
+    word-wrap: break-word; /* Break long words */
+    overflow-wrap: break-word; /* Modern word breaking */
+  }
+  
+  /* Ensure comment content doesn't overflow */
+  .comment-item p {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+  }
+  
+  /* Better comment form for mobile */
+  .comment-form {
+    margin-top: 0.5rem;
+    padding: 0 0.5rem; /* Add some padding to prevent edge overflow */
+  }
+  
+  /* Ensure comment textarea doesn't overflow */
+  .comment-textarea {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* 3.2 Chat Interface Mobile Optimization */
+  
+  /* Better message bubble sizing for mobile */
+  .message-bubble {
+    max-width: 90%;
+    padding: 0.75rem 1rem;
+    border-radius: 16px;
+    margin-bottom: 0.75rem;
+    word-wrap: break-word; /* Ensure long words break */
+    overflow-wrap: break-word; /* Modern word breaking */
+  }
+  
+  /* Improved message content spacing */
+  .message-content {
+    line-height: 1.5;
+    word-wrap: break-word;
+  }
+  
+  /* Better message timestamp positioning */
+  .message-timestamp {
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+  }
+  
+  /* Improved chat input area for mobile */
+  .chat-input-container {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid hsl(var(--border));
+  }
+  
+  /* Better mobile comment system */
+  .comment-section {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    max-width: 100%; /* Ensure section doesn't overflow */
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+  }
+  
+  /* Optimize AI toggle for mobile */
+  .ai-toggle {
+    padding: 0.75rem 0;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid hsl(var(--border) / 0.3);
+  }
+  
+  /* Better system instructions for mobile */
+  .system-instructions {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 8px;
+  }
+  
+  /* Improved scroll to bottom button for mobile */
+  .scroll-to-bottom {
+    bottom: 8rem; /* Increased to clear the fixed input bar */
+    right: 1rem;
+    width: 3rem;
+    height: 3rem;
+  }
+
+  /* 3.3 Dashboard Mobile Improvements */
+  
+  /* Better dashboard layout for mobile */
+  .container {
+    padding: 1rem;
+  }
+  
+  /* Improved dashboard actions for mobile */
+  .dashboard-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .dashboard-actions .btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 48px;
+  }
+  
+  /* Better room grid for mobile */
+  .room-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  /* Improved room cards for mobile */
+  .room-card {
+    padding: 1rem;
+    border-radius: 12px;
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Better room stats for mobile */
+  .room-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin: 1rem 0;
+  }
+  
+  .stat-item {
+    text-align: center;
+    padding: 0.5rem;
+    background: hsl(var(--muted));
+    border-radius: 8px;
+  }
+  
+  /* Improved room actions for mobile */
+  .room-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+  
+  .room-actions .btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+  
+  /* Better summary stats for mobile */
+  .summary-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  .summary-item {
+    text-align: center;
+    padding: 1rem;
+    background: hsl(var(--card));
+    border-radius: 12px;
+    border: 1px solid hsl(var(--border));
+  }
+  
+  /* Improved empty state for mobile */
+  .empty-state {
+    text-align: center;
+    padding: 2rem 1rem;
+  }
+  
+  .empty-state .btn {
+    width: 100%;
+    max-width: 300px;
+    margin-top: 1rem;
   }
 }
