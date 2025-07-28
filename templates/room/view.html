@@ -23,69 +23,68 @@
       <i data-lucide="chevron-down" class="w-5 h-5 transition-transform" id="room-info-icon"></i>
     </button>
     
-    <div class="expandable-content p-6 pt-0" id="room-info-content">
-      <div class="flex items-start justify-between">
-        <div class="room-header flex-1">
-          <h2 class="text-2xl font-bold text-foreground mb-3">{{ room.name }}</h2>
-          {% if room.description %}
-            <p class="room-description text-muted-foreground mb-4">{{ room.description }}</p>
-          {% endif %}
-          {% if room.goals %}
-            <div class="room-goals bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg mb-4">
-              <p class="text-sm font-medium text-foreground mb-1">Learning Goals:</p>
-              <p class="text-sm text-muted-foreground italic">{{ room.goals }}</p>
-            </div>
-          {% endif %}
-          <p class="text-xs text-muted-foreground">
-            Created by {{ room.owner.display_name }} on {{ room.created_at.strftime('%Y-%m-%d %H:%M') }}
-          </p>
-        </div>
+    <div class="expandable-content p-6 pt-0 relative" id="room-info-content">
+      <!-- Action buttons positioned in upper-right corner -->
+      <div class="absolute top-4 right-4 flex items-center gap-2">
+        <!-- Invite Members Button -->
+        <a href="{{ url_for('room.invite_member', room_id=room.id) }}" class="settings-icon-btn" title="Invite Members">
+          <i data-lucide="user-plus" class="w-5 h-5"></i>
+        </a>
         
-        <div class="room-actions-dropdown ml-6">
-          <button class="settings-icon-btn" onclick="toggleRoomActions()" title="Room Settings">
-            <i data-lucide="settings" class="w-5 h-5"></i>
-          </button>
-          
-          <div class="dropdown-menu" id="room-actions-menu">
-            <!-- Owner-only actions -->
-            {% if user.id == room.owner_id %}
-              <a href="{{ url_for('room.edit_room', room_id=room.id) }}" class="dropdown-item">
-                <i data-lucide="edit" class="w-4 h-4"></i>
-                Edit Room
-              </a>
-              <a href="{{ url_for('room.invite_member', room_id=room.id) }}" class="dropdown-item">
-                <i data-lucide="user-plus" class="w-4 h-4"></i>
-                Invite Members
-              </a>
-              <a href="{{ url_for('room.view_members', room_id=room.id) }}" class="dropdown-item">
-                <i data-lucide="users" class="w-4 h-4"></i>
-                View Members
-              </a>
-              <a href="{{ url_for('room.delete_room', room_id=room.id) }}" class="dropdown-item text-red-600" onclick="return confirm('Are you sure you want to delete this room? This action cannot be undone.')">
-                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                Delete Room
-              </a>
-              <div class="dropdown-divider"></div>
-            {% else %}
-              <!-- Member actions -->
-              <a href="{{ url_for('room.invite_member', room_id=room.id) }}" class="dropdown-item">
-                <i data-lucide="user-plus" class="w-4 h-4"></i>
-                Invite Members
-              </a>
-              <a href="{{ url_for('room.view_members', room_id=room.id) }}" class="dropdown-item">
-                <i data-lucide="users" class="w-4 h-4"></i>
-                View Members
-              </a>
-              <div class="dropdown-divider"></div>
-            {% endif %}
-            
-            <!-- Common action -->
-            <a href="{{ url_for('room.create_chat', room_id=room.id) }}" class="dropdown-item text-primary">
-              <i data-lucide="message-circle" class="w-4 h-4"></i>
-              Create Chat
+        <!-- Settings Button -->
+        <button class="settings-icon-btn" onclick="toggleRoomActions()" title="Room Settings">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+        </button>
+        
+        <!-- Dropdown menu positioned relative to settings button -->
+        <div class="dropdown-menu" id="room-actions-menu">
+          <!-- Owner-only actions -->
+          {% if user.id == room.owner_id %}
+            <a href="{{ url_for('room.edit_room', room_id=room.id) }}" class="dropdown-item">
+              <i data-lucide="edit" class="w-4 h-4"></i>
+              Edit Room
             </a>
-          </div>
+            <a href="{{ url_for('room.view_members', room_id=room.id) }}" class="dropdown-item">
+              <i data-lucide="users" class="w-4 h-4"></i>
+              View Members
+            </a>
+            <a href="{{ url_for('room.delete_room', room_id=room.id) }}" class="dropdown-item text-red-600" onclick="return confirm('Are you sure you want to delete this room? This action cannot be undone.')">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+              Delete Room
+            </a>
+            <div class="dropdown-divider"></div>
+          {% else %}
+            <!-- Member actions -->
+            <a href="{{ url_for('room.view_members', room_id=room.id) }}" class="dropdown-item">
+              <i data-lucide="users" class="w-4 h-4"></i>
+              View Members
+            </a>
+            <div class="dropdown-divider"></div>
+          {% endif %}
+          
+          <!-- Common action -->
+          <a href="{{ url_for('room.create_chat', room_id=room.id) }}" class="dropdown-item text-primary">
+            <i data-lucide="message-circle" class="w-4 h-4"></i>
+            Create Chat
+          </a>
         </div>
+      </div>
+      
+      <!-- Room content with padding to avoid overlap with buttons -->
+      <div class="pr-20">
+        <h2 class="text-2xl font-bold text-foreground mb-3">{{ room.name }}</h2>
+        {% if room.description %}
+          <p class="room-description text-muted-foreground mb-4">{{ room.description }}</p>
+        {% endif %}
+        {% if room.goals %}
+          <div class="room-goals bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg mb-4">
+            <p class="text-sm font-medium text-foreground mb-1">Learning Goals:</p>
+            <p class="text-sm text-muted-foreground italic">{{ room.goals }}</p>
+          </div>
+        {% endif %}
+        <p class="text-xs text-muted-foreground">
+          Created by {{ room.owner.display_name }} on {{ room.created_at.strftime('%Y-%m-%d %H:%M') }}
+        </p>
       </div>
     </div>
   </div>
