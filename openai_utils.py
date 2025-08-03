@@ -121,7 +121,13 @@ Generate contextual writing modes that would help students achieve these learnin
         # Try to parse JSON response
         import json
         try:
-            modes_data = json.loads(response)
+            # Extract text from response (API calls return tuple of (text, is_truncated))
+            if isinstance(response, tuple):
+                response_text = response[0]
+            else:
+                response_text = response
+                
+            modes_data = json.loads(response_text)
             contextual_modes = {}
             
             for mode_key, mode_info in modes_data.items():
