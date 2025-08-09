@@ -1187,9 +1187,12 @@
   
   /* Improved room cards for mobile */
   .bg-card {
+    background-color: #ffffff !important;
     padding: 1rem;
     border-radius: 12px;
     margin-bottom: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e7eb;
   }
   
   /* Better button spacing in room cards */
@@ -1819,6 +1822,9 @@
 .expandable-section {
     border-radius: 12px;
     overflow: hidden;
+    background-color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e7eb;
 }
 
 .expandable-header {
@@ -2020,8 +2026,8 @@
 
 /* Chat Cards Improved Styling */
 .chat-card-large {
-    background: var(--background);
-    border: 1px solid var(--border);
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb;
     border-radius: 0.75rem;
     padding: 1.5rem;
     transition: all 0.2s ease;
@@ -2031,6 +2037,7 @@
     flex-direction: column;
     position: relative;
     overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .chat-card-large::before {

@@ -3,6 +3,7 @@ from models import db, User
 from access_control import get_current_user, require_login
 import datetime
 import secrets
+# Removed incorrect flask_login import
 
 auth = Blueprint('auth', __name__)
 
@@ -200,16 +201,21 @@ def login():
             return render_template("login.html", username=username)
         
         # Check if user exists and password is correct
+        # First try exact case match, then fall back to case-insensitive
         try:
-            user = User.query.filter_by(username=username).first()
-            # print(f"User found: {user is not None}")
+            user = User.query.filter_by(username=username).first()  # Exact match first
+            if not user:
+                # Fall back to case-insensitive search if no exact match
+                user = User.query.filter(User.username.ilike(username)).first()
+            
+            # print(f"User found: {user.username if user else 'None'}")
             
             if user and user.check_password(password):
                 if not user.is_active:
                     flash("Your account has been deactivated. Please contact support.", "error")
                     return render_template("login.html", username=username)
                 
-                # Set session
+                # Set session (original session-based authentication)
                 session['user_id'] = user.id
                 session['username'] = user.username  # For easier access
                 

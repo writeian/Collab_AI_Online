@@ -1,27 +1,58 @@
 {% extends "base.html" %}
 {% block title %}Create Room{% endblock %}
 {% block content %}
-  <h2>Create New Room</h2>
-  
-  <form method="POST">
-    <div class="form-group">
-      <label for="name">Room Name *</label>
-      <input type="text" id="name" name="name" required class="form-control">
+  <!-- Main Content Container -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Page Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-foreground mb-2">Create New Room</h1>
+      <p class="text-muted-foreground">Set up a new collaboration space for your team</p>
     </div>
-    
-    <div class="form-group">
-      <label for="description">Description</label>
-      <textarea id="description" name="description" class="form-control" rows="3" placeholder="What is this room for?"></textarea>
+
+    <!-- Create Room Form Card -->
+    <div class="max-w-2xl mx-auto">
+      <div class="bg-card border border-border rounded-lg p-8">
+        <form method="POST" class="space-y-6">
+          <div class="form-group">
+            <label for="name" class="block text-sm font-medium text-foreground mb-2">Room Name *</label>
+            <input type="text" id="name" name="name" required 
+                   class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
+                          focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                          placeholder:text-muted-foreground">
+          </div>
+          
+          <div class="form-group">
+            <label for="description" class="block text-sm font-medium text-foreground mb-2">Description</label>
+            <textarea id="description" name="description" rows="3" 
+                      placeholder="What is this room for?"
+                      class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
+                             focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                             placeholder:text-muted-foreground resize-vertical"></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label for="goals" class="block text-sm font-medium text-foreground mb-2">Learning Goals</label>
+            <textarea id="goals" name="goals" rows="3" 
+                      placeholder="What should students learn in this room?"
+                      class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
+                             focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                             placeholder:text-muted-foreground resize-vertical"></textarea>
+          </div>
+          
+          <div class="flex gap-3 pt-4">
+            <button type="submit" 
+                    class="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 
+                           transition-colors font-medium">
+              Create Room
+            </button>
+            <a href="{{ url_for('room.index') }}" 
+               class="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90 
+                      transition-colors font-medium text-center">
+              Cancel
+            </a>
+          </div>
+        </form>
+      </div>
     </div>
-    
-    <div class="form-group">
-      <label for="goals">Learning Goals</label>
-      <textarea id="goals" name="goals" class="form-control" rows="3" placeholder="What should students learn in this room?"></textarea>
-    </div>
-    
-    <div class="form-actions">
-      <button type="submit" class="btn btn-primary">Create Room</button>
-      <a href="{{ url_for('room.index') }}" class="btn btn-secondary">Cancel</a>
-    </div>
-  </form>
+  </div>
 {% endblock %} 
