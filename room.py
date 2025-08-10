@@ -452,7 +452,7 @@ Please suggest a room title and description for a collaborative learning space f
             })
         
         # Generate AI welcome message
-        ai_message = f"I've created a room proposal based on your goals! The room '{room_title}' includes {len(modes_list)} learning modes designed to help achieve your objectives. You can refine any aspect of this proposal by chatting with me below."
+        ai_message = f"I've created a room proposal based on your goals! The room '{room_title}' includes {len(modes_list)} learning steps designed to help achieve your objectives. You can refine any aspect of this proposal by chatting with me below."
         
         return jsonify({
             'success': True,

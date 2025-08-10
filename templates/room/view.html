@@ -185,7 +185,7 @@
                 <small>Sent your first message</small>
               {% elif achievement.achievement_type == 'explorer' %}
                 🗺️ Explorer
-                <small>Used 24%+ of available modes</small>
+                <small>Used 24%+ of available learning steps</small>
               {% elif achievement.achievement_type == 'ai_whisperer' %}
                 🤖 AI Whisperer
                 <small>10+ AI conversations</small>
@@ -194,7 +194,7 @@
                 <small>Helped 50%+ of room members</small>
               {% elif achievement.achievement_type == 'learning_master' %}
                 🎓 Learning Master
-                <small>Used 74%+ of available modes</small>
+                <small>Used 74%+ of available learning steps</small>
               {% else %}
                 🏆 {{ achievement.achievement_type|title }}
               {% endif %}

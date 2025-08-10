@@ -17,7 +17,7 @@
             <div class="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">1</div>
             <h2 class="text-xl font-semibold text-foreground">Define Your Learning Goals</h2>
           </div>
-          <p class="text-muted-foreground">Describe what you want to achieve in this room. This will help AI generate appropriate modes and suggest a room title.</p>
+          <p class="text-muted-foreground">Describe what you want to achieve in this room. This will help AI generate learning steps that guide students through your goals and suggest a room title.</p>
         </div>
 
         <form id="goals-form" class="space-y-6">
@@ -77,7 +77,7 @@
 
         <!-- Proposed Modes -->
         <div class="mb-8">
-          <h3 class="text-lg font-semibold text-foreground mb-4">Proposed Learning Modes</h3>
+          <h3 class="text-lg font-semibold text-foreground mb-4">Proposed Learning Steps</h3>
           <div id="proposed-modes-list" class="space-y-4">
             <!-- Modes will be populated here -->
           </div>
@@ -86,7 +86,7 @@
         <!-- Refinement Chat -->
         <div class="mb-8">
           <h3 class="text-lg font-semibold text-foreground mb-4">Refine Your Room</h3>
-          <p class="text-muted-foreground mb-4">Not quite right? Chat with me to improve the title, description, or modes:</p>
+          <p class="text-muted-foreground mb-4">Not quite right? Chat with me to improve the title, description, or learning steps:</p>
           
           <div class="bg-muted/20 rounded-lg p-4 mb-4">
             <div id="refinement-chat" class="space-y-4 max-h-64 overflow-y-auto">
@@ -95,7 +95,7 @@
           </div>
           
           <div class="flex gap-2">
-            <input type="text" id="refinement-input" placeholder="e.g., 'Make the title more specific' or 'Add a mode for practicing delivery'"
+            <input type="text" id="refinement-input" placeholder="e.g., 'Make the title more specific' or 'Add a learning step for practicing delivery'"
                    class="flex-1 px-3 py-2 border border-border rounded-md bg-background text-foreground 
                           focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
                           placeholder:text-muted-foreground">

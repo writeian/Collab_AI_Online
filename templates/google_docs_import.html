@@ -25,7 +25,7 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="mode">Starting Mode:</label>
+                    <label for="mode">Starting Learning Step:</label>
                     <select class="form-control" id="mode" name="mode">
                         {% for mode_key, mode_data in modes.items() %}
                             {% set mode_number = mode_data.label.split('.')[0] if '.' in mode_data.label else '999' %}
@@ -39,7 +39,7 @@
                         {% endfor %}
                     </select>
                     <small class="form-text text-muted">
-                        Choose the writing mode to start with for this document.
+                        Choose the learning step to start with for this document.
                     </small>
                 </div>
                 

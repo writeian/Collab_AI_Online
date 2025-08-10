@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container">
     <h1>System Instructions Management</h1>
-    <p class="dashboard-subtitle">Customize how the AI assistant behaves in different modes</p>
+    <p class="dashboard-subtitle">Customize how the AI assistant behaves in different learning steps</p>
     
     <!-- Navigation -->
     <div class="dashboard-actions">
@@ -35,7 +35,7 @@
     {% if selected_room_id and room_specific_modes %}
         <div class="dashboard-section">
             <h2>System Instructions for "{{ selected_room.name }}"</h2>
-            <p>These modes are customized for this room based on its learning goals: <em>{{ selected_room.goals }}</em></p>
+            <p>These learning steps are customized for this room based on its learning goals: <em>{{ selected_room.goals }}</em></p>
             
             <div class="modes-grid">
                 {% for mode_key, mode_info in room_specific_modes.items() %}
@@ -68,17 +68,17 @@
         <div class="dashboard-section">
             <h2>System Instructions for "{{ selected_room.name }}"</h2>
             <div class="empty-state">
-                <p>This room uses the base modes. No custom instructions have been generated yet.</p>
+                <p>This room uses the base learning steps. No custom instructions have been generated yet.</p>
                 {% if selected_room.goals %}
                     <p>This room has learning goals and can generate contextual instructions.</p>
                     <form method="POST" action="{{ url_for('dashboard.regenerate_room_modes') }}" style="display: inline;" id="regenerateForm">
                         <input type="hidden" name="room_id" value="{{ selected_room.id }}">
-                        <button type="submit" class="btn btn-primary" id="regenerateButton">Generate Contextual Modes</button>
+                        <button type="submit" class="btn btn-primary" id="regenerateButton">Generate Contextual Learning Steps</button>
                     </form>
                     <script>
                         document.getElementById('regenerateForm').addEventListener('submit', function(e) {
                             const button = document.getElementById('regenerateButton');
-                            loadingManager.setLoading(button, 'Generating Modes...');
+                            loadingManager.setLoading(button, 'Generating Learning Steps...');
                         });
                     </script>
                 {% else %}

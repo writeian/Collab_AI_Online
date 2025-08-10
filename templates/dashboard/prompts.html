@@ -24,7 +24,7 @@
             <div class="filter-group">
                 <label for="mode">Filter by Mode:</label>
                 <select name="mode" id="mode">
-                    <option value="">All Modes</option>
+                    <option value="">All Learning Steps</option>
                     {% for mode in modes %}
                     <option value="{{ mode[0] }}" {% if current_mode == mode[0] %}selected{% endif %}>
                         {{ mode[0]|title }}
