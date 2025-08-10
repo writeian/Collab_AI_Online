@@ -33,11 +33,13 @@ We're actively seeking educators, writing teams, and content creators to help im
 - **Achievement System**: Track user progress and award badges for participation milestones
 
 ### Educational Writing Support
-- **Writing Mode System**: 10 different writing stages (Explore, Focus, Outline, Draft, Revise, Polish, etc.)
-- **Mode-Specific AI Prompts**: AI adapts its responses based on the current writing stage
-- **Custom System Instructions**: Instructors can edit AI prompts for different modes and rooms
+- **Learning Steps System**: 10 different learning stages (Explore, Focus, Outline, Draft, Revise, Polish, etc.)
+- **Learning Step-Specific AI Prompts**: AI adapts its responses based on the current learning stage
+- **Custom System Instructions**: Instructors can edit AI prompts for different learning steps and rooms
 - **Google Docs Integration**: Import and analyze Google Docs directly into chats
 - **Document Analysis**: Get AI feedback on your writing without importing text
+- **Streamlined Room Creation**: 2-step process with AI proposal generation and conversational refinement
+- **Conversational Mode Refinement**: Chat with AI to refine room title, description, and learning steps before finalizing
 
 ### AI Response Control
 - **Toggle System**: Enable/disable AI responses with a simple checkbox
@@ -48,11 +50,11 @@ We're actively seeking educators, writing teams, and content creators to help im
 
 ### Instructor Dashboard & Analytics
 - **Comprehensive Dashboard**: Room overview, member management, and analytics
-- **Student Analytics**: Track student prompts and writing modes usage
+- **Student Analytics**: Track student prompts and learning steps usage
 - **Prompt History**: Monitor how students use AI assistance with detailed logs
-- **Mode Filtering**: Analyze usage patterns by writing stage
+- **Mode Filtering**: Analyze usage patterns by learning stage
 - **Member Activity**: Track participation and engagement levels
-- **System Instructions Management**: Edit AI prompts for different modes and rooms
+- **System Instructions Management**: Edit AI prompts for different learning steps and rooms
 
 ### Modern UI & Collaboration
 - **Clean Design**: Responsive, intuitive user experience with modern styling
@@ -60,6 +62,8 @@ We're actively seeking educators, writing teams, and content creators to help im
 - **Access Control**: Secure permission system with decorators
 - **Room Management**: Easy room creation, joining, and member management
 - **Comment System**: Threaded discussions on specific AI responses
+- **Settings Integration**: Functional gear button with dropdown menus for room actions
+- **Consistent Styling**: Modern Tailwind CSS design with proper padding and responsive layouts
 
 ## 🚀 Quick Start
 
@@ -292,7 +296,7 @@ If you encounter any issues or have questions:
 - [x] Interactive commenting system
 - [x] Custom system instructions management
 - [x] Google Docs integration with service account
-- [x] Writing mode system with 10 stages
+- [x] Learning steps system with 10 stages
 - [x] Dashboard analytics for student tracking
 - [x] Access control with permission decorators
 - [x] Comprehensive test suite
@@ -304,6 +308,13 @@ If you encounter any issues or have questions:
 - [x] Modern form design with card layouts
 - [x] Comprehensive footer with essential links
 - [x] Case-insensitive login system
+- [x] Streamlined room creation with AI proposal generation
+- [x] Conversational mode refinement system
+- [x] Learning steps terminology throughout application
+- [x] Proper numerical ordering for learning steps (1, 2, 3... 10, 11)
+- [x] Database cascade relationships for proper room deletion
+- [x] Settings gear button functionality
+- [x] Consistent styling across all pages
 - [ ] Real-time messaging with WebSockets
 - [ ] Advanced chat analytics
 - [ ] Mobile app development
@@ -315,7 +326,17 @@ If you encounter any issues or have questions:
 
 ---
 
-## 🆕 Recent Improvements (August 2025)
+## 🆕 Recent Improvements (January 2025)
+
+### Phase 6: Streamlined Room Creation & Learning Steps ✅
+- **Streamlined Room Creation Flow**: Redesigned room creation as a 2-step process:
+  1. **Step 1**: User enters learning goals
+  2. **Step 2**: AI proposes room title, description, and learning steps with conversational refinement
+- **Conversational Mode Refinement**: Users can chat with AI to refine room proposals before finalizing
+- **Learning Steps Terminology**: Replaced "modes" with "learning steps" throughout the application for better user understanding
+- **Proper Numerical Ordering**: Learning steps now display in correct numerical order (1, 2, 3... 10, 11) instead of alphabetical
+- **AI Proposal System**: New endpoints (`/generate-room-proposal`, `/refine-room-proposal`) for intelligent room creation
+- **Enhanced User Experience**: Clear step-by-step guidance with AI assistance throughout room creation
 
 ### Phase 5: Comprehensive UI/UX Improvements ✅
 - **Room Mode Generation Fix**: Fixed critical API response handling bug that prevented custom room goals from generating contextual AI modes
@@ -371,6 +392,13 @@ If you encounter any issues or have questions:
 - **System Instructions Dropdown:** AI system instructions are always accessible in the left pane
 - **Improved accessibility:** Higher contrast, better font weights, and more readable color palette
 - **Modern avatar system** with online indicators and conversation previews
+
+### Bug Fixes & Database Improvements ✅
+- **Database Cascade Relationships**: Fixed room deletion by adding proper cascade rules to Room model relationships
+- **Settings Gear Button**: Fixed non-functional settings dropdown in room view pages
+- **Dropdown Menu Fixes**: Resolved form submission issues with AI instruction dropdowns
+- **Consistent Styling**: Fixed padding inconsistencies across delete pages and other UI elements
+- **Numerical Sorting**: Implemented proper sorting for learning steps with numerical prefixes
 
 ### Project Cleanup
 - **Removed 22+ debug/test files** from the main directory (now in `cleanup_files/`)
