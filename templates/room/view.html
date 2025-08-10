@@ -43,19 +43,20 @@
         </div>
         
         <!-- Action buttons positioned in upper-right corner of the card -->
-        <div class="flex items-center gap-2 ml-6">
+        <div class="flex items-center gap-2 ml-6 relative">
           <!-- Invite Members Button -->
           <a href="{{ url_for('room.invite_member', room_id=room.id) }}" class="settings-icon-btn" title="Invite Members">
             <i data-lucide="user-plus" class="w-5 h-5"></i>
           </a>
           
-          <!-- Settings Button -->
-          <button class="settings-icon-btn" onclick="toggleRoomActions()" title="Room Settings">
-            <i data-lucide="settings" class="w-5 h-5"></i>
-          </button>
-          
-          <!-- Dropdown menu positioned relative to settings button -->
-          <div class="dropdown-menu" id="room-actions-menu">
+          <!-- Settings Button with Dropdown -->
+          <div class="relative">
+            <button class="settings-icon-btn" onclick="toggleRoomActions()" title="Room Settings">
+              <i data-lucide="settings" class="w-5 h-5"></i>
+            </button>
+            
+            <!-- Dropdown menu positioned relative to settings button -->
+            <div class="dropdown-menu" id="room-actions-menu">
             <!-- Owner-only actions -->
             {% if user.id == room.owner_id %}
               <a href="{{ url_for('room.edit_room', room_id=room.id) }}" class="dropdown-item">
@@ -295,6 +296,7 @@
 <script>
   function toggleRoomActions() {
     const menu = document.getElementById('room-actions-menu');
+    const settingsButton = event.target.closest('.settings-icon-btn');
     const isOpen = menu.classList.contains('open');
     
     if (isOpen) {
@@ -302,6 +304,12 @@
       menu.classList.remove('open');
       menu.style.display = 'none';
     } else {
+      // Close any other open dropdowns first
+      document.querySelectorAll('.dropdown-menu.open').forEach(openMenu => {
+        openMenu.classList.remove('open');
+        openMenu.style.display = 'none';
+      });
+      
       // Open dropdown
       menu.style.display = 'block';
       // Use setTimeout to ensure display: block is applied before adding the open class
@@ -312,7 +320,7 @@
     
     // Close when clicking outside
     document.addEventListener('click', function closeMenu(e) {
-      if (!e.target.closest('.room-actions-dropdown')) {
+      if (!e.target.closest('.settings-icon-btn') && !e.target.closest('.dropdown-menu')) {
         menu.classList.remove('open');
         menu.style.display = 'none';
         document.removeEventListener('click', closeMenu);
