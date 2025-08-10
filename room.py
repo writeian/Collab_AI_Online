@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, session, jsonify, current_app
 from models import db, Room, RoomMember, Chat, User, Message, PromptRecord, CustomPrompt
 from access_control import (
     get_current_user, 
@@ -9,9 +9,10 @@ from access_control import (
     can_invite_to_room,
     is_room_member
 )
-from openai_utils import get_ai_response, get_modes_for_room, BASE_MODES
+from openai_utils import get_ai_response, get_modes_for_room, BASE_MODES, generate_room_modes, get_client_type, call_anthropic_api, call_openai_api
 from google_docs import validate_google_docs_url, get_document_content
 from datetime import datetime, timedelta
+import time
 
 room = Blueprint('room', __name__)
 
@@ -74,7 +75,6 @@ def create_room():
         # Generate contextual modes if room has goals
         if goals:
             try:
-                from openai_utils import generate_room_modes
                 contextual_modes = generate_room_modes(room_obj)
                 
                 # Save generated modes as custom prompts
@@ -330,3 +330,131 @@ def create_chat(room_id):
     # Get dynamic modes for this room
     modes = get_modes_for_room(room_obj)
     return render_template("room/create_chat.html", room=room_obj, modes=modes) 
+
+@room.route("/generate-draft-modes", methods=["POST"])
+@require_login
+def generate_draft_modes():
+    """Generate draft modes for room creation without creating the room yet."""
+    try:
+        data = request.get_json()
+        goals = data.get('goals', '').strip()
+        
+        if not goals:
+            return jsonify({'error': 'Goals are required for mode generation'}), 400
+        
+        # Create a temporary room object for mode generation
+        temp_room = Room(
+            name="Temporary",
+            description="",
+            goals=goals,
+            owner_id=get_current_user().id
+        )
+        
+        # Generate contextual modes
+        contextual_modes = generate_room_modes(temp_room)
+        
+        # Convert to JSON-serializable format
+        modes_list = []
+        for mode_key, mode_info in contextual_modes.items():
+            modes_list.append({
+                'key': mode_key,
+                'label': mode_info.label,
+                'prompt': mode_info.prompt
+            })
+        
+        return jsonify({
+            'success': True,
+            'modes': modes_list,
+            'conversation_id': f"refinement_{int(time.time())}"
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error generating draft modes: {e}")
+        return jsonify({'error': 'Failed to generate modes'}), 500
+
+@room.route("/refine-modes", methods=["POST"])
+@require_login
+def refine_modes():
+    """Refine modes through AI conversation."""
+    try:
+        data = request.get_json()
+        conversation_id = data.get('conversation_id')
+        user_message = data.get('message', '').strip()
+        current_modes = data.get('current_modes', [])
+        
+        if not user_message:
+            return jsonify({'error': 'Message is required'}), 400
+        
+        # Create refinement prompt
+        system_prompt = """You are an AI assistant helping to refine writing modes for a collaborative learning room. 
+
+The user has provided learning goals and wants to improve the generated modes. Your job is to:
+1. Understand their feedback
+2. Suggest specific improvements to the modes
+3. Provide updated mode data in the same format
+
+Each mode should have:
+- A clear, descriptive label (2-4 words)
+- A detailed prompt explaining the AI's role and approach
+
+Return your response as a JSON object with mode keys and objects containing 'label' and 'prompt' fields."""
+
+        # Build context from current modes
+        current_modes_text = "\n".join([
+            f"- {mode['label']}: {mode['prompt'][:100]}..." 
+            for mode in current_modes
+        ])
+        
+        user_prompt = f"""Current Modes:
+{current_modes_text}
+
+User Feedback: {user_message}
+
+Please refine these modes based on the user's feedback. Return the updated modes as JSON."""
+
+        # Call AI for refinement
+        client_type = get_client_type()
+        if client_type == "anthropic":
+            response = call_anthropic_api(
+                [{"role": "user", "content": user_prompt}],
+                system_prompt,
+                max_tokens=1000
+            )
+        else:
+            response = call_openai_api(
+                [{"role": "system", "content": system_prompt},
+                 {"role": "user", "content": user_prompt}],
+                max_tokens=1000
+            )
+        
+        # Parse response
+        import json
+        if isinstance(response, tuple):
+            response_text = response[0]
+        else:
+            response_text = response
+            
+        refined_modes_data = json.loads(response_text)
+        
+        # Convert to list format
+        refined_modes = []
+        for mode_key, mode_info in refined_modes_data.items():
+            if isinstance(mode_info, dict) and 'label' in mode_info and 'prompt' in mode_info:
+                refined_modes.append({
+                    'key': mode_key,
+                    'label': mode_info['label'],
+                    'prompt': mode_info['prompt']
+                })
+        
+        # Generate AI response for the conversation
+        ai_response = f"I've refined the modes based on your feedback. The updated modes now better align with your learning goals."
+        
+        return jsonify({
+            'success': True,
+            'modes': refined_modes,
+            'ai_response': ai_response
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error refining modes: {e}")
+        return jsonify({'error': 'Failed to refine modes'}), 500 
