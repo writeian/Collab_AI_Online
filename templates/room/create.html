@@ -10,9 +10,11 @@
     </div>
 
     <!-- Create Room Form Card -->
-    <div class="max-w-2xl mx-auto">
+    <div class="max-w-4xl mx-auto">
       <div class="bg-card border border-border rounded-lg p-8">
-        <form method="POST" class="space-y-6">
+        <form id="room-details-form" method="POST" class="space-y-6">
+          <!-- Hidden input for refined modes -->
+          <input type="hidden" id="refined-modes-input" name="refined_modes" value="">
           <div class="form-group">
             <label for="name" class="block text-sm font-medium text-foreground mb-2">Room Name *</label>
             <input type="text" id="name" name="name" required 
@@ -39,8 +41,54 @@
                              placeholder:text-muted-foreground resize-vertical"></textarea>
           </div>
           
-          <div class="flex gap-3 pt-4">
-            <button type="submit" 
+          <!-- Draft Mode Generation Section -->
+          <div class="border-t border-border pt-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold text-foreground">AI Writing Modes</h3>
+              <button type="button" id="generate-modes-btn" 
+                      class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 
+                             transition-colors font-medium">
+                Generate Draft Modes
+              </button>
+            </div>
+            <p class="text-sm text-muted-foreground mb-4">
+              Generate contextual AI writing modes based on your learning goals, then refine them through conversation.
+            </p>
+          </div>
+          
+          <!-- Mode Refinement Section (initially hidden) -->
+          <div id="mode-refinement-section" class="hidden border-t border-border pt-6">
+            <h3 class="text-lg font-semibold text-foreground mb-4">Draft Modes for Your Room</h3>
+            
+            <!-- Draft Modes List -->
+            <div id="draft-modes-list" class="space-y-3 mb-6">
+              <!-- Modes will be populated here dynamically -->
+            </div>
+            
+            <!-- Mode Refinement Chat Interface -->
+            <div id="mode-chat-interface" class="border border-border rounded-lg p-4 bg-muted/20">
+              <h4 class="text-sm font-medium text-foreground mb-3">Refine Your Modes</h4>
+              <div id="chat-messages" class="space-y-3 mb-4 max-h-48 overflow-y-auto">
+                <!-- Chat messages will appear here -->
+              </div>
+              <div class="flex gap-2">
+                <input type="text" id="refinement-input" 
+                       placeholder="Ask me to refine these modes... (e.g., 'Add a mode for practicing delivery')"
+                       class="flex-1 px-3 py-2 border border-border rounded-md bg-background text-foreground 
+                              focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                              placeholder:text-muted-foreground text-sm">
+                <button type="button" id="send-refinement-btn" 
+                        class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 
+                               transition-colors font-medium text-sm">
+                  Send
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Action Buttons -->
+          <div class="flex gap-3 pt-6 border-t border-border">
+            <button type="submit" id="create-room-btn"
                     class="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 
                            transition-colors font-medium">
               Create Room
@@ -55,4 +103,194 @@
       </div>
     </div>
   </div>
+
+  <!-- JavaScript for Mode Refinement -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const generateModesBtn = document.getElementById('generate-modes-btn');
+      const modeRefinementSection = document.getElementById('mode-refinement-section');
+      const draftModesList = document.getElementById('draft-modes-list');
+      const chatMessages = document.getElementById('chat-messages');
+      const refinementInput = document.getElementById('refinement-input');
+      const sendRefinementBtn = document.getElementById('send-refinement-btn');
+      const createRoomBtn = document.getElementById('create-room-btn');
+      const refinedModesInput = document.getElementById('refined-modes-input');
+      
+      let currentModes = [];
+      let conversationId = null;
+      
+      // Handle form submission
+      document.getElementById('room-details-form').addEventListener('submit', function(e) {
+        // Include refined modes in form submission if available
+        if (currentModes.length > 0) {
+          refinedModesInput.value = JSON.stringify(currentModes);
+        }
+      });
+      
+      // Generate draft modes
+      generateModesBtn.addEventListener('click', async function() {
+        const goals = document.getElementById('goals').value.trim();
+        
+        if (!goals) {
+          alert('Please enter learning goals before generating modes.');
+          return;
+        }
+        
+        generateModesBtn.disabled = true;
+        generateModesBtn.textContent = 'Generating...';
+        
+        try {
+          const response = await fetch('/room/generate-draft-modes', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ goals: goals })
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            currentModes = result.modes;
+            conversationId = result.conversation_id;
+            
+            // Display modes
+            displayModes(currentModes);
+            
+            // Show refinement section
+            modeRefinementSection.classList.remove('hidden');
+            
+            // Add initial AI message
+            addChatMessage('AI', 'I\'ve generated ' + currentModes.length + ' contextual modes for your room. You can ask me to refine them if needed!');
+            
+            // Scroll to refinement section
+            modeRefinementSection.scrollIntoView({ behavior: 'smooth' });
+          } else {
+            alert('Failed to generate modes: ' + (result.error || 'Unknown error'));
+          }
+        } catch (error) {
+          console.error('Error generating modes:', error);
+          alert('Error generating modes. Please try again.');
+        } finally {
+          generateModesBtn.disabled = false;
+          generateModesBtn.textContent = 'Generate Draft Modes';
+        }
+      });
+      
+      // Send refinement message
+      sendRefinementBtn.addEventListener('click', sendRefinementMessage);
+      refinementInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          sendRefinementMessage();
+        }
+      });
+      
+      async function sendRefinementMessage() {
+        const message = refinementInput.value.trim();
+        if (!message) return;
+        
+        // Add user message to chat
+        addChatMessage('You', message);
+        refinementInput.value = '';
+        
+        // Disable input while processing
+        sendRefinementBtn.disabled = true;
+        refinementInput.disabled = true;
+        
+        try {
+          const response = await fetch('/room/refine-modes', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              conversation_id: conversationId,
+              message: message,
+              current_modes: currentModes
+            })
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            currentModes = result.modes;
+            
+            // Update displayed modes
+            displayModes(currentModes);
+            
+            // Add AI response
+            addChatMessage('AI', result.ai_response);
+          } else {
+            addChatMessage('AI', 'Sorry, I encountered an error while refining the modes. Please try again.');
+          }
+        } catch (error) {
+          console.error('Error refining modes:', error);
+          addChatMessage('AI', 'Sorry, I encountered an error. Please try again.');
+        } finally {
+          sendRefinementBtn.disabled = false;
+          refinementInput.disabled = false;
+          refinementInput.focus();
+        }
+      }
+      
+      function displayModes(modes) {
+        draftModesList.innerHTML = '';
+        
+        modes.forEach((mode, index) => {
+          const modeElement = document.createElement('div');
+          modeElement.className = 'bg-background border border-border rounded-lg p-4';
+          modeElement.innerHTML = `
+            <div class="flex items-start justify-between">
+              <div class="flex-1">
+                <h4 class="font-medium text-foreground mb-2">${index + 1}. ${mode.label}</h4>
+                <div class="mode-prompt-dropdown">
+                  <button class="text-sm text-muted-foreground hover:text-foreground transition-colors mb-2" 
+                          onclick="togglePrompt(this)">
+                    <i class="lucide-chevron-down w-4 h-4 inline mr-1"></i>
+                    Show AI Instructions
+                  </button>
+                  <div class="prompt-content hidden text-sm text-muted-foreground bg-muted/20 p-3 rounded">
+                    ${mode.prompt}
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+          draftModesList.appendChild(modeElement);
+        });
+      }
+      
+      function addChatMessage(sender, message) {
+        const messageElement = document.createElement('div');
+        messageElement.className = 'flex gap-3';
+        messageElement.innerHTML = `
+          <div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
+            ${sender === 'AI' ? 'AI' : 'U'}
+          </div>
+          <div class="flex-1">
+            <div class="text-sm font-medium text-foreground">${sender}</div>
+            <div class="text-sm text-muted-foreground">${message}</div>
+          </div>
+        `;
+        chatMessages.appendChild(messageElement);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+      
+      // Toggle prompt visibility
+      window.togglePrompt = function(button) {
+        const promptContent = button.nextElementSibling;
+        const icon = button.querySelector('i');
+        
+        if (promptContent.classList.contains('hidden')) {
+          promptContent.classList.remove('hidden');
+          icon.classList.remove('lucide-chevron-down');
+          icon.classList.add('lucide-chevron-up');
+        } else {
+          promptContent.classList.add('hidden');
+          icon.classList.remove('lucide-chevron-up');
+          icon.classList.add('lucide-chevron-down');
+        }
+      };
+    });
+  </script>
 {% endblock %} 

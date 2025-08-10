@@ -59,6 +59,9 @@ def create_room():
         description = request.form.get("description", "").strip()
         goals = request.form.get("goals", "").strip()
         
+        # Get refined modes from form data (if any)
+        refined_modes_json = request.form.get("refined_modes", "")
+        
         if not name:
             flash("Room name is required.")
             return redirect(url_for("room.create_room"))
@@ -72,8 +75,31 @@ def create_room():
         db.session.add(room_obj)
         db.session.commit()
         
-        # Generate contextual modes if room has goals
-        if goals:
+        # Handle refined modes if provided
+        if refined_modes_json:
+            try:
+                import json
+                refined_modes = json.loads(refined_modes_json)
+                
+                # Save refined modes as custom prompts
+                for mode in refined_modes:
+                    if 'key' in mode and 'label' in mode and 'prompt' in mode:
+                        custom_prompt = CustomPrompt(
+                            mode_key=mode['key'],
+                            label=mode['label'],
+                            prompt=mode['prompt'],
+                            room_id=room_obj.id,
+                            created_by=user.id
+                        )
+                        db.session.add(custom_prompt)
+                
+                db.session.commit()
+                flash(f"Room '{name}' created successfully with {len(refined_modes)} refined modes!")
+            except Exception as e:
+                current_app.logger.error(f"Error saving refined modes: {e}")
+                flash(f"Room '{name}' created successfully! (Mode saving failed: {str(e)})")
+        # Fallback to original mode generation if no refined modes
+        elif goals:
             try:
                 contextual_modes = generate_room_modes(room_obj)
                 
