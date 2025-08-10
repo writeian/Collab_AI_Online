@@ -27,7 +27,12 @@
             <select id="mode" name="mode" 
                     class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
                            focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
-              {% for mode_key, mode_info in modes.items()|sort(attribute='1.label') %}
+              {% for mode_key, mode_info in modes.items() %}
+                {% set mode_number = mode_info.label.split('.')[0] if '.' in mode_info.label else '999' %}
+                {% set mode_number_int = mode_number|int if mode_number.isdigit() else 999 %}
+                {% set _ = mode_info.update({'sort_order': mode_number_int}) %}
+              {% endfor %}
+              {% for mode_key, mode_info in modes.items()|sort(attribute='1.sort_order') %}
                 <option value="{{ mode_key }}">{{ mode_info.label }}</option>
               {% endfor %}
             </select>

@@ -379,12 +379,17 @@ def generate_draft_modes():
         # Generate contextual modes
         contextual_modes = generate_room_modes(temp_room)
         
-        # Convert to JSON-serializable format
+        # Convert to JSON-serializable format with proper numbering
         modes_list = []
-        for mode_key, mode_info in contextual_modes.items():
+        for i, (mode_key, mode_info) in enumerate(contextual_modes.items(), 1):
+            # Add numbering to label if it doesn't already have it
+            label = mode_info.label
+            if not label[0].isdigit() or not '.' in label.split()[0]:
+                label = f"{i}. {label}"
+            
             modes_list.append({
                 'key': mode_key,
-                'label': mode_info.label,
+                'label': label,
                 'prompt': mode_info.prompt
             })
         
@@ -462,13 +467,18 @@ Please refine these modes based on the user's feedback. Return the updated modes
             
         refined_modes_data = json.loads(response_text)
         
-        # Convert to list format
+        # Convert to list format with proper numbering
         refined_modes = []
-        for mode_key, mode_info in refined_modes_data.items():
+        for i, (mode_key, mode_info) in enumerate(refined_modes_data.items(), 1):
             if isinstance(mode_info, dict) and 'label' in mode_info and 'prompt' in mode_info:
+                # Add numbering to label if it doesn't already have it
+                label = mode_info['label']
+                if not label[0].isdigit() or not '.' in label.split()[0]:
+                    label = f"{i}. {label}"
+                
                 refined_modes.append({
                     'key': mode_key,
-                    'label': mode_info['label'],
+                    'label': label,
                     'prompt': mode_info['prompt']
                 })
         

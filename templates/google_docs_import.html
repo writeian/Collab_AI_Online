@@ -27,7 +27,12 @@
                 <div class="form-group">
                     <label for="mode">Starting Mode:</label>
                     <select class="form-control" id="mode" name="mode">
-                        {% for mode_key, mode_data in modes.items()|sort(attribute='1.label') %}
+                        {% for mode_key, mode_data in modes.items() %}
+                            {% set mode_number = mode_data.label.split('.')[0] if '.' in mode_data.label else '999' %}
+                            {% set mode_number_int = mode_number|int if mode_number.isdigit() else 999 %}
+                            {% set _ = mode_data.update({'sort_order': mode_number_int}) %}
+                        {% endfor %}
+                        {% for mode_key, mode_data in modes.items()|sort(attribute='1.sort_order') %}
                         <option value="{{ mode_key }}" {% if mode_key == 'explore' %}selected{% endif %}>
                             {{ mode_data.label }}
                         </option>
