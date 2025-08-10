@@ -76,6 +76,9 @@ class Room(db.Model):
     chats = db.relationship('Chat', backref='room', lazy=True, cascade='all, delete-orphan')
     members = db.relationship('RoomMember', backref='room', lazy=True, cascade='all, delete-orphan')
     custom_prompts = db.relationship('CustomPrompt', backref='room', lazy=True, cascade='all, delete-orphan')
+    achievements = db.relationship('Achievement', backref='room', lazy=True, cascade='all, delete-orphan')
+    user_mode_usage = db.relationship('UserModeUsage', backref='room', lazy=True, cascade='all, delete-orphan')
+    prompt_records = db.relationship('PromptRecord', backref='room', lazy=True, cascade='all, delete-orphan')
     
     def __repr__(self):
         return f"<Room {self.id} {self.name!r}>"
@@ -187,7 +190,6 @@ class PromptRecord(db.Model):
     
     # Relationships
     user = db.relationship('User', backref='prompt_records')
-    room = db.relationship('Room', backref='prompt_records')
     
     def __repr__(self):
         return f"<PromptRecord {self.id} mode={self.mode}>"
@@ -221,7 +223,6 @@ class UserModeUsage(db.Model):
     
     # Relationships
     user = db.relationship('User', backref='mode_usage')
-    room = db.relationship('Room', backref='user_mode_usage')
     
     __table_args__ = (db.UniqueConstraint('user_id', 'room_id', 'mode', name='unique_user_room_mode'),)
     
@@ -239,7 +240,6 @@ class Achievement(db.Model):
     
     # Relationships
     user = db.relationship('User', backref='achievements')
-    room = db.relationship('Room', backref='achievements')
     
     __table_args__ = (db.UniqueConstraint('user_id', 'room_id', 'achievement_type', name='unique_user_room_achievement'),)
     
