@@ -9,138 +9,165 @@
       <p class="text-muted-foreground">Set up a new collaboration space for your team</p>
     </div>
 
-    <!-- Create Room Form Card -->
-    <div class="max-w-4xl mx-auto">
+    <!-- Step 1: Goals Input -->
+    <div id="step-1" class="max-w-4xl mx-auto">
       <div class="bg-card border border-border rounded-lg p-8">
-        <form id="room-details-form" method="POST" class="space-y-6">
-          <!-- Hidden input for refined modes -->
-          <input type="hidden" id="refined-modes-input" name="refined_modes" value="">
-          <div class="form-group">
-            <label for="name" class="block text-sm font-medium text-foreground mb-2">Room Name *</label>
-            <input type="text" id="name" name="name" required 
-                   class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
-                          focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-                          placeholder:text-muted-foreground">
+        <div class="mb-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">1</div>
+            <h2 class="text-xl font-semibold text-foreground">Define Your Learning Goals</h2>
           </div>
-          
+          <p class="text-muted-foreground">Describe what you want to achieve in this room. This will help AI generate appropriate modes and suggest a room title.</p>
+        </div>
+
+        <form id="goals-form" class="space-y-6">
           <div class="form-group">
-            <label for="description" class="block text-sm font-medium text-foreground mb-2">Description</label>
-            <textarea id="description" name="description" rows="3" 
-                      placeholder="What is this room for?"
+            <label for="goals" class="block text-sm font-medium text-foreground mb-2">Learning Goals *</label>
+            <textarea id="goals" name="goals" required rows="4"
+                      placeholder="e.g., To teach the steps of crafting and delivering a professional presentation"
                       class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
                              focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-                             placeholder:text-muted-foreground resize-vertical"></textarea>
+                             placeholder:text-muted-foreground resize-none"></textarea>
+            <p class="mt-2 text-sm text-muted-foreground">Be specific about what you want to accomplish. The more detailed your goals, the better the AI can help.</p>
           </div>
-          
-          <div class="form-group">
-            <label for="goals" class="block text-sm font-medium text-foreground mb-2">Learning Goals</label>
-            <textarea id="goals" name="goals" rows="3" 
-                      placeholder="What should students learn in this room?"
-                      class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
-                             focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-                             placeholder:text-muted-foreground resize-vertical"></textarea>
-          </div>
-          
-          <!-- Draft Mode Generation Section -->
-          <div class="border-t border-border pt-6">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-lg font-semibold text-foreground">AI Writing Modes</h3>
-              <button type="button" id="generate-modes-btn" 
-                      class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 
-                             transition-colors font-medium">
-                Generate Draft Modes
-              </button>
-            </div>
-            <p class="text-sm text-muted-foreground mb-4">
-              Generate contextual AI writing modes based on your learning goals, then refine them through conversation.
-            </p>
-          </div>
-          
-          <!-- Mode Refinement Section (initially hidden) -->
-          <div id="mode-refinement-section" class="hidden border-t border-border pt-6">
-            <h3 class="text-lg font-semibold text-foreground mb-4">Draft Modes for Your Room</h3>
-            
-            <!-- Draft Modes List -->
-            <div id="draft-modes-list" class="space-y-3 mb-6">
-              <!-- Modes will be populated here dynamically -->
-            </div>
-            
-            <!-- Mode Refinement Chat Interface -->
-            <div id="mode-chat-interface" class="border border-border rounded-lg p-4 bg-muted/20">
-              <h4 class="text-sm font-medium text-foreground mb-3">Refine Your Modes</h4>
-              <div id="chat-messages" class="space-y-3 mb-4 max-h-48 overflow-y-auto">
-                <!-- Chat messages will appear here -->
-              </div>
-              <div class="flex gap-2">
-                <input type="text" id="refinement-input" 
-                       placeholder="Ask me to refine these modes... (e.g., 'Add a mode for practicing delivery')"
-                       class="flex-1 px-3 py-2 border border-border rounded-md bg-background text-foreground 
-                              focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-                              placeholder:text-muted-foreground text-sm">
-                <button type="button" id="send-refinement-btn" 
-                        class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 
-                               transition-colors font-medium text-sm">
-                  Send
-                </button>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Action Buttons -->
-          <div class="flex gap-3 pt-6 border-t border-border">
-            <button type="submit" id="create-room-btn"
-                    class="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 
-                           transition-colors font-medium">
-              Create Room
+
+          <div class="flex gap-3 pt-4">
+            <button type="submit" id="generate-proposal-btn"
+                    class="inline-flex items-center px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors">
+              <i data-lucide="sparkles" class="w-5 h-5 mr-2"></i>
+              Generate Room Proposal
             </button>
             <a href="{{ url_for('room.index') }}" 
-               class="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90 
-                      transition-colors font-medium text-center">
+               class="px-6 py-3 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-secondary/80 transition-colors">
               Cancel
             </a>
           </div>
         </form>
       </div>
     </div>
+
+    <!-- Step 2: AI Proposal (Hidden initially) -->
+    <div id="step-2" class="max-w-4xl mx-auto hidden">
+      <div class="bg-card border border-border rounded-lg p-8">
+        <div class="mb-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">2</div>
+            <h2 class="text-xl font-semibold text-foreground">AI Room Proposal</h2>
+          </div>
+          <p class="text-muted-foreground">Based on your goals, here's what I suggest for your room:</p>
+        </div>
+
+        <!-- Room Title Proposal -->
+        <div class="mb-8">
+          <label for="room-name" class="block text-sm font-medium text-foreground mb-2">Room Title</label>
+          <input type="text" id="room-name" name="name" required
+                 class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
+                        focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+        </div>
+
+        <!-- Room Description -->
+        <div class="mb-8">
+          <label for="room-description" class="block text-sm font-medium text-foreground mb-2">Room Description (Optional)</label>
+          <textarea id="room-description" name="description" rows="3"
+                    placeholder="Brief description of what this room is for..."
+                    class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
+                           focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                           placeholder:text-muted-foreground resize-none"></textarea>
+        </div>
+
+        <!-- Proposed Modes -->
+        <div class="mb-8">
+          <h3 class="text-lg font-semibold text-foreground mb-4">Proposed Learning Modes</h3>
+          <div id="proposed-modes-list" class="space-y-4">
+            <!-- Modes will be populated here -->
+          </div>
+        </div>
+
+        <!-- Refinement Chat -->
+        <div class="mb-8">
+          <h3 class="text-lg font-semibold text-foreground mb-4">Refine Your Room</h3>
+          <p class="text-muted-foreground mb-4">Not quite right? Chat with me to improve the title, description, or modes:</p>
+          
+          <div class="bg-muted/20 rounded-lg p-4 mb-4">
+            <div id="refinement-chat" class="space-y-4 max-h-64 overflow-y-auto">
+              <!-- Chat messages will appear here -->
+            </div>
+          </div>
+          
+          <div class="flex gap-2">
+            <input type="text" id="refinement-input" placeholder="e.g., 'Make the title more specific' or 'Add a mode for practicing delivery'"
+                   class="flex-1 px-3 py-2 border border-border rounded-md bg-background text-foreground 
+                          focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                          placeholder:text-muted-foreground">
+            <button id="send-refinement-btn" class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
+              Send
+            </button>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex gap-3 pt-4">
+          <button type="button" id="create-room-btn"
+                  class="inline-flex items-center px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors">
+            <i data-lucide="check" class="w-5 h-5 mr-2"></i>
+            Create Room
+          </button>
+          <button type="button" id="back-to-goals-btn"
+                  class="px-6 py-3 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-secondary/80 transition-colors">
+            Back to Goals
+          </button>
+          <a href="{{ url_for('room.index') }}" 
+             class="px-6 py-3 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-secondary/80 transition-colors">
+            Cancel
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden form for final submission -->
+    <form id="final-room-form" method="POST" class="hidden">
+      <input type="hidden" id="final-name" name="name" value="">
+      <input type="hidden" id="final-description" name="description" value="">
+      <input type="hidden" id="final-goals" name="goals" value="">
+      <input type="hidden" id="final-modes" name="refined_modes" value="">
+    </form>
   </div>
 
-  <!-- JavaScript for Mode Refinement -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      const generateModesBtn = document.getElementById('generate-modes-btn');
-      const modeRefinementSection = document.getElementById('mode-refinement-section');
-      const draftModesList = document.getElementById('draft-modes-list');
-      const chatMessages = document.getElementById('chat-messages');
+      const step1 = document.getElementById('step-1');
+      const step2 = document.getElementById('step-2');
+      const goalsForm = document.getElementById('goals-form');
+      const generateBtn = document.getElementById('generate-proposal-btn');
+      const backToGoalsBtn = document.getElementById('back-to-goals-btn');
+      const createRoomBtn = document.getElementById('create-room-btn');
+      const finalForm = document.getElementById('final-room-form');
+      
+      const roomNameInput = document.getElementById('room-name');
+      const roomDescriptionInput = document.getElementById('room-description');
+      const goalsInput = document.getElementById('goals');
+      const proposedModesList = document.getElementById('proposed-modes-list');
+      const refinementChat = document.getElementById('refinement-chat');
       const refinementInput = document.getElementById('refinement-input');
       const sendRefinementBtn = document.getElementById('send-refinement-btn');
-      const createRoomBtn = document.getElementById('create-room-btn');
-      const refinedModesInput = document.getElementById('refined-modes-input');
       
       let currentModes = [];
       let conversationId = null;
-      
-      // Handle form submission
-      document.getElementById('room-details-form').addEventListener('submit', function(e) {
-        // Include refined modes in form submission if available
-        if (currentModes.length > 0) {
-          refinedModesInput.value = JSON.stringify(currentModes);
-        }
-      });
-      
-      // Generate draft modes
-      generateModesBtn.addEventListener('click', async function() {
-        const goals = document.getElementById('goals').value.trim();
+      let currentGoals = '';
+
+      // Step 1: Generate proposal from goals
+      goalsForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
         
-        if (!goals) {
-          alert('Please enter learning goals before generating modes.');
-          return;
-        }
+        const goals = goalsInput.value.trim();
+        if (!goals) return;
         
-        generateModesBtn.disabled = true;
-        generateModesBtn.textContent = 'Generating...';
+        currentGoals = goals;
+        generateBtn.disabled = true;
+        generateBtn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 mr-2 animate-spin"></i>Generating...';
         
         try {
-          const response = await fetch('/room/generate-draft-modes', {
+          const response = await fetch('/room/generate-room-proposal', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -151,57 +178,64 @@
           const result = await response.json();
           
           if (result.success) {
+            // Populate the proposal
+            roomNameInput.value = result.room_title;
+            roomDescriptionInput.value = result.room_description || '';
             currentModes = result.modes;
             conversationId = result.conversation_id;
             
-                         // Display modes
-             displayModes(currentModes);
-             
-             // Initialize Lucide icons for the new content
-             lucide.createIcons();
-             
-             // Show refinement section
-             modeRefinementSection.classList.remove('hidden');
+            // Display modes
+            displayModes(currentModes);
+            
+            // Initialize Lucide icons
+            lucide.createIcons();
+            
+            // Show step 2
+            step1.classList.add('hidden');
+            step2.classList.remove('hidden');
             
             // Add initial AI message
-            addChatMessage('AI', 'I\'ve generated ' + currentModes.length + ' contextual modes for your room. You can ask me to refine them if needed!');
+            addChatMessage('AI', result.ai_message);
             
-            // Scroll to refinement section
-            modeRefinementSection.scrollIntoView({ behavior: 'smooth' });
           } else {
-            alert('Failed to generate modes: ' + (result.error || 'Unknown error'));
+            alert('Error generating proposal: ' + result.error);
           }
         } catch (error) {
-          console.error('Error generating modes:', error);
-          alert('Error generating modes. Please try again.');
+          console.error('Error:', error);
+          alert('Error generating proposal. Please try again.');
         } finally {
-          generateModesBtn.disabled = false;
-          generateModesBtn.textContent = 'Generate Draft Modes';
+          generateBtn.disabled = false;
+          generateBtn.innerHTML = '<i data-lucide="sparkles" class="w-5 h-5 mr-2"></i>Generate Room Proposal';
         }
       });
-      
-      // Send refinement message
+
+      // Back to goals
+      backToGoalsBtn.addEventListener('click', function() {
+        step2.classList.add('hidden');
+        step1.classList.remove('hidden');
+      });
+
+      // Refinement chat
       sendRefinementBtn.addEventListener('click', sendRefinementMessage);
       refinementInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
           sendRefinementMessage();
         }
       });
-      
+
       async function sendRefinementMessage() {
         const message = refinementInput.value.trim();
         if (!message) return;
         
-        // Add user message to chat
-        addChatMessage('You', message);
-        refinementInput.value = '';
-        
-        // Disable input while processing
         sendRefinementBtn.disabled = true;
         refinementInput.disabled = true;
         
+        // Add user message
+        addChatMessage('User', message);
+        refinementInput.value = '';
+        
         try {
-          const response = await fetch('/room/refine-modes', {
+          const response = await fetch('/room/refine-room-proposal', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -209,6 +243,8 @@
             body: JSON.stringify({
               conversation_id: conversationId,
               message: message,
+              current_room_title: roomNameInput.value,
+              current_room_description: roomDescriptionInput.value,
               current_modes: currentModes
             })
           });
@@ -216,21 +252,26 @@
           const result = await response.json();
           
           if (result.success) {
-            currentModes = result.modes;
+            // Update room details if provided
+            if (result.room_title) {
+              roomNameInput.value = result.room_title;
+            }
+            if (result.room_description !== undefined) {
+              roomDescriptionInput.value = result.room_description;
+            }
+            if (result.modes) {
+              currentModes = result.modes;
+              displayModes(currentModes);
+              lucide.createIcons();
+            }
             
-                         // Update displayed modes
-             displayModes(currentModes);
-             
-             // Initialize Lucide icons for the updated content
-             lucide.createIcons();
-             
-             // Add AI response
-             addChatMessage('AI', result.ai_response);
+            // Add AI response
+            addChatMessage('AI', result.ai_response);
           } else {
-            addChatMessage('AI', 'Sorry, I encountered an error while refining the modes. Please try again.');
+            addChatMessage('AI', 'Sorry, I encountered an error. Please try again.');
           }
         } catch (error) {
-          console.error('Error refining modes:', error);
+          console.error('Error:', error);
           addChatMessage('AI', 'Sorry, I encountered an error. Please try again.');
         } finally {
           sendRefinementBtn.disabled = false;
@@ -238,9 +279,21 @@
           refinementInput.focus();
         }
       }
-      
+
+      // Create room
+      createRoomBtn.addEventListener('click', function() {
+        // Populate final form
+        document.getElementById('final-name').value = roomNameInput.value;
+        document.getElementById('final-description').value = roomDescriptionInput.value;
+        document.getElementById('final-goals').value = currentGoals;
+        document.getElementById('final-modes').value = JSON.stringify(currentModes);
+        
+        // Submit form
+        finalForm.submit();
+      });
+
       function displayModes(modes) {
-        draftModesList.innerHTML = '';
+        proposedModesList.innerHTML = '';
         
         modes.forEach((mode, index) => {
           const modeElement = document.createElement('div');
@@ -248,13 +301,13 @@
           modeElement.innerHTML = `
             <div class="flex items-start justify-between">
               <div class="flex-1">
-                <h4 class="font-medium text-foreground mb-2">${index + 1}. ${mode.label}</h4>
-                                 <div class="mode-prompt-dropdown">
-                   <button type="button" class="text-sm text-muted-foreground hover:text-foreground transition-colors mb-2" 
-                           onclick="togglePrompt(this)">
-                     <i data-lucide="chevron-down" class="w-4 h-4 inline mr-1"></i>
-                     Show AI Instructions
-                   </button>
+                <h4 class="font-medium text-foreground mb-2">${mode.label}</h4>
+                <div class="mode-prompt-dropdown">
+                  <button type="button" class="text-sm text-muted-foreground hover:text-foreground transition-colors mb-2" 
+                          onclick="togglePrompt(this)">
+                    <i data-lucide="chevron-down" class="w-4 h-4 inline mr-1"></i>
+                    Show AI Instructions
+                  </button>
                   <div class="prompt-content hidden text-sm text-muted-foreground bg-muted/20 p-3 rounded">
                     ${mode.prompt}
                   </div>
@@ -262,10 +315,10 @@
               </div>
             </div>
           `;
-          draftModesList.appendChild(modeElement);
+          proposedModesList.appendChild(modeElement);
         });
       }
-      
+
       function addChatMessage(sender, message) {
         const messageElement = document.createElement('div');
         messageElement.className = 'flex gap-3';
@@ -278,30 +331,28 @@
             <div class="text-sm text-muted-foreground">${message}</div>
           </div>
         `;
-        chatMessages.appendChild(messageElement);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        refinementChat.appendChild(messageElement);
+        refinementChat.scrollTop = refinementChat.scrollHeight;
       }
-      
-             // Toggle prompt visibility
-       window.togglePrompt = function(button) {
-         // Prevent form submission
-         event.preventDefault();
-         event.stopPropagation();
-         
-         const promptContent = button.nextElementSibling;
-         const icon = button.querySelector('i');
-         
-         if (promptContent.classList.contains('hidden')) {
-           promptContent.classList.remove('hidden');
-           icon.setAttribute('data-lucide', 'chevron-up');
-         } else {
-           promptContent.classList.add('hidden');
-           icon.setAttribute('data-lucide', 'chevron-down');
-         }
-         
-         // Reinitialize Lucide icons
-         lucide.createIcons();
-       };
+
+      // Toggle prompt visibility
+      window.togglePrompt = function(button) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        const promptContent = button.nextElementSibling;
+        const icon = button.querySelector('i');
+        
+        if (promptContent.classList.contains('hidden')) {
+          promptContent.classList.remove('hidden');
+          icon.setAttribute('data-lucide', 'chevron-up');
+        } else {
+          promptContent.classList.add('hidden');
+          icon.setAttribute('data-lucide', 'chevron-down');
+        }
+        
+        lucide.createIcons();
+      };
     });
   </script>
 {% endblock %} 

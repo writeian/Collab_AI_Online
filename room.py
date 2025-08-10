@@ -357,16 +357,16 @@ def create_chat(room_id):
     modes = get_modes_for_room(room_obj)
     return render_template("room/create_chat.html", room=room_obj, modes=modes) 
 
-@room.route("/generate-draft-modes", methods=["POST"])
+@room.route("/generate-room-proposal", methods=["POST"])
 @require_login
-def generate_draft_modes():
-    """Generate draft modes for room creation without creating the room yet."""
+def generate_room_proposal():
+    """Generate a complete room proposal including title, description, and modes."""
     try:
         data = request.get_json()
         goals = data.get('goals', '').strip()
         
         if not goals:
-            return jsonify({'error': 'Goals are required for mode generation'}), 400
+            return jsonify({'error': 'Goals are required for proposal generation'}), 400
         
         # Create a temporary room object for mode generation
         temp_room = Room(
@@ -377,9 +377,67 @@ def generate_draft_modes():
         )
         
         # Generate contextual modes
+        from openai_utils import generate_room_modes
         contextual_modes = generate_room_modes(temp_room)
         
-        # Convert to JSON-serializable format with proper numbering
+        # Generate room title and description using AI
+        client_type = get_client_type()
+        if client_type:
+            system_prompt = """You are an AI assistant helping to create collaborative learning rooms. Based on the learning goals provided, suggest:
+1. A clear, descriptive room title (3-6 words)
+2. A brief room description (1-2 sentences)
+
+The title should be engaging and clearly indicate the room's purpose. The description should provide context about what students will learn."""
+            
+            user_prompt = f"""Learning Goals: {goals}
+
+Please suggest a room title and description for a collaborative learning space focused on these goals."""
+
+            try:
+                if client_type == "anthropic":
+                    response = call_anthropic_api(
+                        [{"role": "user", "content": user_prompt}],
+                        system_prompt,
+                        max_tokens=200
+                    )
+                else:
+                    response = call_openai_api(
+                        [{"role": "system", "content": system_prompt},
+                         {"role": "user", "content": user_prompt}],
+                        max_tokens=200
+                    )
+                
+                # Parse the response to extract title and description
+                if isinstance(response, tuple):
+                    response_text = response[0]
+                else:
+                    response_text = response
+                
+                # Simple parsing - look for title and description patterns
+                lines = response_text.strip().split('\n')
+                room_title = "Learning Room"  # Default
+                room_description = ""
+                
+                for line in lines:
+                    line = line.strip()
+                    if line.lower().startswith('title:') or line.lower().startswith('room title:'):
+                        room_title = line.split(':', 1)[1].strip()
+                    elif line.lower().startswith('description:') or line.lower().startswith('room description:'):
+                        room_description = line.split(':', 1)[1].strip()
+                    elif not room_title or room_title == "Learning Room":
+                        # If no explicit title found, use the first meaningful line
+                        if line and not line.startswith('#') and len(line) > 3:
+                            room_title = line.strip('"').strip("'")
+                
+            except Exception as e:
+                current_app.logger.error(f"Error generating room title/description: {e}")
+                room_title = "Learning Room"
+                room_description = ""
+        else:
+            room_title = "Learning Room"
+            room_description = ""
+        
+        # Convert modes to JSON-serializable format with proper numbering
         modes_list = []
         for i, (mode_key, mode_info) in enumerate(contextual_modes.items(), 1):
             # Add numbering to label if it doesn't already have it
@@ -393,55 +451,67 @@ def generate_draft_modes():
                 'prompt': mode_info.prompt
             })
         
+        # Generate AI welcome message
+        ai_message = f"I've created a room proposal based on your goals! The room '{room_title}' includes {len(modes_list)} learning modes designed to help achieve your objectives. You can refine any aspect of this proposal by chatting with me below."
+        
         return jsonify({
             'success': True,
+            'room_title': room_title,
+            'room_description': room_description,
             'modes': modes_list,
-            'conversation_id': f"refinement_{int(time.time())}"
+            'conversation_id': f"proposal_{int(time.time())}",
+            'ai_message': ai_message
         })
         
     except Exception as e:
-        current_app.logger.error(f"Error generating draft modes: {e}")
-        return jsonify({'error': 'Failed to generate modes'}), 500
+        current_app.logger.error(f"Error generating room proposal: {e}")
+        return jsonify({'error': 'Failed to generate proposal'}), 500
 
-@room.route("/refine-modes", methods=["POST"])
+@room.route("/refine-room-proposal", methods=["POST"])
 @require_login
-def refine_modes():
-    """Refine modes through AI conversation."""
+def refine_room_proposal():
+    """Refine room proposal through AI conversation."""
     try:
         data = request.get_json()
         conversation_id = data.get('conversation_id')
         user_message = data.get('message', '').strip()
+        current_room_title = data.get('current_room_title', '')
+        current_room_description = data.get('current_room_description', '')
         current_modes = data.get('current_modes', [])
         
         if not user_message:
             return jsonify({'error': 'Message is required'}), 400
         
         # Create refinement prompt
-        system_prompt = """You are an AI assistant helping to refine writing modes for a collaborative learning room. 
+        system_prompt = """You are an AI assistant helping to refine room proposals for collaborative learning spaces. 
 
-The user has provided learning goals and wants to improve the generated modes. Your job is to:
-1. Understand their feedback
-2. Suggest specific improvements to the modes
-3. Provide updated mode data in the same format
+The user wants to improve their room proposal. Your job is to:
+1. Understand their feedback about the room title, description, or modes
+2. Suggest specific improvements
+3. Provide updated data in the requested format
 
-Each mode should have:
-- A clear, descriptive label (2-4 words)
-- A detailed prompt explaining the AI's role and approach
+You can update:
+- Room title (provide as 'room_title' field)
+- Room description (provide as 'room_description' field) 
+- Modes (provide as 'modes' array with objects containing 'key', 'label', 'prompt')
 
-Return your response as a JSON object with mode keys and objects containing 'label' and 'prompt' fields."""
+Only update what the user specifically asks to change. Return your response as JSON with the fields you're updating."""
 
-        # Build context from current modes
+        # Build context from current proposal
         current_modes_text = "\n".join([
             f"- {mode['label']}: {mode['prompt'][:100]}..." 
             for mode in current_modes
         ])
         
-        user_prompt = f"""Current Modes:
+        user_prompt = f"""Current Room Proposal:
+Title: {current_room_title}
+Description: {current_room_description}
+Modes:
 {current_modes_text}
 
 User Feedback: {user_message}
 
-Please refine these modes based on the user's feedback. Return the updated modes as JSON."""
+Please refine this proposal based on the user's feedback. Return only the fields you're updating as JSON."""
 
         # Call AI for refinement
         client_type = get_client_type()
@@ -465,32 +535,40 @@ Please refine these modes based on the user's feedback. Return the updated modes
         else:
             response_text = response
             
-        refined_modes_data = json.loads(response_text)
+        refined_data = json.loads(response_text)
         
-        # Convert to list format with proper numbering
-        refined_modes = []
-        for i, (mode_key, mode_info) in enumerate(refined_modes_data.items(), 1):
-            if isinstance(mode_info, dict) and 'label' in mode_info and 'prompt' in mode_info:
-                # Add numbering to label if it doesn't already have it
-                label = mode_info['label']
-                if not label[0].isdigit() or not '.' in label.split()[0]:
-                    label = f"{i}. {label}"
-                
-                refined_modes.append({
-                    'key': mode_key,
-                    'label': label,
-                    'prompt': mode_info['prompt']
-                })
+        # Process updates
+        updated_room_title = refined_data.get('room_title', current_room_title)
+        updated_room_description = refined_data.get('room_description', current_room_description)
+        updated_modes = current_modes
+        
+        if 'modes' in refined_data:
+            # Convert refined modes to proper format with numbering
+            updated_modes = []
+            for i, mode_info in enumerate(refined_data['modes'], 1):
+                if isinstance(mode_info, dict) and 'label' in mode_info and 'prompt' in mode_info:
+                    # Add numbering to label if it doesn't already have it
+                    label = mode_info['label']
+                    if not label[0].isdigit() or not '.' in label.split()[0]:
+                        label = f"{i}. {label}"
+                    
+                    updated_modes.append({
+                        'key': mode_info.get('key', f'mode_{i}'),
+                        'label': label,
+                        'prompt': mode_info['prompt']
+                    })
         
         # Generate AI response for the conversation
-        ai_response = f"I've refined the modes based on your feedback. The updated modes now better align with your learning goals."
+        ai_response = f"I've updated the proposal based on your feedback. The changes have been applied to the form above."
         
         return jsonify({
             'success': True,
-            'modes': refined_modes,
+            'room_title': updated_room_title,
+            'room_description': updated_room_description,
+            'modes': updated_modes,
             'ai_response': ai_response
         })
         
     except Exception as e:
-        current_app.logger.error(f"Error refining modes: {e}")
-        return jsonify({'error': 'Failed to refine modes'}), 500 
+        current_app.logger.error(f"Error refining room proposal: {e}")
+        return jsonify({'error': 'Failed to refine proposal'}), 500 
