@@ -154,11 +154,14 @@
             currentModes = result.modes;
             conversationId = result.conversation_id;
             
-            // Display modes
-            displayModes(currentModes);
-            
-            // Show refinement section
-            modeRefinementSection.classList.remove('hidden');
+                         // Display modes
+             displayModes(currentModes);
+             
+             // Initialize Lucide icons for the new content
+             lucide.createIcons();
+             
+             // Show refinement section
+             modeRefinementSection.classList.remove('hidden');
             
             // Add initial AI message
             addChatMessage('AI', 'I\'ve generated ' + currentModes.length + ' contextual modes for your room. You can ask me to refine them if needed!');
@@ -215,11 +218,14 @@
           if (result.success) {
             currentModes = result.modes;
             
-            // Update displayed modes
-            displayModes(currentModes);
-            
-            // Add AI response
-            addChatMessage('AI', result.ai_response);
+                         // Update displayed modes
+             displayModes(currentModes);
+             
+             // Initialize Lucide icons for the updated content
+             lucide.createIcons();
+             
+             // Add AI response
+             addChatMessage('AI', result.ai_response);
           } else {
             addChatMessage('AI', 'Sorry, I encountered an error while refining the modes. Please try again.');
           }
@@ -243,12 +249,12 @@
             <div class="flex items-start justify-between">
               <div class="flex-1">
                 <h4 class="font-medium text-foreground mb-2">${index + 1}. ${mode.label}</h4>
-                <div class="mode-prompt-dropdown">
-                  <button class="text-sm text-muted-foreground hover:text-foreground transition-colors mb-2" 
-                          onclick="togglePrompt(this)">
-                    <i class="lucide-chevron-down w-4 h-4 inline mr-1"></i>
-                    Show AI Instructions
-                  </button>
+                                 <div class="mode-prompt-dropdown">
+                   <button type="button" class="text-sm text-muted-foreground hover:text-foreground transition-colors mb-2" 
+                           onclick="togglePrompt(this)">
+                     <i data-lucide="chevron-down" class="w-4 h-4 inline mr-1"></i>
+                     Show AI Instructions
+                   </button>
                   <div class="prompt-content hidden text-sm text-muted-foreground bg-muted/20 p-3 rounded">
                     ${mode.prompt}
                   </div>
@@ -276,21 +282,26 @@
         chatMessages.scrollTop = chatMessages.scrollHeight;
       }
       
-      // Toggle prompt visibility
-      window.togglePrompt = function(button) {
-        const promptContent = button.nextElementSibling;
-        const icon = button.querySelector('i');
-        
-        if (promptContent.classList.contains('hidden')) {
-          promptContent.classList.remove('hidden');
-          icon.classList.remove('lucide-chevron-down');
-          icon.classList.add('lucide-chevron-up');
-        } else {
-          promptContent.classList.add('hidden');
-          icon.classList.remove('lucide-chevron-up');
-          icon.classList.add('lucide-chevron-down');
-        }
-      };
+             // Toggle prompt visibility
+       window.togglePrompt = function(button) {
+         // Prevent form submission
+         event.preventDefault();
+         event.stopPropagation();
+         
+         const promptContent = button.nextElementSibling;
+         const icon = button.querySelector('i');
+         
+         if (promptContent.classList.contains('hidden')) {
+           promptContent.classList.remove('hidden');
+           icon.setAttribute('data-lucide', 'chevron-up');
+         } else {
+           promptContent.classList.add('hidden');
+           icon.setAttribute('data-lucide', 'chevron-down');
+         }
+         
+         // Reinitialize Lucide icons
+         lucide.createIcons();
+       };
     });
   </script>
 {% endblock %} 
