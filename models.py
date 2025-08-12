@@ -79,6 +79,8 @@ class Room(db.Model):
     achievements = db.relationship('Achievement', backref='room', lazy=True, cascade='all, delete-orphan')
     user_mode_usage = db.relationship('UserModeUsage', backref='room', lazy=True, cascade='all, delete-orphan')
     prompt_records = db.relationship('PromptRecord', backref='room', lazy=True, cascade='all, delete-orphan')
+    rubric_criteria = db.relationship('RubricCriterion', backref='room', lazy=True, cascade='all, delete-orphan')
+    room_rubrics = db.relationship('RoomRubric', backref='room', lazy=True, cascade='all, delete-orphan')
     
     def __repr__(self):
         return f"<Room {self.id} {self.name!r}>"
@@ -245,3 +247,52 @@ class Achievement(db.Model):
     
     def __repr__(self):
         return f"<Achievement {self.achievement_type} for user {self.user_id} in room {self.room_id}>"
+
+class RubricCriterion(db.Model):
+    """Rubric criteria for assessing learning step progress."""
+    
+    id = db.Column(db.Integer, primary_key=True)
+    room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
+    step_key = db.Column(db.String(32), nullable=False)  # 'explore', 'focus', 'context', etc.
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    weight = db.Column(db.Float, default=1.0, nullable=False)
+    order = db.Column(db.Integer, nullable=False)
+    
+    # Relationships
+    levels = db.relationship('RubricLevel', backref='criterion', lazy=True, cascade='all, delete-orphan')
+    
+    __table_args__ = (db.UniqueConstraint('room_id', 'step_key', 'name', name='unique_room_step_criterion'),)
+    
+    def __repr__(self):
+        return f"<RubricCriterion {self.name} for {self.step_key} in room {self.room_id}>"
+
+class RubricLevel(db.Model):
+    """Individual levels within a rubric criterion."""
+    
+    id = db.Column(db.Integer, primary_key=True)
+    criterion_id = db.Column(db.Integer, db.ForeignKey('rubric_criterion.id'), nullable=False)
+    level = db.Column(db.String(50), nullable=False)  # 'Emerging', 'Developing', 'Proficient', 'Exemplary'
+    score = db.Column(db.Integer, nullable=False)  # 1, 2, 3, 4
+    description = db.Column(db.Text, nullable=False)
+    examples = db.Column(db.Text, nullable=True)  # JSON array of examples
+    
+    def __repr__(self):
+        return f"<RubricLevel {self.level} (score {self.score}) for criterion {self.criterion_id}>"
+
+class RoomRubric(db.Model):
+    """Overall rubric configuration for a learning step in a room."""
+    
+    id = db.Column(db.Integer, primary_key=True)
+    room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
+    step_key = db.Column(db.String(32), nullable=False)
+    progression_threshold = db.Column(db.Float, default=2.5, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    
+    __table_args__ = (db.UniqueConstraint('room_id', 'step_key', name='unique_room_step_rubric'),)
+    
+    def __repr__(self):
+        return f"<RoomRubric for {self.step_key} in room {self.room_id}>"

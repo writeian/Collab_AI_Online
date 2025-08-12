@@ -62,6 +62,35 @@
                         {% endif %}
                     </div>
                 </details>
+                
+                <!-- Learning Progress Assessment -->
+                <div class="mt-4 learning-progress-section">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-sm font-medium text-foreground">Learning Progress</h4>
+                        <button id="assess-progress-btn" 
+                                class="text-xs px-2 py-1 bg-primary/10 text-primary rounded hover:bg-primary/20 transition-colors"
+                                onclick="assessLearningProgress()">
+                            🔍 Assess Progress
+                        </button>
+                    </div>
+                    
+                    <!-- Progress Status Display -->
+                    <div id="progress-status" class="hidden">
+                        <div id="progress-content" class="p-3 rounded-md text-xs">
+                            <!-- Progress content will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <!-- Loading State -->
+                    <div id="progress-loading" class="hidden">
+                        <div class="p-3 rounded-md text-xs text-muted-foreground">
+                            <div class="flex items-center gap-2">
+                                <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
+                                Analyzing your progress...
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -723,6 +752,166 @@
             });
         }
     });
+    
+    // Learning Progress Assessment Functions
+    function assessLearningProgress() {
+        const assessBtn = document.getElementById('assess-progress-btn');
+        const progressStatus = document.getElementById('progress-status');
+        const progressLoading = document.getElementById('progress-loading');
+        const progressContent = document.getElementById('progress-content');
+        
+        // Show loading state
+        assessBtn.disabled = true;
+        assessBtn.textContent = 'Analyzing...';
+        progressStatus.classList.add('hidden');
+        progressLoading.classList.remove('hidden');
+        
+        // Make API request
+        fetch(`/chat/{{ chat.id }}/assess-progression`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Hide loading state
+            progressLoading.classList.add('hidden');
+            
+            if (data.success) {
+                displayProgressResult(data.recommendation);
+            } else {
+                displayProgressError(data.error || 'Assessment failed');
+            }
+        })
+        .catch(error => {
+            console.error('Assessment error:', error);
+            progressLoading.classList.add('hidden');
+            displayProgressError('Network error. Please try again.');
+        })
+        .finally(() => {
+            // Reset button
+            assessBtn.disabled = false;
+            assessBtn.textContent = '🔍 Assess Progress';
+        });
+    }
+    
+    function displayProgressResult(recommendation) {
+        const progressStatus = document.getElementById('progress-status');
+        const progressContent = document.getElementById('progress-content');
+        
+        let html = '';
+        
+        if (recommendation.type === 'ready') {
+            html = `
+                <div class="bg-green-50 border border-green-200 rounded-md p-3">
+                    <div class="flex items-start gap-2">
+                        <div class="text-green-600 text-lg">🎉</div>
+                        <div class="flex-1">
+                            <p class="font-medium text-green-800 mb-2">${recommendation.message}</p>
+                            <p class="text-green-700 text-xs mb-3">Confidence: ${Math.round(recommendation.confidence * 100)}%</p>
+                            ${recommendation.next_step ? `
+                                <div class="bg-white rounded p-2 mb-2">
+                                    <p class="font-medium text-green-800 text-xs">Next Step: ${recommendation.next_step.label}</p>
+                                    <p class="text-green-700 text-xs">${recommendation.next_step.description}</p>
+                                </div>
+                            ` : ''}
+                            <button onclick="createNextStepChat()" 
+                                    class="text-xs px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors">
+                                Create Next Step Chat
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else if (recommendation.type === 'almost_ready') {
+            html = `
+                <div class="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                    <div class="flex items-start gap-2">
+                        <div class="text-yellow-600 text-lg">👍</div>
+                        <div class="flex-1">
+                            <p class="font-medium text-yellow-800 mb-2">${recommendation.message}</p>
+                            <p class="text-yellow-700 text-xs mb-3">Confidence: ${Math.round(recommendation.confidence * 100)}%</p>
+                            <div class="bg-white rounded p-2">
+                                <p class="font-medium text-yellow-800 text-xs mb-1">Suggestions:</p>
+                                <ul class="text-yellow-700 text-xs space-y-1">
+                                    ${recommendation.suggestions.map(suggestion => `<li>• ${suggestion}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            html = `
+                <div class="bg-blue-50 border border-blue-200 rounded-md p-3">
+                    <div class="flex items-start gap-2">
+                        <div class="text-blue-600 text-lg">📚</div>
+                        <div class="flex-1">
+                            <p class="font-medium text-blue-800 mb-2">${recommendation.message}</p>
+                            <p class="text-blue-700 text-xs mb-3">Confidence: ${Math.round(recommendation.confidence * 100)}%</p>
+                            <div class="bg-white rounded p-2">
+                                <p class="font-medium text-blue-800 text-xs mb-1">Keep working on:</p>
+                                <ul class="text-blue-700 text-xs space-y-1">
+                                    ${recommendation.suggestions.map(suggestion => `<li>• ${suggestion}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        progressContent.innerHTML = html;
+        progressStatus.classList.remove('hidden');
+    }
+    
+    function displayProgressError(error) {
+        const progressStatus = document.getElementById('progress-status');
+        const progressContent = document.getElementById('progress-content');
+        
+        progressContent.innerHTML = `
+            <div class="bg-red-50 border border-red-200 rounded-md p-3">
+                <div class="flex items-start gap-2">
+                    <div class="text-red-600 text-lg">⚠️</div>
+                    <div class="flex-1">
+                        <p class="font-medium text-red-800">Assessment Error</p>
+                        <p class="text-red-700 text-xs">${error}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        progressStatus.classList.remove('hidden');
+    }
+    
+    function createNextStepChat() {
+        // Redirect to create chat page with next step pre-selected
+        const nextStep = getNextStepFromRecommendation();
+        if (nextStep) {
+            const createChatUrl = `/room/{{ room.id }}/chat/create?mode=${nextStep.key}`;
+            window.location.href = createChatUrl;
+        } else {
+            // Fallback to regular create chat page
+            window.location.href = `/room/{{ room.id }}/chat/create`;
+        }
+    }
+    
+    function getNextStepFromRecommendation() {
+        // This would be populated from the recommendation data
+        // For now, we'll use a simple approach
+        const currentMode = '{{ chat.mode }}';
+        const modeOrder = ['explore', 'focus', 'context', 'proposal', 'outline', 'draft', 'revise', 'evidence', 'citation', 'reflect'];
+        const currentIndex = modeOrder.indexOf(currentMode);
+        
+        if (currentIndex >= 0 && currentIndex < modeOrder.length - 1) {
+            return {
+                key: modeOrder[currentIndex + 1],
+                label: `Step ${currentIndex + 2}`
+            };
+        }
+        return null;
+    }
 </script>
 {% endblock %}
 

@@ -1,0 +1,815 @@
+{% extends "base.html" %}
+{% block title %}Create Room{% endblock %}
+{% block content %}
+  <!-- Main Content Container -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Page Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-foreground mb-2">Create New Room</h1>
+      <p class="text-muted-foreground">Set up a new collaboration space for your team</p>
+    </div>
+
+    <!-- Step 1: Goals Input -->
+    <div id="step-1" class="max-w-4xl mx-auto">
+      <div class="bg-card border border-border rounded-lg p-8">
+        <div class="mb-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">1</div>
+            <h2 class="text-xl font-semibold text-foreground">Define Your Learning Goals</h2>
+          </div>
+          <p class="text-muted-foreground">Describe what you want to achieve in this room. This will help AI generate learning steps that guide students through your goals and suggest a room title.</p>
+        </div>
+
+        <form id="goals-form" class="space-y-6">
+          <div class="form-group">
+            <label for="goals" class="block text-sm font-medium text-foreground mb-2">Learning Goals *</label>
+            <textarea id="goals" name="goals" required rows="4"
+                      placeholder="e.g., To teach the steps of crafting and delivering a professional presentation"
+                      class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
+                             focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                             placeholder:text-muted-foreground resize-none"></textarea>
+            <p class="mt-2 text-sm text-muted-foreground">Be specific about what you want to accomplish. The more detailed your goals, the better the AI can help.</p>
+          </div>
+
+          <div class="flex gap-3 pt-4">
+            <button type="submit" id="generate-proposal-btn"
+                    class="inline-flex items-center px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors">
+              <i data-lucide="sparkles" class="w-5 h-5 mr-2"></i>
+              Generate Room Proposal
+            </button>
+            <a href="{{ url_for('room.index') }}" 
+               class="px-6 py-3 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-secondary/80 transition-colors">
+              Cancel
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Step 2: AI Proposal (Hidden initially) -->
+    <div id="step-2" class="max-w-4xl mx-auto hidden">
+      <div class="bg-card border border-border rounded-lg p-8">
+        <div class="mb-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">2</div>
+            <h2 class="text-xl font-semibold text-foreground">AI Room Proposal</h2>
+          </div>
+          <p class="text-muted-foreground">Based on your goals, here's what I suggest for your room:</p>
+        </div>
+
+        <!-- Room Title Proposal -->
+        <div class="mb-8">
+          <label for="room-name" class="block text-sm font-medium text-foreground mb-2">Room Title</label>
+          <input type="text" id="room-name" name="name" required
+                 class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
+                        focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+        </div>
+
+        <!-- Room Description -->
+        <div class="mb-8">
+          <label for="room-description" class="block text-sm font-medium text-foreground mb-2">Room Description (Optional)</label>
+          <textarea id="room-description" name="description" rows="3"
+                    placeholder="Brief description of what this room is for..."
+                    class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
+                           focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                           placeholder:text-muted-foreground resize-none"></textarea>
+        </div>
+
+        <!-- Proposed Modes -->
+        <div class="mb-8">
+          <h3 class="text-lg font-semibold text-foreground mb-4">Proposed Learning Steps</h3>
+          <div id="proposed-modes-list" class="space-y-4">
+            <!-- Modes will be populated here -->
+          </div>
+        </div>
+
+        <!-- Refinement Chat -->
+        <div class="mb-8">
+          <h3 class="text-lg font-semibold text-foreground mb-4">Refine Your Room</h3>
+          <p class="text-muted-foreground mb-4">Not quite right? Chat with me to improve the title, description, or learning steps:</p>
+          
+          <div class="bg-muted/20 rounded-lg p-4 mb-4">
+            <div id="refinement-chat" class="space-y-4 max-h-64 overflow-y-auto">
+              <!-- Chat messages will appear here -->
+            </div>
+          </div>
+          
+          <div class="flex gap-2">
+            <input type="text" id="refinement-input" placeholder="e.g., 'Make the title more specific' or 'Add a learning step for practicing delivery'"
+                   class="flex-1 px-3 py-2 border border-border rounded-md bg-background text-foreground 
+                          focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                          placeholder:text-muted-foreground">
+            <button id="send-refinement-btn" class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
+              Send
+            </button>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex gap-3 pt-4">
+          <button type="button" id="create-room-btn"
+                  class="inline-flex items-center px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors">
+            <i data-lucide="check" class="w-5 h-5 mr-2"></i>
+            Create Room
+          </button>
+          <button type="button" id="back-to-goals-btn"
+                  class="px-6 py-3 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-secondary/80 transition-colors">
+            Back to Goals
+          </button>
+          <a href="{{ url_for('room.index') }}" 
+             class="px-6 py-3 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-secondary/80 transition-colors">
+            Cancel
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden form for final submission -->
+    <form id="final-room-form" method="POST" class="hidden">
+      <input type="hidden" id="final-name" name="name" value="">
+      <input type="hidden" id="final-description" name="description" value="">
+      <input type="hidden" id="final-goals" name="goals" value="">
+      <input type="hidden" id="final-modes" name="refined_modes" value="">
+    </form>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const step1 = document.getElementById('step-1');
+      const step2 = document.getElementById('step-2');
+      const goalsForm = document.getElementById('goals-form');
+      const generateBtn = document.getElementById('generate-proposal-btn');
+      const backToGoalsBtn = document.getElementById('back-to-goals-btn');
+      const createRoomBtn = document.getElementById('create-room-btn');
+      const finalForm = document.getElementById('final-room-form');
+      
+      const roomNameInput = document.getElementById('room-name');
+      const roomDescriptionInput = document.getElementById('room-description');
+      const goalsInput = document.getElementById('goals');
+      const proposedModesList = document.getElementById('proposed-modes-list');
+      const refinementChat = document.getElementById('refinement-chat');
+      const refinementInput = document.getElementById('refinement-input');
+      const sendRefinementBtn = document.getElementById('send-refinement-btn');
+      
+      let currentModes = [];
+      let conversationId = null;
+      let currentGoals = '';
+
+      // Step 1: Generate proposal from goals
+      goalsForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const goals = goalsInput.value.trim();
+        if (!goals) return;
+        
+        currentGoals = goals;
+        generateBtn.disabled = true;
+        generateBtn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 mr-2 animate-spin"></i>Generating...';
+        
+        try {
+          const response = await fetch('/room/generate-room-proposal', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ goals: goals })
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            // Populate the proposal
+            roomNameInput.value = result.room_title;
+            roomDescriptionInput.value = result.room_description || '';
+            currentModes = result.modes;
+            conversationId = result.conversation_id;
+            
+            // Display modes
+            displayModes(currentModes);
+            
+            // Initialize Lucide icons
+            lucide.createIcons();
+            
+            // Show step 2
+            step1.classList.add('hidden');
+            step2.classList.remove('hidden');
+            
+            // Add initial AI message
+            addChatMessage('AI', result.ai_message);
+            
+          } else {
+            alert('Error generating proposal: ' + result.error);
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          alert('Error generating proposal. Please try again.');
+        } finally {
+          generateBtn.disabled = false;
+          generateBtn.innerHTML = '<i data-lucide="sparkles" class="w-5 h-5 mr-2"></i>Generate Room Proposal';
+        }
+      });
+
+      // Back to goals
+      backToGoalsBtn.addEventListener('click', function() {
+        step2.classList.add('hidden');
+        step1.classList.remove('hidden');
+      });
+
+      // Refinement chat
+      sendRefinementBtn.addEventListener('click', sendRefinementMessage);
+      refinementInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          sendRefinementMessage();
+        }
+      });
+
+      async function sendRefinementMessage() {
+        const message = refinementInput.value.trim();
+        if (!message) return;
+        
+        sendRefinementBtn.disabled = true;
+        refinementInput.disabled = true;
+        
+        // Add user message
+        addChatMessage('User', message);
+        refinementInput.value = '';
+        
+        try {
+          const response = await fetch('/room/refine-room-proposal', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              conversation_id: conversationId,
+              message: message,
+              current_room_title: roomNameInput.value,
+              current_room_description: roomDescriptionInput.value,
+              current_modes: currentModes
+            })
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            // Update room details if provided
+            if (result.room_title) {
+              roomNameInput.value = result.room_title;
+            }
+            if (result.room_description !== undefined) {
+              roomDescriptionInput.value = result.room_description;
+            }
+            if (result.modes) {
+              currentModes = result.modes;
+              displayModes(currentModes);
+              lucide.createIcons();
+            }
+            
+            // Add AI response
+            addChatMessage('AI', result.ai_response);
+          } else {
+            addChatMessage('AI', 'Sorry, I encountered an error. Please try again.');
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          addChatMessage('AI', 'Sorry, I encountered an error. Please try again.');
+        } finally {
+          sendRefinementBtn.disabled = false;
+          refinementInput.disabled = false;
+          refinementInput.focus();
+        }
+      }
+
+      // Create room
+      createRoomBtn.addEventListener('click', function() {
+        // Populate final form
+        document.getElementById('final-name').value = roomNameInput.value;
+        document.getElementById('final-description').value = roomDescriptionInput.value;
+        document.getElementById('final-goals').value = currentGoals;
+        document.getElementById('final-modes').value = JSON.stringify(currentModes);
+        
+        // Submit form
+        finalForm.submit();
+      });
+
+      function displayModes(modes) {
+        proposedModesList.innerHTML = '';
+        
+        modes.forEach((mode, index) => {
+          const modeElement = document.createElement('div');
+          modeElement.className = 'bg-background border border-border rounded-lg p-4';
+          modeElement.innerHTML = `
+            <div class="flex items-start justify-between mb-3">
+              <div class="flex-1">
+                <h4 class="font-medium text-foreground">${mode.label}</h4>
+              </div>
+              <button type="button" class="text-sm px-2 py-1 bg-primary/10 text-primary rounded hover:bg-primary/20 transition-colors"
+                      onclick="editInstructions(${index})">
+                Edit Instructions
+              </button>
+            </div>
+            
+            <!-- AI Instructions Dropdown -->
+            <div class="mode-prompt-dropdown mb-3">
+              <button type="button" class="text-sm text-muted-foreground hover:text-foreground transition-colors" 
+                      onclick="togglePrompt(this)">
+                <i data-lucide="chevron-down" class="w-4 h-4 inline mr-1"></i>
+                Show AI Instructions
+              </button>
+              <div class="prompt-content hidden text-sm text-muted-foreground bg-muted/20 p-3 rounded">
+                ${mode.prompt}
+              </div>
+            </div>
+            
+            <!-- Assessment Rubric Dropdown -->
+            <div class="rubric-dropdown">
+              <button type="button" class="text-sm text-muted-foreground hover:text-foreground transition-colors mb-2" 
+                      onclick="toggleRubric(this, ${index})">
+                <i data-lucide="chevron-down" class="w-4 h-4 inline mr-1"></i>
+                📋 Assessment Rubric
+              </button>
+              <div class="rubric-content hidden">
+                <div class="bg-muted/20 p-3 rounded mb-2">
+                  <p class="text-xs text-muted-foreground mb-2">
+                    <strong>Note:</strong> You can customize these assessment criteria to better match your learning goals. 
+                    The rubric helps determine when students are ready to progress to the next learning step.
+                  </p>
+                  <button type="button" class="text-xs px-2 py-1 bg-secondary text-secondary-foreground rounded hover:bg-secondary/80 transition-colors"
+                          onclick="editRubric(${index})">
+                    Edit Rubric
+                  </button>
+                </div>
+                
+                <!-- Mobile Accordion Rubric Structure -->
+                <div class="rubric-accordion" id="rubric-accordion-${index}">
+                  <!-- Rubric criteria will be populated here -->
+                </div>
+              </div>
+            </div>
+          `;
+          proposedModesList.appendChild(modeElement);
+          
+          // Populate rubric with default template
+          populateRubricTemplate(index, mode.key);
+        });
+      }
+
+      function addChatMessage(sender, message) {
+        const messageElement = document.createElement('div');
+        messageElement.className = 'flex gap-3';
+        messageElement.innerHTML = `
+          <div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
+            ${sender === 'AI' ? 'AI' : 'U'}
+          </div>
+          <div class="flex-1">
+            <div class="text-sm font-medium text-foreground">${sender}</div>
+            <div class="text-sm text-muted-foreground">${message}</div>
+          </div>
+        `;
+        refinementChat.appendChild(messageElement);
+        refinementChat.scrollTop = refinementChat.scrollHeight;
+      }
+
+      // Toggle prompt visibility
+      window.togglePrompt = function(button) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        const promptContent = button.nextElementSibling;
+        const icon = button.querySelector('i');
+        
+        if (promptContent.classList.contains('hidden')) {
+          promptContent.classList.remove('hidden');
+          icon.setAttribute('data-lucide', 'chevron-up');
+        } else {
+          promptContent.classList.add('hidden');
+          icon.setAttribute('data-lucide', 'chevron-down');
+        }
+        
+        lucide.createIcons();
+      };
+
+      // Toggle rubric visibility
+      window.toggleRubric = function(button, modeIndex) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        const rubricContent = button.nextElementSibling;
+        const icon = button.querySelector('i');
+        
+        if (rubricContent.classList.contains('hidden')) {
+          rubricContent.classList.remove('hidden');
+          icon.setAttribute('data-lucide', 'chevron-up');
+        } else {
+          rubricContent.classList.add('hidden');
+          icon.setAttribute('data-lucide', 'chevron-down');
+        }
+        
+        lucide.createIcons();
+      };
+
+      // Populate rubric with default template
+      function populateRubricTemplate(modeIndex, stepKey) {
+        const rubricAccordion = document.getElementById(`rubric-accordion-${modeIndex}`);
+        if (!rubricAccordion) return;
+
+        // Default rubric template based on step key
+        const template = getDefaultRubricTemplate(stepKey);
+        
+        rubricAccordion.innerHTML = template.map((criterion, criterionIndex) => `
+          <div class="criterion-accordion mb-3 border border-border rounded-lg overflow-hidden">
+            <!-- Criterion Header -->
+            <div class="criterion-header bg-muted/30 p-3 border-b border-border">
+              <div class="flex items-center justify-between">
+                <h4 class="text-sm font-medium text-foreground">${criterion.name}</h4>
+                <div class="flex gap-2">
+                  <button type="button" class="text-xs px-2 py-1 bg-primary/10 text-primary rounded hover:bg-primary/20 transition-colors"
+                          onclick="toggleCriterionLevels(${modeIndex}, ${criterionIndex})">
+                    <i data-lucide="chevron-down" class="w-3 h-3"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Levels Accordion -->
+            <div class="levels-accordion hidden" id="levels-${modeIndex}-${criterionIndex}">
+              ${criterion.levels.map((level, levelIndex) => `
+                <div class="level-item border-b border-border last:border-b-0">
+                  <button type="button" class="level-toggle w-full p-3 text-left hover:bg-muted/20 transition-colors flex items-center justify-between"
+                          onclick="toggleLevelContent(${modeIndex}, ${criterionIndex}, ${levelIndex})">
+                    <span class="text-sm font-medium">${level.level} (${level.score})</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-muted-foreground"></i>
+                  </button>
+                  <div class="level-content hidden p-3 bg-muted/10" id="level-content-${modeIndex}-${criterionIndex}-${levelIndex}">
+                    <div class="view-mode">
+                      <p class="text-sm text-muted-foreground mb-2">${level.description}</p>
+                      ${level.examples ? `<p class="text-xs text-muted-foreground"><strong>Examples:</strong> ${level.examples}</p>` : ''}
+                    </div>
+                    <div class="edit-mode hidden">
+                      <textarea class="level-description-edit w-full p-2 text-sm border border-border rounded bg-background text-foreground resize-none" rows="3">${level.description}</textarea>
+                      <div class="flex gap-2 mt-2">
+                        <button type="button" class="text-xs px-2 py-1 bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
+                                onclick="saveLevelEdit(${modeIndex}, ${criterionIndex}, ${levelIndex})">
+                          Save
+                        </button>
+                        <button type="button" class="text-xs px-2 py-1 bg-secondary text-secondary-foreground rounded hover:bg-secondary/80 transition-colors"
+                                onclick="cancelLevelEdit(${modeIndex}, ${criterionIndex}, ${levelIndex})">
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                    <div class="flex gap-2 mt-2">
+                      <button type="button" class="text-xs px-2 py-1 bg-secondary text-secondary-foreground rounded hover:bg-secondary/80 transition-colors"
+                              onclick="editLevel(${modeIndex}, ${criterionIndex}, ${levelIndex})">
+                        Edit
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `).join('');
+        
+        // Reinitialize Lucide icons
+        lucide.createIcons();
+      }
+
+      // Get default rubric template
+      function getDefaultRubricTemplate(stepKey) {
+        const templates = {
+          'explore': [
+            {
+              name: 'Topic Identification',
+              levels: [
+                { level: 'Emerging', score: 1, description: 'Broad topic area identified' },
+                { level: 'Developing', score: 2, description: 'More specific topic with some focus' },
+                { level: 'Proficient', score: 3, description: 'Well-defined, researchable topic' },
+                { level: 'Exemplary', score: 4, description: 'Highly specific, compelling topic with clear significance' }
+              ]
+            },
+            {
+              name: 'Personal Connection',
+              levels: [
+                { level: 'Emerging', score: 1, description: 'Shows basic interest in topic' },
+                { level: 'Developing', score: 2, description: 'Demonstrates some personal motivation' },
+                { level: 'Proficient', score: 3, description: 'Clear personal connection established' },
+                { level: 'Exemplary', score: 4, description: 'Strong intrinsic motivation with clear personal stakes' }
+              ]
+            },
+            {
+              name: 'Question Development',
+              levels: [
+                { level: 'Emerging', score: 1, description: 'Basic questions about the topic' },
+                { level: 'Developing', score: 2, description: 'More specific questions emerging' },
+                { level: 'Proficient', score: 3, description: 'Clear, researchable questions formulated' },
+                { level: 'Exemplary', score: 4, description: 'Sophisticated questions with clear research potential' }
+              ]
+            }
+          ],
+          'focus': [
+            {
+              name: 'Question Specificity',
+              levels: [
+                { level: 'Emerging', score: 1, description: 'Broad, general questions' },
+                { level: 'Developing', score: 2, description: 'More specific but still broad questions' },
+                { level: 'Proficient', score: 3, description: 'Focused, researchable questions' },
+                { level: 'Exemplary', score: 4, description: 'Highly specific, compelling research questions' }
+              ]
+            },
+            {
+              name: 'Research Feasibility',
+              levels: [
+                { level: 'Emerging', score: 1, description: 'Question too broad or impossible to research' },
+                { level: 'Developing', score: 2, description: 'Question possible but would require extensive resources' },
+                { level: 'Proficient', score: 3, description: 'Question researchable with reasonable effort' },
+                { level: 'Exemplary', score: 4, description: 'Question perfectly scoped for available resources and time' }
+              ]
+            }
+          ],
+          'context': [
+            {
+              name: 'Source Evaluation',
+              levels: [
+                { level: 'Emerging', score: 1, description: 'Uses any source without evaluation' },
+                { level: 'Developing', score: 2, description: 'Recognizes some credible sources' },
+                { level: 'Proficient', score: 3, description: 'Evaluates author credentials and publication quality' },
+                { level: 'Exemplary', score: 4, description: 'Sophisticated evaluation of bias, methodology, and relevance' }
+              ]
+            },
+            {
+              name: 'Source Diversity',
+              levels: [
+                { level: 'Emerging', score: 1, description: 'Uses only one type of source' },
+                { level: 'Developing', score: 2, description: 'Uses 2-3 different source types' },
+                { level: 'Proficient', score: 3, description: 'Uses multiple source types appropriately' },
+                { level: 'Exemplary', score: 4, description: 'Sophisticated use of diverse, high-quality sources' }
+              ]
+            }
+          ]
+        };
+
+        return templates[stepKey] || templates['explore'];
+      }
+
+      // Edit instructions (placeholder for Phase 1)
+      window.editInstructions = function(modeIndex) {
+        alert('Edit Instructions functionality will be implemented in Phase 1. This will allow you to customize the AI instructions for each learning step.');
+      };
+
+      // Toggle criterion levels accordion
+      window.toggleCriterionLevels = function(modeIndex, criterionIndex) {
+        const levelsAccordion = document.getElementById(`levels-${modeIndex}-${criterionIndex}`);
+        const icon = event.target.closest('button').querySelector('i');
+        
+        if (levelsAccordion.classList.contains('hidden')) {
+          levelsAccordion.classList.remove('hidden');
+          icon.setAttribute('data-lucide', 'chevron-up');
+        } else {
+          levelsAccordion.classList.add('hidden');
+          icon.setAttribute('data-lucide', 'chevron-down');
+        }
+        
+        lucide.createIcons();
+      };
+
+      // Toggle level content (mobile: one at a time, desktop: multiple)
+      window.toggleLevelContent = function(modeIndex, criterionIndex, levelIndex) {
+        const levelContent = document.getElementById(`level-content-${modeIndex}-${criterionIndex}-${levelIndex}`);
+        const icon = event.target.closest('button').querySelector('i');
+        const isMobile = window.innerWidth < 768;
+        
+        if (levelContent.classList.contains('hidden')) {
+          // On mobile, close other open levels first
+          if (isMobile) {
+            const allLevelContents = document.querySelectorAll(`[id^="level-content-${modeIndex}-${criterionIndex}-"]`);
+            allLevelContents.forEach(content => {
+              if (content !== levelContent) {
+                content.classList.add('hidden');
+                const otherIcon = content.previousElementSibling.querySelector('i');
+                otherIcon.setAttribute('data-lucide', 'chevron-down');
+              }
+            });
+          }
+          
+          levelContent.classList.remove('hidden');
+          icon.setAttribute('data-lucide', 'chevron-up');
+        } else {
+          levelContent.classList.add('hidden');
+          icon.setAttribute('data-lucide', 'chevron-down');
+        }
+        
+        lucide.createIcons();
+      };
+
+      // Edit level description
+      window.editLevel = function(modeIndex, criterionIndex, levelIndex) {
+        const levelContent = document.getElementById(`level-content-${modeIndex}-${criterionIndex}-${levelIndex}`);
+        const viewMode = levelContent.querySelector('.view-mode');
+        const editMode = levelContent.querySelector('.edit-mode');
+        const editButton = levelContent.querySelector('button[onclick^="editLevel"]');
+        
+        viewMode.classList.add('hidden');
+        editMode.classList.remove('hidden');
+        editButton.classList.add('hidden');
+        
+        // Focus on textarea
+        const textarea = editMode.querySelector('textarea');
+        textarea.focus();
+        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+      };
+
+      // Save level edit
+      window.saveLevelEdit = function(modeIndex, criterionIndex, levelIndex) {
+        const levelContent = document.getElementById(`level-content-${modeIndex}-${criterionIndex}-${levelIndex}`);
+        const viewMode = levelContent.querySelector('.view-mode');
+        const editMode = levelContent.querySelector('.edit-mode');
+        const editButton = levelContent.querySelector('button[onclick^="editLevel"]');
+        const textarea = editMode.querySelector('textarea');
+        const description = viewMode.querySelector('p');
+        
+        // Update the description
+        description.textContent = textarea.value;
+        
+        // Switch back to view mode
+        viewMode.classList.remove('hidden');
+        editMode.classList.add('hidden');
+        editButton.classList.remove('hidden');
+        
+        // Show success feedback
+        showEditFeedback('Level description updated successfully!', 'success');
+      };
+
+      // Cancel level edit
+      window.cancelLevelEdit = function(modeIndex, criterionIndex, levelIndex) {
+        const levelContent = document.getElementById(`level-content-${modeIndex}-${criterionIndex}-${levelIndex}`);
+        const viewMode = levelContent.querySelector('.view-mode');
+        const editMode = levelContent.querySelector('.edit-mode');
+        const editButton = levelContent.querySelector('button[onclick^="editLevel"]');
+        const textarea = editMode.querySelector('textarea');
+        const description = viewMode.querySelector('p');
+        
+        // Reset textarea to original value
+        textarea.value = description.textContent;
+        
+        // Switch back to view mode
+        viewMode.classList.remove('hidden');
+        editMode.classList.add('hidden');
+        editButton.classList.remove('hidden');
+      };
+
+      // Show edit feedback
+      function showEditFeedback(message, type = 'info') {
+        const feedback = document.createElement('div');
+        feedback.className = `fixed top-4 right-4 px-4 py-2 rounded-lg text-sm font-medium z-50 transition-opacity duration-300 ${
+          type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' :
+          type === 'error' ? 'bg-red-100 text-red-800 border border-red-200' :
+          'bg-blue-100 text-blue-800 border border-blue-200'
+        }`;
+        feedback.textContent = message;
+        
+        document.body.appendChild(feedback);
+        
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+          feedback.style.opacity = '0';
+          setTimeout(() => feedback.remove(), 300);
+        }, 3000);
+      }
+
+      // Edit rubric (placeholder for Phase 2B)
+      window.editRubric = function(modeIndex) {
+        alert('Edit Rubric functionality will be implemented in Phase 2B. This will allow you to customize the entire rubric structure.');
+      };
+    });
+  </script>
+
+  <!-- Mobile Accordion Styles -->
+  <style>
+    /* Mobile-first accordion styles */
+    .criterion-accordion {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+
+    .criterion-header {
+      background: #f9fafb;
+      padding: 12px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .levels-accordion {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .level-item {
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .level-item:last-child {
+      border-bottom: none;
+    }
+
+    .level-toggle {
+      width: 100%;
+      padding: 12px;
+      background: none;
+      border: none;
+      text-align: left;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background-color 0.2s;
+    }
+
+    .level-toggle:hover {
+      background: #f3f4f6;
+    }
+
+    .level-content {
+      padding: 12px;
+      background: #fafafa;
+    }
+
+    .level-description-edit {
+      width: 100%;
+      min-height: 60px;
+      padding: 8px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      resize: vertical;
+      font-size: 14px;
+    }
+
+    .level-description-edit:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    }
+
+    /* Desktop enhancement */
+    @media (min-width: 768px) {
+      .levels-accordion {
+        flex-direction: row;
+      }
+      
+      .level-item {
+        flex: 1;
+        border-right: 1px solid #e5e7eb;
+      }
+      
+      .level-item:last-child {
+        border-right: none;
+      }
+
+      .level-content {
+        min-height: 120px;
+      }
+    }
+
+    /* Animation for accordion */
+    .levels-accordion {
+      transition: all 0.3s ease;
+    }
+
+    .level-content {
+      transition: all 0.3s ease;
+    }
+
+    /* Edit mode visual feedback */
+    .edit-mode {
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      border-radius: 4px;
+      padding: 8px;
+    }
+
+    /* Success feedback animation */
+    .feedback-enter {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+
+    .feedback-enter-active {
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 0.3s, transform 0.3s;
+    }
+
+    .feedback-exit {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .feedback-exit-active {
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: opacity 0.3s, transform 0.3s;
+    }
+  </style>
+{% endblock %} 

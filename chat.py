@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, current_app, jsonify
 from datetime import datetime
 from models import db, Chat, Message, User, PromptRecord, Room, Comment, RoomMember
 from openai_utils import get_ai_response, get_modes_for_room, BASE_MODES
@@ -241,3 +241,31 @@ def continue_message(chat_id, message_id):
     except Exception as e:
         print(f"Exception while creating continued message: {e}")
     return redirect(url_for("chat.view_chat", chat_id=chat_obj.id)) 
+
+@chat.route("/<int:chat_id>/assess-progression", methods=["POST"])
+@require_chat_access
+def assess_progression(chat_id):
+    """Assess whether the user is ready to progress to the next learning step."""
+    chat_obj = Chat.query.get_or_404(chat_id)
+    user = get_current_user()
+    
+    if not user:
+        return jsonify({"error": "User not authenticated"}), 401
+    
+    try:
+        from openai_utils import get_progression_recommendation
+        
+        # Get progression recommendation
+        recommendation = get_progression_recommendation(chat_obj)
+        
+        return jsonify({
+            "success": True,
+            "recommendation": recommendation
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Progression assessment failed: {e}")
+        return jsonify({
+            "success": False,
+            "error": "Assessment failed. Please try again."
+        }), 500 

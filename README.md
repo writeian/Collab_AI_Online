@@ -40,6 +40,10 @@ We're actively seeking educators, writing teams, and content creators to help im
 - **Document Analysis**: Get AI feedback on your writing without importing text
 - **Streamlined Room Creation**: 2-step process with AI proposal generation and conversational refinement
 - **Conversational Mode Refinement**: Chat with AI to refine room title, description, and learning steps before finalizing
+- **AI-Powered Rubric System**: Complete assessment framework with 4-level progression (Emerging → Developing → Proficient → Exemplary)
+- **Mobile-Responsive Rubric UI**: Accordion interface with inline editing for individual rubric levels
+- **AI Validation**: Educational content assessment with quality feedback and scoring
+- **State Management**: Auto-save, session persistence, and unsaved changes warnings
 
 ### AI Response Control
 - **Toggle System**: Enable/disable AI responses with a simple checkbox
@@ -315,6 +319,12 @@ If you encounter any issues or have questions:
 - [x] Database cascade relationships for proper room deletion
 - [x] Settings gear button functionality
 - [x] Consistent styling across all pages
+- [x] **AI-Powered Rubric System** - Complete assessment framework with 4-level progression
+- [x] **Mobile-Responsive Rubric UI** - Accordion interface with inline editing
+- [x] **Backend Integration** - Full database persistence with REST API endpoints
+- [x] **AI Validation** - Educational content assessment with feedback
+- [x] **State Management** - Auto-save, session persistence, unsaved changes warnings
+- [x] **Enhanced UX** - Loading states, error handling, validation feedback
 - [ ] Real-time messaging with WebSockets
 - [ ] Advanced chat analytics
 - [ ] Mobile app development
@@ -326,7 +336,27 @@ If you encounter any issues or have questions:
 
 ---
 
-## 🆕 Recent Improvements (January 2025)
+## 🆕 Recent Improvements (August 2025)
+
+### Phase 2B: AI-Powered Rubric System ✅
+- **Complete Rubric Framework**: Full assessment system with 4-level progression (Emerging → Developing → Proficient → Exemplary)
+- **Mobile-Responsive UI**: Accordion interface with inline editing for individual rubric levels
+- **Backend Integration**: Full database persistence with REST API endpoints for rubric CRUD operations
+- **AI Validation**: Educational content assessment with quality feedback, scoring, and threshold warnings
+- **State Management**: Auto-save with 5-second delay, session persistence, and unsaved changes warnings
+- **Enhanced UX**: Loading states, comprehensive error handling, and validation feedback
+- **User-Requested Improvements**:
+  - ✅ Removed unnecessary "edit" button on rubrics (individual categories are editable)
+  - ✅ Changed "Validate with AI" to "Validate" with brief explanation
+  - ✅ Fixed "edit instructions" functionality for AI instructions (was previously placeholder)
+  - ✅ Restored and improved room description generation with robust parsing
+
+### Phase 2A: Mobile Accordion UI ✅
+- **Mobile-First Design**: Replaced table-based rubrics with responsive accordion interface
+- **Progressive Disclosure**: Criterion headers → Level toggles → Content
+- **Responsive Behavior**: Mobile (one level open) vs Desktop (multiple open)
+- **Inline Editing**: Individual level editing with textarea interface
+- **Visual Feedback**: Edit mode indicators, success messages, auto-dismiss
 
 ### Phase 6: Streamlined Room Creation & Learning Steps ✅
 - **Streamlined Room Creation Flow**: Redesigned room creation as a 2-step process:
@@ -348,6 +378,7 @@ If you encounter any issues or have questions:
 - **About Page Accessibility**: About page now accessible from footer on all pages, following industry best practices
 - **Responsive Design**: All pages now work seamlessly across desktop, tablet, and mobile devices
 - **Modern Button Styling**: Consistent button design with hover effects and proper color schemes throughout the application
+- **Hover Effect Optimization**: Fixed dark blue hover issues across the entire website, implementing pleasant light gray hover effects for both desktop and mobile compatibility
 - **Form Validation Enhancement**: Improved form styling with better focus states and error handling
 
 ### Phase 4: AI Response Toggle System ✅

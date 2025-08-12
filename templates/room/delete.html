@@ -10,12 +10,12 @@
     </div>
 
     <!-- Warning Alert -->
-    <div class="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
+    <div class="bg-destructive-light border border-destructive rounded-lg p-6 mb-8">
       <div class="flex items-start space-x-3">
-        <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600 mt-0.5"></i>
+        <i data-lucide="alert-triangle" class="w-6 h-6 text-destructive mt-0.5"></i>
         <div>
-          <h3 class="text-lg font-semibold text-red-900 mb-2">⚠️ Warning: This action cannot be undone</h3>
-          <p class="text-red-700">
+          <h3 class="text-lg font-semibold text-destructive-text mb-2">⚠️ Warning: This action cannot be undone</h3>
+          <p class="text-destructive-text">
             All chats, messages, member data, and room settings will be permanently deleted. 
             This action is irreversible.
           </p>
@@ -61,7 +61,7 @@
           <i data-lucide="trash-2" class="w-5 h-5 mr-2"></i>
           Delete Room
         </button>
-        <a href="{{ url_for('room.view_room', room_id=room.id) }}" class="inline-flex items-center px-6 py-3 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-secondary/80 transition-colors">
+        <a href="{{ url_for('room.view_room', room_id=room.id) }}" class="inline-flex items-center px-6 py-3 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-gray-100 transition-colors">
           <i data-lucide="x" class="w-5 h-5 mr-2"></i>
           Cancel
         </a>
