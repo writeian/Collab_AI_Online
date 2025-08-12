@@ -372,3 +372,274 @@ def get_ai_response(
         return call_anthropic_api(messages_payload, system_prompt, max_tokens)
     else:  # openai
         return call_openai_api(messages_payload, max_tokens)
+
+def assess_learning_progression(chat, target_mode=None):
+    """
+    Assess whether a user is ready to progress to the next learning step.
+    
+    Args:
+        chat: Chat object with messages
+        target_mode: The next mode to progress to (optional)
+    
+    Returns:
+        dict: Assessment results with readiness, confidence, feedback, and recommendations
+    """
+    client_type = get_client_type()
+    if not client_type:
+        return {
+            "ready": False,
+            "confidence": 0.0,
+            "feedback": "AI assessment unavailable - no API key configured",
+            "recommendations": ["Configure an AI API key to enable progression assessment"],
+            "next_steps": []
+        }
+    
+    # Get all messages in the chat
+    messages = Message.query.filter_by(chat_id=chat.id).order_by(Message.timestamp).all()
+    
+    if len(messages) < 4:  # Need at least 2 exchanges to assess
+        return {
+            "ready": False,
+            "confidence": 0.0,
+            "feedback": "Need more conversation to assess progress",
+            "recommendations": ["Continue working in this learning step"],
+            "next_steps": []
+        }
+    
+    # Get current mode info
+    current_mode = chat.mode
+    modes = get_modes_for_room(chat.room)
+    current_mode_info = modes.get(current_mode)
+    
+    if not current_mode_info:
+        return {
+            "ready": False,
+            "confidence": 0.0,
+            "feedback": f"Unknown learning step: {current_mode}",
+            "recommendations": ["Contact your instructor about this learning step"],
+            "next_steps": []
+        }
+    
+    # Determine next mode if not specified
+    if not target_mode:
+        mode_order = list(modes.keys())
+        try:
+            current_index = mode_order.index(current_mode)
+            if current_index < len(mode_order) - 1:
+                target_mode = mode_order[current_index + 1]
+            else:
+                return {
+                    "ready": True,
+                    "confidence": 1.0,
+                    "feedback": "You've completed all learning steps!",
+                    "recommendations": ["Congratulations on completing the learning journey"],
+                    "next_steps": []
+                }
+        except ValueError:
+            target_mode = "focus"  # Fallback
+    
+    target_mode_info = modes.get(target_mode)
+    if not target_mode_info:
+        target_mode_info = modes.get("focus", modes.get(list(modes.keys())[0]))
+    
+    # Create assessment prompt
+    assessment_prompt = f"""You are an expert educational assessment AI. Analyze the conversation below to determine if the student is ready to progress from the current learning step to the next one.
+
+CURRENT LEARNING STEP: {current_mode_info.label if hasattr(current_mode_info, 'label') else current_mode}
+CURRENT STEP OBJECTIVES: {current_mode_info.prompt if hasattr(current_mode_info, 'prompt') else 'Focus on current learning objectives'}
+
+NEXT LEARNING STEP: {target_mode_info.label if hasattr(target_mode_info, 'label') else target_mode}
+NEXT STEP OBJECTIVES: {target_mode_info.prompt if hasattr(target_mode_info, 'prompt') else 'Move to next learning objectives'}
+
+CONVERSATION TO ANALYZE:
+{format_conversation_for_assessment(messages)}
+
+ASSESSMENT CRITERIA:
+1. Has the student demonstrated understanding of the current step's core concepts?
+2. Have they engaged meaningfully with the learning objectives?
+3. Do they show readiness to tackle the next step's challenges?
+4. Are there any gaps in their current understanding that should be addressed?
+
+Provide your assessment in this exact JSON format:
+{{
+    "ready": true/false,
+    "confidence": 0.0-1.0,
+    "feedback": "Brief explanation of your assessment",
+    "recommendations": ["Specific action items to improve"],
+    "next_steps": ["What to focus on in the next learning step"]
+}}
+
+Be honest and constructive. It's better to recommend staying in the current step if the student needs more practice."""
+    
+    # Get AI assessment
+    try:
+        if client_type == "anthropic":
+            # For Anthropic, we need to include the conversation as a user message
+            conversation_text = format_conversation_for_assessment(messages)
+            user_message = f"Please analyze this conversation and provide an assessment:\n\n{conversation_text}"
+            response, _ = call_anthropic_api([{"role": "user", "content": user_message}], assessment_prompt, max_tokens=500)
+        elif client_type == "openai":
+            response, _ = call_openai_api([{"role": "system", "content": assessment_prompt}], max_tokens=500)
+        else:  # ollama
+            response, _ = call_ollama_api([], assessment_prompt, max_tokens=500)
+        
+        # Parse JSON response
+        import json
+        import re
+        
+        # Extract JSON from response (handle cases where AI adds extra text)
+        json_match = re.search(r'\{.*\}', response, re.DOTALL)
+        if json_match:
+            assessment_data = json.loads(json_match.group())
+        else:
+            # Fallback parsing
+            assessment_data = {
+                "ready": False,
+                "confidence": 0.5,
+                "feedback": "Unable to parse AI assessment",
+                "recommendations": ["Continue working in current step"],
+                "next_steps": []
+            }
+        
+        # Ensure we have all required fields
+        if not isinstance(assessment_data, dict):
+            assessment_data = {}
+        
+        return {
+            "ready": assessment_data.get("ready", False),
+            "confidence": assessment_data.get("confidence", 0.0),
+            "feedback": assessment_data.get("feedback", "Assessment completed"),
+            "recommendations": assessment_data.get("recommendations", ["Continue working in current step"]),
+            "next_steps": assessment_data.get("next_steps", [])
+        }
+        
+    except Exception as e:
+        return {
+            "ready": False,
+            "confidence": 0.0,
+            "feedback": f"Assessment failed: {str(e)}",
+            "recommendations": ["Continue working in current step"],
+            "next_steps": []
+        }
+
+def format_conversation_for_assessment(messages):
+    """Format conversation messages for AI assessment."""
+    formatted = []
+    for i, msg in enumerate(messages):
+        role = "Student" if msg.role == "user" else "AI Assistant"
+        formatted.append(f"{role}: {msg.content}")
+    return "\n\n".join(formatted)
+
+def get_progression_recommendation(chat):
+    """
+    Get a user-friendly progression recommendation for the chat interface.
+    Returns a simplified recommendation suitable for UI display.
+    """
+    assessment = assess_learning_progression(chat)
+    
+    if assessment["ready"]:
+        if assessment["confidence"] >= 0.8:
+            return {
+                "type": "ready",
+                "message": "🎉 You're ready to move to the next learning step!",
+                "confidence": assessment["confidence"],
+                "next_step": get_next_learning_step(chat)
+            }
+        else:
+            return {
+                "type": "almost_ready",
+                "message": "👍 Almost ready! Consider these final touches:",
+                "confidence": assessment["confidence"],
+                "suggestions": assessment["recommendations"][:2]  # Top 2 recommendations
+            }
+    else:
+        return {
+            "type": "continue",
+            "message": "📚 Keep working on this learning step",
+            "confidence": assessment["confidence"],
+            "suggestions": assessment["recommendations"][:2]  # Top 2 recommendations
+        }
+
+def get_next_learning_step(chat):
+    """Get the next learning step in the sequence."""
+    modes = get_modes_for_room(chat.room)
+    mode_order = list(modes.keys())
+    
+    try:
+        current_index = mode_order.index(chat.mode)
+        if current_index < len(mode_order) - 1:
+            next_mode = mode_order[current_index + 1]
+            next_mode_info = modes[next_mode]
+            
+            return {
+                "key": next_mode,
+                "label": next_mode_info.label if hasattr(next_mode_info, 'label') else next_mode,
+                "description": (next_mode_info.prompt[:100] + "..." if len(next_mode_info.prompt) > 100 else next_mode_info.prompt) if hasattr(next_mode_info, 'prompt') else f"Next learning step: {next_mode}"
+            }
+    except ValueError:
+        pass
+    
+    return None
+
+def generate_chat_introduction(chat):
+    """
+    Generate an AI introduction message for a new chat.
+    This provides context about the AI's role and prompts the user to get started.
+    """
+    try:
+        # Get the mode information for this chat
+        modes = get_modes_for_room(chat.room)
+        mode_info = modes.get(chat.mode, None)
+        
+        if not mode_info:
+            # Fallback introduction
+            return "Hello! I'm here to help you with your learning journey. What would you like to work on today?"
+        
+        # Extract the AI role from the mode prompt
+        mode_prompt = mode_info.prompt if hasattr(mode_info, 'prompt') else str(mode_info)
+        
+        # Create a contextual introduction based on the mode
+        system_prompt = f"""You are an AI assistant creating a welcoming introduction for a new learning chat. 
+
+The chat is for: {chat.room.name}
+Learning goals: {chat.room.goals}
+Current learning step: {mode_info.label if hasattr(mode_info, 'label') else chat.mode}
+AI role: {mode_prompt}
+
+Create a brief, friendly introduction (2-3 sentences) that:
+1. Welcomes the student to this specific learning step
+2. Briefly explains your role as an instructor/expert
+3. Provides a simple prompt to get them started
+4. Maintains an encouraging, supportive tone
+
+Keep it concise and engaging. Don't repeat the full mode prompt - just give a warm welcome and a starting point."""
+
+        client_type = get_client_type()
+        if not client_type:
+            # Fallback introduction
+            return f"Hello! I'm here to help you with {mode_info.label if hasattr(mode_info, 'label') else chat.mode}. What would you like to explore today?"
+        
+        # Generate the introduction using the appropriate AI service
+        if client_type == "openai":
+            response, _ = call_openai_api([], system_prompt, max_tokens=150)
+        elif client_type == "anthropic":
+            # For Anthropic, we need at least one message, so we'll include a simple user message
+            user_message = "Please create a welcoming introduction for this new learning chat."
+            response, _ = call_anthropic_api([{"role": "user", "content": user_message}], system_prompt, max_tokens=150)
+        elif client_type == "ollama":
+            response, _ = call_ollama_api([], system_prompt, max_tokens=150)
+        else:
+            # Fallback
+            return f"Hello! I'm here to help you with {mode_info.label if hasattr(mode_info, 'label') else chat.mode}. What would you like to explore today?"
+        
+        # Clean up the response
+        introduction = response.strip()
+        if not introduction:
+            # Fallback introduction
+            return f"Hello! I'm here to help you with {mode_info.label if hasattr(mode_info, 'label') else chat.mode}. What would you like to explore today?"
+        
+        return introduction
+        
+    except Exception as e:
+        # Fallback introduction in case of any errors
+        return f"Hello! I'm here to help you with your learning. What would you like to work on today?"

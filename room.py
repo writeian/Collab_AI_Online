@@ -81,9 +81,10 @@ def create_room():
                 import json
                 refined_modes = json.loads(refined_modes_json)
                 
-                # Save refined modes as custom prompts
+                # Save refined modes as custom prompts and create rubrics
                 for mode in refined_modes:
                     if 'key' in mode and 'label' in mode and 'prompt' in mode:
+                        # Save custom prompt
                         custom_prompt = CustomPrompt(
                             mode_key=mode['key'],
                             label=mode['label'],
@@ -92,19 +93,31 @@ def create_room():
                             created_by=user.id
                         )
                         db.session.add(custom_prompt)
+                        
+                        # Create default rubric for this learning step
+                        from rubric_templates import create_default_rubric_for_room
+                        rubric_result = create_default_rubric_for_room(room_obj, mode['key'])
+                        if rubric_result:
+                            room_rubric, criteria_list, levels_list = rubric_result
+                            db.session.add(room_rubric)
+                            for criterion in criteria_list:
+                                db.session.add(criterion)
+                            for level in levels_list:
+                                db.session.add(level)
                 
                 db.session.commit()
-                flash(f"Room '{name}' created successfully with {len(refined_modes)} refined modes!")
+                flash(f"Room '{name}' created successfully with {len(refined_modes)} refined modes and assessment rubrics!")
             except Exception as e:
-                current_app.logger.error(f"Error saving refined modes: {e}")
-                flash(f"Room '{name}' created successfully! (Mode saving failed: {str(e)})")
+                current_app.logger.error(f"Error saving refined modes and rubrics: {e}")
+                flash(f"Room '{name}' created successfully! (Mode and rubric saving failed: {str(e)})")
         # Fallback to original mode generation if no refined modes
         elif goals:
             try:
                 contextual_modes = generate_room_modes(room_obj)
                 
-                # Save generated modes as custom prompts
+                # Save generated modes as custom prompts and create rubrics
                 for mode_key, mode_info in contextual_modes.items():
+                    # Save custom prompt
                     custom_prompt = CustomPrompt(
                         mode_key=mode_key,
                         label=mode_info.label,
@@ -113,9 +126,20 @@ def create_room():
                         created_by=user.id
                     )
                     db.session.add(custom_prompt)
+                    
+                    # Create default rubric for this learning step
+                    from rubric_templates import create_default_rubric_for_room
+                    rubric_result = create_default_rubric_for_room(room_obj, mode_key)
+                    if rubric_result:
+                        room_rubric, criteria_list, levels_list = rubric_result
+                        db.session.add(room_rubric)
+                        for criterion in criteria_list:
+                            db.session.add(criterion)
+                        for level in levels_list:
+                            db.session.add(level)
                 
                 db.session.commit()
-                flash(f"Room '{name}' created successfully with {len(contextual_modes)} contextual modes!")
+                flash(f"Room '{name}' created successfully with {len(contextual_modes)} contextual modes and assessment rubrics!")
             except Exception as e:
                 # If mode generation fails, still create the room but with base modes
                 flash(f"Room '{name}' created successfully! (Mode generation failed: {str(e)})")
@@ -124,7 +148,7 @@ def create_room():
         
         return redirect(url_for("room.view_room", room_id=room_obj.id))
     
-    return render_template("room/create.html")
+    return render_template("room/learning_steps.html", room=None, is_editing=False)
 
 @room.route("/<int:room_id>")
 @require_room_access
@@ -172,7 +196,189 @@ def edit_room(room_id):
         flash("Room updated successfully.")
         return redirect(url_for("room.view_room", room_id=room_obj.id))
     
-    return render_template("room/edit.html", room=room_obj)
+    # Redirect to learning steps management page instead of showing basic edit form
+    return redirect(url_for("room.learning_steps", room_id=room_obj.id))
+
+@room.route("/<int:room_id>/learning-steps", methods=["GET", "POST"])
+@require_room_management
+def learning_steps(room_id):
+    """Manage learning steps, AI instructions, and rubrics for a room."""
+    room_obj = Room.query.get_or_404(room_id)
+    
+    if request.method == "POST":
+        # Handle form submission for updating room and learning steps
+        room_obj.name = request.form["name"].strip()
+        room_obj.description = request.form.get("description", "").strip()
+        room_obj.goals = request.form.get("goals", "").strip()
+        
+        # Handle refined modes if provided
+        refined_modes_json = request.form.get("refined_modes", "")
+        
+        if refined_modes_json:
+            try:
+                import json
+                refined_modes = json.loads(refined_modes_json)
+                
+                # Save refined modes as custom prompts and create rubrics
+                for mode in refined_modes:
+                    if 'key' in mode and 'label' in mode and 'prompt' in mode:
+                        # Save custom prompt
+                        custom_prompt = CustomPrompt(
+                            mode_key=mode['key'],
+                            label=mode['label'],
+                            prompt=mode['prompt'],
+                            room_id=room_obj.id,
+                            created_by=get_current_user().id
+                        )
+                        db.session.add(custom_prompt)
+                        
+                        # Create default rubric for this learning step
+                        from rubric_templates import create_default_rubric_for_room
+                        rubric_result = create_default_rubric_for_room(room_obj, mode['key'])
+                        if rubric_result:
+                            room_rubric, criteria_list, levels_list = rubric_result
+                            db.session.add(room_rubric)
+                            for criterion in criteria_list:
+                                db.session.add(criterion)
+                            for level in levels_list:
+                                db.session.add(level)
+                
+                db.session.commit()
+                flash(f"Room '{room_obj.name}' updated successfully with {len(refined_modes)} refined learning steps and assessment rubrics!")
+            except Exception as e:
+                db.session.rollback()
+                current_app.logger.error(f"Error saving refined modes and rubrics: {e}")
+                flash(f"Room '{room_obj.name}' updated successfully! (Learning steps and rubric saving failed: {str(e)})")
+        else:
+            db.session.commit()
+            flash("Room updated successfully.")
+        
+        return redirect(url_for("room.view_room", room_id=room_obj.id))
+    
+    # Get existing learning steps for this room
+    from openai_utils import get_modes_for_room
+    existing_modes_dict = get_modes_for_room(room_obj)
+    
+    # Convert dictionary to array format expected by JavaScript
+    existing_modes = []
+    for mode_key, mode_info in existing_modes_dict.items():
+        existing_modes.append({
+            'key': mode_key,
+            'label': mode_info['label'],
+            'prompt': mode_info['prompt']
+        })
+    
+    return render_template("room/learning_steps.html", 
+                         room=room_obj, 
+                         is_editing=True,
+                         existing_modes=existing_modes)
+
+@room.route("/<int:room_id>/update-learning-steps", methods=["POST"])
+@require_room_management
+def update_learning_steps(room_id):
+    """Update room learning steps via AJAX."""
+    room_obj = Room.query.get_or_404(room_id)
+    
+    try:
+        data = request.get_json()
+        
+        # Update basic room information
+        room_obj.name = data.get("name", "").strip()
+        room_obj.description = data.get("description", "").strip()
+        room_obj.goals = data.get("goals", "").strip()
+        
+        # Handle learning steps updates
+        modes = data.get("modes", [])
+        
+        if modes:
+            # Clear existing custom prompts for this room
+            CustomPrompt.query.filter_by(room_id=room_obj.id).delete()
+            
+            # Save new/updated modes as custom prompts
+            for mode in modes:
+                if 'key' in mode and 'label' in mode and 'prompt' in mode:
+                    custom_prompt = CustomPrompt(
+                        mode_key=mode['key'],
+                        label=mode['label'],
+                        prompt=mode['prompt'],
+                        room_id=room_obj.id,
+                        created_by=get_current_user().id
+                    )
+                    db.session.add(custom_prompt)
+            
+            # Clear existing rubrics and recreate them
+            from models import RubricCriterion, RubricLevel, RoomRubric
+            RubricCriterion.query.filter_by(room_id=room_obj.id).delete(synchronize_session=False)
+            RoomRubric.query.filter_by(room_id=room_obj.id).delete()
+            
+            # Create new rubrics for each learning step
+            from rubric_templates import create_default_rubric_for_room
+            for mode in modes:
+                if 'key' in mode:
+                    rubric_result = create_default_rubric_for_room(room_obj, mode['key'])
+                    if rubric_result:
+                        room_rubric, criteria_list, levels_list = rubric_result
+                        db.session.add(room_rubric)
+                        for criterion in criteria_list:
+                            db.session.add(criterion)
+                        for level in levels_list:
+                            db.session.add(level)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Room learning steps updated successfully'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error updating learning steps: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@room.route("/<int:room_id>/regenerate-learning-steps", methods=["POST"])
+@require_room_management
+def regenerate_learning_steps(room_id):
+    """Regenerate learning steps based on current room goals."""
+    room_obj = Room.query.get_or_404(room_id)
+    
+    try:
+        # Generate new learning steps based on current goals
+        from openai_utils import generate_room_modes
+        
+        if not room_obj.goals:
+            return jsonify({
+                'success': False,
+                'error': 'Room must have learning goals to generate new learning steps'
+            }), 400
+        
+        # Generate new contextual modes
+        new_modes = generate_room_modes(room_obj)
+        
+        # Convert to the format expected by frontend
+        formatted_modes = []
+        for mode_key, mode_info in new_modes.items():
+            formatted_modes.append({
+                'key': mode_key,
+                'label': mode_info.label,
+                'prompt': mode_info.prompt
+            })
+        
+        return jsonify({
+            'success': True,
+            'new_modes': formatted_modes,
+            'message': f'Generated {len(formatted_modes)} new learning steps based on current goals'
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error regenerating learning steps: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 @room.route("/<int:room_id>/delete", methods=["GET", "POST"])
 @require_room_management
@@ -324,6 +530,32 @@ def create_chat(room_id):
         db.session.add(chat_obj)
         db.session.commit()
         
+        # Generate and add AI introduction message
+        try:
+            from openai_utils import generate_chat_introduction
+            introduction = generate_chat_introduction(chat_obj)
+            
+            # Add the AI introduction as the first message
+            intro_message = Message(
+                chat_id=chat_obj.id,
+                role="assistant",
+                content=introduction,
+                is_truncated=False
+            )
+            db.session.add(intro_message)
+            db.session.commit()
+        except Exception as e:
+            # If introduction generation fails, add a simple fallback
+            current_app.logger.error(f"Failed to generate chat introduction: {e}")
+            fallback_intro = Message(
+                chat_id=chat_obj.id,
+                role="assistant",
+                content="Hello! I'm here to help you with your learning. What would you like to work on today?",
+                is_truncated=False
+            )
+            db.session.add(fallback_intro)
+            db.session.commit()
+        
         # If Google Doc URL provided, import the content
         if google_doc_url:
             doc_id = doc_id_or_error  # This is the doc_id from validation
@@ -387,11 +619,19 @@ def generate_room_proposal():
 1. A clear, descriptive room title (3-6 words)
 2. A brief room description (1-2 sentences)
 
-The title should be engaging and clearly indicate the room's purpose. The description should provide context about what students will learn."""
+The title should be engaging and clearly indicate the room's purpose. The description should provide context about what students will learn.
+
+IMPORTANT: Format your response exactly as follows:
+Title: [Your suggested title]
+Description: [Your suggested description]"""
             
             user_prompt = f"""Learning Goals: {goals}
 
-Please suggest a room title and description for a collaborative learning space focused on these goals."""
+Please suggest a room title and description for a collaborative learning space focused on these goals.
+
+Format your response as:
+Title: [suggested title]
+Description: [suggested description]"""
 
             try:
                 if client_type == "anthropic":
@@ -413,21 +653,27 @@ Please suggest a room title and description for a collaborative learning space f
                 else:
                     response_text = response
                 
-                # Simple parsing - look for title and description patterns
+                # Parse the response to extract title and description
                 lines = response_text.strip().split('\n')
                 room_title = "Learning Room"  # Default
                 room_description = ""
                 
                 for line in lines:
                     line = line.strip()
-                    if line.lower().startswith('title:') or line.lower().startswith('room title:'):
+                    # Look for title patterns
+                    if line.lower().startswith('title:'):
                         room_title = line.split(':', 1)[1].strip()
-                    elif line.lower().startswith('description:') or line.lower().startswith('room description:'):
+                        # Clean up any quotes or extra formatting
+                        room_title = room_title.strip('"').strip("'").strip()
+                    # Look for description patterns
+                    elif line.lower().startswith('description:'):
                         room_description = line.split(':', 1)[1].strip()
-                    elif not room_title or room_title == "Learning Room":
-                        # If no explicit title found, use the first meaningful line
-                        if line and not line.startswith('#') and len(line) > 3:
-                            room_title = line.strip('"').strip("'")
+                        # Clean up any quotes or extra formatting
+                        room_description = room_description.strip('"').strip("'").strip()
+                
+                # If no description was found, create a default one based on the title
+                if not room_description and room_title != "Learning Room":
+                    room_description = f"A collaborative learning space focused on {room_title.lower()} where students can work together to achieve their learning goals."
                 
             except Exception as e:
                 current_app.logger.error(f"Error generating room title/description: {e}")
@@ -470,6 +716,84 @@ Please suggest a room title and description for a collaborative learning space f
 @room.route("/refine-room-proposal", methods=["POST"])
 @require_login
 def refine_room_proposal():
+    """Refine room proposal for new room creation."""
+    return _refine_room_proposal(None)
+
+@room.route("/<int:room_id>/refine-room-proposal", methods=["POST"])
+@require_room_management
+def refine_existing_room_proposal(room_id):
+    """Refine room proposal for existing room editing."""
+    return _refine_room_proposal(room_id)
+
+def _refine_room_proposal(room_id=None):
+    """Internal function to handle room proposal refinement."""
+    user = get_current_user()
+    
+    try:
+        data = request.get_json()
+        message = data.get('message', '').strip()
+        conversation_id = data.get('conversation_id')
+        current_modes = data.get('current_modes', [])
+        
+        if not message:
+            return jsonify({'success': False, 'error': 'Message is required'})
+        
+        # Get room object if editing existing room
+        room_obj = None
+        if room_id:
+            room_obj = Room.query.get_or_404(room_id)
+            if room_obj.owner_id != user.id:
+                return jsonify({'success': False, 'error': 'Permission denied'})
+        
+        # Use the existing refinement logic
+        client_type = get_client_type()
+        if not client_type:
+            return jsonify({'success': False, 'error': 'No AI service available'})
+        
+        # Build conversation context
+        conversation = []
+        
+        # Add system message
+        system_prompt = """You are an educational AI assistant helping to refine a room proposal. The user wants to improve their learning space.
+
+Current room information:
+- Goals: {goals}
+- Current learning steps: {current_steps}
+
+Please help refine the room title, description, or learning steps based on the user's feedback. Be specific and actionable in your suggestions.
+
+Respond in a conversational, helpful tone. Focus on making the learning experience more effective and engaging.""".format(
+            goals=room_obj.goals if room_obj else "Not specified",
+            current_steps=", ".join([mode.get('label', mode.get('key', '')) for mode in current_modes]) if current_modes else "Not specified"
+        )
+        
+        conversation.append({"role": "system", "content": system_prompt})
+        
+        # Add user message
+        conversation.append({"role": "user", "content": message})
+        
+        # Get AI response
+        if client_type == "anthropic":
+            ai_response = call_anthropic_api(conversation, system_prompt, max_tokens=500)
+        elif client_type == "openai":
+            ai_response = call_openai_api(conversation, max_tokens=500)
+        else:
+            ai_response = call_ollama_api(conversation, system_prompt, max_tokens=500)
+        
+        # Parse AI response to extract refined content
+        # For now, return the AI response as-is
+        # In a more sophisticated implementation, you could parse the response to extract specific updates
+        
+        return jsonify({
+            'success': True,
+            'ai_message': ai_response,
+            'modes': current_modes,  # Keep existing modes for now
+            'conversation_id': conversation_id or str(time.time())
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error refining room proposal: {e}")
+        return jsonify({'success': False, 'error': str(e)})
     """Refine room proposal through AI conversation."""
     try:
         data = request.get_json()
@@ -572,3 +896,211 @@ Please refine this proposal based on the user's feedback. Return only the fields
     except Exception as e:
         current_app.logger.error(f"Error refining room proposal: {e}")
         return jsonify({'error': 'Failed to refine proposal'}), 500 
+
+@room.route("/<int:room_id>/rubric/<step_key>", methods=["GET"])
+@require_room_access
+def get_rubric(room_id, step_key):
+    """Get rubric data for a specific learning step in a room."""
+    try:
+        from models import RubricCriterion, RubricLevel, RoomRubric
+        
+        # Get rubric criteria for this step
+        criteria = RubricCriterion.query.filter_by(
+            room_id=room_id, 
+            step_key=step_key
+        ).order_by(RubricCriterion.order).all()
+        
+        rubric_data = []
+        for criterion in criteria:
+            levels = RubricLevel.query.filter_by(criterion_id=criterion.id).order_by(RubricLevel.score).all()
+            criterion_data = {
+                'id': criterion.id,
+                'name': criterion.name,
+                'description': criterion.description,
+                'weight': criterion.weight,
+                'order': criterion.order,
+                'levels': [{
+                    'id': level.id,
+                    'level': level.level,
+                    'score': level.score,
+                    'description': level.description,
+                    'examples': level.examples
+                } for level in levels]
+            }
+            rubric_data.append(criterion_data)
+        
+        # Get room rubric configuration
+        room_rubric = RoomRubric.query.filter_by(room_id=room_id, step_key=step_key).first()
+        progression_threshold = room_rubric.progression_threshold if room_rubric else 2.5
+        
+        return jsonify({
+            'success': True,
+            'criteria': rubric_data,
+            'progression_threshold': progression_threshold
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error getting rubric: {e}")
+        return jsonify({'error': 'Failed to get rubric data'}), 500
+
+@room.route("/<int:room_id>/rubric/<step_key>/update", methods=["POST"])
+@require_room_management
+def update_rubric(room_id, step_key):
+    """Update rubric data for a specific learning step."""
+    try:
+        from models import RubricCriterion, RubricLevel, RoomRubric
+        
+        data = request.get_json()
+        criteria_data = data.get('criteria', [])
+        progression_threshold = data.get('progression_threshold', 2.5)
+        
+        # Update or create room rubric configuration
+        room_rubric = RoomRubric.query.filter_by(room_id=room_id, step_key=step_key).first()
+        if not room_rubric:
+            room_rubric = RoomRubric(
+                room_id=room_id,
+                step_key=step_key,
+                progression_threshold=progression_threshold
+            )
+            db.session.add(room_rubric)
+        else:
+            room_rubric.progression_threshold = progression_threshold
+            room_rubric.updated_at = datetime.utcnow()
+        
+        # Update criteria and levels
+        for criterion_data in criteria_data:
+            criterion_id = criterion_data.get('id')
+            
+            if criterion_id:
+                # Update existing criterion
+                criterion = RubricCriterion.query.get(criterion_id)
+                if criterion and criterion.room_id == room_id:
+                    criterion.name = criterion_data['name']
+                    criterion.description = criterion_data.get('description', '')
+                    criterion.weight = criterion_data.get('weight', 1.0)
+                    criterion.order = criterion_data.get('order', 0)
+                    
+                    # Update levels
+                    for level_data in criterion_data.get('levels', []):
+                        level_id = level_data.get('id')
+                        if level_id:
+                            level = RubricLevel.query.get(level_id)
+                            if level and level.criterion_id == criterion_id:
+                                level.description = level_data['description']
+                                level.examples = level_data.get('examples', '')
+            else:
+                # Create new criterion
+                criterion = RubricCriterion(
+                    room_id=room_id,
+                    step_key=step_key,
+                    name=criterion_data['name'],
+                    description=criterion_data.get('description', ''),
+                    weight=criterion_data.get('weight', 1.0),
+                    order=criterion_data.get('order', 0)
+                )
+                db.session.add(criterion)
+                db.session.flush()  # Get the ID
+                
+                # Create levels for new criterion
+                for level_data in criterion_data.get('levels', []):
+                    level = RubricLevel(
+                        criterion_id=criterion.id,
+                        level=level_data['level'],
+                        score=level_data['score'],
+                        description=level_data['description'],
+                        examples=level_data.get('examples', '')
+                    )
+                    db.session.add(level)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Rubric updated successfully'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error updating rubric: {e}")
+        return jsonify({'error': 'Failed to update rubric'}), 500
+
+@room.route("/<int:room_id>/rubric/<step_key>/validate", methods=["POST"])
+@require_room_management
+def validate_rubric(room_id, step_key):
+    """Validate rubric content using AI."""
+    try:
+        from models import RubricCriterion, RubricLevel
+        
+        data = request.get_json()
+        criteria_data = data.get('criteria', [])
+        
+        # Build rubric text for AI validation
+        rubric_text = f"Learning Step: {step_key}\n\n"
+        
+        for criterion in criteria_data:
+            rubric_text += f"Criterion: {criterion['name']}\n"
+            for level in criterion.get('levels', []):
+                rubric_text += f"  {level['level']} ({level['score']}): {level['description']}\n"
+            rubric_text += "\n"
+        
+        # AI validation prompt
+        system_prompt = """You are an educational assessment expert. Review this rubric and provide feedback on:
+
+1. **Clarity**: Are the descriptions clear and specific?
+2. **Progression**: Do the levels show clear progression from basic to advanced?
+3. **Educational Value**: Will this help students understand expectations?
+4. **Balance**: Is the progression reasonable and achievable?
+
+Provide specific suggestions for improvement. Be encouraging but honest about areas that need work."""
+
+        user_prompt = f"Please review this rubric:\n\n{rubric_text}"
+        
+        # Call AI for validation
+        client_type = get_client_type()
+        if client_type == "anthropic":
+            response = call_anthropic_api(
+                [{"role": "user", "content": user_prompt}],
+                system_prompt,
+                max_tokens=800
+            )
+        else:
+            response = call_openai_api(
+                [{"role": "system", "content": system_prompt},
+                 {"role": "user", "content": user_prompt}],
+                max_tokens=800
+            )
+        
+        if isinstance(response, tuple):
+            validation_feedback = response[0]
+        else:
+            validation_feedback = response
+        
+        # Calculate average score for progression assessment
+        total_score = 0
+        total_levels = 0
+        
+        for criterion in criteria_data:
+            for level in criterion.get('levels', []):
+                total_score += level['score']
+                total_levels += 1
+        
+        average_score = total_score / total_levels if total_levels > 0 else 0
+        
+        # Determine if progression threshold is appropriate
+        threshold_warning = None
+        if average_score < 2.0:
+            threshold_warning = "The average score is quite low. Consider if students can realistically achieve higher levels."
+        elif average_score > 3.5:
+            threshold_warning = "The average score is quite high. Consider if the progression threshold is too lenient."
+        
+        return jsonify({
+            'success': True,
+            'validation_feedback': validation_feedback,
+            'average_score': round(average_score, 2),
+            'threshold_warning': threshold_warning,
+            'recommendation': 'proceed' if average_score >= 2.0 else 'review'
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error validating rubric: {e}")
+        return jsonify({'error': 'Failed to validate rubric'}), 500 

@@ -50,12 +50,12 @@
           
           <div class="flex gap-3 pt-4">
             <button type="submit" id="createButton"
-                    class="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 
+                    class="flex-1 px-4 py-2 bg-success text-white rounded-md hover:bg-success-hover 
                            transition-colors font-medium">
               Create Chat
             </button>
             <a href="{{ url_for('room.view_room', room_id=room.id) }}" 
-               class="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90 
+               class="px-4 py-2 bg-white text-black border border-gray-300 rounded-md hover:bg-gray-50 
                       transition-colors font-medium text-center">
               Cancel
             </a>

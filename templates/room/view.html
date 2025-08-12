@@ -17,7 +17,7 @@
   <div class="expandable-section bg-card border border-border rounded-lg mb-8">
     <button class="expandable-header w-full p-6 text-left flex items-center justify-between hover:bg-muted/50 transition-colors" onclick="toggleSection('room-info')">
       <div class="flex items-center gap-3">
-        <i data-lucide="info" class="w-6 h-6 text-blue-600"></i>
+                    <i data-lucide="info" class="w-6 h-6 text-info"></i>
         <h3 class="text-lg font-semibold">Room Info</h3>
       </div>
       <i data-lucide="chevron-down" class="w-5 h-5 transition-transform" id="room-info-icon"></i>
@@ -67,7 +67,7 @@
                 <i data-lucide="users" class="w-4 h-4"></i>
                 View Members
               </a>
-              <a href="{{ url_for('room.delete_room', room_id=room.id) }}" class="dropdown-item text-red-600" onclick="return confirm('Are you sure you want to delete this room? This action cannot be undone.')">
+              <a href="{{ url_for('room.delete_room', room_id=room.id) }}" class="dropdown-item text-destructive" onclick="return confirm('Are you sure you want to delete this room? This action cannot be undone.')">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
                 Delete Room
               </a>
@@ -121,7 +121,7 @@
                     <a href="{{ url_for('chat.edit_chat', chat_id=chat.id) }}" class="text-muted-foreground hover:text-foreground transition-colors" title="Edit Chat">
                       <i data-lucide="edit" class="w-4 h-4"></i>
                     </a>
-                    <a href="{{ url_for('chat.delete_chat', chat_id=chat.id) }}" class="text-red-600 hover:text-red-700 transition-colors" title="Delete Chat" onclick="return confirm('Are you sure you want to delete this chat?')">
+                    <a href="{{ url_for('chat.delete_chat', chat_id=chat.id) }}" class="text-destructive hover:text-destructive-hover transition-colors" title="Delete Chat" onclick="return confirm('Are you sure you want to delete this chat?')">
                       <i data-lucide="trash-2" class="w-4 h-4"></i>
                     </a>
                   </div>
@@ -129,17 +129,33 @@
               </div>
               
               <div class="space-y-3">
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary">
-                  {% if chat.mode in modes %}
-                    {{ modes[chat.mode].label }}
-                  {% else %}
-                    {{ chat.mode }}
-                  {% endif %}
-                </span>
+                <div class="flex items-center justify-between">
+                  <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary">
+                    {% if chat.mode in modes %}
+                      {{ modes[chat.mode].label }}
+                    {% else %}
+                      {{ chat.mode }}
+                    {% endif %}
+                  </span>
+                  
+                  <!-- Progress Assessment Button -->
+                  <button onclick="assessChatProgress({{ chat.id }})" 
+                          class="text-xs px-2 py-1 bg-success-light text-success-text rounded hover:bg-success-light/80 transition-colors"
+                          title="Assess learning progress">
+                    🔍 Progress
+                  </button>
+                </div>
                 
                 <p class="text-sm text-muted-foreground">
                   Created by {{ chat.creator.display_name }}
                 </p>
+                
+                <!-- Progress Status (hidden by default) -->
+                <div id="progress-{{ chat.id }}" class="hidden mt-2">
+                  <div id="progress-content-{{ chat.id }}" class="text-xs">
+                    <!-- Progress content will be populated by JavaScript -->
+                  </div>
+                </div>
               </div>
             </a>
           </div>
@@ -168,7 +184,7 @@
   <div class="expandable-section bg-card border border-border rounded-lg mb-8">
     <button class="expandable-header w-full p-6 text-left flex items-center justify-between hover:bg-muted/50 transition-colors" onclick="toggleSection('achievements')">
       <div class="flex items-center gap-3">
-        <i data-lucide="trophy" class="w-6 h-6 text-yellow-600"></i>
+                    <i data-lucide="trophy" class="w-6 h-6 text-warning"></i>
         <h3 class="text-lg font-semibold">Your Achievements</h3>
       </div>
       <i data-lucide="chevron-down" class="w-5 h-5 transition-transform" id="achievements-icon"></i>
@@ -213,7 +229,7 @@
   <div class="expandable-section bg-card border border-border rounded-lg mb-8">
     <button class="expandable-header w-full p-6 text-left flex items-center justify-between hover:bg-muted/50 transition-colors" onclick="toggleSection('members')">
       <div class="flex items-center gap-3">
-        <i data-lucide="users" class="w-6 h-6 text-blue-600"></i>
+                    <i data-lucide="users" class="w-6 h-6 text-info"></i>
         <h3 class="text-lg font-semibold">Room Members</h3>
       </div>
       <i data-lucide="chevron-down" class="w-5 h-5 transition-transform" id="members-icon"></i>
@@ -262,7 +278,7 @@
   <div class="expandable-section bg-card border border-border rounded-lg mb-8">
     <button class="expandable-header w-full p-6 text-left flex items-center justify-between hover:bg-muted/50 transition-colors" onclick="toggleSection('stats')">
       <div class="flex items-center gap-3">
-        <i data-lucide="bar-chart-3" class="w-6 h-6 text-green-600"></i>
+                    <i data-lucide="bar-chart-3" class="w-6 h-6 text-success"></i>
         <h3 class="text-lg font-semibold">Room Stats</h3>
       </div>
       <i data-lucide="chevron-down" class="w-5 h-5 transition-transform" id="stats-icon"></i>
@@ -279,7 +295,7 @@
           <div class="stat-label text-sm text-muted-foreground">Chats</div>
         </div>
         <div class="stat-item">
-          <div class="stat-value text-2xl font-bold text-green-600">Active</div>
+                      <div class="stat-value text-2xl font-bold text-success">Active</div>
           <div class="stat-label text-sm text-muted-foreground">Status</div>
         </div>
       </div>
@@ -312,6 +328,43 @@
       
       // Open dropdown
       menu.style.display = 'block';
+      
+      // Mobile-friendly positioning: check if dropdown would go off-screen
+      const buttonRect = settingsButton.getBoundingClientRect();
+      const menuRect = menu.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+      
+      // Reset any previous positioning
+      menu.style.top = '';
+      menu.style.bottom = '';
+      menu.style.left = '';
+      menu.style.right = '';
+      
+      // Check if dropdown would go below viewport
+      if (buttonRect.bottom + menuRect.height > viewportHeight) {
+        // Position above the button instead
+        menu.style.bottom = '100%';
+        menu.style.top = 'auto';
+        menu.style.marginBottom = '0.5rem';
+        menu.style.marginTop = '0';
+      } else {
+        // Position below the button (default)
+        menu.style.top = '100%';
+        menu.style.bottom = 'auto';
+        menu.style.marginTop = '0.5rem';
+        menu.style.marginBottom = '0';
+      }
+      
+      // Check if dropdown would go off the right edge
+      if (buttonRect.right + menuRect.width > viewportWidth) {
+        menu.style.right = '0';
+        menu.style.left = 'auto';
+      } else {
+        menu.style.left = '0';
+        menu.style.right = 'auto';
+      }
+      
       // Use setTimeout to ensure display: block is applied before adding the open class
       setTimeout(() => {
         menu.classList.add('open');
@@ -361,5 +414,116 @@
       yourChatsIcon.style.transform = 'rotate(180deg)';
     }
   });
+  
+  // Learning Progress Assessment Functions
+  function assessChatProgress(chatId) {
+    const progressDiv = document.getElementById(`progress-${chatId}`);
+    const progressContent = document.getElementById(`progress-content-${chatId}`);
+    const button = event.target;
+    
+    // Show loading state
+    button.disabled = true;
+    button.textContent = 'Analyzing...';
+    progressDiv.classList.remove('hidden');
+    progressContent.innerHTML = `
+      <div class="flex items-center gap-2 text-muted-foreground">
+        <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
+        Analyzing progress...
+      </div>
+    `;
+    
+    // Make API request
+    fetch(`/chat/${chatId}/assess-progression`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        displayChatProgressResult(chatId, data.recommendation);
+      } else {
+        displayChatProgressError(chatId, data.error || 'Assessment failed');
+      }
+    })
+    .catch(error => {
+      console.error('Assessment error:', error);
+      displayChatProgressError(chatId, 'Network error. Please try again.');
+    })
+    .finally(() => {
+      // Reset button
+      button.disabled = false;
+      button.textContent = '🔍 Progress';
+    });
+  }
+  
+  function displayChatProgressResult(chatId, recommendation) {
+    const progressContent = document.getElementById(`progress-content-${chatId}`);
+    
+    let html = '';
+    
+    if (recommendation.type === 'ready') {
+      html = `
+        <div class="bg-success-light border border-success rounded-md p-2">
+          <div class="flex items-start gap-2">
+            <div class="text-success">🎉</div>
+            <div class="flex-1">
+              <p class="font-medium text-success-text text-xs">Ready for next step!</p>
+              <p class="text-success-text text-xs">Confidence: ${Math.round(recommendation.confidence * 100)}%</p>
+              ${recommendation.next_step ? `
+                <p class="text-success-text text-xs mt-1">Next: ${recommendation.next_step.label}</p>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    } else if (recommendation.type === 'almost_ready') {
+      html = `
+        <div class="bg-warning-light border border-warning rounded-md p-2">
+          <div class="flex items-start gap-2">
+            <div class="text-warning">👍</div>
+            <div class="flex-1">
+              <p class="font-medium text-warning-text text-xs">Almost ready!</p>
+              <p class="text-warning-text text-xs">Confidence: ${Math.round(recommendation.confidence * 100)}%</p>
+              <p class="text-warning-text text-xs mt-1">Keep working on current step</p>
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      html = `
+        <div class="bg-info-light border border-info rounded-md p-2">
+          <div class="flex items-start gap-2">
+            <div class="text-info">📚</div>
+            <div class="flex-1">
+              <p class="font-medium text-info-text text-xs">Continue learning</p>
+              <p class="text-info-text text-xs">Confidence: ${Math.round(recommendation.confidence * 100)}%</p>
+              <p class="text-info-text text-xs mt-1">More practice needed</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    progressContent.innerHTML = html;
+  }
+  
+  function displayChatProgressError(chatId, error) {
+    const progressContent = document.getElementById(`progress-content-${chatId}`);
+    
+    progressContent.innerHTML = `
+      <div class="bg-destructive-light border border-destructive rounded-md p-2">
+        <div class="flex items-start gap-2">
+          <div class="text-destructive">⚠️</div>
+          <div class="flex-1">
+            <p class="font-medium text-destructive-text text-xs">Assessment Error</p>
+            <p class="text-destructive-text text-xs">${error}</p>
+          </div>
+        </div>
+      </div>
+    `;
+  }
 </script>
 {% endblock %} 
