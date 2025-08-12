@@ -1,6 +1,12 @@
-from flask import Flask, render_template, redirect, url_for
-from models import db
+# Standard library imports
 import os
+from datetime import datetime, timedelta
+
+# Third-party imports
+from flask import Flask, render_template, redirect, url_for
+
+# Local imports
+from models import db
 from config import config
 
 # Load environment variables from .env file
@@ -21,38 +27,69 @@ from dashboard import dashboard
 from google_auth import google_auth
 from analytics import analytics
 
+
+def initialize_database(app):
+    """Initialize database connection and create tables if needed."""
+    if app.config.get('SQLALCHEMY_DATABASE_URI'):
+        db.init_app(app)
+        
+        try:
+            with app.app_context():
+                db.create_all()
+        except Exception as e:
+            print(f"Warning: Could not initialize database: {e}")
+    else:
+        print("Warning: No database URL configured - skipping database initialization")
+        # Create a minimal app without database
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+        db.init_app(app)
+
+
+def run_production_migrations():
+    """Run Alembic migrations in production environment."""
+    if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("FLASK_ENV") == "production":
+        try:
+            from alembic.config import Config
+            from alembic import command
+            print("Running Alembic migrations...")
+            alembic_cfg = Config("alembic.ini")
+            command.upgrade(alembic_cfg, "head")
+            print("Alembic migrations complete.")
+        except Exception as e:
+            print("Alembic migration failed:", e)
+        
+        # Also ensure achievement tables exist
+        try:
+            print("Ensuring achievement tables exist...")
+            from models import db, UserModeUsage, Achievement
+            
+            # Create a temporary app context
+            temp_app = Flask(__name__)
+            temp_app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+            temp_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+            db.init_app(temp_app)
+            
+            with temp_app.app_context():
+                # Create achievement tables if they don't exist
+                UserModeUsage.__table__.create(db.engine, checkfirst=True)
+                Achievement.__table__.create(db.engine, checkfirst=True)
+                print("✓ Achievement tables ensured")
+        except Exception as e:
+            print(f"Achievement table creation failed: {e}")
+
+
 # Automatically run Alembic migrations in production (e.g., on Railway)
-if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("FLASK_ENV") == "production":
-    try:
-        from alembic.config import Config
-        from alembic import command
-        print("Running Alembic migrations...")
-        alembic_cfg = Config("alembic.ini")
-        # Only run migrations if tables don't exist to avoid conflicts
-        command.upgrade(alembic_cfg, "head")
-        print("Alembic migrations complete.")
-    except Exception as e:
-        print("Alembic migration failed:", e)
-        # Continue anyway - the app will handle table creation
-    
-    # Also ensure achievement tables exist
-    try:
-        print("Ensuring achievement tables exist...")
-        from models import db, UserModeUsage, Achievement
-        
-        # Create a temporary app context
-        temp_app = Flask(__name__)
-        temp_app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
-        temp_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-        db.init_app(temp_app)
-        
-        with temp_app.app_context():
-            # Create achievement tables if they don't exist
-            UserModeUsage.__table__.create(db.engine, checkfirst=True)
-            Achievement.__table__.create(db.engine, checkfirst=True)
-            print("✓ Achievement tables ensured")
-    except Exception as e:
-        print(f"Achievement table creation failed: {e}")
+run_production_migrations()
+
+
+def register_blueprints(app):
+    """Register all application blueprints."""
+    app.register_blueprint(auth, url_prefix='/auth')
+    app.register_blueprint(room, url_prefix='/room')
+    app.register_blueprint(chat, url_prefix='/chat')
+    app.register_blueprint(dashboard, url_prefix='/dashboard')
+    app.register_blueprint(google_auth, url_prefix='/auth/google')
+    app.register_blueprint(analytics, url_prefix='/analytics')
 
 
 def create_app(config_name=None):
@@ -71,32 +108,15 @@ def create_app(config_name=None):
     print("SQLALCHEMY_DATABASE_URI:", app.config.get('SQLALCHEMY_DATABASE_URI'))
 
     # Initialize database only if database URL is available
-    if app.config.get('SQLALCHEMY_DATABASE_URI'):
-        db.init_app(app)
-        
-        # Only create tables if database URL is available
-        try:
-            with app.app_context():
-                db.create_all()
-        except Exception as e:
-            print(f"Warning: Could not initialize database: {e}")
-    else:
-        print("Warning: No database URL configured - skipping database initialization")
-        # Create a minimal app without database
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-        db.init_app(app)
-
+    initialize_database(app)
+    
     # Register Blueprints
-    app.register_blueprint(auth, url_prefix='/auth')
-    app.register_blueprint(room, url_prefix='/room')
-    app.register_blueprint(chat, url_prefix='/chat')
-    app.register_blueprint(dashboard, url_prefix='/dashboard')
-    app.register_blueprint(google_auth, url_prefix='/auth/google')
-    app.register_blueprint(analytics, url_prefix='/analytics')
+    register_blueprints(app)
     
     # Health check endpoint for Railway
     @app.route('/health')
     def health():
+        """Health check endpoint for monitoring and deployment verification."""
         try:
             # Test database connection
             from models import db
@@ -151,9 +171,18 @@ def create_app(config_name=None):
                     'commit': 'f3d9d79'
                 }, 200
             else:
-                return {'status': 'healthy', 'message': 'App is running', 'database': 'not configured'}, 200
+                return {
+                    'status': 'healthy', 
+                    'message': 'App is running', 
+                    'database': 'not configured'
+                }, 200
         except Exception as e:
-            return {'status': 'unhealthy', 'error': str(e), 'database': 'error'}, 500
+            return {
+                'status': 'unhealthy', 
+                'error': str(e), 
+                'database': 'error',
+                'timestamp': datetime.now(datetime.UTC).isoformat()
+            }, 500
     
     # Test endpoint to list all routes
     @app.route('/routes')
@@ -335,14 +364,14 @@ def create_app(config_name=None):
     def inject_user():
         from access_control import get_current_user
         from models import RoomMember, Room
-        from datetime import datetime, timedelta
+        from datetime import datetime, timedelta, timezone
         
         user = get_current_user()
         invitation_count = 0
         
         if user:
             # Get recent unaccepted invitations (rooms they were added to in the last 24 hours)
-            recent_cutoff = datetime.utcnow() - timedelta(hours=24)
+            recent_cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
             recent_invitations = RoomMember.query.filter(
                 RoomMember.user_id == user.id,
                 RoomMember.joined_at >= recent_cutoff,
