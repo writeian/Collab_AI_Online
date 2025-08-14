@@ -1,3 +1,14 @@
+#!/usr/bin/env python3
+"""
+config.py
+Purpose: Application configuration management
+Status: [ACTIVE]
+Created: 2025-01-27
+Author: writeian
+
+Environment-specific configuration settings and database connection management
+"""
+
 import os
 from dotenv import load_dotenv
 from datetime import timedelta

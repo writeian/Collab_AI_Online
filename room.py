@@ -1,3 +1,17 @@
+#!/usr/bin/env python3
+"""
+room.py
+Purpose: Collaborative room management blueprint
+Status: [ACTIVE]
+Created: 2025-01-27
+Author: writeian
+
+Handles room creation, membership, invitations, and room-based collaboration features
+"""
+
+TODO: Add proper documentation for this script
+"""
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, session, jsonify, current_app
 from models import db, Room, RoomMember, Chat, User, Message, PromptRecord, CustomPrompt
 from access_control import (

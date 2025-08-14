@@ -1,3 +1,14 @@
+#!/usr/bin/env python3
+"""
+models.py
+Purpose: Database models and schema definitions
+Status: [ACTIVE]
+Created: 2025-01-27
+Author: writeian
+
+SQLAlchemy ORM models for users, rooms, chats, messages, analytics, and achievements
+"""
+
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -273,7 +284,7 @@ class RubricCriterion(db.Model):
     order = db.Column(db.Integer, nullable=False)
     
     # Relationships
-    room = db.relationship('Room', lazy=True)
+    room = db.relationship('Room', lazy=True, overlaps="rubric_criteria")
     levels = db.relationship('RubricLevel', backref='criterion', lazy=True, cascade='all, delete-orphan')
     
     __table_args__ = (db.UniqueConstraint('room_id', 'step_key', 'name', name='unique_room_step_criterion'),)

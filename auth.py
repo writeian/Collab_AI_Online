@@ -1,3 +1,17 @@
+#!/usr/bin/env python3
+"""
+auth.py
+Purpose: User authentication and session management blueprint
+Status: [ACTIVE]
+Created: 2025-01-27
+Author: writeian
+
+Handles user registration, login, logout, password management, and session handling
+"""
+
+TODO: Add proper documentation for this script
+"""
+
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from models import db, User
 from access_control import get_current_user, require_login

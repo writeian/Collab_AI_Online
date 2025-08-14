@@ -1,3 +1,14 @@
+#!/usr/bin/env python3
+"""
+app.py
+Purpose: Main Flask application entry point and configuration
+Status: [ACTIVE]
+Created: 2025-01-27
+Author: writeian
+
+Initializes Flask app, registers blueprints, handles database setup, and provides health check endpoints
+"""
+
 # Standard library imports
 import os
 from datetime import datetime, timedelta

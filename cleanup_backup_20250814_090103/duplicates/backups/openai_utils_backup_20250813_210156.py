@@ -1,0 +1,645 @@
+"""Helper functions for talking to AI services.
+
+Supports OpenAI, Anthropic Claude, and local Ollama APIs.
+"""
+import os
+import requests
+import time
+from flask import current_app
+from models import Message, Room
+from collections import namedtuple
+
+def get_client_type():
+    """Get the current client type based on available API keys."""
+    # Check API keys dynamically each time
+    anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    use_ollama = os.getenv("USE_OLLAMA", "false").lower() == "true"
+    
+    if use_ollama:
+        return "ollama"
+    elif anthropic_api_key:
+        return "anthropic"
+    elif openai_api_key:
+        return "openai"
+    else:
+        return None
+
+# Define ChatMode namedtuple and modes
+ChatMode = namedtuple("ChatMode", "label prompt")
+
+# Base modes for fallback
+BASE_MODES = {
+    "explore": ChatMode(
+        "1. Explore & evaluate significance",
+        "You are an expert instructor in academic research and critical thinking. Ask probing questions to help students discover what genuinely interests them about their topic. Guide them to reflect on why this matters to them personally and to others. Don't provide answers - help them uncover their own insights through thoughtful questioning."
+    ),
+    "focus": ChatMode(
+        "2. Narrow to a researchable question",
+        "You are a leading expert in research methodology and question formulation. Help students learn to craft clear, answerable questions by asking: 'What specific aspect interests you most?' 'How could you make this more specific?' 'What would you need to know to answer this?' Guide them to understand the difference between broad topics and focused research questions."
+    ),
+    "context": ChatMode(
+        "3. Find authoritative sources",
+        "You are a top instructor specializing in information literacy and source evaluation. Help students find and evaluate authoritative sources by asking: 'Who are the experts on this topic?' 'What makes this source credible?' 'How recent is this information?' 'What are the author's credentials?' Teach them to distinguish between academic sources, expert journalism, and less reliable information. Guide them to assess authority, accuracy, currency, and bias."
+    ),
+    "proposal": ChatMode(
+        "4. Write a persuasive proposal",
+        "You are an expert instructor in proposal writing and argumentation. Guide students through the proposal process by asking: 'What's your main argument?' 'How will you gather evidence?' 'What sources will you need?' Help them understand what makes a proposal compelling rather than writing it for them. Encourage them to articulate their own rationale and methods."
+    ),
+    "outline": ChatMode(
+        "5. Design a working outline",
+        "You are a leading expert in academic writing and structure. Help students learn to structure their ideas by asking: 'What's your main claim?' 'What evidence supports each point?' 'How do these sections connect?' Guide them to create logical flow and parallel structure rather than providing the outline. Teach them to think about argument structure."
+    ),
+    "draft": ChatMode(
+        "6. Draft key sections",
+        "You are a top instructor specializing in academic writing and composition. Help students develop their writing skills by asking: 'What's your main point here?' 'How does this connect to your thesis?' 'What evidence supports this claim?' Guide them to write clear, well-supported paragraphs rather than writing for them. Focus on teaching writing principles and structure."
+    ),
+    "revise": ChatMode(
+        "7. Revision strategy & feedback",
+        "You are an expert instructor in revision and academic editing. Help students learn to revise by asking: 'What's your strongest argument?' 'Where could you strengthen evidence?' 'How does each paragraph advance your thesis?' Guide them to identify their own revision priorities rather than making changes for them. Teach them to evaluate their own work critically."
+    ),
+    "evidence": ChatMode(
+        "8. Evidence integrator",
+        "You are a leading expert in evidence evaluation and integration. Help students learn to evaluate and integrate sources by asking: 'How reliable is this source?' 'What does this evidence actually prove?' 'How does it connect to your argument?' Guide them to think critically about evidence rather than selecting sources for them. Teach them to assess credibility and relevance."
+    ),
+    "citation": ChatMode(
+        "9. Citation & formatting coach",
+        "You are a top instructor specializing in academic citation and formatting. Help students learn citation rules by asking: 'What type of source is this?' 'What information do you need?' 'How would you format this in [style]?' Guide them to understand citation principles rather than formatting for them. Teach them to use citation guides and style manuals."
+    ),
+    "reflect": ChatMode(
+        "10. Metacognitive reflection",
+        "You are an expert instructor in metacognition and learning reflection. Help students think about their learning process by asking: 'What did you learn about research?' 'What skills did you develop?' 'What would you do differently?' 'What questions remain?' Guide them to articulate their own insights and growth rather than summarizing for them."
+    ),
+}
+
+# Global MODES variable that will be updated dynamically
+MODES = BASE_MODES.copy()
+
+def generate_room_modes(room):
+    """Generate contextual writing modes based on room goals."""
+    if not room.goals:
+        return BASE_MODES
+    
+    client_type = get_client_type()
+    if not client_type:
+        return BASE_MODES
+    
+    # Create a prompt for generating contextual modes
+    system_prompt = """You are an educational AI assistant. Based on the learning goals provided, generate 5-8 contextual writing modes that would help students achieve those goals.
+
+For each mode, provide:
+1. A short, descriptive label (2-4 words)
+2. A detailed prompt explaining the AI's role and approach
+
+IMPORTANT: Every mode should start with the AI taking the role of an instructor who is a top expert in the learning goals. For example:
+- "You are an expert instructor in [topic]..."
+- "As a leading expert in [field]..."
+- "I am a top instructor specializing in [subject]..."
+
+Focus on modes that help students learn, not modes that do the work for them. Each mode should guide students through a specific aspect of their learning journey.
+
+Return the response as a JSON object with mode keys and objects containing 'label' and 'prompt' fields."""
+
+    user_prompt = f"""Learning Goals: {room.goals}
+
+Generate contextual writing modes that would help students achieve these learning goals. Each mode should start with the AI taking the role of an instructor who is a top expert in these learning goals. Focus on modes that guide students through the learning process rather than doing the work for them."""
+
+    try:
+        if client_type == "anthropic":
+            response = call_anthropic_api(
+                [{"role": "user", "content": user_prompt}],
+                system_prompt,
+                max_tokens=800
+            )
+        else:
+            response = call_openai_api(
+                [{"role": "system", "content": system_prompt},
+                 {"role": "user", "content": user_prompt}],
+                max_tokens=800
+            )
+        
+        # Try to parse JSON response
+        import json
+        try:
+            # Extract text from response (API calls return tuple of (text, is_truncated))
+            if isinstance(response, tuple):
+                response_text = response[0]
+            else:
+                response_text = response
+                
+            modes_data = json.loads(response_text)
+            contextual_modes = {}
+            
+            for mode_key, mode_info in modes_data.items():
+                if isinstance(mode_info, dict) and 'label' in mode_info and 'prompt' in mode_info:
+                    contextual_modes[mode_key] = ChatMode(mode_info['label'], mode_info['prompt'])
+            
+            if contextual_modes:
+                return contextual_modes
+        except json.JSONDecodeError:
+            pass
+        
+        # Fallback to base modes if parsing fails
+        return BASE_MODES
+        
+    except Exception as e:
+        current_app.logger.error(f"Error generating room modes: {e}")
+        return BASE_MODES
+
+def get_modes_for_room(room):
+    """Get writing modes for a specific room, prioritizing saved custom prompts."""
+    from models import CustomPrompt
+    
+    # First, check for saved custom prompts for this room
+    custom_prompts = CustomPrompt.query.filter_by(
+        room_id=room.id, 
+        is_active=True
+    ).all()
+    
+    if custom_prompts:
+        # Convert custom prompts to the same format as BASE_MODES
+        room_modes = {}
+        for cp in custom_prompts:
+            room_modes[cp.mode_key] = {
+                'label': cp.label,
+                'prompt': cp.prompt
+            }
+        return room_modes
+    
+    # If no custom prompts exist, generate contextual modes if room has goals
+    if room.goals:
+        try:
+            contextual_modes = generate_room_modes(room)
+            # Convert to the same format as BASE_MODES
+            room_modes = {}
+            for mode_key, mode_info in contextual_modes.items():
+                room_modes[mode_key] = {
+                    'label': mode_info.label,
+                    'prompt': mode_info.prompt
+                }
+            return room_modes
+        except Exception as e:
+            current_app.logger.error(f"Error generating room modes: {e}")
+    
+    # Fallback to base modes
+    return BASE_MODES
+
+def get_mode_system_prompt(mode, room_id=None):
+    """Return a system prompt tailored to the writing stage."""
+    # First check for custom prompts in the database
+    from models import CustomPrompt
+    from flask import current_app
+    
+    try:
+        # Check for room-specific custom prompt first
+        if room_id:
+            custom_prompt = CustomPrompt.query.filter_by(
+                mode_key=mode, 
+                room_id=room_id,
+                is_active=True
+            ).first()
+            
+            if custom_prompt:
+                return custom_prompt.prompt
+        
+        # Check for global custom prompt (room_id is null)
+        custom_prompt = CustomPrompt.query.filter_by(
+            mode_key=mode, 
+            room_id=None,
+            is_active=True
+        ).first()
+        
+        if custom_prompt:
+            return custom_prompt.prompt
+    except Exception as e:
+        current_app.logger.error(f"Error checking custom prompts: {e}")
+    
+    # Fallback to default modes
+    if mode in BASE_MODES:
+        return BASE_MODES[mode].prompt
+    else:
+        # Default to explore mode if mode is not found
+        return BASE_MODES["explore"].prompt
+
+
+def call_anthropic_api(messages, system_prompt, max_tokens=300):
+    """Call Anthropic Claude API."""
+    anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+    url = "https://api.anthropic.com/v1/messages"
+    headers = {
+        "x-api-key": anthropic_api_key,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json"
+    }
+    
+    # Convert messages to Anthropic format
+    anthropic_messages = []
+    for msg in messages:
+        if msg["role"] == "system":
+            continue
+        anthropic_messages.append({
+            "role": msg["role"],
+            "content": [{"type": "text", "text": msg["content"]}]
+        })
+    
+    payload = {
+        "model": "claude-3-haiku-20240307",
+        "max_tokens": max_tokens,
+        "messages": anthropic_messages,
+        "system": system_prompt
+    }
+    
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        text = response.json()["content"][0]["text"]
+        # Anthropic API may include a 'stop_reason' field
+        is_truncated = response.json().get("stop_reason") == "max_tokens"
+        return text, is_truncated
+    except requests.exceptions.HTTPError as e:
+        print("Anthropic API HTTPError:", e)
+        print("Status code:", e.response.status_code)
+        print("Response text:", e.response.text)
+        current_app.logger.error("Anthropic API failure: %s", e)
+        return f"⚠️ Anthropic API error: {e.response.text}", False
+    except Exception as e:
+        print("Anthropic API Exception:", e)
+        current_app.logger.error("Anthropic API failure: %s", e)
+        return "⚠️ Sorry — I couldn't reach the AI service just now.", False
+
+
+def call_openai_api(messages, max_tokens=300):
+    """Call OpenAI API."""
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    from openai import OpenAI
+    client = OpenAI(api_key=openai_api_key)
+    
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages,
+            temperature=0.7,
+            max_tokens=max_tokens,
+        )
+        content = response.choices[0].message.content
+        finish_reason = response.choices[0].finish_reason
+        is_truncated = finish_reason == "length"
+        return (content.strip() if content else "", is_truncated)
+    except Exception as e:
+        current_app.logger.error("OpenAI API failure: %s", e)
+        return ("⚠️ Sorry — I couldn't reach the AI service just now.", False)
+
+
+def call_ollama_api(messages, system_prompt, max_tokens=300):
+    """Call local Ollama API."""
+    ollama_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    model = os.getenv("OLLAMA_MODEL", "gemma3")
+    
+    # Convert messages to Ollama format with system prompt
+    if system_prompt:
+        prompt = f"System: {system_prompt}\\n\\n"
+    else:
+        prompt = ""
+    
+    # Add user messages
+    for msg in messages:
+        if msg.get('role') == 'user':
+            prompt += f"User: {msg.get('content', '')}\\n"
+        elif msg.get('role') == 'assistant':
+            prompt += f"Assistant: {msg.get('content', '')}\\n"
+    
+    prompt += "Assistant: "
+    
+    payload = {
+        "model": model,
+        "prompt": prompt,
+        "stream": False,
+        "options": {
+            "temperature": 0.7,
+            "top_p": 0.9,
+            "num_predict": max_tokens
+        }
+    }
+    
+    try:
+        start_time = time.time()
+        response = requests.post(f"{ollama_url}/api/generate", json=payload, timeout=120)
+        end_time = time.time()
+        
+        if response.status_code == 200:
+            result = response.json()
+            current_app.logger.info(f"Ollama response time: {end_time - start_time:.2f}s")
+            text = result.get('response', '').strip()
+            is_truncated = result.get('done', True) is False or result.get('truncated', False)
+            return text, is_truncated
+        else:
+            current_app.logger.error(f"Ollama API error: {response.status_code}")
+            return ("I'm sorry, I'm having trouble processing your request right now.", False)
+            
+    except requests.exceptions.Timeout:
+        current_app.logger.error("Ollama request timed out")
+        return ("I'm sorry, the request took too long to process. Please try again.", False)
+    except Exception as e:
+        current_app.logger.error(f"Ollama API error: {e}")
+        return ("I'm sorry, I encountered an error processing your request.", False)
+
+
+def get_ai_response(
+    chat,
+    *,
+    model=None,  # Ignored for now, using default based on available API
+    temperature=0.7,  # Ignored for Anthropic
+    max_tokens=300,
+):
+    """Return the assistant's reply text and truncation status for a given Chat row."""
+    client_type = get_client_type()
+    if not client_type:
+        return ("⚠️ No AI API key configured. Please set ANTHROPIC_API_KEY, OPENAI_API_KEY, or USE_OLLAMA=true environment variable.", False)
+    
+    # Get mode-specific system prompt
+    system_prompt = get_mode_system_prompt(chat.mode, chat.room_id)
+    
+    messages_payload = [
+        {"role": m.role, "content": m.content}
+        for m in Message.query.filter_by(chat_id=chat.id)
+        .order_by(Message.timestamp)
+        .all()
+    ]
+    
+    if client_type == "ollama":
+        return call_ollama_api(messages_payload, system_prompt, max_tokens)
+    elif client_type == "anthropic":
+        return call_anthropic_api(messages_payload, system_prompt, max_tokens)
+    else:  # openai
+        return call_openai_api(messages_payload, max_tokens)
+
+def assess_learning_progression(chat, target_mode=None):
+    """
+    Assess whether a user is ready to progress to the next learning step.
+    
+    Args:
+        chat: Chat object with messages
+        target_mode: The next mode to progress to (optional)
+    
+    Returns:
+        dict: Assessment results with readiness, confidence, feedback, and recommendations
+    """
+    client_type = get_client_type()
+    if not client_type:
+        return {
+            "ready": False,
+            "confidence": 0.0,
+            "feedback": "AI assessment unavailable - no API key configured",
+            "recommendations": ["Configure an AI API key to enable progression assessment"],
+            "next_steps": []
+        }
+    
+    # Get all messages in the chat
+    messages = Message.query.filter_by(chat_id=chat.id).order_by(Message.timestamp).all()
+    
+    if len(messages) < 4:  # Need at least 2 exchanges to assess
+        return {
+            "ready": False,
+            "confidence": 0.0,
+            "feedback": "Need more conversation to assess progress",
+            "recommendations": ["Continue working in this learning step"],
+            "next_steps": []
+        }
+    
+    # Get current mode info
+    current_mode = chat.mode
+    modes = get_modes_for_room(chat.room)
+    current_mode_info = modes.get(current_mode)
+    
+    if not current_mode_info:
+        return {
+            "ready": False,
+            "confidence": 0.0,
+            "feedback": f"Unknown learning step: {current_mode}",
+            "recommendations": ["Contact your instructor about this learning step"],
+            "next_steps": []
+        }
+    
+    # Determine next mode if not specified
+    if not target_mode:
+        mode_order = list(modes.keys())
+        try:
+            current_index = mode_order.index(current_mode)
+            if current_index < len(mode_order) - 1:
+                target_mode = mode_order[current_index + 1]
+            else:
+                return {
+                    "ready": True,
+                    "confidence": 1.0,
+                    "feedback": "You've completed all learning steps!",
+                    "recommendations": ["Congratulations on completing the learning journey"],
+                    "next_steps": []
+                }
+        except ValueError:
+            target_mode = "focus"  # Fallback
+    
+    target_mode_info = modes.get(target_mode)
+    if not target_mode_info:
+        target_mode_info = modes.get("focus", modes.get(list(modes.keys())[0]))
+    
+    # Create assessment prompt
+    assessment_prompt = f"""You are an expert educational assessment AI. Analyze the conversation below to determine if the student is ready to progress from the current learning step to the next one.
+
+CURRENT LEARNING STEP: {current_mode_info.label if hasattr(current_mode_info, 'label') else current_mode}
+CURRENT STEP OBJECTIVES: {current_mode_info.prompt if hasattr(current_mode_info, 'prompt') else 'Focus on current learning objectives'}
+
+NEXT LEARNING STEP: {target_mode_info.label if hasattr(target_mode_info, 'label') else target_mode}
+NEXT STEP OBJECTIVES: {target_mode_info.prompt if hasattr(target_mode_info, 'prompt') else 'Move to next learning objectives'}
+
+CONVERSATION TO ANALYZE:
+{format_conversation_for_assessment(messages)}
+
+ASSESSMENT CRITERIA:
+1. Has the student demonstrated understanding of the current step's core concepts?
+2. Have they engaged meaningfully with the learning objectives?
+3. Do they show readiness to tackle the next step's challenges?
+4. Are there any gaps in their current understanding that should be addressed?
+
+Provide your assessment in this exact JSON format:
+{{
+    "ready": true/false,
+    "confidence": 0.0-1.0,
+    "feedback": "Brief explanation of your assessment",
+    "recommendations": ["Specific action items to improve"],
+    "next_steps": ["What to focus on in the next learning step"]
+}}
+
+Be honest and constructive. It's better to recommend staying in the current step if the student needs more practice."""
+    
+    # Get AI assessment
+    try:
+        if client_type == "anthropic":
+            # For Anthropic, we need to include the conversation as a user message
+            conversation_text = format_conversation_for_assessment(messages)
+            user_message = f"Please analyze this conversation and provide an assessment:\n\n{conversation_text}"
+            response, _ = call_anthropic_api([{"role": "user", "content": user_message}], assessment_prompt, max_tokens=500)
+        elif client_type == "openai":
+            response, _ = call_openai_api([{"role": "system", "content": assessment_prompt}], max_tokens=500)
+        else:  # ollama
+            response, _ = call_ollama_api([], assessment_prompt, max_tokens=500)
+        
+        # Parse JSON response
+        import json
+        import re
+        
+        # Extract JSON from response (handle cases where AI adds extra text)
+        json_match = re.search(r'\{.*\}', response, re.DOTALL)
+        if json_match:
+            assessment_data = json.loads(json_match.group())
+        else:
+            # Fallback parsing
+            assessment_data = {
+                "ready": False,
+                "confidence": 0.5,
+                "feedback": "Unable to parse AI assessment",
+                "recommendations": ["Continue working in current step"],
+                "next_steps": []
+            }
+        
+        # Ensure we have all required fields
+        if not isinstance(assessment_data, dict):
+            assessment_data = {}
+        
+        return {
+            "ready": assessment_data.get("ready", False),
+            "confidence": assessment_data.get("confidence", 0.0),
+            "feedback": assessment_data.get("feedback", "Assessment completed"),
+            "recommendations": assessment_data.get("recommendations", ["Continue working in current step"]),
+            "next_steps": assessment_data.get("next_steps", [])
+        }
+        
+    except Exception as e:
+        return {
+            "ready": False,
+            "confidence": 0.0,
+            "feedback": f"Assessment failed: {str(e)}",
+            "recommendations": ["Continue working in current step"],
+            "next_steps": []
+        }
+
+def format_conversation_for_assessment(messages):
+    """Format conversation messages for AI assessment."""
+    formatted = []
+    for i, msg in enumerate(messages):
+        role = "Student" if msg.role == "user" else "AI Assistant"
+        formatted.append(f"{role}: {msg.content}")
+    return "\n\n".join(formatted)
+
+def get_progression_recommendation(chat):
+    """
+    Get a user-friendly progression recommendation for the chat interface.
+    Returns a simplified recommendation suitable for UI display.
+    """
+    assessment = assess_learning_progression(chat)
+    
+    if assessment["ready"]:
+        if assessment["confidence"] >= 0.8:
+            return {
+                "type": "ready",
+                "message": "🎉 You're ready to move to the next learning step!",
+                "confidence": assessment["confidence"],
+                "next_step": get_next_learning_step(chat)
+            }
+        else:
+            return {
+                "type": "almost_ready",
+                "message": "👍 Almost ready! Consider these final touches:",
+                "confidence": assessment["confidence"],
+                "suggestions": assessment["recommendations"][:2]  # Top 2 recommendations
+            }
+    else:
+        return {
+            "type": "continue",
+            "message": "📚 Keep working on this learning step",
+            "confidence": assessment["confidence"],
+            "suggestions": assessment["recommendations"][:2]  # Top 2 recommendations
+        }
+
+def get_next_learning_step(chat):
+    """Get the next learning step in the sequence."""
+    modes = get_modes_for_room(chat.room)
+    mode_order = list(modes.keys())
+    
+    try:
+        current_index = mode_order.index(chat.mode)
+        if current_index < len(mode_order) - 1:
+            next_mode = mode_order[current_index + 1]
+            next_mode_info = modes[next_mode]
+            
+            return {
+                "key": next_mode,
+                "label": next_mode_info.label if hasattr(next_mode_info, 'label') else next_mode,
+                "description": (next_mode_info.prompt[:100] + "..." if len(next_mode_info.prompt) > 100 else next_mode_info.prompt) if hasattr(next_mode_info, 'prompt') else f"Next learning step: {next_mode}"
+            }
+    except ValueError:
+        pass
+    
+    return None
+
+def generate_chat_introduction(chat):
+    """
+    Generate an AI introduction message for a new chat.
+    This provides context about the AI's role and prompts the user to get started.
+    """
+    try:
+        # Get the mode information for this chat
+        modes = get_modes_for_room(chat.room)
+        mode_info = modes.get(chat.mode, None)
+        
+        if not mode_info:
+            # Fallback introduction
+            return "Hello! I'm here to help you with your learning journey. What would you like to work on today?"
+        
+        # Extract the AI role from the mode prompt
+        mode_prompt = mode_info.prompt if hasattr(mode_info, 'prompt') else str(mode_info)
+        
+        # Create a contextual introduction based on the mode
+        system_prompt = f"""You are an AI assistant creating a welcoming introduction for a new learning chat. 
+
+The chat is for: {chat.room.name}
+Learning goals: {chat.room.goals}
+Current learning step: {mode_info.label if hasattr(mode_info, 'label') else chat.mode}
+AI role: {mode_prompt}
+
+Create a brief, friendly introduction (2-3 sentences) that:
+1. Welcomes the student to this specific learning step
+2. Briefly explains your role as an instructor/expert
+3. Provides a simple prompt to get them started
+4. Maintains an encouraging, supportive tone
+
+Keep it concise and engaging. Don't repeat the full mode prompt - just give a warm welcome and a starting point."""
+
+        client_type = get_client_type()
+        if not client_type:
+            # Fallback introduction
+            return f"Hello! I'm here to help you with {mode_info.label if hasattr(mode_info, 'label') else chat.mode}. What would you like to explore today?"
+        
+        # Generate the introduction using the appropriate AI service
+        if client_type == "openai":
+            response, _ = call_openai_api([], system_prompt, max_tokens=150)
+        elif client_type == "anthropic":
+            # For Anthropic, we need at least one message, so we'll include a simple user message
+            user_message = "Please create a welcoming introduction for this new learning chat."
+            response, _ = call_anthropic_api([{"role": "user", "content": user_message}], system_prompt, max_tokens=150)
+        elif client_type == "ollama":
+            response, _ = call_ollama_api([], system_prompt, max_tokens=150)
+        else:
+            # Fallback
+            return f"Hello! I'm here to help you with {mode_info.label if hasattr(mode_info, 'label') else chat.mode}. What would you like to explore today?"
+        
+        # Clean up the response
+        introduction = response.strip()
+        if not introduction:
+            # Fallback introduction
+            return f"Hello! I'm here to help you with {mode_info.label if hasattr(mode_info, 'label') else chat.mode}. What would you like to explore today?"
+        
+        return introduction
+        
+    except Exception as e:
+        # Fallback introduction in case of any errors
+        return f"Hello! I'm here to help you with your learning. What would you like to work on today?"

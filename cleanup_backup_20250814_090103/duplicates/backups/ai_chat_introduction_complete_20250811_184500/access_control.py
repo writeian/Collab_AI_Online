@@ -1,0 +1,291 @@
+"""Access control utilities for room and chat permissions.
+
+This module provides helper methods and decorators for checking
+user permissions on rooms and chats in the room-based architecture.
+"""
+from functools import wraps
+from flask import abort, flash, redirect, url_for, session
+from models import Chat, User, Room, RoomMember
+
+
+def get_current_user():
+    """Get the currently logged-in user from session."""
+    if 'user_id' in session:
+        return User.query.get(session['user_id'])
+    return None
+
+
+def is_room_member(user, room):
+    """Check if a user is a member of a room.
+    
+    Args:
+        user: User object or None for anonymous users
+        room: Room object to check membership for
+        
+    Returns:
+        bool: True if user is a member of the room, False otherwise
+    """
+    if not user or not room:
+        return False
+        
+    # Room owner is always a member
+    if room.owner_id == user.id:
+        return True
+        
+    # Check if user has a membership record
+    membership = RoomMember.query.filter_by(
+        room_id=room.id, 
+        user_id=user.id
+    ).first()
+    
+    return membership is not None
+
+
+def can_access_room(user, room):
+    """Check if a user can access a room.
+    
+    Args:
+        user: User object or None for anonymous users
+        room: Room object to check access for
+        
+    Returns:
+        bool: True if user can access the room, False otherwise
+    """
+    if not room or not room.is_active:
+        return False
+        
+    # Only room members can access
+    return is_room_member(user, room)
+
+
+def can_manage_room(user, room):
+    """Check if a user can manage a room (owner only).
+    
+    Args:
+        user: User object (must be authenticated)
+        room: Room object to check management permissions for
+        
+    Returns:
+        bool: True if user can manage the room, False otherwise
+    """
+    if not user or not room:
+        return False
+        
+    # Only room owner can manage
+    return room.owner_id == user.id
+
+
+def can_create_chats_in_room(user, room):
+    """Check if a user can create chats in a room.
+    
+    Args:
+        user: User object (must be authenticated)
+        room: Room object to check permissions for
+        
+    Returns:
+        bool: True if user can create chats in the room, False otherwise
+    """
+    if not user or not room:
+        return False
+        
+    # Room owner can always create chats
+    if room.owner_id == user.id:
+        return True
+        
+    # Check if user has create_chats permission
+    membership = RoomMember.query.filter_by(
+        room_id=room.id, 
+        user_id=user.id,
+        can_create_chats=True
+    ).first()
+    
+    return membership is not None
+
+
+def can_invite_to_room(user, room):
+    """Check if a user can invite others to a room.
+    
+    Args:
+        user: User object (must be authenticated)
+        room: Room object to check permissions for
+        
+    Returns:
+        bool: True if user can invite to the room, False otherwise
+    """
+    if not user or not room:
+        return False
+        
+    # Room owner can always invite
+    if room.owner_id == user.id:
+        return True
+        
+    # Check if user has invite permissions
+    membership = RoomMember.query.filter_by(
+        room_id=room.id, 
+        user_id=user.id,
+        can_invite_members=True
+    ).first()
+    
+    return membership is not None
+
+
+def can_access_chat(user, chat):
+    """Check if a user can access a chat within a room.
+    
+    Args:
+        user: User object or None for anonymous users
+        chat: Chat object to check access for
+        
+    Returns:
+        bool: True if user can access the chat, False otherwise
+    """
+    if not chat:
+        return False
+        
+    # Check if user can access the room that contains this chat
+    return can_access_room(user, chat.room)
+
+
+def can_edit_chat(user, chat):
+    """Check if a user can edit a chat.
+    
+    Args:
+        user: User object (must be authenticated)
+        chat: Chat object to check edit permissions for
+        
+    Returns:
+        bool: True if user can edit the chat, False otherwise
+    """
+    if not user or not chat:
+        return False
+        
+    # Chat creator can always edit
+    if chat.created_by == user.id:
+        return True
+        
+    # Room owner can edit any chat in their room
+    if chat.room.owner_id == user.id:
+        return True
+        
+    # Room members can edit chats (collaborative environment)
+    return is_room_member(user, chat.room)
+
+
+def can_delete_chat(user, chat):
+    """Check if a user can delete a chat.
+    
+    Args:
+        user: User object (must be authenticated)
+        chat: Chat object to check delete permissions for
+        
+    Returns:
+        bool: True if user can delete the chat, False otherwise
+    """
+    if not user or not chat:
+        return False
+        
+    # Chat creator can delete
+    if chat.created_by == user.id:
+        return True
+        
+    # Room owner can delete any chat in their room
+    return chat.room.owner_id == user.id
+
+
+def require_login(f):
+    """Decorator to require user authentication."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        user = get_current_user()
+        if not user:
+            flash("Please log in to access this page.")
+            return redirect(url_for('auth.login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def require_room_access(f):
+    """Decorator to require room access permissions."""
+    @wraps(f)
+    def decorated_function(room_id, *args, **kwargs):
+        room = Room.query.get_or_404(room_id)
+        user = get_current_user()
+        
+        if not can_access_room(user, room):
+            flash("You don't have access to this room.")
+            return redirect(url_for('room.index'))
+            
+        return f(room_id, *args, **kwargs)
+    return decorated_function
+
+
+def require_room_management(f):
+    """Decorator to require room management permissions (owner only)."""
+    @wraps(f)
+    def decorated_function(room_id, *args, **kwargs):
+        room = Room.query.get_or_404(room_id)
+        user = get_current_user()
+        
+        if not user:
+            flash("Please log in to manage rooms.")
+            return redirect(url_for('auth.login'))
+            
+        if not can_manage_room(user, room):
+            flash("You can only manage rooms you own.")
+            return redirect(url_for('room.view_room', room_id=room_id))
+            
+        return f(room_id, *args, **kwargs)
+    return decorated_function
+
+
+def require_chat_access(f):
+    """Decorator to require chat access permissions."""
+    @wraps(f)
+    def decorated_function(chat_id, *args, **kwargs):
+        chat = Chat.query.get_or_404(chat_id)
+        user = get_current_user()
+        
+        if not can_access_chat(user, chat):
+            flash("You don't have access to this chat.")
+            return redirect(url_for('room.view_room', room_id=chat.room_id))
+            
+        return f(chat_id, *args, **kwargs)
+    return decorated_function
+
+
+def require_chat_edit(f):
+    """Decorator to require chat edit permissions."""
+    @wraps(f)
+    def decorated_function(chat_id, *args, **kwargs):
+        chat = Chat.query.get_or_404(chat_id)
+        user = get_current_user()
+        
+        if not user:
+            flash("Please log in to edit chats.")
+            return redirect(url_for('auth.login'))
+            
+        if not can_edit_chat(user, chat):
+            flash("You can only edit chats you created or in rooms you own.")
+            return redirect(url_for('chat.view_chat', chat_id=chat_id))
+            
+        return f(chat_id, *args, **kwargs)
+    return decorated_function
+
+
+def require_chat_delete(f):
+    """Decorator to require chat delete permissions."""
+    @wraps(f)
+    def decorated_function(chat_id, *args, **kwargs):
+        chat = Chat.query.get_or_404(chat_id)
+        user = get_current_user()
+        
+        if not user:
+            flash("Please log in to delete chats.")
+            return redirect(url_for('auth.login'))
+            
+        if not can_delete_chat(user, chat):
+            flash("You can only delete chats you created or in rooms you own.")
+            return redirect(url_for('chat.view_chat', chat_id=chat_id))
+            
+        return f(chat_id, *args, **kwargs)
+    return decorated_function 

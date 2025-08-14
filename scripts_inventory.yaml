@@ -1,0 +1,6205 @@
+metadata:
+  generated: '2025-08-14T06:39:11.753826'
+  project: AI Collab Online
+  total_scripts: 307
+recommendations:
+  archive_candidates:
+  - analyze_inventory.py
+  - app.py
+  - config.py
+  - models.py
+  - openai_utils.py
+  - room.py
+  - rubric_templates.py
+  - script_inventory.py
+  - test_ai_instructions.py
+  - test_card_standardization.py
+  - test_hamburger_aggressive_fix.py
+  - test_hover_fix_source.py
+  - test_hover_improvements.py
+  - test_hover_verification.py
+  - test_improved_styling.py
+  - test_phase1_rubrics.py
+  - test_settings_icon.py
+  - backups\openai_utils_backup_20250813_210156.py
+  - backups\openai_utils_backup_20250813_210218.py
+  - backups\ai_chat_introduction_complete_20250811_184500\access_control.py
+  - backups\ai_chat_introduction_complete_20250811_184500\achievements.py
+  - backups\ai_chat_introduction_complete_20250811_184500\analytics.py
+  - backups\ai_chat_introduction_complete_20250811_184500\app.py
+  - backups\ai_chat_introduction_complete_20250811_184500\auth.py
+  - backups\ai_chat_introduction_complete_20250811_184500\chat.py
+  - backups\ai_chat_introduction_complete_20250811_184500\config.py
+  - backups\ai_chat_introduction_complete_20250811_184500\debug_avatars.py
+  - backups\ai_chat_introduction_complete_20250811_184500\debug_room_page.py
+  - backups\ai_chat_introduction_complete_20250811_184500\fix_all_hover_website.py
+  - backups\ai_chat_introduction_complete_20250811_184500\git_helper.py
+  - backups\ai_chat_introduction_complete_20250811_184500\google_auth.py
+  - backups\ai_chat_introduction_complete_20250811_184500\google_docs.py
+  - backups\ai_chat_introduction_complete_20250811_184500\models.py
+  - backups\ai_chat_introduction_complete_20250811_184500\openai_utils.py
+  - backups\ai_chat_introduction_complete_20250811_184500\room.py
+  - backups\ai_chat_introduction_complete_20250811_184500\rubric_templates.py
+  - backups\ai_chat_introduction_complete_20250811_184500\test_ai_instructions.py
+  - backups\ai_chat_introduction_complete_20250811_184500\test_card_standardization.py
+  - backups\ai_chat_introduction_complete_20250811_184500\test_hamburger_aggressive_fix.py
+  - backups\ai_chat_introduction_complete_20250811_184500\test_hover_fix_source.py
+  - backups\ai_chat_introduction_complete_20250811_184500\test_hover_improvements.py
+  - backups\ai_chat_introduction_complete_20250811_184500\test_hover_verification.py
+  - backups\ai_chat_introduction_complete_20250811_184500\test_improved_styling.py
+  - backups\ai_chat_introduction_complete_20250811_184500\test_phase1_rubrics.py
+  - backups\ai_chat_introduction_complete_20250811_184500\test_settings_icon.py
+  - backups\ai_chat_introduction_complete_20250811_184500\verify_phase2b.py
+  - backups\ai_chat_introduction_complete_20250811_184500\Chat Interface Website\fix_chat_import.py
+  - backups\ai_chat_introduction_complete_20250811_184500\Chat Interface Website\setup_ai_collab_styling.py
+  - backups\ai_chat_introduction_complete_20250811_184500\cleanup_files\check_chat8_messages.py
+  - backups\ai_chat_introduction_complete_20250811_184500\cleanup_files\check_recent_messages.py
+  - backups\ai_chat_introduction_complete_20250811_184500\cleanup_files\manual_migrate.py
+  - backups\ai_chat_introduction_complete_20250811_184500\cleanup_files\setup_styling.py
+  - backups\ai_chat_introduction_complete_20250811_184500\deployment\gunicorn.conf.py
+  - backups\ai_chat_introduction_complete_20250811_184500\migrations\env.py
+  - backups\ai_chat_introduction_complete_20250811_184500\migrations\versions\12722155fa55_add_parent_message_id_and_is_truncated_.py
+  - backups\ai_chat_introduction_complete_20250811_184500\migrations\versions\a8c4d37510b7_add_accepted_at_field_to_roommember_.py
+  - backups\ai_chat_introduction_complete_20250811_184500\migrations\versions\achievement_models_migration.py
+  - backups\ai_chat_introduction_complete_20250811_184500\migrations\versions\dade1def113a_initial_migration.py
+  - backups\ai_chat_introduction_complete_20250811_184500\migrations\versions\rubric_models_migration.py
+  - backups\phase2b_complete_20250810_155027\models.py
+  - backups\phase2b_complete_20250810_155027\room.py
+  - backups\phase2b_complete_20250810_155027\test_ai_instructions.py
+  - backups\phase2b_complete_20250810_155027\verify_phase2b.py
+  - Chat Interface Website\fix_chat_import.py
+  - Chat Interface Website\setup_ai_collab_styling.py
+  - cleanup_files\check_chat8_messages.py
+  - cleanup_files\check_recent_messages.py
+  - cleanup_files\manual_migrate.py
+  - cleanup_files\setup_styling.py
+  - deployment\gunicorn.conf.py
+  - migrations\env.py
+  - migrations\versions\12722155fa55_add_parent_message_id_and_is_truncated_.py
+  - migrations\versions\a8c4d37510b7_add_accepted_at_field_to_roommember_.py
+  - migrations\versions\achievement_models_migration.py
+  - migrations\versions\dade1def113a_initial_migration.py
+  - migrations\versions\rubric_models_migration.py
+  - openai_utils\assessment.py
+  - openai_utils\config.py
+  - openai_utils\migration.py
+  - openai_utils\test_suite.py
+  - openai_utils\__init__.py
+  consolidation_opportunities:
+  - category: ui
+    count: 21
+    scripts:
+    - test_accordion_structure.py
+    - test_accordion_ui.py
+    - test_all_hover_fixed.py
+    - test_comprehensive_hover_fix.py
+    - test_design_system_accordion.py
+    - test_hover_fix_source.py
+    - test_hover_improvements.py
+    - test_hover_overrides.py
+    - test_hover_verification.py
+    - test_simple_accordion.py
+    - test_accordion_structure.py
+    - test_accordion_ui.py
+    - test_all_hover_fixed.py
+    - test_comprehensive_hover_fix.py
+    - test_design_system_accordion.py
+    - test_hover_fix_source.py
+    - test_hover_improvements.py
+    - test_hover_overrides.py
+    - test_hover_verification.py
+    - test_simple_accordion.py
+    - test_accordion_ui.py
+  - category: ai
+    count: 7
+    scripts:
+    - test_ai_instructions.py
+    - test_ai_response.py
+    - test_ai_simple.py
+    - test_ai_toggle.py
+    - test_ai_instructions.py
+    - test_ai_connection.py
+    - test_ai_integration.py
+  - category: general
+    count: 42
+    scripts:
+    - test_alignment_fix.py
+    - test_auto_login.py
+    - test_avatars.py
+    - test_card_standardization.py
+    - test_color_values.py
+    - test_comment_overflow.py
+    - test_css_alignment_fix.py
+    - test_dark_blue_fix.py
+    - test_desktop_hamburger.py
+    - test_env_loading.py
+    - test_expandable_layout.py
+    - test_fixed_input.py
+    - test_hamburger_aggressive_fix.py
+    - test_hamburger_fix.py
+    - test_icons_in_card.py
+    - test_improved_styling.py
+    - test_input_improvements.py
+    - test_invitation_acceptance.py
+    - test_invite.py
+    - test_invite_display.py
+    - test_migration_system.py
+    - test_mode_refinement_api.py
+    - test_mode_refinement_with_auth.py
+    - test_padding_standards.py
+    - test_phase1_rubrics.py
+    - test_phase2b_rubrics.py
+    - test_phase3_layouts.py
+    - test_progression_assessment.py
+    - test_send_button.py
+    - test_settings_icon.py
+    - test_validate_button_removal.py
+    - test_with_login.py
+    - test_phase2b_rubrics.py
+    - test_first_message.py
+    - test_google_docs.py
+    - test_ollama_integration.py
+    - test_profile.py
+    - test_basic.py
+    - test_chunked_response.py
+    - test_dashboard.py
+    - test_models.py
+    - test_routes.py
+  - category: chat
+    count: 60
+    scripts:
+    - test_chat_alignment_fix.py
+    - test_chat_centric_layout.py
+    - test_chat_page.py
+    - test_create_chat.py
+    - test_find_chat.py
+    - test_ai_instructions.py
+    - test_ai_response.py
+    - test_ai_simple.py
+    - test_ai_toggle.py
+    - test_alignment_fix.py
+    - test_auto_login.py
+    - test_avatars.py
+    - test_card_standardization.py
+    - test_chat_alignment_fix.py
+    - test_chat_centric_layout.py
+    - test_chat_page.py
+    - test_color_values.py
+    - test_comment_overflow.py
+    - test_create_chat.py
+    - test_css_alignment_fix.py
+    - test_dark_blue_fix.py
+    - test_desktop_hamburger.py
+    - test_env_loading.py
+    - test_expandable_layout.py
+    - test_find_chat.py
+    - test_fixed_input.py
+    - test_form_data.py
+    - test_form_fix.py
+    - test_hamburger_aggressive_fix.py
+    - test_hamburger_fix.py
+    - test_icons_in_card.py
+    - test_improved_styling.py
+    - test_input_improvements.py
+    - test_invitation_acceptance.py
+    - test_invite.py
+    - test_invite_display.py
+    - test_migration_system.py
+    - test_mode_refinement_api.py
+    - test_mode_refinement_with_auth.py
+    - test_padding_standards.py
+    - test_phase1_rubrics.py
+    - test_phase2b_rubrics.py
+    - test_phase3_layouts.py
+    - test_progression_assessment.py
+    - test_send_button.py
+    - test_settings_icon.py
+    - test_validate_button_removal.py
+    - test_with_login.py
+    - test_first_message.py
+    - test_form_submission.py
+    - test_google_docs.py
+    - test_ollama_integration.py
+    - test_profile.py
+    - test_ai_connection.py
+    - test_ai_integration.py
+    - test_basic.py
+    - test_chunked_response.py
+    - test_dashboard.py
+    - test_models.py
+    - test_routes.py
+  - category: mobile
+    count: 22
+    scripts:
+    - test_mobile_access.py
+    - test_mobile_accordion_fix.py
+    - test_mobile_features.py
+    - test_mobile_fixes.py
+    - test_mobile_forms.py
+    - test_mobile_hamburger_fix.py
+    - test_mobile_hamburger_working.py
+    - test_mobile_menu.py
+    - test_mobile_navigation.py
+    - test_mobile_rubric_editing.py
+    - test_production_mobile.py
+    - test_mobile_access.py
+    - test_mobile_accordion_fix.py
+    - test_mobile_features.py
+    - test_mobile_fixes.py
+    - test_mobile_forms.py
+    - test_mobile_hamburger_fix.py
+    - test_mobile_hamburger_working.py
+    - test_mobile_menu.py
+    - test_mobile_navigation.py
+    - test_mobile_rubric_editing.py
+    - test_production_mobile.py
+  - category: room
+    count: 17
+    scripts:
+    - test_new_room_creation.py
+    - test_room_actions_html.py
+    - test_room_actions_layout.py
+    - test_room_description.py
+    - test_room_dropdown.py
+    - test_room_layout.py
+    - test_room_mode_generation.py
+    - test_room_with_login.py
+    - test_new_room_creation.py
+    - test_room_actions_html.py
+    - test_room_actions_layout.py
+    - test_room_description.py
+    - test_room_dropdown.py
+    - test_room_layout.py
+    - test_room_mode_generation.py
+    - test_room_with_login.py
+    - test_room_description.py
+  documentation_needs:
+  - app.py
+  - auth.py
+  - chat.py
+  - dashboard.py
+  - google_auth.py
+  - google_docs.py
+  - room.py
+  - backups\ai_chat_introduction_complete_20250811_184500\app.py
+  - backups\ai_chat_introduction_complete_20250811_184500\auth.py
+  - backups\ai_chat_introduction_complete_20250811_184500\chat.py
+  - backups\ai_chat_introduction_complete_20250811_184500\dashboard.py
+  - backups\ai_chat_introduction_complete_20250811_184500\google_auth.py
+  - backups\ai_chat_introduction_complete_20250811_184500\google_docs.py
+  - backups\ai_chat_introduction_complete_20250811_184500\room.py
+  - backups\ai_chat_introduction_complete_20250811_184500\deployment\gunicorn.conf.py
+  - backups\ai_chat_introduction_complete_20250811_184500\migrations\env.py
+  - backups\ai_chat_introduction_complete_20250811_184500\tests\test_chunked_response.py
+  - backups\ai_chat_introduction_complete_20250811_184500\tests\__init__.py
+  - backups\phase2b_complete_20250810_155027\room.py
+  - deployment\gunicorn.conf.py
+  - migrations\env.py
+  - tests\test_chunked_response.py
+  - tests\__init__.py
+  immediate_actions:
+  - Archive 81 scripts
+  - Add documentation to 23 scripts
+scripts:
+- category: misc
+  dependencies:
+  - flask
+  imports:
+  - models
+  - functools
+  - flask
+  last_modified: '2025-07-10'
+  lines:
+    code: 200
+    comments: 91
+    total: 291
+  name: access_control.py
+  path: access_control.py
+  purpose: '"""Access control utilities for room and chat permissions.  This module
+    provides helper methods and ...'
+  size_kb: 8.5
+  status: active
+  subcategory: unknown
+- category: misc
+  dependencies:
+  - flask
+  imports:
+  - datetime
+  - models
+  - flask
+  - openai_utils
+  last_modified: '2025-07-23'
+  lines:
+    code: 190
+    comments: 71
+    total: 261
+  name: achievements.py
+  path: achievements.py
+  purpose: '"""Track that a user has used a specific mode in a room."""     try:         #
+    Check if this user ha...'
+  size_kb: 8.9
+  status: active
+  subcategory: unknown
+- category: core
+  dependencies:
+  - json
+  - flask
+  imports:
+  - datetime
+  - models
+  - json
+  - flask
+  last_modified: '2025-07-21'
+  lines:
+    code: 110
+    comments: 34
+    total: 144
+  name: analytics.py
+  path: analytics.py
+  purpose: '"""Track a page view."""     try:         data = request.get_json()                  #
+    Get user ID i...'
+  size_kb: 5.4
+  status: active
+  subcategory: blueprint
+- &id011
+  category: misc
+  dependencies:
+  - json
+  - yaml
+  imports:
+  - json
+  - yaml
+  - collections
+  - pathlib
+  last_modified: '2025-08-14'
+  lines:
+    code: 295
+    comments: 89
+    total: 384
+  name: analyze_inventory.py
+  path: analyze_inventory.py
+  purpose: '""" Script Inventory Analyzer Purpose: Deep analysis of script categories
+    and dependencies Status: [...'
+  size_kb: 16.2
+  status: deprecated
+  subcategory: unknown
+- &id013
+  category: core
+  dependencies:
+  - flask
+  - os
+  imports:
+  - datetime
+  - room
+  - config
+  - flask
+  - access_control
+  - auth
+  - models
+  - os
+  - alembic.config
+  - chat
+  - analytics
+  - alembic
+  - dotenv
+  - dashboard
+  - google_auth
+  last_modified: '2025-08-13'
+  lines:
+    code: 305
+    comments: 105
+    total: 410
+  name: app.py
+  path: app.py
+  purpose: No purpose documented
+  size_kb: 16.1
+  status: deprecated
+  subcategory: application
+- category: misc
+  dependencies: []
+  imports:
+  - app
+  last_modified: '2025-08-10'
+  lines:
+    code: 11
+    comments: 5
+    total: 16
+  name: app_mobile.py
+  path: app_mobile.py
+  purpose: '""" Mobile-friendly Flask app for testing on public WiFi """  from app
+    import app'
+  size_kb: 0.5
+  status: experimental
+  subcategory: unknown
+- &id007
+  category: core
+  dependencies:
+  - flask
+  imports:
+  - datetime
+  - traceback
+  - flask
+  - access_control
+  - models
+  - secrets
+  last_modified: '2025-08-08'
+  lines:
+    code: 317
+    comments: 92
+    total: 409
+  name: auth.py
+  path: auth.py
+  purpose: No purpose documented
+  size_kb: 18.6
+  status: active
+  subcategory: blueprint
+- category: core
+  dependencies:
+  - flask
+  imports:
+  - datetime
+  - openai_utils
+  - flask
+  - access_control
+  - models
+  - sqlalchemy.orm
+  - achievements
+  - google_docs
+  last_modified: '2025-08-10'
+  lines:
+    code: 203
+    comments: 68
+    total: 271
+  name: chat.py
+  path: chat.py
+  purpose: No purpose documented
+  size_kb: 11.2
+  status: active
+  subcategory: blueprint
+- category: core
+  dependencies:
+  - os
+  imports:
+  - datetime
+  - os
+  - logging
+  - dotenv
+  - logging.handlers
+  last_modified: '2025-07-28'
+  lines:
+    code: 80
+    comments: 47
+    total: 127
+  name: config.py
+  path: config.py
+  purpose: '"""Base configuration class"""     SECRET_KEY = os.environ.get(''SECRET_KEY'')
+    or ''dev-secret-key-chan...'
+  size_kb: 3.9
+  status: deprecated
+  subcategory: application
+- category: core
+  dependencies:
+  - flask
+  - sqlalchemy
+  imports:
+  - openai_utils
+  - datetime
+  - flask
+  - access_control
+  - sqlalchemy
+  - models
+  - collections
+  last_modified: '2025-07-21'
+  lines:
+    code: 257
+    comments: 117
+    total: 374
+  name: dashboard.py
+  path: dashboard.py
+  purpose: No purpose documented
+  size_kb: 14.2
+  status: experimental
+  subcategory: blueprint
+- category: debug
+  dependencies:
+  - json
+  - requests
+  imports:
+  - json
+  - requests
+  last_modified: '2025-08-09'
+  lines:
+    code: 33
+    comments: 9
+    total: 42
+  name: debug_api_response.py
+  path: debug_api_response.py
+  purpose: '""" Debug script to see what the API endpoints are actually returning.
+    """  import requests'
+  size_kb: 1.3
+  status: experimental
+  subcategory: troubleshooting
+- category: debug
+  dependencies: []
+  imports:
+  - models
+  - sqlalchemy.orm
+  - app
+  last_modified: '2025-07-26'
+  lines:
+    code: 27
+    comments: 11
+    total: 38
+  name: debug_avatars.py
+  path: debug_avatars.py
+  purpose: '"""Debug script to check avatar data."""  from app import create_app from
+    models import db, Message,...'
+  size_kb: 1.4
+  status: active
+  subcategory: troubleshooting
+- category: debug
+  dependencies:
+  - requests
+  imports:
+  - requests
+  last_modified: '2025-07-27'
+  lines:
+    code: 64
+    comments: 34
+    total: 98
+  name: debug_chat_page.py
+  path: debug_chat_page.py
+  purpose: '""" Debug script to check what HTML is being served for the chat page
+    """  import requests'
+  size_kb: 3.2
+  status: experimental
+  subcategory: troubleshooting
+- category: debug
+  dependencies:
+  - os
+  imports:
+  - openai_utils
+  - os
+  - dotenv
+  - traceback
+  last_modified: '2025-07-27'
+  lines:
+    code: 64
+    comments: 27
+    total: 91
+  name: debug_env.py
+  path: debug_env.py
+  purpose: '""" Debug script to check environment variables """  import os'
+  size_kb: 3.0
+  status: experimental
+  subcategory: troubleshooting
+- category: debug
+  dependencies:
+  - requests
+  imports:
+  - requests
+  - bs4
+  last_modified: '2025-07-28'
+  lines:
+    code: 99
+    comments: 34
+    total: 133
+  name: debug_new_chat_button.py
+  path: debug_new_chat_button.py
+  purpose: '""" Debug script to check the New Chat button implementation. """  import
+    requests'
+  size_kb: 5.4
+  status: experimental
+  subcategory: troubleshooting
+- category: debug
+  dependencies:
+  - requests
+  imports:
+  - requests
+  - bs4
+  last_modified: '2025-07-28'
+  lines:
+    code: 81
+    comments: 33
+    total: 114
+  name: debug_room_detailed.py
+  path: debug_room_detailed.py
+  purpose: '""" Detailed debug script to see exactly what HTML is being served. """  import
+    requests'
+  size_kb: 4.2
+  status: experimental
+  subcategory: troubleshooting
+- category: debug
+  dependencies:
+  - requests
+  imports:
+  - requests
+  - bs4
+  last_modified: '2025-07-28'
+  lines:
+    code: 58
+    comments: 28
+    total: 86
+  name: debug_room_page.py
+  path: debug_room_page.py
+  purpose: '""" Debug script to check what''s actually being served by the room page.
+    """  import requests'
+  size_kb: 3.3
+  status: active
+  subcategory: troubleshooting
+- category: misc
+  dependencies:
+  - os
+  imports:
+  - re
+  - os
+  last_modified: '2025-08-10'
+  lines:
+    code: 59
+    comments: 17
+    total: 76
+  name: fix_all_hover_website.py
+  path: fix_all_hover_website.py
+  purpose: '""" Script to fix all dark hover classes across the entire website """  import
+    os'
+  size_kb: 2.6
+  status: active
+  subcategory: unknown
+- category: utility
+  dependencies:
+  - os
+  - sys
+  imports:
+  - os
+  - sys
+  - subprocess
+  last_modified: '2025-07-28'
+  lines:
+    code: 95
+    comments: 21
+    total: 116
+  name: git_helper.py
+  path: git_helper.py
+  purpose: '""" Git Helper Script for AI_Collab_Online Provides reliable git operations
+    without PowerShell displ...'
+  size_kb: 3.1
+  status: active
+  subcategory: development
+- category: core
+  dependencies:
+  - json
+  - flask
+  - os
+  imports:
+  - datetime
+  - json
+  - flask
+  - access_control
+  - googleapiclient.discovery
+  - models
+  - os
+  - google_auth_oauthlib.flow
+  last_modified: '2025-07-08'
+  lines:
+    code: 127
+    comments: 42
+    total: 169
+  name: google_auth.py
+  path: google_auth.py
+  purpose: No purpose documented
+  size_kb: 5.4
+  status: active
+  subcategory: blueprint
+- category: misc
+  dependencies:
+  - os
+  imports:
+  - googleapiclient.errors
+  - re
+  - googleapiclient.discovery
+  - os
+  - google.oauth2
+  last_modified: '2025-07-21'
+  lines:
+    code: 59
+    comments: 18
+    total: 77
+  name: google_docs.py
+  path: google_docs.py
+  purpose: No purpose documented
+  size_kb: 2.8
+  status: active
+  subcategory: unknown
+- &id014
+  category: core
+  dependencies: []
+  imports:
+  - datetime
+  - re
+  - werkzeug.security
+  - flask_sqlalchemy
+  last_modified: '2025-08-13'
+  lines:
+    code: 225
+    comments: 87
+    total: 312
+  name: models.py
+  path: models.py
+  purpose: '"""A registered user of the application."""          id = db.Column(db.Integer,
+    primary_key=True)   ...'
+  size_kb: 15.3
+  status: deprecated
+  subcategory: application
+- &id015
+  category: ai
+  dependencies: []
+  imports:
+  - openai_utils
+  - logging
+  - warnings
+  last_modified: '2025-08-13'
+  lines:
+    code: 68
+    comments: 21
+    total: 89
+  name: openai_utils.py
+  path: openai_utils.py
+  purpose: '""" Compatibility Wrapper for OpenAI Utils.  This file provides backward
+    compatibility for the old o...'
+  size_kb: 2.2
+  status: deprecated
+  subcategory: integration
+- &id004
+  category: ai
+  dependencies:
+  - json
+  - flask
+  - os
+  - requests
+  - openai
+  imports:
+  - json
+  - re
+  - flask
+  - models
+  - os
+  - requests
+  - openai
+  - time
+  - collections
+  last_modified: '2025-08-11'
+  lines:
+    code: 505
+    comments: 141
+    total: 646
+  name: openai_utils_original.py
+  path: openai_utils_original.py
+  purpose: '"""Helper functions for talking to AI services.  Supports OpenAI, Anthropic
+    Claude, and local Ollama...'
+  size_kb: 28.2
+  status: active
+  subcategory: integration
+- &id001
+  category: core
+  dependencies:
+  - json
+  - flask
+  imports:
+  - openai_utils
+  - datetime
+  - json
+  - flask
+  - access_control
+  - models
+  - rubric_templates
+  - time
+  - google_docs
+  last_modified: '2025-08-11'
+  lines:
+    code: 830
+    comments: 276
+    total: 1106
+  name: room.py
+  path: room.py
+  purpose: No purpose documented
+  size_kb: 46.6
+  status: deprecated
+  subcategory: blueprint
+- category: ai
+  dependencies:
+  - json
+  imports:
+  - json
+  - models
+  last_modified: '2025-08-10'
+  lines:
+    code: 305
+    comments: 22
+    total: 327
+  name: rubric_templates.py
+  path: rubric_templates.py
+  purpose: '""" Pre-built rubric templates for common learning steps. These templates
+    provide a foundation that ...'
+  size_kb: 13.9
+  status: deprecated
+  subcategory: templates
+- category: misc
+  dependencies:
+  - unittest
+  - os
+  - sys
+  imports:
+  - datetime
+  - unittest
+  - os
+  - sys
+  last_modified: '2025-07-11'
+  lines:
+    code: 70
+    comments: 26
+    total: 96
+  name: run_tests.py
+  path: run_tests.py
+  purpose: '""" Test runner for AI_Collab_Teams application Runs all test suites and
+    provides a comprehensive re...'
+  size_kb: 2.7
+  status: experimental
+  subcategory: unknown
+- &id012
+  category: misc
+  dependencies:
+  - yaml
+  - os
+  imports:
+  - datetime
+  - re
+  - yaml
+  - os
+  - ast
+  - collections
+  - pathlib
+  last_modified: '2025-08-14'
+  lines:
+    code: 294
+    comments: 113
+    total: 407
+  name: script_inventory.py
+  path: script_inventory.py
+  purpose: '""" Script Inventory Generator Purpose: Generate comprehensive inventory
+    of all Python scripts in th...'
+  size_kb: 15.4
+  status: deprecated
+  subcategory: unknown
+- category: utility
+  dependencies:
+  - requests
+  imports:
+  - requests
+  last_modified: '2025-08-10'
+  lines:
+    code: 36
+    comments: 13
+    total: 49
+  name: simple_test.py
+  path: simple_test.py
+  purpose: '""" Simple test to check if the create room page loads correctly """  import
+    requests'
+  size_kb: 1.6
+  status: experimental
+  subcategory: development
+- category: utility
+  dependencies: []
+  imports:
+  - time
+  - pyngrok
+  last_modified: '2025-08-10'
+  lines:
+    code: 33
+    comments: 9
+    total: 42
+  name: start_ngrok.py
+  path: start_ngrok.py
+  purpose: '""" Start ngrok tunnel for mobile access from public WiFi """  from pyngrok
+    import ngrok'
+  size_kb: 1.3
+  status: experimental
+  subcategory: development
+- category: testing
+  dependencies: []
+  imports:
+  - re
+  last_modified: '2025-08-10'
+  lines:
+    code: 55
+    comments: 20
+    total: 75
+  name: test_accordion_structure.py
+  path: test_accordion_structure.py
+  purpose: '""" Test script to verify accordion structure """  import re'
+  size_kb: 2.7
+  status: experimental
+  subcategory: ui
+- category: testing
+  dependencies:
+  - json
+  - requests
+  imports:
+  - json
+  - requests
+  - time
+  last_modified: '2025-08-10'
+  lines:
+    code: 137
+    comments: 32
+    total: 169
+  name: test_accordion_ui.py
+  path: test_accordion_ui.py
+  purpose: '""" Test script for Phase 2A: Mobile Accordion UI Implementation Tests
+    the accordion structure and f...'
+  size_kb: 5.6
+  status: experimental
+  subcategory: ui
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 90
+    comments: 29
+    total: 119
+  name: test_ai_instructions.py
+  path: test_ai_instructions.py
+  purpose: '""" Test AI Instructions Editing Functionality Verifies that the Edit
+    Instructions button works prop...'
+  size_kb: 4.6
+  status: deprecated
+  subcategory: ai
+- category: testing
+  dependencies:
+  - json
+  - requests
+  imports:
+  - openai_utils
+  - json
+  - traceback
+  - models
+  - requests
+  - app
+  last_modified: '2025-07-27'
+  lines:
+    code: 81
+    comments: 29
+    total: 110
+  name: test_ai_response.py
+  path: test_ai_response.py
+  purpose: '""" Test script to directly test AI response functionality """  import
+    requests'
+  size_kb: 3.7
+  status: experimental
+  subcategory: ai
+- category: testing
+  dependencies: []
+  imports:
+  - openai_utils
+  - traceback
+  last_modified: '2025-07-27'
+  lines:
+    code: 44
+    comments: 17
+    total: 61
+  name: test_ai_simple.py
+  path: test_ai_simple.py
+  purpose: '""" Simple test for AI response functionality """  def test_ai_simple():'
+  size_kb: 2.1
+  status: experimental
+  subcategory: ai
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  - time
+  last_modified: '2025-07-27'
+  lines:
+    code: 80
+    comments: 35
+    total: 115
+  name: test_ai_toggle.py
+  path: test_ai_toggle.py
+  purpose: '""" Test script for AI Response Toggle functionality """  import requests'
+  size_kb: 4.4
+  status: experimental
+  subcategory: ai
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  - bs4
+  last_modified: '2025-07-28'
+  lines:
+    code: 87
+    comments: 36
+    total: 123
+  name: test_alignment_fix.py
+  path: test_alignment_fix.py
+  purpose: '""" Test script to verify the alignment fix for expandable sections. """  import
+    requests'
+  size_kb: 4.9
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 64
+    comments: 19
+    total: 83
+  name: test_all_hover_fixed.py
+  path: test_all_hover_fixed.py
+  purpose: '""" Test script to verify all dark hover classes are removed """  def
+    test_all_hover_fixed():'
+  size_kb: 3.1
+  status: experimental
+  subcategory: ui
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  last_modified: '2025-07-27'
+  lines:
+    code: 84
+    comments: 36
+    total: 120
+  name: test_auto_login.py
+  path: test_auto_login.py
+  purpose: '""" Test script that automatically logs in and tests the AI toggle functionality
+    """  import request...'
+  size_kb: 4.3
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies: []
+  imports:
+  - models
+  - sqlalchemy.orm
+  - app
+  last_modified: '2025-07-26'
+  lines:
+    code: 17
+    comments: 6
+    total: 23
+  name: test_avatars.py
+  path: test_avatars.py
+  purpose: '"""Test script to check user avatar functionality."""  from app import
+    app from models import db, Me...'
+  size_kb: 0.9
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies: []
+  imports:
+  - re
+  last_modified: '2025-07-28'
+  lines:
+    code: 54
+    comments: 32
+    total: 86
+  name: test_card_standardization.py
+  path: test_card_standardization.py
+  purpose: '""" Test script to verify card standardization and icon positioning. Checks
+    that all white cards hav...'
+  size_kb: 3.4
+  status: deprecated
+  subcategory: general
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - re
+  - requests
+  - bs4
+  last_modified: '2025-07-28'
+  lines:
+    code: 90
+    comments: 43
+    total: 133
+  name: test_chat_alignment_fix.py
+  path: test_chat_alignment_fix.py
+  purpose: '""" Test script to verify chat message alignment fixes. Checks that user
+    messages don''t overflow the...'
+  size_kb: 5.4
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  - bs4
+  last_modified: '2025-07-28'
+  lines:
+    code: 104
+    comments: 40
+    total: 144
+  name: test_chat_centric_layout.py
+  path: test_chat_centric_layout.py
+  purpose: '""" Test script to verify the new chat-centric layout implementation.
+    """  import requests'
+  size_kb: 5.7
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-07-27'
+  lines:
+    code: 44
+    comments: 15
+    total: 59
+  name: test_chat_page.py
+  path: test_chat_page.py
+  purpose: '""" Test to check if the chat page template contains the toggle elements
+    """  def test_chat_template...'
+  size_kb: 2.3
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 37
+    comments: 9
+    total: 46
+  name: test_color_values.py
+  path: test_color_values.py
+  purpose: '""" Test script to show the actual color values causing the dark blue
+    hover """  def test_color_valu...'
+  size_kb: 1.6
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-07-27'
+  lines:
+    code: 72
+    comments: 25
+    total: 97
+  name: test_comment_overflow.py
+  path: test_comment_overflow.py
+  purpose: '""" Test script for comment overflow fix This script tests that comments
+    don''t overflow chat boundar...'
+  size_kb: 3.9
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies:
+  - os
+  imports:
+  - re
+  - os
+  last_modified: '2025-08-10'
+  lines:
+    code: 109
+    comments: 31
+    total: 140
+  name: test_comprehensive_hover_fix.py
+  path: test_comprehensive_hover_fix.py
+  purpose: '""" Comprehensive test to verify all hover fixes are applied """  def
+    test_comprehensive_hover_fix()...'
+  size_kb: 5.7
+  status: experimental
+  subcategory: ui
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  last_modified: '2025-07-27'
+  lines:
+    code: 94
+    comments: 42
+    total: 136
+  name: test_create_chat.py
+  path: test_create_chat.py
+  purpose: '""" Test script that creates a chat and tests the AI toggle functionality
+    """  import requests'
+  size_kb: 5.8
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies: []
+  imports:
+  - re
+  last_modified: '2025-07-28'
+  lines:
+    code: 109
+    comments: 45
+    total: 154
+  name: test_css_alignment_fix.py
+  path: test_css_alignment_fix.py
+  purpose: '""" Test script to verify CSS alignment fixes are properly implemented.
+    Checks the CSS file directly...'
+  size_kb: 6.3
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 48
+    comments: 15
+    total: 63
+  name: test_dark_blue_fix.py
+  path: test_dark_blue_fix.py
+  purpose: '""" Test script to verify the dark blue color is removed from style.css
+    """  def test_dark_blue_fix(...'
+  size_kb: 2.3
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 82
+    comments: 26
+    total: 108
+  name: test_design_system_accordion.py
+  path: test_design_system_accordion.py
+  purpose: '""" Test script for design system accordion styling """  def test_design_system_accordion():'
+  size_kb: 4.1
+  status: experimental
+  subcategory: ui
+- category: testing
+  dependencies:
+  - os
+  imports:
+  - re
+  - os
+  last_modified: '2025-08-10'
+  lines:
+    code: 124
+    comments: 48
+    total: 172
+  name: test_desktop_hamburger.py
+  path: test_desktop_hamburger.py
+  purpose: '""" Test script to check if hamburger menu is properly hidden on desktop
+    """  import os'
+  size_kb: 5.6
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies:
+  - os
+  imports:
+  - openai_utils
+  - os
+  - dotenv
+  - app
+  last_modified: '2025-07-27'
+  lines:
+    code: 59
+    comments: 22
+    total: 81
+  name: test_env_loading.py
+  path: test_env_loading.py
+  purpose: '""" Test script to verify environment variable loading from .env file
+    """  import os'
+  size_kb: 2.7
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  - bs4
+  last_modified: '2025-07-28'
+  lines:
+    code: 104
+    comments: 40
+    total: 144
+  name: test_expandable_layout.py
+  path: test_expandable_layout.py
+  purpose: '""" Test script to verify the new expandable layout implementation. """  import
+    requests'
+  size_kb: 5.8
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - re
+  - requests
+  last_modified: '2025-07-27'
+  lines:
+    code: 79
+    comments: 39
+    total: 118
+  name: test_find_chat.py
+  path: test_find_chat.py
+  purpose: '""" Test script that finds an existing chat and tests the AI toggle functionality
+    """  import reques...'
+  size_kb: 5.0
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-07-27'
+  lines:
+    code: 72
+    comments: 25
+    total: 97
+  name: test_fixed_input.py
+  path: test_fixed_input.py
+  purpose: '""" Test script for always-visible input bar This script tests that the
+    chat input is always accessi...'
+  size_kb: 3.8
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  last_modified: '2025-07-27'
+  lines:
+    code: 55
+    comments: 23
+    total: 78
+  name: test_form_data.py
+  path: test_form_data.py
+  purpose: '""" Test to verify form data is being sent correctly """  import requests'
+  size_kb: 2.9
+  status: experimental
+  subcategory: form
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  - bs4
+  last_modified: '2025-07-27'
+  lines:
+    code: 66
+    comments: 35
+    total: 101
+  name: test_form_fix.py
+  path: test_form_fix.py
+  purpose: '""" Test to verify the AI response toggle is now inside the form """  import
+    requests'
+  size_kb: 2.9
+  status: experimental
+  subcategory: form
+- category: testing
+  dependencies: []
+  imports:
+  - re
+  last_modified: '2025-08-10'
+  lines:
+    code: 80
+    comments: 31
+    total: 111
+  name: test_hamburger_aggressive_fix.py
+  path: test_hamburger_aggressive_fix.py
+  purpose: '""" Test script to verify aggressive hamburger menu desktop hiding fix
+    """  import re'
+  size_kb: 3.7
+  status: deprecated
+  subcategory: general
+- category: testing
+  dependencies: []
+  imports:
+  - re
+  last_modified: '2025-08-10'
+  lines:
+    code: 86
+    comments: 33
+    total: 119
+  name: test_hamburger_fix.py
+  path: test_hamburger_fix.py
+  purpose: '""" Test script to verify hamburger menu desktop hiding fix """  import
+    re'
+  size_kb: 3.8
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 71
+    comments: 22
+    total: 93
+  name: test_hover_fix_source.py
+  path: test_hover_fix_source.py
+  purpose: '""" Test script to verify hover fix at the source level """  def test_hover_fix_source():'
+  size_kb: 3.5
+  status: deprecated
+  subcategory: ui
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 72
+    comments: 23
+    total: 95
+  name: test_hover_improvements.py
+  path: test_hover_improvements.py
+  purpose: '""" Test script to verify hover improvements """  def test_hover_improvements():'
+  size_kb: 3.3
+  status: deprecated
+  subcategory: ui
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 63
+    comments: 19
+    total: 82
+  name: test_hover_overrides.py
+  path: test_hover_overrides.py
+  purpose: '""" Test script to verify hover override styles """  def test_hover_overrides():'
+  size_kb: 3.0
+  status: experimental
+  subcategory: ui
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 75
+    comments: 26
+    total: 101
+  name: test_hover_verification.py
+  path: test_hover_verification.py
+  purpose: '""" Comprehensive test to verify hover improvements are working """  def
+    test_hover_verification():'
+  size_kb: 3.7
+  status: deprecated
+  subcategory: ui
+- category: testing
+  dependencies: []
+  imports:
+  - re
+  last_modified: '2025-07-28'
+  lines:
+    code: 50
+    comments: 29
+    total: 79
+  name: test_icons_in_card.py
+  path: test_icons_in_card.py
+  purpose: '""" Test script to verify that action icons are positioned within the
+    white card. Checks that the ic...'
+  size_kb: 2.9
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  - bs4
+  last_modified: '2025-07-28'
+  lines:
+    code: 94
+    comments: 44
+    total: 138
+  name: test_improved_styling.py
+  path: test_improved_styling.py
+  purpose: '""" Test script to verify the improved styling implementation. """  import
+    requests'
+  size_kb: 5.4
+  status: deprecated
+  subcategory: general
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-07-27'
+  lines:
+    code: 81
+    comments: 30
+    total: 111
+  name: test_input_improvements.py
+  path: test_input_improvements.py
+  purpose: '""" Test script for input field improvements This script tests the solid
+    white input field and scrol...'
+  size_kb: 4.1
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies: []
+  imports:
+  - datetime
+  - models
+  - app
+  last_modified: '2025-07-27'
+  lines:
+    code: 77
+    comments: 28
+    total: 105
+  name: test_invitation_acceptance.py
+  path: test_invitation_acceptance.py
+  purpose: '"""Test script to verify invitation acceptance functionality."""  from
+    app import create_app from mo...'
+  size_kb: 4.4
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies: []
+  imports:
+  - datetime
+  - room
+  - access_control
+  - models
+  - sqlalchemy.orm
+  - app
+  last_modified: '2025-07-26'
+  lines:
+    code: 161
+    comments: 62
+    total: 223
+  name: test_invite.py
+  path: test_invite.py
+  purpose: '"""Test script for invite functionality."""  from app import create_app
+    from models import db, User,...'
+  size_kb: 8.9
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies: []
+  imports:
+  - datetime
+  - models
+  - app
+  last_modified: '2025-07-26'
+  lines:
+    code: 139
+    comments: 43
+    total: 182
+  name: test_invite_display.py
+  path: test_invite_display.py
+  purpose: '"""Test script to check invitation display on home page."""  from app
+    import create_app from models ...'
+  size_kb: 8.0
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies:
+  - sqlalchemy
+  - os
+  imports:
+  - datetime
+  - sqlalchemy
+  - models
+  - os
+  - alembic.config
+  - app
+  - alembic
+  last_modified: '2025-07-27'
+  lines:
+    code: 105
+    comments: 29
+    total: 134
+  name: test_migration_system.py
+  path: test_migration_system.py
+  purpose: '"""Test script to verify migration system is production-ready."""  from
+    app import create_app from m...'
+  size_kb: 5.9
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  - socket
+  last_modified: '2025-08-10'
+  lines:
+    code: 61
+    comments: 12
+    total: 73
+  name: test_mobile_access.py
+  path: test_mobile_access.py
+  purpose: '""" Test script to verify mobile access to the Flask application """  import
+    requests'
+  size_kb: 2.4
+  status: experimental
+  subcategory: mobile
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 79
+    comments: 25
+    total: 104
+  name: test_mobile_accordion_fix.py
+  path: test_mobile_accordion_fix.py
+  purpose: '""" Test script for mobile accordion fixes """  def test_mobile_accordion_fix():'
+  size_kb: 4.0
+  status: experimental
+  subcategory: mobile
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  - time
+  last_modified: '2025-07-28'
+  lines:
+    code: 88
+    comments: 27
+    total: 115
+  name: test_mobile_features.py
+  path: test_mobile_features.py
+  purpose: '""" Test script for mobile features: Pull-to-Refresh and Touch-Optimized
+    Scrolling """  import reque...'
+  size_kb: 4.4
+  status: experimental
+  subcategory: mobile
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  - bs4
+  last_modified: '2025-07-27'
+  lines:
+    code: 57
+    comments: 29
+    total: 86
+  name: test_mobile_fixes.py
+  path: test_mobile_fixes.py
+  purpose: '""" Test mobile navigation and AI toggle fixes """  import requests'
+  size_kb: 2.7
+  status: experimental
+  subcategory: mobile
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-07-27'
+  lines:
+    code: 72
+    comments: 27
+    total: 99
+  name: test_mobile_forms.py
+  path: test_mobile_forms.py
+  purpose: '""" Test script for mobile form improvements This script tests the mobile-optimized
+    forms and touch ...'
+  size_kb: 3.9
+  status: experimental
+  subcategory: mobile
+- category: testing
+  dependencies: []
+  imports:
+  - re
+  last_modified: '2025-08-10'
+  lines:
+    code: 60
+    comments: 23
+    total: 83
+  name: test_mobile_hamburger_fix.py
+  path: test_mobile_hamburger_fix.py
+  purpose: '""" Test script to verify mobile hamburger menu fix """  import re'
+  size_kb: 3.2
+  status: experimental
+  subcategory: mobile
+- category: testing
+  dependencies: []
+  imports:
+  - re
+  last_modified: '2025-08-10'
+  lines:
+    code: 101
+    comments: 41
+    total: 142
+  name: test_mobile_hamburger_working.py
+  path: test_mobile_hamburger_working.py
+  purpose: '""" Test script to verify hamburger menu still works on mobile after desktop
+    hiding fix """  import ...'
+  size_kb: 4.7
+  status: experimental
+  subcategory: mobile
+- category: testing
+  dependencies:
+  - os
+  - sys
+  imports:
+  - os
+  - sys
+  last_modified: '2025-08-10'
+  lines:
+    code: 94
+    comments: 28
+    total: 122
+  name: test_mobile_menu.py
+  path: test_mobile_menu.py
+  purpose: '""" Test script to verify mobile menu functionality """  import os'
+  size_kb: 4.3
+  status: experimental
+  subcategory: mobile
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - re
+  - requests
+  - bs4
+  last_modified: '2025-07-27'
+  lines:
+    code: 66
+    comments: 27
+    total: 93
+  name: test_mobile_navigation.py
+  path: test_mobile_navigation.py
+  purpose: '""" Test script for mobile navigation improvements This script tests the
+    mobile navigation menu and ...'
+  size_kb: 3.6
+  status: experimental
+  subcategory: mobile
+- category: testing
+  dependencies: []
+  imports:
+  - re
+  last_modified: '2025-08-10'
+  lines:
+    code: 74
+    comments: 25
+    total: 99
+  name: test_mobile_rubric_editing.py
+  path: test_mobile_rubric_editing.py
+  purpose: '""" Test script to verify mobile rubric editing improvements """  import
+    re'
+  size_kb: 3.8
+  status: experimental
+  subcategory: mobile
+- category: testing
+  dependencies:
+  - json
+  - requests
+  imports:
+  - json
+  - requests
+  last_modified: '2025-08-09'
+  lines:
+    code: 76
+    comments: 26
+    total: 102
+  name: test_mode_refinement_api.py
+  path: test_mode_refinement_api.py
+  purpose: '""" Test script for the new mode refinement API endpoints. This tests
+    the draft mode generation and ...'
+  size_kb: 3.3
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies:
+  - json
+  - requests
+  imports:
+  - json
+  - requests
+  last_modified: '2025-08-09'
+  lines:
+    code: 112
+    comments: 38
+    total: 150
+  name: test_mode_refinement_with_auth.py
+  path: test_mode_refinement_with_auth.py
+  purpose: '""" Test script for the mode refinement API endpoints with authentication.
+    """  import requests'
+  size_kb: 5.3
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies:
+  - os
+  - sys
+  imports:
+  - datetime
+  - openai_utils
+  - models
+  - os
+  - sys
+  - app
+  last_modified: '2025-07-28'
+  lines:
+    code: 97
+    comments: 37
+    total: 134
+  name: test_new_room_creation.py
+  path: test_new_room_creation.py
+  purpose: '""" Test script to verify new room creation with custom goals. Tests that
+    contextual modes are gener...'
+  size_kb: 5.2
+  status: experimental
+  subcategory: room
+- category: testing
+  dependencies:
+  - os
+  imports:
+  - re
+  - os
+  last_modified: '2025-07-28'
+  lines:
+    code: 103
+    comments: 37
+    total: 140
+  name: test_padding_standards.py
+  path: test_padding_standards.py
+  purpose: '""" Test script to verify industry-standard padding across all pages.
+    Checks that pages have proper ...'
+  size_kb: 4.7
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies:
+  - json
+  - os
+  - sys
+  imports:
+  - datetime
+  - json
+  - traceback
+  - alembic.config
+  - models
+  - os
+  - sys
+  - rubric_templates
+  - app
+  - alembic
+  last_modified: '2025-08-10'
+  lines:
+    code: 253
+    comments: 100
+    total: 353
+  name: test_phase1_rubrics.py
+  path: test_phase1_rubrics.py
+  purpose: '""" Test script for Phase 1 Rubric System Implementation. This tests the
+    basic rubric functionality ...'
+  size_kb: 14.9
+  status: deprecated
+  subcategory: general
+- category: testing
+  dependencies:
+  - json
+  - requests
+  imports:
+  - json
+  - requests
+  - time
+  last_modified: '2025-08-10'
+  lines:
+    code: 170
+    comments: 56
+    total: 226
+  name: test_phase2b_rubrics.py
+  path: test_phase2b_rubrics.py
+  purpose: '""" Test Phase 2B Rubric Functionality Tests the new API endpoints and
+    frontend integration for rubr...'
+  size_kb: 8.8
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-07-27'
+  lines:
+    code: 110
+    comments: 45
+    total: 155
+  name: test_phase3_layouts.py
+  path: test_phase3_layouts.py
+  purpose: '""" Test script for Phase 3: Responsive Layout Improvements This script
+    tests the mobile layout opti...'
+  size_kb: 6.3
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies:
+  - json
+  - sqlalchemy
+  - requests
+  - os
+  - sys
+  imports:
+  - json
+  - urllib.parse
+  - sqlalchemy
+  - models
+  - requests
+  - os
+  - sys
+  - app
+  last_modified: '2025-07-28'
+  lines:
+    code: 119
+    comments: 30
+    total: 149
+  name: test_production_mobile.py
+  path: test_production_mobile.py
+  purpose: '""" Production Mobile Testing Script Tests mobile functionality that might
+    break in production envir...'
+  size_kb: 4.7
+  status: experimental
+  subcategory: mobile
+- category: testing
+  dependencies:
+  - json
+  - flask
+  - os
+  - sys
+  imports:
+  - datetime
+  - json
+  - openai_utils
+  - traceback
+  - flask
+  - models
+  - os
+  - sys
+  - app
+  last_modified: '2025-08-10'
+  lines:
+    code: 182
+    comments: 60
+    total: 242
+  name: test_progression_assessment.py
+  path: test_progression_assessment.py
+  purpose: '""" Test script for the AI-powered learning progression assessment system.
+    This script tests the new...'
+  size_kb: 10.5
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies: []
+  imports:
+  - re
+  last_modified: '2025-07-28'
+  lines:
+    code: 46
+    comments: 26
+    total: 72
+  name: test_room_actions_html.py
+  path: test_room_actions_html.py
+  purpose: '""" Test script to verify room actions layout changes in the HTML template.
+    Checks that settings and...'
+  size_kb: 2.6
+  status: experimental
+  subcategory: room
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - re
+  - requests
+  - bs4
+  last_modified: '2025-07-28'
+  lines:
+    code: 66
+    comments: 34
+    total: 100
+  name: test_room_actions_layout.py
+  path: test_room_actions_layout.py
+  purpose: '""" Test script to verify room actions layout changes. Checks that settings
+    and invite members icons...'
+  size_kb: 3.9
+  status: experimental
+  subcategory: room
+- category: testing
+  dependencies:
+  - json
+  - requests
+  imports:
+  - json
+  - requests
+  last_modified: '2025-08-10'
+  lines:
+    code: 110
+    comments: 34
+    total: 144
+  name: test_room_description.py
+  path: test_room_description.py
+  purpose: '""" Test Room Description Generation Verifies that the room description
+    generation feature is workin...'
+  size_kb: 5.4
+  status: experimental
+  subcategory: room
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  last_modified: '2025-07-28'
+  lines:
+    code: 65
+    comments: 17
+    total: 82
+  name: test_room_dropdown.py
+  path: test_room_dropdown.py
+  purpose: '""" Test script for room actions dropdown implementation """  import requests'
+  size_kb: 2.9
+  status: experimental
+  subcategory: room
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - re
+  - requests
+  - bs4
+  last_modified: '2025-07-28'
+  lines:
+    code: 94
+    comments: 30
+    total: 124
+  name: test_room_layout.py
+  path: test_room_layout.py
+  purpose: '""" Test script to verify the new room layout implementation. Checks for
+    redesigned components and s...'
+  size_kb: 4.9
+  status: experimental
+  subcategory: room
+- category: testing
+  dependencies:
+  - json
+  - os
+  - sys
+  imports:
+  - datetime
+  - json
+  - openai_utils
+  - models
+  - os
+  - sys
+  - app
+  last_modified: '2025-07-28'
+  lines:
+    code: 92
+    comments: 35
+    total: 127
+  name: test_room_mode_generation.py
+  path: test_room_mode_generation.py
+  purpose: '""" Test script to debug room mode generation. Checks if custom room goals
+    are being used to generat...'
+  size_kb: 4.7
+  status: experimental
+  subcategory: room
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - re
+  - requests
+  - bs4
+  last_modified: '2025-07-28'
+  lines:
+    code: 125
+    comments: 44
+    total: 169
+  name: test_room_with_login.py
+  path: test_room_with_login.py
+  purpose: '""" Test script to verify the new room layout implementation with login.
+    """  import requests'
+  size_kb: 6.8
+  status: experimental
+  subcategory: room
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-07-27'
+  lines:
+    code: 71
+    comments: 25
+    total: 96
+  name: test_send_button.py
+  path: test_send_button.py
+  purpose: '""" Test script for send button loading spinner improvements This script
+    tests the new loading icon ...'
+  size_kb: 3.8
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  - bs4
+  last_modified: '2025-07-28'
+  lines:
+    code: 82
+    comments: 41
+    total: 123
+  name: test_settings_icon.py
+  path: test_settings_icon.py
+  purpose: '""" Test script to verify the simple settings icon implementation. """  import
+    requests'
+  size_kb: 4.4
+  status: deprecated
+  subcategory: general
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 70
+    comments: 23
+    total: 93
+  name: test_simple_accordion.py
+  path: test_simple_accordion.py
+  purpose: '""" Test script for simplified accordion implementation """  def test_simple_accordion():'
+  size_kb: 3.5
+  status: experimental
+  subcategory: ui
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 50
+    comments: 16
+    total: 66
+  name: test_validate_button_removal.py
+  path: test_validate_button_removal.py
+  purpose: '""" Test script to verify validate button removal """  def test_validate_button_removal():'
+  size_kb: 2.5
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  last_modified: '2025-07-27'
+  lines:
+    code: 84
+    comments: 36
+    total: 120
+  name: test_with_login.py
+  path: test_with_login.py
+  purpose: '""" Test script that logs in and tests the AI toggle functionality """  import
+    requests'
+  size_kb: 4.4
+  status: experimental
+  subcategory: general
+- category: utility
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 136
+    comments: 35
+    total: 171
+  name: verify_phase2b.py
+  path: verify_phase2b.py
+  purpose: '""" Verify Phase 2B Implementation Quick verification of the Phase 2B
+    rubric functionality implement...'
+  size_kb: 6.1
+  status: active
+  subcategory: verification
+- category: utility
+  dependencies:
+  - os
+  imports:
+  - re
+  - os
+  last_modified: '2025-08-10'
+  lines:
+    code: 69
+    comments: 16
+    total: 85
+  name: verify_website_hover_fix.py
+  path: verify_website_hover_fix.py
+  purpose: '""" Verification script to confirm all dark hover classes are removed
+    from the website """  import o...'
+  size_kb: 3.1
+  status: experimental
+  subcategory: verification
+- category: core
+  dependencies:
+  - os
+  - sys
+  imports:
+  - traceback
+  - os
+  - sys
+  - app
+  last_modified: '2025-07-21'
+  lines:
+    code: 27
+    comments: 10
+    total: 37
+  name: wsgi.py
+  path: wsgi.py
+  purpose: '""" WSGI entry point for production deployment. This file is used by Gunicorn
+    to serve the Flask app...'
+  size_kb: 1.1
+  status: experimental
+  subcategory: application
+- &id005
+  category: ai
+  dependencies:
+  - json
+  - flask
+  - os
+  - requests
+  - openai
+  imports:
+  - json
+  - re
+  - flask
+  - models
+  - os
+  - requests
+  - openai
+  - time
+  - collections
+  last_modified: '2025-08-11'
+  lines:
+    code: 505
+    comments: 141
+    total: 646
+  name: openai_utils_backup_20250813_210156.py
+  path: backups\openai_utils_backup_20250813_210156.py
+  purpose: '"""Helper functions for talking to AI services.  Supports OpenAI, Anthropic
+    Claude, and local Ollama...'
+  size_kb: 28.2
+  status: archived
+  subcategory: integration
+- &id016
+  category: ai
+  dependencies: []
+  imports:
+  - openai_utils
+  - logging
+  - warnings
+  last_modified: '2025-08-13'
+  lines:
+    code: 68
+    comments: 21
+    total: 89
+  name: openai_utils_backup_20250813_210218.py
+  path: backups\openai_utils_backup_20250813_210218.py
+  purpose: '""" Compatibility Wrapper for OpenAI Utils.  This file provides backward
+    compatibility for the old o...'
+  size_kb: 2.2
+  status: deprecated
+  subcategory: integration
+- category: misc
+  dependencies:
+  - flask
+  imports:
+  - models
+  - functools
+  - flask
+  last_modified: '2025-07-10'
+  lines:
+    code: 200
+    comments: 91
+    total: 291
+  name: access_control.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\access_control.py
+  purpose: '"""Access control utilities for room and chat permissions.  This module
+    provides helper methods and ...'
+  size_kb: 8.5
+  status: archived
+  subcategory: unknown
+- category: misc
+  dependencies:
+  - flask
+  imports:
+  - datetime
+  - models
+  - flask
+  - openai_utils
+  last_modified: '2025-07-23'
+  lines:
+    code: 190
+    comments: 71
+    total: 261
+  name: achievements.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\achievements.py
+  purpose: '"""Track that a user has used a specific mode in a room."""     try:         #
+    Check if this user ha...'
+  size_kb: 8.9
+  status: archived
+  subcategory: unknown
+- category: core
+  dependencies:
+  - json
+  - flask
+  imports:
+  - datetime
+  - models
+  - json
+  - flask
+  last_modified: '2025-07-21'
+  lines:
+    code: 110
+    comments: 34
+    total: 144
+  name: analytics.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\analytics.py
+  purpose: '"""Track a page view."""     try:         data = request.get_json()                  #
+    Get user ID i...'
+  size_kb: 5.4
+  status: archived
+  subcategory: blueprint
+- category: core
+  dependencies:
+  - flask
+  - os
+  imports:
+  - datetime
+  - room
+  - config
+  - flask
+  - access_control
+  - auth
+  - models
+  - os
+  - alembic.config
+  - chat
+  - analytics
+  - alembic
+  - dotenv
+  - dashboard
+  - google_auth
+  last_modified: '2025-07-27'
+  lines:
+    code: 285
+    comments: 96
+    total: 381
+  name: app.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\app.py
+  purpose: No purpose documented
+  size_kb: 15.4
+  status: deprecated
+  subcategory: application
+- category: misc
+  dependencies: []
+  imports:
+  - app
+  last_modified: '2025-08-10'
+  lines:
+    code: 11
+    comments: 5
+    total: 16
+  name: app_mobile.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\app_mobile.py
+  purpose: '""" Mobile-friendly Flask app for testing on public WiFi """  from app
+    import app'
+  size_kb: 0.5
+  status: experimental
+  subcategory: unknown
+- &id008
+  category: core
+  dependencies:
+  - flask
+  imports:
+  - datetime
+  - traceback
+  - flask
+  - access_control
+  - models
+  - secrets
+  last_modified: '2025-08-08'
+  lines:
+    code: 317
+    comments: 92
+    total: 409
+  name: auth.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\auth.py
+  purpose: No purpose documented
+  size_kb: 18.6
+  status: archived
+  subcategory: blueprint
+- category: core
+  dependencies:
+  - flask
+  imports:
+  - datetime
+  - openai_utils
+  - flask
+  - access_control
+  - models
+  - sqlalchemy.orm
+  - achievements
+  - google_docs
+  last_modified: '2025-08-10'
+  lines:
+    code: 203
+    comments: 68
+    total: 271
+  name: chat.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\chat.py
+  purpose: No purpose documented
+  size_kb: 11.2
+  status: archived
+  subcategory: blueprint
+- category: core
+  dependencies:
+  - os
+  imports:
+  - datetime
+  - os
+  - logging
+  - dotenv
+  - logging.handlers
+  last_modified: '2025-07-28'
+  lines:
+    code: 80
+    comments: 47
+    total: 127
+  name: config.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\config.py
+  purpose: '"""Base configuration class"""     SECRET_KEY = os.environ.get(''SECRET_KEY'')
+    or ''dev-secret-key-chan...'
+  size_kb: 3.9
+  status: deprecated
+  subcategory: application
+- category: core
+  dependencies:
+  - flask
+  - sqlalchemy
+  imports:
+  - openai_utils
+  - datetime
+  - flask
+  - access_control
+  - sqlalchemy
+  - models
+  - collections
+  last_modified: '2025-07-21'
+  lines:
+    code: 257
+    comments: 117
+    total: 374
+  name: dashboard.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\dashboard.py
+  purpose: No purpose documented
+  size_kb: 14.2
+  status: experimental
+  subcategory: blueprint
+- category: debug
+  dependencies:
+  - json
+  - requests
+  imports:
+  - json
+  - requests
+  last_modified: '2025-08-09'
+  lines:
+    code: 33
+    comments: 9
+    total: 42
+  name: debug_api_response.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\debug_api_response.py
+  purpose: '""" Debug script to see what the API endpoints are actually returning.
+    """  import requests'
+  size_kb: 1.3
+  status: experimental
+  subcategory: troubleshooting
+- category: debug
+  dependencies: []
+  imports:
+  - models
+  - sqlalchemy.orm
+  - app
+  last_modified: '2025-07-26'
+  lines:
+    code: 27
+    comments: 11
+    total: 38
+  name: debug_avatars.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\debug_avatars.py
+  purpose: '"""Debug script to check avatar data."""  from app import create_app from
+    models import db, Message,...'
+  size_kb: 1.4
+  status: archived
+  subcategory: troubleshooting
+- category: debug
+  dependencies:
+  - requests
+  imports:
+  - requests
+  last_modified: '2025-07-27'
+  lines:
+    code: 64
+    comments: 34
+    total: 98
+  name: debug_chat_page.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\debug_chat_page.py
+  purpose: '""" Debug script to check what HTML is being served for the chat page
+    """  import requests'
+  size_kb: 3.2
+  status: experimental
+  subcategory: troubleshooting
+- category: debug
+  dependencies:
+  - os
+  imports:
+  - openai_utils
+  - os
+  - dotenv
+  - traceback
+  last_modified: '2025-07-27'
+  lines:
+    code: 64
+    comments: 27
+    total: 91
+  name: debug_env.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\debug_env.py
+  purpose: '""" Debug script to check environment variables """  import os'
+  size_kb: 3.0
+  status: experimental
+  subcategory: troubleshooting
+- category: debug
+  dependencies:
+  - requests
+  imports:
+  - requests
+  - bs4
+  last_modified: '2025-07-28'
+  lines:
+    code: 99
+    comments: 34
+    total: 133
+  name: debug_new_chat_button.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\debug_new_chat_button.py
+  purpose: '""" Debug script to check the New Chat button implementation. """  import
+    requests'
+  size_kb: 5.4
+  status: experimental
+  subcategory: troubleshooting
+- category: debug
+  dependencies:
+  - requests
+  imports:
+  - requests
+  - bs4
+  last_modified: '2025-07-28'
+  lines:
+    code: 81
+    comments: 33
+    total: 114
+  name: debug_room_detailed.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\debug_room_detailed.py
+  purpose: '""" Detailed debug script to see exactly what HTML is being served. """  import
+    requests'
+  size_kb: 4.2
+  status: experimental
+  subcategory: troubleshooting
+- category: debug
+  dependencies:
+  - requests
+  imports:
+  - requests
+  - bs4
+  last_modified: '2025-07-28'
+  lines:
+    code: 58
+    comments: 28
+    total: 86
+  name: debug_room_page.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\debug_room_page.py
+  purpose: '""" Debug script to check what''s actually being served by the room page.
+    """  import requests'
+  size_kb: 3.3
+  status: archived
+  subcategory: troubleshooting
+- category: misc
+  dependencies:
+  - os
+  imports:
+  - re
+  - os
+  last_modified: '2025-08-10'
+  lines:
+    code: 59
+    comments: 17
+    total: 76
+  name: fix_all_hover_website.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\fix_all_hover_website.py
+  purpose: '""" Script to fix all dark hover classes across the entire website """  import
+    os'
+  size_kb: 2.6
+  status: archived
+  subcategory: unknown
+- category: utility
+  dependencies:
+  - os
+  - sys
+  imports:
+  - os
+  - sys
+  - subprocess
+  last_modified: '2025-07-28'
+  lines:
+    code: 95
+    comments: 21
+    total: 116
+  name: git_helper.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\git_helper.py
+  purpose: '""" Git Helper Script for AI_Collab_Online Provides reliable git operations
+    without PowerShell displ...'
+  size_kb: 3.1
+  status: archived
+  subcategory: development
+- category: core
+  dependencies:
+  - json
+  - flask
+  - os
+  imports:
+  - datetime
+  - json
+  - flask
+  - access_control
+  - googleapiclient.discovery
+  - models
+  - os
+  - google_auth_oauthlib.flow
+  last_modified: '2025-07-08'
+  lines:
+    code: 127
+    comments: 42
+    total: 169
+  name: google_auth.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\google_auth.py
+  purpose: No purpose documented
+  size_kb: 5.4
+  status: archived
+  subcategory: blueprint
+- category: misc
+  dependencies:
+  - os
+  imports:
+  - googleapiclient.errors
+  - re
+  - googleapiclient.discovery
+  - os
+  - google.oauth2
+  last_modified: '2025-07-21'
+  lines:
+    code: 59
+    comments: 18
+    total: 77
+  name: google_docs.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\google_docs.py
+  purpose: No purpose documented
+  size_kb: 2.8
+  status: archived
+  subcategory: unknown
+- category: core
+  dependencies: []
+  imports:
+  - datetime
+  - werkzeug.security
+  - flask_sqlalchemy
+  last_modified: '2025-08-11'
+  lines:
+    code: 214
+    comments: 84
+    total: 298
+  name: models.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\models.py
+  purpose: '"""A registered user of the application."""          id = db.Column(db.Integer,
+    primary_key=True)   ...'
+  size_kb: 14.2
+  status: deprecated
+  subcategory: application
+- &id006
+  category: ai
+  dependencies:
+  - json
+  - flask
+  - os
+  - requests
+  - openai
+  imports:
+  - json
+  - re
+  - flask
+  - models
+  - os
+  - requests
+  - openai
+  - time
+  - collections
+  last_modified: '2025-08-11'
+  lines:
+    code: 505
+    comments: 141
+    total: 646
+  name: openai_utils.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\openai_utils.py
+  purpose: '"""Helper functions for talking to AI services.  Supports OpenAI, Anthropic
+    Claude, and local Ollama...'
+  size_kb: 28.2
+  status: archived
+  subcategory: integration
+- &id002
+  category: core
+  dependencies:
+  - json
+  - flask
+  imports:
+  - openai_utils
+  - datetime
+  - json
+  - flask
+  - access_control
+  - models
+  - rubric_templates
+  - time
+  - google_docs
+  last_modified: '2025-08-11'
+  lines:
+    code: 830
+    comments: 276
+    total: 1106
+  name: room.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\room.py
+  purpose: No purpose documented
+  size_kb: 46.6
+  status: deprecated
+  subcategory: blueprint
+- category: ai
+  dependencies:
+  - json
+  imports:
+  - json
+  - models
+  last_modified: '2025-08-10'
+  lines:
+    code: 305
+    comments: 22
+    total: 327
+  name: rubric_templates.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\rubric_templates.py
+  purpose: '""" Pre-built rubric templates for common learning steps. These templates
+    provide a foundation that ...'
+  size_kb: 13.9
+  status: deprecated
+  subcategory: templates
+- category: misc
+  dependencies:
+  - unittest
+  - os
+  - sys
+  imports:
+  - datetime
+  - unittest
+  - os
+  - sys
+  last_modified: '2025-07-11'
+  lines:
+    code: 70
+    comments: 26
+    total: 96
+  name: run_tests.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\run_tests.py
+  purpose: '""" Test runner for AI_Collab_Teams application Runs all test suites and
+    provides a comprehensive re...'
+  size_kb: 2.7
+  status: experimental
+  subcategory: unknown
+- category: utility
+  dependencies:
+  - requests
+  imports:
+  - requests
+  last_modified: '2025-08-10'
+  lines:
+    code: 36
+    comments: 13
+    total: 49
+  name: simple_test.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\simple_test.py
+  purpose: '""" Simple test to check if the create room page loads correctly """  import
+    requests'
+  size_kb: 1.6
+  status: experimental
+  subcategory: development
+- category: utility
+  dependencies: []
+  imports:
+  - time
+  - pyngrok
+  last_modified: '2025-08-10'
+  lines:
+    code: 33
+    comments: 9
+    total: 42
+  name: start_ngrok.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\start_ngrok.py
+  purpose: '""" Start ngrok tunnel for mobile access from public WiFi """  from pyngrok
+    import ngrok'
+  size_kb: 1.3
+  status: experimental
+  subcategory: development
+- category: testing
+  dependencies: []
+  imports:
+  - re
+  last_modified: '2025-08-10'
+  lines:
+    code: 55
+    comments: 20
+    total: 75
+  name: test_accordion_structure.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_accordion_structure.py
+  purpose: '""" Test script to verify accordion structure """  import re'
+  size_kb: 2.7
+  status: experimental
+  subcategory: ui
+- category: testing
+  dependencies:
+  - json
+  - requests
+  imports:
+  - json
+  - requests
+  - time
+  last_modified: '2025-08-10'
+  lines:
+    code: 137
+    comments: 32
+    total: 169
+  name: test_accordion_ui.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_accordion_ui.py
+  purpose: '""" Test script for Phase 2A: Mobile Accordion UI Implementation Tests
+    the accordion structure and f...'
+  size_kb: 5.6
+  status: experimental
+  subcategory: ui
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 90
+    comments: 29
+    total: 119
+  name: test_ai_instructions.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_ai_instructions.py
+  purpose: '""" Test AI Instructions Editing Functionality Verifies that the Edit
+    Instructions button works prop...'
+  size_kb: 4.6
+  status: deprecated
+  subcategory: chat
+- category: testing
+  dependencies:
+  - json
+  - requests
+  imports:
+  - openai_utils
+  - json
+  - traceback
+  - models
+  - requests
+  - app
+  last_modified: '2025-07-27'
+  lines:
+    code: 81
+    comments: 29
+    total: 110
+  name: test_ai_response.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_ai_response.py
+  purpose: '""" Test script to directly test AI response functionality """  import
+    requests'
+  size_kb: 3.7
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies: []
+  imports:
+  - openai_utils
+  - traceback
+  last_modified: '2025-07-27'
+  lines:
+    code: 44
+    comments: 17
+    total: 61
+  name: test_ai_simple.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_ai_simple.py
+  purpose: '""" Simple test for AI response functionality """  def test_ai_simple():'
+  size_kb: 2.1
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  - time
+  last_modified: '2025-07-27'
+  lines:
+    code: 80
+    comments: 35
+    total: 115
+  name: test_ai_toggle.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_ai_toggle.py
+  purpose: '""" Test script for AI Response Toggle functionality """  import requests'
+  size_kb: 4.4
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  - bs4
+  last_modified: '2025-07-28'
+  lines:
+    code: 87
+    comments: 36
+    total: 123
+  name: test_alignment_fix.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_alignment_fix.py
+  purpose: '""" Test script to verify the alignment fix for expandable sections. """  import
+    requests'
+  size_kb: 4.9
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 64
+    comments: 19
+    total: 83
+  name: test_all_hover_fixed.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_all_hover_fixed.py
+  purpose: '""" Test script to verify all dark hover classes are removed """  def
+    test_all_hover_fixed():'
+  size_kb: 3.1
+  status: experimental
+  subcategory: ui
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  last_modified: '2025-07-27'
+  lines:
+    code: 84
+    comments: 36
+    total: 120
+  name: test_auto_login.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_auto_login.py
+  purpose: '""" Test script that automatically logs in and tests the AI toggle functionality
+    """  import request...'
+  size_kb: 4.3
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies: []
+  imports:
+  - models
+  - sqlalchemy.orm
+  - app
+  last_modified: '2025-07-26'
+  lines:
+    code: 17
+    comments: 6
+    total: 23
+  name: test_avatars.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_avatars.py
+  purpose: '"""Test script to check user avatar functionality."""  from app import
+    app from models import db, Me...'
+  size_kb: 0.9
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies: []
+  imports:
+  - re
+  last_modified: '2025-07-28'
+  lines:
+    code: 54
+    comments: 32
+    total: 86
+  name: test_card_standardization.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_card_standardization.py
+  purpose: '""" Test script to verify card standardization and icon positioning. Checks
+    that all white cards hav...'
+  size_kb: 3.4
+  status: deprecated
+  subcategory: chat
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - re
+  - requests
+  - bs4
+  last_modified: '2025-07-28'
+  lines:
+    code: 90
+    comments: 43
+    total: 133
+  name: test_chat_alignment_fix.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_chat_alignment_fix.py
+  purpose: '""" Test script to verify chat message alignment fixes. Checks that user
+    messages don''t overflow the...'
+  size_kb: 5.4
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  - bs4
+  last_modified: '2025-07-28'
+  lines:
+    code: 104
+    comments: 40
+    total: 144
+  name: test_chat_centric_layout.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_chat_centric_layout.py
+  purpose: '""" Test script to verify the new chat-centric layout implementation.
+    """  import requests'
+  size_kb: 5.7
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-07-27'
+  lines:
+    code: 44
+    comments: 15
+    total: 59
+  name: test_chat_page.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_chat_page.py
+  purpose: '""" Test to check if the chat page template contains the toggle elements
+    """  def test_chat_template...'
+  size_kb: 2.3
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 37
+    comments: 9
+    total: 46
+  name: test_color_values.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_color_values.py
+  purpose: '""" Test script to show the actual color values causing the dark blue
+    hover """  def test_color_valu...'
+  size_kb: 1.6
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-07-27'
+  lines:
+    code: 72
+    comments: 25
+    total: 97
+  name: test_comment_overflow.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_comment_overflow.py
+  purpose: '""" Test script for comment overflow fix This script tests that comments
+    don''t overflow chat boundar...'
+  size_kb: 3.9
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - os
+  imports:
+  - re
+  - os
+  last_modified: '2025-08-10'
+  lines:
+    code: 109
+    comments: 31
+    total: 140
+  name: test_comprehensive_hover_fix.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_comprehensive_hover_fix.py
+  purpose: '""" Comprehensive test to verify all hover fixes are applied """  def
+    test_comprehensive_hover_fix()...'
+  size_kb: 5.7
+  status: experimental
+  subcategory: ui
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  last_modified: '2025-07-27'
+  lines:
+    code: 94
+    comments: 42
+    total: 136
+  name: test_create_chat.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_create_chat.py
+  purpose: '""" Test script that creates a chat and tests the AI toggle functionality
+    """  import requests'
+  size_kb: 5.8
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies: []
+  imports:
+  - re
+  last_modified: '2025-07-28'
+  lines:
+    code: 109
+    comments: 45
+    total: 154
+  name: test_css_alignment_fix.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_css_alignment_fix.py
+  purpose: '""" Test script to verify CSS alignment fixes are properly implemented.
+    Checks the CSS file directly...'
+  size_kb: 6.3
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 48
+    comments: 15
+    total: 63
+  name: test_dark_blue_fix.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_dark_blue_fix.py
+  purpose: '""" Test script to verify the dark blue color is removed from style.css
+    """  def test_dark_blue_fix(...'
+  size_kb: 2.3
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 82
+    comments: 26
+    total: 108
+  name: test_design_system_accordion.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_design_system_accordion.py
+  purpose: '""" Test script for design system accordion styling """  def test_design_system_accordion():'
+  size_kb: 4.1
+  status: experimental
+  subcategory: ui
+- category: testing
+  dependencies:
+  - os
+  imports:
+  - re
+  - os
+  last_modified: '2025-08-10'
+  lines:
+    code: 124
+    comments: 48
+    total: 172
+  name: test_desktop_hamburger.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_desktop_hamburger.py
+  purpose: '""" Test script to check if hamburger menu is properly hidden on desktop
+    """  import os'
+  size_kb: 5.6
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - os
+  imports:
+  - openai_utils
+  - os
+  - dotenv
+  - app
+  last_modified: '2025-07-27'
+  lines:
+    code: 59
+    comments: 22
+    total: 81
+  name: test_env_loading.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_env_loading.py
+  purpose: '""" Test script to verify environment variable loading from .env file
+    """  import os'
+  size_kb: 2.7
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  - bs4
+  last_modified: '2025-07-28'
+  lines:
+    code: 104
+    comments: 40
+    total: 144
+  name: test_expandable_layout.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_expandable_layout.py
+  purpose: '""" Test script to verify the new expandable layout implementation. """  import
+    requests'
+  size_kb: 5.8
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - re
+  - requests
+  last_modified: '2025-07-27'
+  lines:
+    code: 79
+    comments: 39
+    total: 118
+  name: test_find_chat.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_find_chat.py
+  purpose: '""" Test script that finds an existing chat and tests the AI toggle functionality
+    """  import reques...'
+  size_kb: 5.0
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-07-27'
+  lines:
+    code: 72
+    comments: 25
+    total: 97
+  name: test_fixed_input.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_fixed_input.py
+  purpose: '""" Test script for always-visible input bar This script tests that the
+    chat input is always accessi...'
+  size_kb: 3.8
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  last_modified: '2025-07-27'
+  lines:
+    code: 55
+    comments: 23
+    total: 78
+  name: test_form_data.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_form_data.py
+  purpose: '""" Test to verify form data is being sent correctly """  import requests'
+  size_kb: 2.9
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  - bs4
+  last_modified: '2025-07-27'
+  lines:
+    code: 66
+    comments: 35
+    total: 101
+  name: test_form_fix.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_form_fix.py
+  purpose: '""" Test to verify the AI response toggle is now inside the form """  import
+    requests'
+  size_kb: 2.9
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies: []
+  imports:
+  - re
+  last_modified: '2025-08-10'
+  lines:
+    code: 80
+    comments: 31
+    total: 111
+  name: test_hamburger_aggressive_fix.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_hamburger_aggressive_fix.py
+  purpose: '""" Test script to verify aggressive hamburger menu desktop hiding fix
+    """  import re'
+  size_kb: 3.7
+  status: deprecated
+  subcategory: chat
+- category: testing
+  dependencies: []
+  imports:
+  - re
+  last_modified: '2025-08-10'
+  lines:
+    code: 86
+    comments: 33
+    total: 119
+  name: test_hamburger_fix.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_hamburger_fix.py
+  purpose: '""" Test script to verify hamburger menu desktop hiding fix """  import
+    re'
+  size_kb: 3.8
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 71
+    comments: 22
+    total: 93
+  name: test_hover_fix_source.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_hover_fix_source.py
+  purpose: '""" Test script to verify hover fix at the source level """  def test_hover_fix_source():'
+  size_kb: 3.5
+  status: deprecated
+  subcategory: ui
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 72
+    comments: 23
+    total: 95
+  name: test_hover_improvements.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_hover_improvements.py
+  purpose: '""" Test script to verify hover improvements """  def test_hover_improvements():'
+  size_kb: 3.3
+  status: deprecated
+  subcategory: ui
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 63
+    comments: 19
+    total: 82
+  name: test_hover_overrides.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_hover_overrides.py
+  purpose: '""" Test script to verify hover override styles """  def test_hover_overrides():'
+  size_kb: 3.0
+  status: experimental
+  subcategory: ui
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 75
+    comments: 26
+    total: 101
+  name: test_hover_verification.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_hover_verification.py
+  purpose: '""" Comprehensive test to verify hover improvements are working """  def
+    test_hover_verification():'
+  size_kb: 3.7
+  status: deprecated
+  subcategory: ui
+- category: testing
+  dependencies: []
+  imports:
+  - re
+  last_modified: '2025-07-28'
+  lines:
+    code: 50
+    comments: 29
+    total: 79
+  name: test_icons_in_card.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_icons_in_card.py
+  purpose: '""" Test script to verify that action icons are positioned within the
+    white card. Checks that the ic...'
+  size_kb: 2.9
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  - bs4
+  last_modified: '2025-07-28'
+  lines:
+    code: 94
+    comments: 44
+    total: 138
+  name: test_improved_styling.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_improved_styling.py
+  purpose: '""" Test script to verify the improved styling implementation. """  import
+    requests'
+  size_kb: 5.4
+  status: deprecated
+  subcategory: chat
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-07-27'
+  lines:
+    code: 81
+    comments: 30
+    total: 111
+  name: test_input_improvements.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_input_improvements.py
+  purpose: '""" Test script for input field improvements This script tests the solid
+    white input field and scrol...'
+  size_kb: 4.1
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies: []
+  imports:
+  - datetime
+  - models
+  - app
+  last_modified: '2025-07-27'
+  lines:
+    code: 77
+    comments: 28
+    total: 105
+  name: test_invitation_acceptance.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_invitation_acceptance.py
+  purpose: '"""Test script to verify invitation acceptance functionality."""  from
+    app import create_app from mo...'
+  size_kb: 4.4
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies: []
+  imports:
+  - datetime
+  - room
+  - access_control
+  - models
+  - sqlalchemy.orm
+  - app
+  last_modified: '2025-07-26'
+  lines:
+    code: 161
+    comments: 62
+    total: 223
+  name: test_invite.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_invite.py
+  purpose: '"""Test script for invite functionality."""  from app import create_app
+    from models import db, User,...'
+  size_kb: 8.9
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies: []
+  imports:
+  - datetime
+  - models
+  - app
+  last_modified: '2025-07-26'
+  lines:
+    code: 139
+    comments: 43
+    total: 182
+  name: test_invite_display.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_invite_display.py
+  purpose: '"""Test script to check invitation display on home page."""  from app
+    import create_app from models ...'
+  size_kb: 8.0
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - sqlalchemy
+  - os
+  imports:
+  - datetime
+  - sqlalchemy
+  - models
+  - os
+  - alembic.config
+  - app
+  - alembic
+  last_modified: '2025-07-27'
+  lines:
+    code: 105
+    comments: 29
+    total: 134
+  name: test_migration_system.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_migration_system.py
+  purpose: '"""Test script to verify migration system is production-ready."""  from
+    app import create_app from m...'
+  size_kb: 5.9
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  - socket
+  last_modified: '2025-08-10'
+  lines:
+    code: 61
+    comments: 12
+    total: 73
+  name: test_mobile_access.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_mobile_access.py
+  purpose: '""" Test script to verify mobile access to the Flask application """  import
+    requests'
+  size_kb: 2.4
+  status: experimental
+  subcategory: mobile
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 79
+    comments: 25
+    total: 104
+  name: test_mobile_accordion_fix.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_mobile_accordion_fix.py
+  purpose: '""" Test script for mobile accordion fixes """  def test_mobile_accordion_fix():'
+  size_kb: 4.0
+  status: experimental
+  subcategory: mobile
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  - time
+  last_modified: '2025-07-28'
+  lines:
+    code: 88
+    comments: 27
+    total: 115
+  name: test_mobile_features.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_mobile_features.py
+  purpose: '""" Test script for mobile features: Pull-to-Refresh and Touch-Optimized
+    Scrolling """  import reque...'
+  size_kb: 4.4
+  status: experimental
+  subcategory: mobile
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  - bs4
+  last_modified: '2025-07-27'
+  lines:
+    code: 57
+    comments: 29
+    total: 86
+  name: test_mobile_fixes.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_mobile_fixes.py
+  purpose: '""" Test mobile navigation and AI toggle fixes """  import requests'
+  size_kb: 2.7
+  status: experimental
+  subcategory: mobile
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-07-27'
+  lines:
+    code: 72
+    comments: 27
+    total: 99
+  name: test_mobile_forms.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_mobile_forms.py
+  purpose: '""" Test script for mobile form improvements This script tests the mobile-optimized
+    forms and touch ...'
+  size_kb: 3.9
+  status: experimental
+  subcategory: mobile
+- category: testing
+  dependencies: []
+  imports:
+  - re
+  last_modified: '2025-08-10'
+  lines:
+    code: 60
+    comments: 23
+    total: 83
+  name: test_mobile_hamburger_fix.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_mobile_hamburger_fix.py
+  purpose: '""" Test script to verify mobile hamburger menu fix """  import re'
+  size_kb: 3.2
+  status: experimental
+  subcategory: mobile
+- category: testing
+  dependencies: []
+  imports:
+  - re
+  last_modified: '2025-08-10'
+  lines:
+    code: 101
+    comments: 41
+    total: 142
+  name: test_mobile_hamburger_working.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_mobile_hamburger_working.py
+  purpose: '""" Test script to verify hamburger menu still works on mobile after desktop
+    hiding fix """  import ...'
+  size_kb: 4.7
+  status: experimental
+  subcategory: mobile
+- category: testing
+  dependencies:
+  - os
+  - sys
+  imports:
+  - os
+  - sys
+  last_modified: '2025-08-10'
+  lines:
+    code: 94
+    comments: 28
+    total: 122
+  name: test_mobile_menu.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_mobile_menu.py
+  purpose: '""" Test script to verify mobile menu functionality """  import os'
+  size_kb: 4.3
+  status: experimental
+  subcategory: mobile
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - re
+  - requests
+  - bs4
+  last_modified: '2025-07-27'
+  lines:
+    code: 66
+    comments: 27
+    total: 93
+  name: test_mobile_navigation.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_mobile_navigation.py
+  purpose: '""" Test script for mobile navigation improvements This script tests the
+    mobile navigation menu and ...'
+  size_kb: 3.6
+  status: experimental
+  subcategory: mobile
+- category: testing
+  dependencies: []
+  imports:
+  - re
+  last_modified: '2025-08-10'
+  lines:
+    code: 74
+    comments: 25
+    total: 99
+  name: test_mobile_rubric_editing.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_mobile_rubric_editing.py
+  purpose: '""" Test script to verify mobile rubric editing improvements """  import
+    re'
+  size_kb: 3.8
+  status: experimental
+  subcategory: mobile
+- category: testing
+  dependencies:
+  - json
+  - requests
+  imports:
+  - json
+  - requests
+  last_modified: '2025-08-09'
+  lines:
+    code: 76
+    comments: 26
+    total: 102
+  name: test_mode_refinement_api.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_mode_refinement_api.py
+  purpose: '""" Test script for the new mode refinement API endpoints. This tests
+    the draft mode generation and ...'
+  size_kb: 3.3
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - json
+  - requests
+  imports:
+  - json
+  - requests
+  last_modified: '2025-08-09'
+  lines:
+    code: 112
+    comments: 38
+    total: 150
+  name: test_mode_refinement_with_auth.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_mode_refinement_with_auth.py
+  purpose: '""" Test script for the mode refinement API endpoints with authentication.
+    """  import requests'
+  size_kb: 5.3
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - os
+  - sys
+  imports:
+  - datetime
+  - openai_utils
+  - models
+  - os
+  - sys
+  - app
+  last_modified: '2025-07-28'
+  lines:
+    code: 97
+    comments: 37
+    total: 134
+  name: test_new_room_creation.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_new_room_creation.py
+  purpose: '""" Test script to verify new room creation with custom goals. Tests that
+    contextual modes are gener...'
+  size_kb: 5.2
+  status: experimental
+  subcategory: room
+- category: testing
+  dependencies:
+  - os
+  imports:
+  - re
+  - os
+  last_modified: '2025-07-28'
+  lines:
+    code: 103
+    comments: 37
+    total: 140
+  name: test_padding_standards.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_padding_standards.py
+  purpose: '""" Test script to verify industry-standard padding across all pages.
+    Checks that pages have proper ...'
+  size_kb: 4.7
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - json
+  - os
+  - sys
+  imports:
+  - datetime
+  - json
+  - traceback
+  - alembic.config
+  - models
+  - os
+  - sys
+  - rubric_templates
+  - app
+  - alembic
+  last_modified: '2025-08-10'
+  lines:
+    code: 253
+    comments: 100
+    total: 353
+  name: test_phase1_rubrics.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_phase1_rubrics.py
+  purpose: '""" Test script for Phase 1 Rubric System Implementation. This tests the
+    basic rubric functionality ...'
+  size_kb: 14.9
+  status: deprecated
+  subcategory: chat
+- category: testing
+  dependencies:
+  - json
+  - requests
+  imports:
+  - json
+  - requests
+  - time
+  last_modified: '2025-08-10'
+  lines:
+    code: 170
+    comments: 56
+    total: 226
+  name: test_phase2b_rubrics.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_phase2b_rubrics.py
+  purpose: '""" Test Phase 2B Rubric Functionality Tests the new API endpoints and
+    frontend integration for rubr...'
+  size_kb: 8.8
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-07-27'
+  lines:
+    code: 110
+    comments: 45
+    total: 155
+  name: test_phase3_layouts.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_phase3_layouts.py
+  purpose: '""" Test script for Phase 3: Responsive Layout Improvements This script
+    tests the mobile layout opti...'
+  size_kb: 6.3
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - json
+  - sqlalchemy
+  - requests
+  - os
+  - sys
+  imports:
+  - json
+  - urllib.parse
+  - sqlalchemy
+  - models
+  - requests
+  - os
+  - sys
+  - app
+  last_modified: '2025-07-28'
+  lines:
+    code: 119
+    comments: 30
+    total: 149
+  name: test_production_mobile.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_production_mobile.py
+  purpose: '""" Production Mobile Testing Script Tests mobile functionality that might
+    break in production envir...'
+  size_kb: 4.7
+  status: experimental
+  subcategory: mobile
+- category: testing
+  dependencies:
+  - json
+  - flask
+  - os
+  - sys
+  imports:
+  - datetime
+  - json
+  - openai_utils
+  - traceback
+  - flask
+  - models
+  - os
+  - sys
+  - app
+  last_modified: '2025-08-10'
+  lines:
+    code: 182
+    comments: 60
+    total: 242
+  name: test_progression_assessment.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_progression_assessment.py
+  purpose: '""" Test script for the AI-powered learning progression assessment system.
+    This script tests the new...'
+  size_kb: 10.5
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies: []
+  imports:
+  - re
+  last_modified: '2025-07-28'
+  lines:
+    code: 46
+    comments: 26
+    total: 72
+  name: test_room_actions_html.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_room_actions_html.py
+  purpose: '""" Test script to verify room actions layout changes in the HTML template.
+    Checks that settings and...'
+  size_kb: 2.6
+  status: experimental
+  subcategory: room
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - re
+  - requests
+  - bs4
+  last_modified: '2025-07-28'
+  lines:
+    code: 66
+    comments: 34
+    total: 100
+  name: test_room_actions_layout.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_room_actions_layout.py
+  purpose: '""" Test script to verify room actions layout changes. Checks that settings
+    and invite members icons...'
+  size_kb: 3.9
+  status: experimental
+  subcategory: room
+- category: testing
+  dependencies:
+  - json
+  - requests
+  imports:
+  - json
+  - requests
+  last_modified: '2025-08-10'
+  lines:
+    code: 110
+    comments: 34
+    total: 144
+  name: test_room_description.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_room_description.py
+  purpose: '""" Test Room Description Generation Verifies that the room description
+    generation feature is workin...'
+  size_kb: 5.4
+  status: experimental
+  subcategory: room
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  last_modified: '2025-07-28'
+  lines:
+    code: 65
+    comments: 17
+    total: 82
+  name: test_room_dropdown.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_room_dropdown.py
+  purpose: '""" Test script for room actions dropdown implementation """  import requests'
+  size_kb: 2.9
+  status: experimental
+  subcategory: room
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - re
+  - requests
+  - bs4
+  last_modified: '2025-07-28'
+  lines:
+    code: 94
+    comments: 30
+    total: 124
+  name: test_room_layout.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_room_layout.py
+  purpose: '""" Test script to verify the new room layout implementation. Checks for
+    redesigned components and s...'
+  size_kb: 4.9
+  status: experimental
+  subcategory: room
+- category: testing
+  dependencies:
+  - json
+  - os
+  - sys
+  imports:
+  - datetime
+  - json
+  - openai_utils
+  - models
+  - os
+  - sys
+  - app
+  last_modified: '2025-07-28'
+  lines:
+    code: 92
+    comments: 35
+    total: 127
+  name: test_room_mode_generation.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_room_mode_generation.py
+  purpose: '""" Test script to debug room mode generation. Checks if custom room goals
+    are being used to generat...'
+  size_kb: 4.7
+  status: experimental
+  subcategory: room
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - re
+  - requests
+  - bs4
+  last_modified: '2025-07-28'
+  lines:
+    code: 125
+    comments: 44
+    total: 169
+  name: test_room_with_login.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_room_with_login.py
+  purpose: '""" Test script to verify the new room layout implementation with login.
+    """  import requests'
+  size_kb: 6.8
+  status: experimental
+  subcategory: room
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-07-27'
+  lines:
+    code: 71
+    comments: 25
+    total: 96
+  name: test_send_button.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_send_button.py
+  purpose: '""" Test script for send button loading spinner improvements This script
+    tests the new loading icon ...'
+  size_kb: 3.8
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  - bs4
+  last_modified: '2025-07-28'
+  lines:
+    code: 82
+    comments: 41
+    total: 123
+  name: test_settings_icon.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_settings_icon.py
+  purpose: '""" Test script to verify the simple settings icon implementation. """  import
+    requests'
+  size_kb: 4.4
+  status: deprecated
+  subcategory: chat
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 70
+    comments: 23
+    total: 93
+  name: test_simple_accordion.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_simple_accordion.py
+  purpose: '""" Test script for simplified accordion implementation """  def test_simple_accordion():'
+  size_kb: 3.5
+  status: experimental
+  subcategory: ui
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 50
+    comments: 16
+    total: 66
+  name: test_validate_button_removal.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_validate_button_removal.py
+  purpose: '""" Test script to verify validate button removal """  def test_validate_button_removal():'
+  size_kb: 2.5
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - requests
+  imports:
+  - requests
+  last_modified: '2025-07-27'
+  lines:
+    code: 84
+    comments: 36
+    total: 120
+  name: test_with_login.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\test_with_login.py
+  purpose: '""" Test script that logs in and tests the AI toggle functionality """  import
+    requests'
+  size_kb: 4.4
+  status: experimental
+  subcategory: chat
+- category: utility
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 136
+    comments: 35
+    total: 171
+  name: verify_phase2b.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\verify_phase2b.py
+  purpose: '""" Verify Phase 2B Implementation Quick verification of the Phase 2B
+    rubric functionality implement...'
+  size_kb: 6.1
+  status: archived
+  subcategory: verification
+- category: utility
+  dependencies:
+  - os
+  imports:
+  - re
+  - os
+  last_modified: '2025-08-10'
+  lines:
+    code: 69
+    comments: 16
+    total: 85
+  name: verify_website_hover_fix.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\verify_website_hover_fix.py
+  purpose: '""" Verification script to confirm all dark hover classes are removed
+    from the website """  import o...'
+  size_kb: 3.1
+  status: experimental
+  subcategory: verification
+- category: core
+  dependencies:
+  - os
+  - sys
+  imports:
+  - traceback
+  - os
+  - sys
+  - app
+  last_modified: '2025-07-21'
+  lines:
+    code: 27
+    comments: 10
+    total: 37
+  name: wsgi.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\wsgi.py
+  purpose: '""" WSGI entry point for production deployment. This file is used by Gunicorn
+    to serve the Flask app...'
+  size_kb: 1.1
+  status: experimental
+  subcategory: application
+- category: misc
+  dependencies: []
+  imports:
+  - re
+  - pathlib
+  last_modified: '2025-07-25'
+  lines:
+    code: 45
+    comments: 25
+    total: 70
+  name: fix_chat_import.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\Chat Interface Website\fix_chat_import.py
+  purpose: '""" Fix for the Flask import issue in chat.py This script will add the
+    missing import for current_ap...'
+  size_kb: 2.3
+  status: archived
+  subcategory: unknown
+- &id009
+  category: utility
+  dependencies:
+  - os
+  imports:
+  - shutil
+  - os
+  - pathlib
+  last_modified: '2025-07-25'
+  lines:
+    code: 457
+    comments: 74
+    total: 531
+  name: setup_ai_collab_styling.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\Chat Interface Website\setup_ai_collab_styling.py
+  purpose: '""" AI Collab Online Styling Setup Script This script will create the
+    necessary CSS files and update...'
+  size_kb: 17.0
+  status: deprecated
+  subcategory: setup
+- category: misc
+  dependencies:
+  - os
+  - sys
+  imports:
+  - os
+  - sys
+  - pathlib
+  last_modified: '2025-07-25'
+  lines:
+    code: 61
+    comments: 27
+    total: 88
+  name: simple_fix.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\Chat Interface Website\simple_fix.py
+  purpose: '""" Simple fix for the Flask import issue in chat.py Run this script from
+    your AI Collab Online proj...'
+  size_kb: 2.9
+  status: experimental
+  subcategory: unknown
+- category: debug
+  dependencies: []
+  imports:
+  - datetime
+  - models
+  - app
+  last_modified: '2025-07-25'
+  lines:
+    code: 29
+    comments: 11
+    total: 40
+  name: check_chat8_messages.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\cleanup_files\check_chat8_messages.py
+  purpose: '""" Check messages specifically in chat 8 """  from app import create_app'
+  size_kb: 1.6
+  status: archived
+  subcategory: cleanup
+- category: debug
+  dependencies: []
+  imports:
+  - models
+  - app
+  last_modified: '2025-07-11'
+  lines:
+    code: 28
+    comments: 12
+    total: 40
+  name: check_db.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\cleanup_files\check_db.py
+  purpose: '"""Check database and create test user if needed."""  from app import
+    create_app from models import ...'
+  size_kb: 1.2
+  status: experimental
+  subcategory: cleanup
+- category: debug
+  dependencies: []
+  imports:
+  - werkzeug.security
+  - models
+  - app
+  last_modified: '2025-07-25'
+  lines:
+    code: 70
+    comments: 20
+    total: 90
+  name: check_login.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\cleanup_files\check_login.py
+  purpose: '"""Check login credentials or create a new test user."""  from app import
+    create_app from models imp...'
+  size_kb: 2.7
+  status: experimental
+  subcategory: cleanup
+- category: debug
+  dependencies:
+  - os
+  - requests
+  imports:
+  - openai_utils
+  - os
+  - requests
+  - app
+  last_modified: '2025-07-11'
+  lines:
+    code: 96
+    comments: 28
+    total: 124
+  name: check_model.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\cleanup_files\check_model.py
+  purpose: '""" Check which LLM model the application is using """  import os'
+  size_kb: 4.0
+  status: experimental
+  subcategory: cleanup
+- category: debug
+  dependencies: []
+  imports:
+  - datetime
+  - models
+  - app
+  last_modified: '2025-07-25'
+  lines:
+    code: 32
+    comments: 13
+    total: 45
+  name: check_recent_messages.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\cleanup_files\check_recent_messages.py
+  purpose: '""" Check recent messages in the database """  from app import create_app'
+  size_kb: 1.8
+  status: archived
+  subcategory: cleanup
+- category: debug
+  dependencies: []
+  imports:
+  - openai_utils
+  - models
+  - traceback
+  - app
+  last_modified: '2025-07-25'
+  lines:
+    code: 42
+    comments: 15
+    total: 57
+  name: debug_ai_response.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\cleanup_files\debug_ai_response.py
+  purpose: '""" Debug script to test AI response functionality """  from app import
+    create_app'
+  size_kb: 2.0
+  status: experimental
+  subcategory: troubleshooting
+- category: debug
+  dependencies:
+  - os
+  imports:
+  - openai_utils
+  - traceback
+  - models
+  - os
+  - app
+  last_modified: '2025-07-25'
+  lines:
+    code: 65
+    comments: 20
+    total: 85
+  name: debug_chat_submission.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\cleanup_files\debug_chat_submission.py
+  purpose: '""" Debug script to test chat message submission """  from app import
+    create_app'
+  size_kb: 3.0
+  status: experimental
+  subcategory: troubleshooting
+- category: debug
+  dependencies: []
+  imports:
+  - models
+  - access_control
+  - app
+  last_modified: '2025-07-25'
+  lines:
+    code: 56
+    comments: 24
+    total: 80
+  name: debug_room_access.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\cleanup_files\debug_room_access.py
+  purpose: '""" Debug script to check room and chat access permissions """  from app
+    import create_app'
+  size_kb: 2.9
+  status: experimental
+  subcategory: troubleshooting
+- category: debug
+  dependencies:
+  - flask
+  imports:
+  - datetime
+  - flask
+  - models
+  - chat
+  - app
+  last_modified: '2025-07-25'
+  lines:
+    code: 35
+    comments: 16
+    total: 51
+  name: debug_template_messages.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\cleanup_files\debug_template_messages.py
+  purpose: '""" Debug script to test template message rendering """  from app import
+    create_app'
+  size_kb: 1.9
+  status: experimental
+  subcategory: troubleshooting
+- category: debug
+  dependencies:
+  - flask
+  imports:
+  - models
+  - flask
+  - app
+  last_modified: '2025-07-25'
+  lines:
+    code: 48
+    comments: 17
+    total: 65
+  name: debug_web_session.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\cleanup_files\debug_web_session.py
+  purpose: '""" Debug script to test web session and chat access """  from app import
+    create_app'
+  size_kb: 2.7
+  status: experimental
+  subcategory: troubleshooting
+- category: debug
+  dependencies:
+  - os
+  - sys
+  - flask
+  imports:
+  - models
+  - os
+  - sys
+  - flask
+  last_modified: '2025-07-23'
+  lines:
+    code: 67
+    comments: 28
+    total: 95
+  name: manual_migrate.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\cleanup_files\manual_migrate.py
+  purpose: '""" Manual database migration script for Railway Run this script to create
+    achievement tables """'
+  size_kb: 3.6
+  status: archived
+  subcategory: cleanup
+- category: utility
+  dependencies:
+  - json
+  - flask
+  - requests
+  - os
+  imports:
+  - json
+  - flask
+  - models
+  - requests
+  - os
+  - time
+  - collections
+  last_modified: '2025-07-11'
+  lines:
+    code: 217
+    comments: 42
+    total: 259
+  name: setup_ollama.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\cleanup_files\setup_ollama.py
+  purpose: '""" Ollama setup and testing script for AI_Collab_Online """  import requests'
+  size_kb: 10.8
+  status: experimental
+  subcategory: setup
+- &id010
+  category: utility
+  dependencies:
+  - os
+  imports:
+  - shutil
+  - os
+  - pathlib
+  last_modified: '2025-07-25'
+  lines:
+    code: 457
+    comments: 74
+    total: 531
+  name: setup_styling.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\cleanup_files\setup_styling.py
+  purpose: '""" AI Collab Online Styling Setup Script This script will create the
+    necessary CSS files and update...'
+  size_kb: 17.0
+  status: deprecated
+  subcategory: setup
+- category: debug
+  dependencies:
+  - requests
+  - os
+  imports:
+  - openai_utils
+  - requests
+  - os
+  - app
+  last_modified: '2025-07-11'
+  lines:
+    code: 66
+    comments: 23
+    total: 89
+  name: simple_ollama_test.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\cleanup_files\simple_ollama_test.py
+  purpose: '""" Simple Ollama integration test """  import requests'
+  size_kb: 2.9
+  status: experimental
+  subcategory: cleanup
+- category: debug
+  dependencies:
+  - flask
+  - os
+  - sys
+  imports:
+  - config
+  - flask
+  - models
+  - os
+  - sys
+  - app
+  last_modified: '2025-07-21'
+  lines:
+    code: 67
+    comments: 21
+    total: 88
+  name: startup_debug.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\cleanup_files\startup_debug.py
+  purpose: '""" Debug script to test app startup and identify issues. """  import
+    os'
+  size_kb: 2.4
+  status: experimental
+  subcategory: cleanup
+- category: testing
+  dependencies: []
+  imports:
+  - openai_utils
+  - models
+  - traceback
+  - app
+  last_modified: '2025-07-25'
+  lines:
+    code: 56
+    comments: 21
+    total: 77
+  name: test_first_message.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\cleanup_files\test_first_message.py
+  purpose: '""" Test first message in a new chat """  from app import create_app'
+  size_kb: 2.5
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - flask
+  imports:
+  - models
+  - flask
+  - app
+  last_modified: '2025-07-25'
+  lines:
+    code: 32
+    comments: 15
+    total: 47
+  name: test_form_submission.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\cleanup_files\test_form_submission.py
+  purpose: '""" Test form submission directly """  from app import create_app'
+  size_kb: 1.7
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - os
+  imports:
+  - os
+  - google_docs
+  last_modified: '2025-07-21'
+  lines:
+    code: 57
+    comments: 17
+    total: 74
+  name: test_google_docs.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\cleanup_files\test_google_docs.py
+  purpose: '""" Test Google Docs integration """  import os'
+  size_kb: 2.7
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - os
+  - requests
+  imports:
+  - openai_utils
+  - os
+  - requests
+  - app
+  - time
+  last_modified: '2025-07-11'
+  lines:
+    code: 96
+    comments: 29
+    total: 125
+  name: test_ollama_integration.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\cleanup_files\test_ollama_integration.py
+  purpose: '""" Test script for Ollama integration with AI_Collab_Online """  import
+    os'
+  size_kb: 4.2
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies: []
+  imports:
+  - datetime
+  - models
+  - app
+  last_modified: '2025-07-21'
+  lines:
+    code: 50
+    comments: 14
+    total: 64
+  name: test_profile.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\cleanup_files\test_profile.py
+  purpose: '""" Test script for Enhanced User Profiles """  from app import create_app'
+  size_kb: 2.2
+  status: experimental
+  subcategory: chat
+- category: deployment
+  dependencies:
+  - os
+  imports:
+  - os
+  - multiprocessing
+  last_modified: '2025-07-11'
+  lines:
+    code: 37
+    comments: 23
+    total: 60
+  name: gunicorn.conf.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\deployment\gunicorn.conf.py
+  purpose: No purpose documented
+  size_kb: 1.7
+  status: archived
+  subcategory: production
+- category: misc
+  dependencies:
+  - sqlalchemy
+  - os
+  imports:
+  - sqlalchemy
+  - models
+  - os
+  - logging.config
+  - alembic
+  last_modified: '2025-07-21'
+  lines:
+    code: 51
+    comments: 36
+    total: 87
+  name: env.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\migrations\env.py
+  purpose: No purpose documented
+  size_kb: 2.2
+  status: archived
+  subcategory: unknown
+- category: misc
+  dependencies:
+  - sqlalchemy
+  imports:
+  - sqlalchemy
+  - alembic
+  - typing
+  last_modified: '2025-07-27'
+  lines:
+    code: 30
+    comments: 16
+    total: 46
+  name: 12722155fa55_add_parent_message_id_and_is_truncated_.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\migrations\versions\12722155fa55_add_parent_message_id_and_is_truncated_.py
+  purpose: '"""Add parent_message_id and is_truncated to message  Revision ID: 12722155fa55
+    Revises: dade1def113...'
+  size_kb: 1.5
+  status: archived
+  subcategory: unknown
+- category: misc
+  dependencies:
+  - sqlalchemy
+  imports:
+  - sqlalchemy
+  - alembic
+  - typing
+  last_modified: '2025-07-27'
+  lines:
+    code: 18
+    comments: 15
+    total: 33
+  name: a8c4d37510b7_add_accepted_at_field_to_roommember_.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\migrations\versions\a8c4d37510b7_add_accepted_at_field_to_roommember_.py
+  purpose: '"""Add accepted_at field to RoomMember model  Revision ID: a8c4d37510b7
+    Revises: achievement_models_...'
+  size_kb: 0.9
+  status: archived
+  subcategory: unknown
+- category: misc
+  dependencies:
+  - sqlalchemy
+  imports:
+  - sqlalchemy
+  - alembic
+  last_modified: '2025-07-23'
+  lines:
+    code: 41
+    comments: 12
+    total: 53
+  name: achievement_models_migration.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\migrations\versions\achievement_models_migration.py
+  purpose: '"""Add UserModeUsage and Achievement models for gamification  Revision
+    ID: achievement_models_001 Re...'
+  size_kb: 2.0
+  status: archived
+  subcategory: unknown
+- category: misc
+  dependencies:
+  - sqlalchemy
+  imports:
+  - sqlalchemy
+  - alembic
+  - typing
+  last_modified: '2025-07-21'
+  lines:
+    code: 159
+    comments: 15
+    total: 174
+  name: dade1def113a_initial_migration.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\migrations\versions\dade1def113a_initial_migration.py
+  purpose: '"""Initial migration  Revision ID: dade1def113a Revises:  Create Date:
+    2025-07-21 12:55:47.891444'
+  size_kb: 7.6
+  status: archived
+  subcategory: unknown
+- category: misc
+  dependencies:
+  - sqlalchemy
+  imports:
+  - sqlalchemy
+  - sqlalchemy.dialects
+  - alembic
+  last_modified: '2025-08-10'
+  lines:
+    code: 50
+    comments: 12
+    total: 62
+  name: rubric_models_migration.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\migrations\versions\rubric_models_migration.py
+  purpose: '"""Add rubric models for learning step assessment  Revision ID: rubric_models_001
+    Revises: a8c4d3751...'
+  size_kb: 2.5
+  status: deprecated
+  subcategory: unknown
+- category: debug
+  dependencies:
+  - os
+  imports:
+  - openai_utils
+  - models
+  - os
+  - app
+  last_modified: '2025-07-21'
+  lines:
+    code: 68
+    comments: 26
+    total: 94
+  name: debug_ai.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\tests\debug_ai.py
+  purpose: '""" Debug script to test AI connection within Flask app context. """ from
+    app import create_app from...'
+  size_kb: 2.9
+  status: experimental
+  subcategory: troubleshooting
+- category: debug
+  dependencies:
+  - os
+  imports:
+  - openai_utils
+  - models
+  - os
+  - app
+  last_modified: '2025-07-21'
+  lines:
+    code: 79
+    comments: 28
+    total: 107
+  name: debug_chat_issue.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\tests\debug_chat_issue.py
+  purpose: '""" Debug script to test the exact chat scenario that''s failing. """
+    from app import create_app from...'
+  size_kb: 3.7
+  status: experimental
+  subcategory: troubleshooting
+- category: testing
+  dependencies:
+  - os
+  imports:
+  - openai_utils
+  - models
+  - os
+  - app
+  last_modified: '2025-07-21'
+  lines:
+    code: 65
+    comments: 24
+    total: 89
+  name: test_ai_connection.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\tests\test_ai_connection.py
+  purpose: '""" Test script to verify AI connection is working properly. """ from
+    app import create_app from mod...'
+  size_kb: 2.6
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - unittest
+  imports:
+  - openai_utils
+  - unittest
+  - unittest.mock
+  - models
+  - app
+  last_modified: '2025-07-11'
+  lines:
+    code: 163
+    comments: 58
+    total: 221
+  name: test_ai_integration.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\tests\test_ai_integration.py
+  purpose: '"""Set up test database before each test"""         self.app = create_app()         self.app.config[...'
+  size_kb: 9.2
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - unittest
+  imports:
+  - unittest
+  - models
+  - app
+  last_modified: '2025-07-11'
+  lines:
+    code: 50
+    comments: 14
+    total: 64
+  name: test_basic.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\tests\test_basic.py
+  purpose: '"""Set up test database before each test"""         self.app = create_app()         self.app.config[...'
+  size_kb: 2.2
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - os
+  - sys
+  imports:
+  - models
+  - os
+  - sys
+  - app
+  - tempfile
+  last_modified: '2025-07-21'
+  lines:
+    code: 29
+    comments: 9
+    total: 38
+  name: test_chunked_response.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\tests\test_chunked_response.py
+  purpose: No purpose documented
+  size_kb: 1.4
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - unittest
+  imports:
+  - datetime
+  - unittest
+  - models
+  - app
+  last_modified: '2025-07-11'
+  lines:
+    code: 189
+    comments: 79
+    total: 268
+  name: test_dashboard.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\tests\test_dashboard.py
+  purpose: '"""Set up test database before each test"""         self.app = create_app()         self.app.config[...'
+  size_kb: 11.9
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - unittest
+  imports:
+  - datetime
+  - unittest
+  - models
+  - app
+  last_modified: '2025-07-11'
+  lines:
+    code: 175
+    comments: 40
+    total: 215
+  name: test_models.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\tests\test_models.py
+  purpose: '"""Set up test database before each test"""         self.app = create_app()         self.app.config[...'
+  size_kb: 8.4
+  status: experimental
+  subcategory: chat
+- category: testing
+  dependencies:
+  - unittest
+  - json
+  imports:
+  - unittest
+  - json
+  - models
+  - app
+  last_modified: '2025-07-21'
+  lines:
+    code: 238
+    comments: 75
+    total: 313
+  name: test_routes.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\tests\test_routes.py
+  purpose: '"""Set up test database and client before each test"""         self.app
+    = create_app()         self....'
+  size_kb: 10.9
+  status: experimental
+  subcategory: chat
+- category: misc
+  dependencies: []
+  imports: []
+  last_modified: '2025-07-11'
+  lines:
+    code: 0
+    comments: 1
+    total: 1
+  name: __init__.py
+  path: backups\ai_chat_introduction_complete_20250811_184500\tests\__init__.py
+  purpose: No purpose documented
+  size_kb: 0.0
+  status: experimental
+  subcategory: unknown
+- category: utility
+  dependencies:
+  - requests
+  imports:
+  - requests
+  last_modified: '2025-08-10'
+  lines:
+    code: 36
+    comments: 13
+    total: 49
+  name: simple_test.py
+  path: backups\phase2a_20250810_095403\simple_test.py
+  purpose: '""" Simple test to check if the create room page loads correctly """  import
+    requests'
+  size_kb: 1.6
+  status: experimental
+  subcategory: development
+- category: testing
+  dependencies:
+  - json
+  - requests
+  imports:
+  - json
+  - requests
+  - time
+  last_modified: '2025-08-10'
+  lines:
+    code: 137
+    comments: 32
+    total: 169
+  name: test_accordion_ui.py
+  path: backups\phase2a_20250810_095403\test_accordion_ui.py
+  purpose: '""" Test script for Phase 2A: Mobile Accordion UI Implementation Tests
+    the accordion structure and f...'
+  size_kb: 5.6
+  status: experimental
+  subcategory: ui
+- category: core
+  dependencies: []
+  imports:
+  - datetime
+  - werkzeug.security
+  - flask_sqlalchemy
+  last_modified: '2025-08-10'
+  lines:
+    code: 214
+    comments: 84
+    total: 298
+  name: models.py
+  path: backups\phase2b_complete_20250810_155027\models.py
+  purpose: '"""A registered user of the application."""          id = db.Column(db.Integer,
+    primary_key=True)   ...'
+  size_kb: 14.1
+  status: deprecated
+  subcategory: application
+- &id003
+  category: core
+  dependencies:
+  - json
+  - flask
+  imports:
+  - openai_utils
+  - datetime
+  - json
+  - flask
+  - access_control
+  - models
+  - rubric_templates
+  - time
+  - google_docs
+  last_modified: '2025-08-10'
+  lines:
+    code: 621
+    comments: 199
+    total: 820
+  name: room.py
+  path: backups\phase2b_complete_20250810_155027\room.py
+  purpose: No purpose documented
+  size_kb: 34.6
+  status: deprecated
+  subcategory: blueprint
+- category: testing
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 90
+    comments: 29
+    total: 119
+  name: test_ai_instructions.py
+  path: backups\phase2b_complete_20250810_155027\test_ai_instructions.py
+  purpose: '""" Test AI Instructions Editing Functionality Verifies that the Edit
+    Instructions button works prop...'
+  size_kb: 4.6
+  status: deprecated
+  subcategory: ai
+- category: testing
+  dependencies:
+  - json
+  - requests
+  imports:
+  - json
+  - requests
+  - time
+  last_modified: '2025-08-10'
+  lines:
+    code: 170
+    comments: 56
+    total: 226
+  name: test_phase2b_rubrics.py
+  path: backups\phase2b_complete_20250810_155027\test_phase2b_rubrics.py
+  purpose: '""" Test Phase 2B Rubric Functionality Tests the new API endpoints and
+    frontend integration for rubr...'
+  size_kb: 8.8
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies:
+  - json
+  - requests
+  imports:
+  - json
+  - requests
+  last_modified: '2025-08-10'
+  lines:
+    code: 110
+    comments: 34
+    total: 144
+  name: test_room_description.py
+  path: backups\phase2b_complete_20250810_155027\test_room_description.py
+  purpose: '""" Test Room Description Generation Verifies that the room description
+    generation feature is workin...'
+  size_kb: 5.4
+  status: experimental
+  subcategory: room
+- category: utility
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-10'
+  lines:
+    code: 136
+    comments: 35
+    total: 171
+  name: verify_phase2b.py
+  path: backups\phase2b_complete_20250810_155027\verify_phase2b.py
+  purpose: '""" Verify Phase 2B Implementation Quick verification of the Phase 2B
+    rubric functionality implement...'
+  size_kb: 6.1
+  status: archived
+  subcategory: verification
+- category: misc
+  dependencies: []
+  imports:
+  - re
+  - pathlib
+  last_modified: '2025-07-25'
+  lines:
+    code: 45
+    comments: 25
+    total: 70
+  name: fix_chat_import.py
+  path: Chat Interface Website\fix_chat_import.py
+  purpose: '""" Fix for the Flask import issue in chat.py This script will add the
+    missing import for current_ap...'
+  size_kb: 2.3
+  status: duplicate
+  subcategory: unknown
+- category: utility
+  dependencies:
+  - os
+  imports:
+  - shutil
+  - os
+  - pathlib
+  last_modified: '2025-07-25'
+  lines:
+    code: 457
+    comments: 74
+    total: 531
+  name: setup_ai_collab_styling.py
+  path: Chat Interface Website\setup_ai_collab_styling.py
+  purpose: '""" AI Collab Online Styling Setup Script This script will create the
+    necessary CSS files and update...'
+  size_kb: 17.0
+  status: deprecated
+  subcategory: setup
+- category: misc
+  dependencies:
+  - os
+  - sys
+  imports:
+  - os
+  - sys
+  - pathlib
+  last_modified: '2025-07-25'
+  lines:
+    code: 61
+    comments: 27
+    total: 88
+  name: simple_fix.py
+  path: Chat Interface Website\simple_fix.py
+  purpose: '""" Simple fix for the Flask import issue in chat.py Run this script from
+    your AI Collab Online proj...'
+  size_kb: 2.9
+  status: experimental
+  subcategory: unknown
+- category: debug
+  dependencies: []
+  imports:
+  - datetime
+  - models
+  - app
+  last_modified: '2025-07-25'
+  lines:
+    code: 29
+    comments: 11
+    total: 40
+  name: check_chat8_messages.py
+  path: cleanup_files\check_chat8_messages.py
+  purpose: '""" Check messages specifically in chat 8 """  from app import create_app'
+  size_kb: 1.6
+  status: archived
+  subcategory: cleanup
+- category: debug
+  dependencies: []
+  imports:
+  - models
+  - app
+  last_modified: '2025-07-11'
+  lines:
+    code: 28
+    comments: 12
+    total: 40
+  name: check_db.py
+  path: cleanup_files\check_db.py
+  purpose: '"""Check database and create test user if needed."""  from app import
+    create_app from models import ...'
+  size_kb: 1.2
+  status: experimental
+  subcategory: cleanup
+- category: debug
+  dependencies: []
+  imports:
+  - werkzeug.security
+  - models
+  - app
+  last_modified: '2025-07-25'
+  lines:
+    code: 70
+    comments: 20
+    total: 90
+  name: check_login.py
+  path: cleanup_files\check_login.py
+  purpose: '"""Check login credentials or create a new test user."""  from app import
+    create_app from models imp...'
+  size_kb: 2.7
+  status: experimental
+  subcategory: cleanup
+- category: debug
+  dependencies:
+  - os
+  - requests
+  imports:
+  - openai_utils
+  - os
+  - requests
+  - app
+  last_modified: '2025-07-11'
+  lines:
+    code: 96
+    comments: 28
+    total: 124
+  name: check_model.py
+  path: cleanup_files\check_model.py
+  purpose: '""" Check which LLM model the application is using """  import os'
+  size_kb: 4.0
+  status: experimental
+  subcategory: cleanup
+- category: debug
+  dependencies: []
+  imports:
+  - datetime
+  - models
+  - app
+  last_modified: '2025-07-25'
+  lines:
+    code: 32
+    comments: 13
+    total: 45
+  name: check_recent_messages.py
+  path: cleanup_files\check_recent_messages.py
+  purpose: '""" Check recent messages in the database """  from app import create_app'
+  size_kb: 1.8
+  status: archived
+  subcategory: cleanup
+- category: debug
+  dependencies: []
+  imports:
+  - openai_utils
+  - models
+  - traceback
+  - app
+  last_modified: '2025-07-25'
+  lines:
+    code: 42
+    comments: 15
+    total: 57
+  name: debug_ai_response.py
+  path: cleanup_files\debug_ai_response.py
+  purpose: '""" Debug script to test AI response functionality """  from app import
+    create_app'
+  size_kb: 2.0
+  status: experimental
+  subcategory: troubleshooting
+- category: debug
+  dependencies:
+  - os
+  imports:
+  - openai_utils
+  - traceback
+  - models
+  - os
+  - app
+  last_modified: '2025-07-25'
+  lines:
+    code: 65
+    comments: 20
+    total: 85
+  name: debug_chat_submission.py
+  path: cleanup_files\debug_chat_submission.py
+  purpose: '""" Debug script to test chat message submission """  from app import
+    create_app'
+  size_kb: 3.0
+  status: experimental
+  subcategory: troubleshooting
+- category: debug
+  dependencies: []
+  imports:
+  - models
+  - access_control
+  - app
+  last_modified: '2025-07-25'
+  lines:
+    code: 56
+    comments: 24
+    total: 80
+  name: debug_room_access.py
+  path: cleanup_files\debug_room_access.py
+  purpose: '""" Debug script to check room and chat access permissions """  from app
+    import create_app'
+  size_kb: 2.9
+  status: experimental
+  subcategory: troubleshooting
+- category: debug
+  dependencies:
+  - flask
+  imports:
+  - datetime
+  - flask
+  - models
+  - chat
+  - app
+  last_modified: '2025-07-25'
+  lines:
+    code: 35
+    comments: 16
+    total: 51
+  name: debug_template_messages.py
+  path: cleanup_files\debug_template_messages.py
+  purpose: '""" Debug script to test template message rendering """  from app import
+    create_app'
+  size_kb: 1.9
+  status: experimental
+  subcategory: troubleshooting
+- category: debug
+  dependencies:
+  - flask
+  imports:
+  - models
+  - flask
+  - app
+  last_modified: '2025-07-25'
+  lines:
+    code: 48
+    comments: 17
+    total: 65
+  name: debug_web_session.py
+  path: cleanup_files\debug_web_session.py
+  purpose: '""" Debug script to test web session and chat access """  from app import
+    create_app'
+  size_kb: 2.7
+  status: experimental
+  subcategory: troubleshooting
+- category: debug
+  dependencies:
+  - os
+  - sys
+  - flask
+  imports:
+  - models
+  - os
+  - sys
+  - flask
+  last_modified: '2025-07-23'
+  lines:
+    code: 67
+    comments: 28
+    total: 95
+  name: manual_migrate.py
+  path: cleanup_files\manual_migrate.py
+  purpose: '""" Manual database migration script for Railway Run this script to create
+    achievement tables """'
+  size_kb: 3.6
+  status: archived
+  subcategory: cleanup
+- category: utility
+  dependencies:
+  - json
+  - flask
+  - requests
+  - os
+  imports:
+  - json
+  - flask
+  - models
+  - requests
+  - os
+  - time
+  - collections
+  last_modified: '2025-07-11'
+  lines:
+    code: 217
+    comments: 42
+    total: 259
+  name: setup_ollama.py
+  path: cleanup_files\setup_ollama.py
+  purpose: '""" Ollama setup and testing script for AI_Collab_Online """  import requests'
+  size_kb: 10.8
+  status: experimental
+  subcategory: setup
+- category: utility
+  dependencies:
+  - os
+  imports:
+  - shutil
+  - os
+  - pathlib
+  last_modified: '2025-07-25'
+  lines:
+    code: 457
+    comments: 74
+    total: 531
+  name: setup_styling.py
+  path: cleanup_files\setup_styling.py
+  purpose: '""" AI Collab Online Styling Setup Script This script will create the
+    necessary CSS files and update...'
+  size_kb: 17.0
+  status: deprecated
+  subcategory: setup
+- category: debug
+  dependencies:
+  - requests
+  - os
+  imports:
+  - openai_utils
+  - requests
+  - os
+  - app
+  last_modified: '2025-07-11'
+  lines:
+    code: 66
+    comments: 23
+    total: 89
+  name: simple_ollama_test.py
+  path: cleanup_files\simple_ollama_test.py
+  purpose: '""" Simple Ollama integration test """  import requests'
+  size_kb: 2.9
+  status: experimental
+  subcategory: cleanup
+- category: debug
+  dependencies:
+  - flask
+  - os
+  - sys
+  imports:
+  - config
+  - flask
+  - models
+  - os
+  - sys
+  - app
+  last_modified: '2025-07-21'
+  lines:
+    code: 67
+    comments: 21
+    total: 88
+  name: startup_debug.py
+  path: cleanup_files\startup_debug.py
+  purpose: '""" Debug script to test app startup and identify issues. """  import
+    os'
+  size_kb: 2.4
+  status: experimental
+  subcategory: cleanup
+- category: testing
+  dependencies: []
+  imports:
+  - openai_utils
+  - models
+  - traceback
+  - app
+  last_modified: '2025-07-25'
+  lines:
+    code: 56
+    comments: 21
+    total: 77
+  name: test_first_message.py
+  path: cleanup_files\test_first_message.py
+  purpose: '""" Test first message in a new chat """  from app import create_app'
+  size_kb: 2.5
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies:
+  - flask
+  imports:
+  - models
+  - flask
+  - app
+  last_modified: '2025-07-25'
+  lines:
+    code: 32
+    comments: 15
+    total: 47
+  name: test_form_submission.py
+  path: cleanup_files\test_form_submission.py
+  purpose: '""" Test form submission directly """  from app import create_app'
+  size_kb: 1.7
+  status: experimental
+  subcategory: form
+- category: testing
+  dependencies:
+  - os
+  imports:
+  - os
+  - google_docs
+  last_modified: '2025-07-21'
+  lines:
+    code: 57
+    comments: 17
+    total: 74
+  name: test_google_docs.py
+  path: cleanup_files\test_google_docs.py
+  purpose: '""" Test Google Docs integration """  import os'
+  size_kb: 2.7
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies:
+  - os
+  - requests
+  imports:
+  - openai_utils
+  - os
+  - requests
+  - app
+  - time
+  last_modified: '2025-07-11'
+  lines:
+    code: 96
+    comments: 29
+    total: 125
+  name: test_ollama_integration.py
+  path: cleanup_files\test_ollama_integration.py
+  purpose: '""" Test script for Ollama integration with AI_Collab_Online """  import
+    os'
+  size_kb: 4.2
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies: []
+  imports:
+  - datetime
+  - models
+  - app
+  last_modified: '2025-07-21'
+  lines:
+    code: 50
+    comments: 14
+    total: 64
+  name: test_profile.py
+  path: cleanup_files\test_profile.py
+  purpose: '""" Test script for Enhanced User Profiles """  from app import create_app'
+  size_kb: 2.2
+  status: experimental
+  subcategory: general
+- category: deployment
+  dependencies:
+  - os
+  imports:
+  - os
+  - multiprocessing
+  last_modified: '2025-07-11'
+  lines:
+    code: 37
+    comments: 23
+    total: 60
+  name: gunicorn.conf.py
+  path: deployment\gunicorn.conf.py
+  purpose: No purpose documented
+  size_kb: 1.7
+  status: duplicate
+  subcategory: production
+- category: misc
+  dependencies:
+  - sqlalchemy
+  - os
+  imports:
+  - sqlalchemy
+  - models
+  - os
+  - logging.config
+  - alembic
+  last_modified: '2025-07-21'
+  lines:
+    code: 51
+    comments: 36
+    total: 87
+  name: env.py
+  path: migrations\env.py
+  purpose: No purpose documented
+  size_kb: 2.2
+  status: duplicate
+  subcategory: unknown
+- category: misc
+  dependencies:
+  - sqlalchemy
+  imports:
+  - sqlalchemy
+  - alembic
+  - typing
+  last_modified: '2025-07-27'
+  lines:
+    code: 30
+    comments: 16
+    total: 46
+  name: 12722155fa55_add_parent_message_id_and_is_truncated_.py
+  path: migrations\versions\12722155fa55_add_parent_message_id_and_is_truncated_.py
+  purpose: '"""Add parent_message_id and is_truncated to message  Revision ID: 12722155fa55
+    Revises: dade1def113...'
+  size_kb: 1.5
+  status: duplicate
+  subcategory: unknown
+- category: misc
+  dependencies:
+  - sqlalchemy
+  imports:
+  - sqlalchemy
+  - alembic
+  - typing
+  last_modified: '2025-07-27'
+  lines:
+    code: 18
+    comments: 15
+    total: 33
+  name: a8c4d37510b7_add_accepted_at_field_to_roommember_.py
+  path: migrations\versions\a8c4d37510b7_add_accepted_at_field_to_roommember_.py
+  purpose: '"""Add accepted_at field to RoomMember model  Revision ID: a8c4d37510b7
+    Revises: achievement_models_...'
+  size_kb: 0.9
+  status: duplicate
+  subcategory: unknown
+- category: misc
+  dependencies:
+  - sqlalchemy
+  imports:
+  - sqlalchemy
+  - alembic
+  last_modified: '2025-07-23'
+  lines:
+    code: 41
+    comments: 12
+    total: 53
+  name: achievement_models_migration.py
+  path: migrations\versions\achievement_models_migration.py
+  purpose: '"""Add UserModeUsage and Achievement models for gamification  Revision
+    ID: achievement_models_001 Re...'
+  size_kb: 2.0
+  status: duplicate
+  subcategory: unknown
+- category: misc
+  dependencies:
+  - sqlalchemy
+  imports:
+  - sqlalchemy
+  - alembic
+  - typing
+  last_modified: '2025-07-21'
+  lines:
+    code: 159
+    comments: 15
+    total: 174
+  name: dade1def113a_initial_migration.py
+  path: migrations\versions\dade1def113a_initial_migration.py
+  purpose: '"""Initial migration  Revision ID: dade1def113a Revises:  Create Date:
+    2025-07-21 12:55:47.891444'
+  size_kb: 7.6
+  status: duplicate
+  subcategory: unknown
+- category: misc
+  dependencies:
+  - sqlalchemy
+  imports:
+  - sqlalchemy
+  - sqlalchemy.dialects
+  - alembic
+  last_modified: '2025-08-10'
+  lines:
+    code: 50
+    comments: 12
+    total: 62
+  name: rubric_models_migration.py
+  path: migrations\versions\rubric_models_migration.py
+  purpose: '"""Add rubric models for learning step assessment  Revision ID: rubric_models_001
+    Revises: a8c4d3751...'
+  size_kb: 2.5
+  status: deprecated
+  subcategory: unknown
+- &id017
+  category: ai
+  dependencies:
+  - json
+  - flask
+  - os
+  - requests
+  imports:
+  - json
+  - flask
+  - os
+  - requests
+  - typing
+  - time
+  - abc
+  last_modified: '2025-08-13'
+  lines:
+    code: 262
+    comments: 81
+    total: 343
+  name: api_clients.py
+  path: openai_utils\api_clients.py
+  purpose: '""" API Clients for AI Services.  This module provides a unified interface
+    for interacting with diff...'
+  size_kb: 12.5
+  status: active
+  subcategory: integration
+- &id018
+  category: ai
+  dependencies:
+  - json
+  imports:
+  - dataclasses
+  - json
+  - typing
+  last_modified: '2025-08-13'
+  lines:
+    code: 238
+    comments: 79
+    total: 317
+  name: assessment.py
+  path: openai_utils\assessment.py
+  purpose: '""" Learning Progression Assessment.  This module handles the assessment
+    of student learning progres...'
+  size_kb: 11.2
+  status: deprecated
+  subcategory: integration
+- &id019
+  category: core
+  dependencies:
+  - os
+  imports:
+  - os
+  - typing
+  last_modified: '2025-08-13'
+  lines:
+    code: 58
+    comments: 21
+    total: 79
+  name: config.py
+  path: openai_utils\config.py
+  purpose: '""" Configuration management for AI services.  This module centralizes
+    all configuration values that...'
+  size_kb: 2.5
+  status: deprecated
+  subcategory: application
+- &id020
+  category: ai
+  dependencies:
+  - json
+  - os
+  imports:
+  - datetime
+  - json
+  - dataclasses
+  - os
+  - typing
+  last_modified: '2025-08-13'
+  lines:
+    code: 200
+    comments: 67
+    total: 267
+  name: conversation.py
+  path: openai_utils\conversation.py
+  purpose: '""" Conversation Management and Formatting.  This module handles conversation
+    formatting, message pr...'
+  size_kb: 9.2
+  status: active
+  subcategory: integration
+- category: ai
+  dependencies: []
+  imports: []
+  last_modified: '2025-08-13'
+  lines:
+    code: 83
+    comments: 28
+    total: 111
+  name: exceptions.py
+  path: openai_utils\exceptions.py
+  purpose: '""" Custom exceptions for AI services.  This module provides specific
+    exception types for different ...'
+  size_kb: 3.6
+  status: active
+  subcategory: integration
+- category: ai
+  dependencies: []
+  imports:
+  - logging
+  - typing
+  last_modified: '2025-08-13'
+  lines:
+    code: 242
+    comments: 88
+    total: 330
+  name: main_interface.py
+  path: openai_utils\main_interface.py
+  purpose: '""" Main Interface for OpenAI Utils.  This module provides the unified
+    interface that ties together ...'
+  size_kb: 12.7
+  status: active
+  subcategory: integration
+- category: ai
+  dependencies:
+  - os
+  - sys
+  imports:
+  - datetime
+  - openai_utils
+  - shutil
+  - os
+  - sys
+  - typing
+  - logging
+  - warnings
+  last_modified: '2025-08-13'
+  lines:
+    code: 307
+    comments: 111
+    total: 418
+  name: migration.py
+  path: openai_utils\migration.py
+  purpose: '""" Migration Script for OpenAI Utils.  This script handles the final
+    migration from the old monolit...'
+  size_kb: 13.6
+  status: deprecated
+  subcategory: integration
+- category: ai
+  dependencies:
+  - json
+  imports:
+  - json
+  - dataclasses
+  - models
+  - typing
+  - collections
+  last_modified: '2025-08-13'
+  lines:
+    code: 198
+    comments: 64
+    total: 262
+  name: mode_manager.py
+  path: openai_utils\mode_manager.py
+  purpose: '""" Mode Manager for Learning Steps.  This module handles the management
+    and generation of learning ...'
+  size_kb: 12.7
+  status: active
+  subcategory: integration
+- category: ai
+  dependencies:
+  - unittest
+  imports:
+  - openai_utils
+  - unittest
+  - unittest.mock
+  - typing
+  last_modified: '2025-08-13'
+  lines:
+    code: 268
+    comments: 85
+    total: 353
+  name: test_suite.py
+  path: openai_utils\test_suite.py
+  purpose: '""" Test Suite for OpenAI Utils Modules.  This module provides comprehensive
+    testing for all the new...'
+  size_kb: 13.0
+  status: deprecated
+  subcategory: integration
+- category: ai
+  dependencies: []
+  imports:
+  - openai_utils_original
+  - openai_utils_legacy
+  last_modified: '2025-08-13'
+  lines:
+    code: 169
+    comments: 33
+    total: 202
+  name: __init__.py
+  path: openai_utils\__init__.py
+  purpose: '""" OpenAI Utils Package  A modular, maintainable implementation of AI
+    service utilities. This packa...'
+  size_kb: 5.0
+  status: deprecated
+  subcategory: integration
+- category: debug
+  dependencies:
+  - os
+  imports:
+  - openai_utils
+  - models
+  - os
+  - app
+  last_modified: '2025-07-21'
+  lines:
+    code: 68
+    comments: 26
+    total: 94
+  name: debug_ai.py
+  path: tests\debug_ai.py
+  purpose: '""" Debug script to test AI connection within Flask app context. """ from
+    app import create_app from...'
+  size_kb: 2.9
+  status: experimental
+  subcategory: troubleshooting
+- category: debug
+  dependencies:
+  - os
+  imports:
+  - openai_utils
+  - models
+  - os
+  - app
+  last_modified: '2025-07-21'
+  lines:
+    code: 79
+    comments: 28
+    total: 107
+  name: debug_chat_issue.py
+  path: tests\debug_chat_issue.py
+  purpose: '""" Debug script to test the exact chat scenario that''s failing. """
+    from app import create_app from...'
+  size_kb: 3.7
+  status: experimental
+  subcategory: troubleshooting
+- category: testing
+  dependencies:
+  - os
+  imports:
+  - openai_utils
+  - models
+  - os
+  - app
+  last_modified: '2025-07-21'
+  lines:
+    code: 65
+    comments: 24
+    total: 89
+  name: test_ai_connection.py
+  path: tests\test_ai_connection.py
+  purpose: '""" Test script to verify AI connection is working properly. """ from
+    app import create_app from mod...'
+  size_kb: 2.6
+  status: experimental
+  subcategory: ai
+- category: testing
+  dependencies:
+  - unittest
+  imports:
+  - openai_utils
+  - unittest
+  - unittest.mock
+  - models
+  - app
+  last_modified: '2025-07-11'
+  lines:
+    code: 163
+    comments: 58
+    total: 221
+  name: test_ai_integration.py
+  path: tests\test_ai_integration.py
+  purpose: '"""Set up test database before each test"""         self.app = create_app()         self.app.config[...'
+  size_kb: 9.2
+  status: experimental
+  subcategory: ai
+- category: testing
+  dependencies:
+  - unittest
+  imports:
+  - unittest
+  - models
+  - app
+  last_modified: '2025-07-11'
+  lines:
+    code: 50
+    comments: 14
+    total: 64
+  name: test_basic.py
+  path: tests\test_basic.py
+  purpose: '"""Set up test database before each test"""         self.app = create_app()         self.app.config[...'
+  size_kb: 2.2
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies:
+  - os
+  - sys
+  imports:
+  - models
+  - os
+  - sys
+  - app
+  - tempfile
+  last_modified: '2025-07-21'
+  lines:
+    code: 29
+    comments: 9
+    total: 38
+  name: test_chunked_response.py
+  path: tests\test_chunked_response.py
+  purpose: No purpose documented
+  size_kb: 1.4
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies:
+  - unittest
+  imports:
+  - datetime
+  - unittest
+  - models
+  - app
+  last_modified: '2025-07-11'
+  lines:
+    code: 189
+    comments: 79
+    total: 268
+  name: test_dashboard.py
+  path: tests\test_dashboard.py
+  purpose: '"""Set up test database before each test"""         self.app = create_app()         self.app.config[...'
+  size_kb: 11.9
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies:
+  - unittest
+  imports:
+  - datetime
+  - unittest
+  - models
+  - app
+  last_modified: '2025-07-11'
+  lines:
+    code: 175
+    comments: 40
+    total: 215
+  name: test_models.py
+  path: tests\test_models.py
+  purpose: '"""Set up test database before each test"""         self.app = create_app()         self.app.config[...'
+  size_kb: 8.4
+  status: experimental
+  subcategory: general
+- category: testing
+  dependencies:
+  - unittest
+  - json
+  imports:
+  - unittest
+  - json
+  - models
+  - app
+  last_modified: '2025-07-21'
+  lines:
+    code: 238
+    comments: 75
+    total: 313
+  name: test_routes.py
+  path: tests\test_routes.py
+  purpose: '"""Set up test database and client before each test"""         self.app
+    = create_app()         self....'
+  size_kb: 10.9
+  status: experimental
+  subcategory: general
+- category: misc
+  dependencies: []
+  imports: []
+  last_modified: '2025-07-11'
+  lines:
+    code: 0
+    comments: 1
+    total: 1
+  name: __init__.py
+  path: tests\__init__.py
+  purpose: No purpose documented
+  size_kb: 0.0
+  status: experimental
+  subcategory: unknown
+summary:
+  categories:
+    ai/integration:
+      count: 14
+      lines: 4719
+      size_kb: 182.5
+    ai/templates:
+      count: 2
+      lines: 654
+      size_kb: 27.8
+    core/application:
+      count: 10
+      lines: 2106
+      size_kb: 87.6
+    core/blueprint:
+      count: 13
+      lines: 5766
+      size_kb: 237.4
+    debug/cleanup:
+      count: 16
+      lines: 1222
+      size_kb: 40.4
+    debug/troubleshooting:
+      count: 28
+      lines: 2282
+      size_kb: 81.8
+    deployment/production:
+      count: 2
+      lines: 120
+      size_kb: 3.4
+    misc/unknown:
+      count: 32
+      lines: 3653
+      size_kb: 127.4
+    testing/ai:
+      count: 7
+      lines: 834
+      size_kb: 31.2
+    testing/chat:
+      count: 60
+      lines: 7540
+      size_kb: 290.4
+    testing/form:
+      count: 3
+      lines: 226
+      size_kb: 7.5
+    testing/general:
+      count: 42
+      lines: 5645
+      size_kb: 216.70000000000002
+    testing/mobile:
+      count: 22
+      lines: 2330
+      size_kb: 83.4
+    testing/room:
+      count: 17
+      lines: 2048
+      size_kb: 78.2
+    testing/ui:
+      count: 21
+      lines: 2247
+      size_kb: 82.0
+    utility/development:
+      count: 7
+      lines: 463
+      size_kb: 13.600000000000001
+    utility/setup:
+      count: 6
+      lines: 2642
+      size_kb: 89.6
+    utility/verification:
+      count: 5
+      lines: 683
+      size_kb: 24.5
+  largest_scripts:
+  - *id001
+  - *id002
+  - *id003
+  - *id004
+  - *id005
+  - *id006
+  - *id007
+  - *id008
+  - *id009
+  - *id010
+  recent_scripts:
+  - *id011
+  - *id012
+  - *id013
+  - *id014
+  - *id015
+  - *id016
+  - *id017
+  - *id018
+  - *id019
+  - *id020
+  status_distribution:
+    active: 18
+    archived: 28
+    deprecated: 46
+    duplicate: 7
+    experimental: 208
+  top_dependencies:
+  - !!python/tuple
+    - models
+    - 99
+  - !!python/tuple
+    - os
+    - 84
+  - !!python/tuple
+    - requests
+    - 84
+  - !!python/tuple
+    - app
+    - 80
+  - !!python/tuple
+    - datetime
+    - 55
+  - !!python/tuple
+    - re
+    - 51
+  - !!python/tuple
+    - openai_utils
+    - 47
+  - !!python/tuple
+    - json
+    - 46
+  - !!python/tuple
+    - flask
+    - 37
+  - !!python/tuple
+    - bs4
+    - 30
+  total_lines: 45180
+  total_scripts: 307
+  total_size_kb: 1705.4

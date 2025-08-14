@@ -1,3 +1,17 @@
+#!/usr/bin/env python3
+"""
+chat.py
+Purpose: Chat functionality and AI integration blueprint
+Status: [ACTIVE]
+Created: 2025-01-27
+Author: writeian
+
+Manages chat conversations, AI responses, message handling, and prompt recording
+"""
+
+TODO: Add proper documentation for this script
+"""
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, current_app, jsonify
 from datetime import datetime
 from models import db, Chat, Message, User, PromptRecord, Room, Comment, RoomMember
