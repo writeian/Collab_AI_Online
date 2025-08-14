@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime, timezone
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # SQLAlchemy instance is created here so it can be imported by app.py
@@ -14,7 +14,7 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     display_name = db.Column(db.String(100), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     
     # Registration questions (optional fields)
@@ -44,6 +44,19 @@ class User(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
     
+    def validate_email(self):
+        """Validate email format."""
+        import re
+        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        return re.match(pattern, self.email) is not None
+    
+    def validate_username(self):
+        """Validate username format."""
+        import re
+        # Username should be 3-20 characters, alphanumeric and underscores only
+        pattern = r'^[a-zA-Z0-9_]{3,20}$'
+        return re.match(pattern, self.username) is not None
+    
     def __repr__(self):
         return f"<User {self.username}>"
 
@@ -51,12 +64,12 @@ class GoogleAuth(db.Model):
     """Stores Google OAuth tokens for Docs API access."""
     
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, unique=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, unique=True, index=True)
     access_token = db.Column(db.Text, nullable=False)
     refresh_token = db.Column(db.Text, nullable=True)
     token_expiry = db.Column(db.DateTime, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
     
     def __repr__(self):
         return f"<GoogleAuth user_id={self.user_id}>"
@@ -68,8 +81,8 @@ class Room(db.Model):
     name = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text, nullable=True)
     goals = db.Column(db.Text, nullable=True)  # Learning goals for the room
-    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     
     # Relationships
@@ -79,7 +92,7 @@ class Room(db.Model):
     achievements = db.relationship('Achievement', backref='room', lazy=True, cascade='all, delete-orphan')
     user_mode_usage = db.relationship('UserModeUsage', backref='room', lazy=True, cascade='all, delete-orphan')
     prompt_records = db.relationship('PromptRecord', backref='room', lazy=True, cascade='all, delete-orphan')
-    rubric_criteria = db.relationship('RubricCriterion', backref='room', lazy=True, cascade='all, delete-orphan')
+    rubric_criteria = db.relationship('RubricCriterion', lazy=True, cascade='all, delete-orphan')
     room_rubrics = db.relationship('RoomRubric', backref='room', lazy=True, cascade='all, delete-orphan')
     
     def __repr__(self):
@@ -89,9 +102,9 @@ class RoomMember(db.Model):
     """Represents a user's membership in a room."""
     
     id = db.Column(db.Integer, primary_key=True)
-    room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    joined_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    joined_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     accepted_at = db.Column(db.DateTime, nullable=True)  # When user first accessed the room
     can_create_chats = db.Column(db.Boolean, default=True, nullable=False)
     can_invite_members = db.Column(db.Boolean, default=False, nullable=False)
@@ -106,9 +119,9 @@ class Chat(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(120), nullable=False)
-    room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
-    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False, index=True)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     mode = db.Column(
         db.String(32),          # Dynamic modes based on room goals
         default='explore',
@@ -128,11 +141,11 @@ class Message(db.Model):
     """A single turn in the conversation (user or assistant)."""
     
     id = db.Column(db.Integer, primary_key=True)
-    chat_id = db.Column(db.Integer, db.ForeignKey('chat.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # null for assistant messages
+    chat_id = db.Column(db.Integer, db.ForeignKey('chat.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)  # null for assistant messages
     role = db.Column(db.String(20), nullable=False)  # 'user' or 'assistant'
     content = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     parent_message_id = db.Column(db.Integer, db.ForeignKey('message.id'), nullable=True, default=None)
     is_truncated = db.Column(db.Boolean, default=False, nullable=False)
     
@@ -150,7 +163,7 @@ class Comment(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     dialogue_number = db.Column(db.Integer, nullable=False)  # Which prompt/response (1, 2, 3, etc.)
     content = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     
     # Relationships
     user = db.relationship('User', backref='comments')
@@ -167,8 +180,8 @@ class CustomPrompt(db.Model):
     label = db.Column(db.String(100), nullable=False)
     prompt = db.Column(db.Text, nullable=False)
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     
     # Relationships
@@ -188,7 +201,7 @@ class PromptRecord(db.Model):
     room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
     mode = db.Column(db.String(32), nullable=False)  # The mode when the prompt was sent
     prompt_content = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     
     # Relationships
     user = db.relationship('User', backref='prompt_records')
@@ -203,7 +216,7 @@ class PageView(db.Model):
     page = db.Column(db.String(200), nullable=False)
     user_agent = db.Column(db.Text, nullable=True)
     ip_address = db.Column(db.String(45), nullable=True)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     
     # Relationship
@@ -219,8 +232,8 @@ class UserModeUsage(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
     mode = db.Column(db.String(32), nullable=False)  # The mode that was used
-    first_used_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    last_used_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    first_used_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    last_used_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     usage_count = db.Column(db.Integer, default=1, nullable=False)  # How many times this mode was used
     
     # Relationships
@@ -238,7 +251,7 @@ class Achievement(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
     achievement_type = db.Column(db.String(50), nullable=False)  # 'first_steps', 'explorer', 'collaborator', etc.
-    earned_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    earned_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     
     # Relationships
     user = db.relationship('User', backref='achievements')
@@ -256,10 +269,11 @@ class RubricCriterion(db.Model):
     step_key = db.Column(db.String(32), nullable=False)  # 'explore', 'focus', 'context', etc.
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=True)
-    weight = db.Column(db.Float, default=1.0, nullable=False)
+    weight = db.Column(db.Float, default=1.0, nullable=False, info={'check': 'weight >= 0.0'})
     order = db.Column(db.Integer, nullable=False)
     
     # Relationships
+    room = db.relationship('Room', lazy=True)
     levels = db.relationship('RubricLevel', backref='criterion', lazy=True, cascade='all, delete-orphan')
     
     __table_args__ = (db.UniqueConstraint('room_id', 'step_key', 'name', name='unique_room_step_criterion'),)
@@ -273,7 +287,7 @@ class RubricLevel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     criterion_id = db.Column(db.Integer, db.ForeignKey('rubric_criterion.id'), nullable=False)
     level = db.Column(db.String(50), nullable=False)  # 'Emerging', 'Developing', 'Proficient', 'Exemplary'
-    score = db.Column(db.Integer, nullable=False)  # 1, 2, 3, 4
+    score = db.Column(db.Integer, nullable=False, info={'check': 'score >= 1 AND score <= 4'})  # 1, 2, 3, 4
     description = db.Column(db.Text, nullable=False)
     examples = db.Column(db.Text, nullable=True)  # JSON array of examples
     
@@ -287,8 +301,8 @@ class RoomRubric(db.Model):
     room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
     step_key = db.Column(db.String(32), nullable=False)
     progression_threshold = db.Column(db.Float, default=2.5, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
     
     # Relationships
     
