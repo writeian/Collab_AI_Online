@@ -33,6 +33,7 @@ instance/
 
 # Environment variables
 .env
+.env.txt
 
 # IDE
 .vscode/
@@ -54,3 +55,18 @@ service-account-key.json
 # Environment backups
 .env.backup
 .env.local 
+# Archive directories
+archive/
+phase2_backup_*/
+
+# Test directories (keep structure but ignore temp files)
+tests/*.tmp
+tests/*.log
+
+# Script directories
+scripts/*.tmp
+scripts/*.log
+
+# Cleanup logs
+*_cleanup_log.json
+*_fix_log.json

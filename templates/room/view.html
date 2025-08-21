@@ -1,0 +1,546 @@
+{% extends "base.html" %}
+{% block title %}{{ room.name }}{% endblock %}
+{% block content %}
+  <!-- Main Content Container -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Navigation Breadcrumb -->
+    <div class="navigation-breadcrumb">
+      <a href="{{ url_for('room.room_crud.index') }}" class="breadcrumb-link">
+        <i data-lucide="home" class="w-4 h-4"></i>
+        Home
+      </a>
+      <span class="breadcrumb-separator">/</span>
+      <span class="breadcrumb-current">{{ room.name }}</span>
+    </div>
+
+  <!-- Room Info Section (Expandable - Expanded by default) -->
+  <div class="expandable-section bg-card border border-border rounded-lg mb-8">
+    <button class="expandable-header w-full p-6 text-left flex items-center justify-between hover:bg-muted/50 transition-colors" onclick="toggleSection('room-info')">
+      <div class="flex items-center gap-3">
+                    <i data-lucide="info" class="w-6 h-6 text-info"></i>
+        <h3 class="text-lg font-semibold">Room Info</h3>
+      </div>
+      <i data-lucide="chevron-down" class="w-5 h-5 transition-transform" id="room-info-icon"></i>
+    </button>
+    
+    <div class="expandable-content p-6 pt-0" id="room-info-content">
+      <div class="flex items-start justify-between">
+        <!-- Room content -->
+        <div class="flex-1">
+          <div class="flex items-center mb-3">
+            <h2 class="text-2xl font-bold text-foreground">{{ room.name }}</h2>
+            {% if room.group_size %}
+              <span class="group-size-badge group-size-{{ room.group_size }}">
+                {% if room.group_size == 'individual' %}👤 Individual (1 person)
+                {% elif room.group_size == 'small' %}👥 Small Group (2-3 people)
+                {% elif room.group_size == 'medium' %}👨‍👩‍👧‍👦 Medium Group (4-6 people)
+                {% elif room.group_size == 'large' %}🎯 Large Group (7-10 people)
+                {% else %}👥 {{ room.group_size|title }}{% endif %}
+              </span>
+            {% endif %}
+          </div>
+          {% if room.description %}
+            <p class="room-description text-muted-foreground mb-4">{{ room.description }}</p>
+          {% endif %}
+          {% if room.goals %}
+            <div class="room-goals bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg mb-4">
+              <p class="text-sm font-medium text-foreground mb-2">Learning Goals:</p>
+              <div class="space-y-2">
+                {% for goal in room.goals.split('\n') %}
+                  {% if goal.strip() %}
+                    <div class="flex items-start gap-2">
+                      <span class="text-primary mt-1">•</span>
+                      <span class="text-sm text-muted-foreground">{{ goal.strip() }}</span>
+                    </div>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
+          <p class="text-xs text-muted-foreground">
+            Created by {{ room.owner.display_name }} on {{ room.created_at.strftime('%Y-%m-%d %H:%M') }}
+          </p>
+        </div>
+        
+        <!-- Action buttons positioned in upper-right corner of the card -->
+        <div class="flex items-center gap-2 ml-6 relative">
+          <!-- Invite Members Button -->
+          <a href="{{ url_for('room.room_invitations.invite_members', room_id=room.id) }}" class="settings-icon-btn" title="Invite Members">
+            <i data-lucide="user-plus" class="w-5 h-5"></i>
+          </a>
+          
+          <!-- Settings Button with Dropdown -->
+          <div class="relative">
+            <button class="settings-icon-btn" onclick="toggleRoomActions()" title="Room Settings">
+              <i data-lucide="settings" class="w-5 h-5"></i>
+            </button>
+            
+            <!-- Dropdown menu positioned relative to settings button -->
+            <div class="dropdown-menu" id="room-actions-menu">
+            <!-- Owner-only actions -->
+            {% if user.id == room.owner_id %}
+              <a href="{{ url_for('room.room_crud.edit_room', room_id=room.id) }}" class="dropdown-item">
+                <i data-lucide="edit" class="w-4 h-4"></i>
+                Edit Room
+              </a>
+              <a href="{{ url_for('room.room_invitations.manage_invitations', room_id=room.id) }}" class="dropdown-item">
+                <i data-lucide="users" class="w-4 h-4"></i>
+                View Members
+              </a>
+              <a href="{{ url_for('room.room_crud.delete_room', room_id=room.id) }}" class="dropdown-item text-destructive" onclick="return confirm('Are you sure you want to delete this room? This action cannot be undone.')">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                Delete Room
+              </a>
+              <div class="dropdown-divider"></div>
+            {% else %}
+              <!-- Member actions -->
+              <a href="{{ url_for('room.room_invitations.manage_invitations', room_id=room.id) }}" class="dropdown-item">
+                <i data-lucide="users" class="w-4 h-4"></i>
+                View Members
+              </a>
+              <div class="dropdown-divider"></div>
+            {% endif %}
+            
+            <!-- Common action -->
+            <a href="{{ url_for('room.room_crud.create_chat', room_id=room.id) }}" class="dropdown-item text-primary">
+              <i data-lucide="message-circle" class="w-4 h-4"></i>
+              Create Chat
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Your Chats Section (Expandable - Expanded by default) -->
+  <div class="expandable-section bg-card border border-border rounded-lg mb-8">
+    <button class="expandable-header w-full p-6 text-left flex items-center justify-between hover:bg-muted/50 transition-colors" onclick="toggleSection('your-chats')">
+      <div class="flex items-center gap-3">
+        <i data-lucide="message-circle" class="w-6 h-6 text-primary"></i>
+        <h3 class="text-lg font-semibold">Your Chats</h3>
+      </div>
+      <i data-lucide="chevron-down" class="w-5 h-5 transition-transform" id="your-chats-icon"></i>
+    </button>
+    
+    <div class="expandable-content p-6 pt-0" id="your-chats-content">
+    
+    {% if chats %}
+      <div class="space-y-4">
+        {% for chat in chats %}
+          <div class="bg-card border border-border rounded-lg p-6 hover:border-primary/50 hover:shadow-lg transition-all duration-200 cursor-pointer group">
+            <a href="{{ url_for('chat.view_chat', chat_id=chat.id) }}" class="block h-full">
+              <div class="flex items-start justify-between mb-4">
+                <h3 class="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
+                  {{ chat.title }}
+                </h3>
+                <div class="flex items-center gap-2">
+                  {% if chat.unread_count and chat.unread_count > 0 %}
+                    <span class="unread-badge">{{ chat.unread_count }}</span>
+                  {% endif %}
+                  <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <a href="{{ url_for('chat.edit_chat', chat_id=chat.id) }}" class="text-muted-foreground hover:text-foreground transition-colors" title="Edit Chat">
+                      <i data-lucide="edit" class="w-4 h-4"></i>
+                    </a>
+                    <a href="{{ url_for('chat.delete_chat', chat_id=chat.id) }}" class="text-destructive hover:text-destructive-hover transition-colors" title="Delete Chat" onclick="return confirm('Are you sure you want to delete this chat?')">
+                      <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </a>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary">
+                    {% if chat.mode in modes %}
+                      {{ modes[chat.mode].label }}
+                    {% else %}
+                      {{ chat.mode }}
+                    {% endif %}
+                  </span>
+                  
+                  <!-- Progress Assessment Button -->
+                  <button onclick="assessChatProgress({{ chat.id }})" 
+                          class="text-xs px-2 py-1 bg-success-light text-success-text rounded hover:bg-success-light/80 transition-colors"
+                          title="Assess learning progress">
+                    🔍 Progress
+                  </button>
+                </div>
+                
+                <p class="text-sm text-muted-foreground">
+                  Created by {{ chat.creator.display_name }}
+                </p>
+                
+                <!-- Progress Status (hidden by default) -->
+                <div id="progress-{{ chat.id }}" class="hidden mt-2">
+                  <div id="progress-content-{{ chat.id }}" class="text-xs">
+                    <!-- Progress content will be populated by JavaScript -->
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+        {% endfor %}
+      </div>
+          {% else %}
+        <div class="text-center py-16 bg-card border border-border rounded-xl">
+          <i data-lucide="message-circle" class="w-16 h-16 text-muted-foreground mx-auto mb-4"></i>
+          <h3 class="text-xl font-semibold mb-2">Ready to start? Create your first chat!</h3>
+        </div>
+      {% endif %}
+      
+      <!-- New Chat Button at Bottom -->
+      <div class="mt-6 text-center">
+        <a href="{{ url_for('room.room_crud.create_chat', room_id=room.id) }}" class="btn btn-primary inline-flex items-center justify-center px-6 py-3 min-w-[140px]">
+          <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+          New Chat
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Achievements Section (Expandable) -->
+  {% if user %}
+  <div class="expandable-section bg-card border border-border rounded-lg mb-8">
+    <button class="expandable-header w-full p-6 text-left flex items-center justify-between hover:bg-muted/50 transition-colors" onclick="toggleSection('achievements')">
+      <div class="flex items-center gap-3">
+                    <i data-lucide="trophy" class="w-6 h-6 text-warning"></i>
+        <h3 class="text-lg font-semibold">Your Achievements</h3>
+      </div>
+      <i data-lucide="chevron-down" class="w-5 h-5 transition-transform" id="achievements-icon"></i>
+    </button>
+    
+    <div class="expandable-content hidden p-6 pt-0" id="achievements-content">
+      {% set user_achievements = user.achievements|selectattr('room_id', 'equalto', room.id)|list %}
+      {% if user_achievements %}
+        <div class="achievements-grid">
+          {% for achievement in user_achievements %}
+            <div class="achievement-badge">
+              {% if achievement.achievement_type == 'first_steps' %}
+                🎯 First Steps
+                <small>Sent your first message</small>
+              {% elif achievement.achievement_type == 'explorer' %}
+                🗺️ Explorer
+                <small>Used 24%+ of available learning steps</small>
+              {% elif achievement.achievement_type == 'ai_whisperer' %}
+                🤖 AI Whisperer
+                <small>10+ AI conversations</small>
+              {% elif achievement.achievement_type == 'collaborator' %}
+                👥 Collaborator
+                <small>Helped 50%+ of room members</small>
+              {% elif achievement.achievement_type == 'learning_master' %}
+                🎓 Learning Master
+                <small>Used 74%+ of available learning steps</small>
+              {% else %}
+                🏆 {{ achievement.achievement_type|title }}
+              {% endif %}
+              <small>Earned {{ achievement.earned_at.strftime('%Y-%m-%d') }}</small>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-muted-foreground">No achievements yet. Start participating to earn badges!</p>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Room Members Section (Expandable) -->
+  <div class="expandable-section bg-card border border-border rounded-lg mb-8">
+    <button class="expandable-header w-full p-6 text-left flex items-center justify-between hover:bg-muted/50 transition-colors" onclick="toggleSection('members')">
+      <div class="flex items-center gap-3">
+                    <i data-lucide="users" class="w-6 h-6 text-info"></i>
+        <h3 class="text-lg font-semibold">Room Members</h3>
+      </div>
+      <i data-lucide="chevron-down" class="w-5 h-5 transition-transform" id="members-icon"></i>
+    </button>
+    
+    <div class="expandable-content hidden p-6 pt-0" id="members-content">
+      {% if members %}
+        <div class="member-list">
+          {% for member in members %}
+            {% set color_class = 'avatar-color-' ~ ((member.id % 6) + 1) %}
+            <div class="member-item">
+              <div class="member-avatar {{ color_class }}">
+                <span class="avatar-text">
+                  {% if ' ' in member.display_name %}
+                    {{ member.display_name.split(' ')[0][0] }}{{ member.display_name.split(' ')[1][0] }}
+                  {% else %}
+                    {{ member.display_name[:2] }}
+                  {% endif %}
+                </span>
+              </div>
+              <div class="member-info">
+                <p class="member-name">{{ member.display_name }}</p>
+                {% if member.id == room.owner_id %}
+                  <span class="text-xs text-primary font-medium">Owner</span>
+                {% endif %}
+              </div>
+              <div class="member-actions">
+                <a href="{{ url_for('auth.profile') }}" 
+                   class="member-action-btn primary" title="View Profile">
+                  👤
+                </a>
+                <button class="member-action-btn" title="Message (Coming Soon)" disabled>
+                  💬
+                </button>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-muted-foreground">No members found.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Quick Stats Section (Expandable) -->
+  <div class="expandable-section bg-card border border-border rounded-lg mb-8">
+    <button class="expandable-header w-full p-6 text-left flex items-center justify-between hover:bg-muted/50 transition-colors" onclick="toggleSection('stats')">
+      <div class="flex items-center gap-3">
+                    <i data-lucide="bar-chart-3" class="w-6 h-6 text-success"></i>
+        <h3 class="text-lg font-semibold">Room Stats</h3>
+      </div>
+      <i data-lucide="chevron-down" class="w-5 h-5 transition-transform" id="stats-icon"></i>
+    </button>
+    
+    <div class="expandable-content hidden p-6 pt-0" id="stats-content">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="stat-item">
+          <div class="stat-value text-2xl font-bold text-primary">{{ members|length }}</div>
+          <div class="stat-label text-sm text-muted-foreground">Members</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value text-2xl font-bold text-primary">{{ chats|length if chats else 0 }}</div>
+          <div class="stat-label text-sm text-muted-foreground">Chats</div>
+        </div>
+        <div class="stat-item">
+                      <div class="stat-value text-2xl font-bold text-success">Active</div>
+          <div class="stat-label text-sm text-muted-foreground">Status</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+
+  
+
+  
+
+  </div> <!-- End of main content container -->
+
+<script>
+  function toggleRoomActions() {
+    const menu = document.getElementById('room-actions-menu');
+    const settingsButton = event.target.closest('.settings-icon-btn');
+    const isOpen = menu.classList.contains('open');
+    
+    if (isOpen) {
+      // Close dropdown
+      menu.classList.remove('open');
+      menu.style.display = 'none';
+    } else {
+      // Close any other open dropdowns first
+      document.querySelectorAll('.dropdown-menu.open').forEach(openMenu => {
+        openMenu.classList.remove('open');
+        openMenu.style.display = 'none';
+      });
+      
+      // Open dropdown
+      menu.style.display = 'block';
+      
+      // Use fixed positioning to avoid container overflow issues
+      const buttonRect = settingsButton.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      
+      // Position temporarily to measure
+      menu.style.opacity = '0';
+      menu.style.pointerEvents = 'none';
+      menu.style.position = 'fixed';
+      menu.style.top = buttonRect.bottom + 8 + 'px';
+      // Right-align the dropdown with the button
+      menu.style.left = 'auto';
+      menu.style.right = (viewportWidth - buttonRect.right) + 'px';
+      menu.offsetHeight; // Force reflow
+      
+      const menuRect = menu.getBoundingClientRect();
+      const menuWidth = menuRect.width;
+      const menuHeight = menuRect.height;
+      
+      // Check if dropdown would go off the left edge
+      if (buttonRect.right - menuWidth < 0) {
+        menu.style.right = 'auto';
+        menu.style.left = '16px';
+      }
+      
+      // Check if dropdown would go off the bottom edge
+      if (buttonRect.bottom + menuHeight + 8 > viewportHeight) {
+        menu.style.top = (buttonRect.top - menuHeight - 8) + 'px';
+      }
+      
+      // Make visible
+      menu.style.opacity = '1';
+      menu.style.pointerEvents = 'auto';
+      
+      // Use setTimeout to ensure display: block is applied before adding the open class
+      setTimeout(() => {
+        menu.classList.add('open');
+      }, 10);
+    }
+    
+    // Close when clicking outside
+    document.addEventListener('click', function closeMenu(e) {
+      if (!e.target.closest('.settings-icon-btn') && !e.target.closest('.dropdown-menu')) {
+        menu.classList.remove('open');
+        menu.style.display = 'none';
+        document.removeEventListener('click', closeMenu);
+      }
+    });
+  }
+  
+  // Expandable sections functionality
+  function toggleSection(sectionId) {
+    const content = document.getElementById(sectionId + '-content');
+    const icon = document.getElementById(sectionId + '-icon');
+    
+    if (content.classList.contains('hidden')) {
+      // Expand section
+      content.classList.remove('hidden');
+      icon.style.transform = 'rotate(180deg)';
+    } else {
+      // Collapse section
+      content.classList.add('hidden');
+      icon.style.transform = 'rotate(0deg)';
+    }
+  }
+  
+  // Initialize Lucide icons and expandable sections
+  document.addEventListener('DOMContentLoaded', function() {
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
+    
+    // Set default states: Room Info and Your Chats expanded, others collapsed
+    const roomInfoIcon = document.getElementById('room-info-icon');
+    const yourChatsIcon = document.getElementById('your-chats-icon');
+    
+    if (roomInfoIcon) {
+      roomInfoIcon.style.transform = 'rotate(180deg)';
+    }
+    if (yourChatsIcon) {
+      yourChatsIcon.style.transform = 'rotate(180deg)';
+    }
+  });
+  
+  // Learning Progress Assessment Functions
+  function assessChatProgress(chatId) {
+    const progressDiv = document.getElementById(`progress-${chatId}`);
+    const progressContent = document.getElementById(`progress-content-${chatId}`);
+    const button = event.target;
+    
+    // Show loading state
+    button.disabled = true;
+    button.textContent = 'Analyzing...';
+    progressDiv.classList.remove('hidden');
+    progressContent.innerHTML = `
+      <div class="flex items-center gap-2 text-muted-foreground">
+        <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
+        Analyzing progress...
+      </div>
+    `;
+    
+    // Make API request
+    fetch(`/chat/${chatId}/assess-progression`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        displayChatProgressResult(chatId, data.recommendation);
+      } else {
+        displayChatProgressError(chatId, data.error || 'Assessment failed');
+      }
+    })
+    .catch(error => {
+      console.error('Assessment error:', error);
+      displayChatProgressError(chatId, 'Network error. Please try again.');
+    })
+    .finally(() => {
+      // Reset button
+      button.disabled = false;
+      button.textContent = '🔍 Progress';
+    });
+  }
+  
+  function displayChatProgressResult(chatId, recommendation) {
+    const progressContent = document.getElementById(`progress-content-${chatId}`);
+    
+    let html = '';
+    
+    if (recommendation.type === 'ready') {
+      html = `
+        <div class="bg-success-light border border-success rounded-md p-2">
+          <div class="flex items-start gap-2">
+            <div class="text-success">🎉</div>
+            <div class="flex-1">
+              <p class="font-medium text-success-text text-xs">Ready for next step!</p>
+              <p class="text-success-text text-xs">Confidence: ${Math.round(recommendation.confidence * 100)}%</p>
+              ${recommendation.next_step ? `
+                <p class="text-success-text text-xs mt-1">Next: ${recommendation.next_step.label}</p>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    } else if (recommendation.type === 'almost_ready') {
+      html = `
+        <div class="bg-warning-light border border-warning rounded-md p-2">
+          <div class="flex items-start gap-2">
+            <div class="text-warning">👍</div>
+            <div class="flex-1">
+              <p class="font-medium text-warning-text text-xs">Almost ready!</p>
+              <p class="text-warning-text text-xs">Confidence: ${Math.round(recommendation.confidence * 100)}%</p>
+              <p class="text-warning-text text-xs mt-1">Keep working on current step</p>
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      html = `
+        <div class="bg-info-light border border-info rounded-md p-2">
+          <div class="flex items-start gap-2">
+            <div class="text-info">📚</div>
+            <div class="flex-1">
+              <p class="font-medium text-info-text text-xs">Continue learning</p>
+              <p class="text-info-text text-xs">Confidence: ${Math.round(recommendation.confidence * 100)}%</p>
+              <p class="text-info-text text-xs mt-1">More practice needed</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    progressContent.innerHTML = html;
+  }
+  
+  function displayChatProgressError(chatId, error) {
+    const progressContent = document.getElementById(`progress-content-${chatId}`);
+    
+    progressContent.innerHTML = `
+      <div class="bg-destructive-light border border-destructive rounded-md p-2">
+        <div class="flex items-start gap-2">
+          <div class="text-destructive">⚠️</div>
+          <div class="flex-1">
+            <p class="font-medium text-destructive-text text-xs">Assessment Error</p>
+            <p class="text-destructive-text text-xs">${error}</p>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+</script>
+{% endblock %} 

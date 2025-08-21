@@ -1,0 +1,717 @@
+{% extends "base.html" %}
+{% block title %}Learning Lab Template - AI Collab{% endblock %}
+
+<style>
+  .goal-category {
+    transition: all 0.3s ease;
+  }
+  
+  .category-header {
+    transition: background-color 0.3s ease;
+  }
+  
+  .category-header:hover {
+    opacity: 0.9;
+  }
+  
+  .toggle-icon {
+    transition: transform 0.3s ease;
+  }
+  
+  .toggle-icon.rotated {
+    transform: rotate(180deg);
+  }
+  
+  .goals-container {
+    transition: all 0.3s ease;
+  }
+  
+  .goal-item {
+    transition: all 0.2s ease;
+  }
+  
+  .goal-item:hover {
+    transform: translateX(4px);
+  }
+  
+  @media (max-width: 768px) {
+    .category-header {
+      padding: 0.75rem 1rem;
+    }
+    
+    .goals-container {
+      padding: 0.75rem;
+    }
+  }
+</style>
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Header -->
+  <div class="text-center mb-8">
+    <div class="inline-flex items-center justify-center w-16 h-16 bg-indigo-500 rounded-full mb-4">
+      <i data-lucide="flask-conical" class="w-8 h-8 text-white"></i>
+    </div>
+    <h1 class="text-3xl font-bold text-foreground mb-2">Learning Lab Setup</h1>
+    <p class="text-lg text-muted-foreground">Create an experimental learning space for skill development and research</p>
+  </div>
+
+  <!-- Error and Success Messages -->
+  <div id="error-message" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+  </div>
+  <div id="success-message" class="hidden bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">
+  </div>
+
+  <!-- Step 1: Learning Style Selection -->
+  <div id="step-1" class="bg-card border border-border rounded-lg p-8 mb-6">
+    <div class="mb-6">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-8 h-8 bg-indigo-500 text-white rounded-full flex items-center justify-center text-sm font-medium">1</div>
+        <h2 class="text-xl font-semibold text-foreground">What learning journey are you embarking on?</h2>
+      </div>
+      <p class="text-muted-foreground">Consider what learning challenges you're facing and what experimental approaches you want to explore</p>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <button class="template-option p-4 border border-border rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-colors text-left" data-value="hands_on">
+        <div class="flex items-center gap-3">
+          <i data-lucide="wrench" class="w-6 h-6 text-indigo-600"></i>
+          <span class="font-medium">Hands-on</span>
+        </div>
+      </button>
+      <button class="template-option p-4 border border-border rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-colors text-left" data-value="theoretical">
+        <div class="flex items-center gap-3">
+          <i data-lucide="brain" class="w-6 h-6 text-blue-600"></i>
+          <span class="font-medium">Theoretical</span>
+        </div>
+      </button>
+      <button class="template-option p-4 border border-border rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-colors text-left" data-value="experimental">
+        <div class="flex items-center gap-3">
+          <i data-lucide="test-tube" class="w-6 h-6 text-green-600"></i>
+          <span class="font-medium">Experimental</span>
+        </div>
+      </button>
+      <button class="template-option p-4 border border-border rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-colors text-left" data-value="collaborative">
+        <div class="flex items-center gap-3">
+          <i data-lucide="users" class="w-6 h-6 text-purple-600"></i>
+          <span class="font-medium">Collaborative</span>
+        </div>
+      </button>
+      <button class="template-option p-4 border border-border rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-colors text-left" data-value="research">
+        <div class="flex items-center gap-3">
+          <i data-lucide="search" class="w-6 h-6 text-amber-600"></i>
+          <span class="font-medium">Research-based</span>
+        </div>
+      </button>
+      <button class="template-option p-4 border border-border rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-colors text-left" data-value="other">
+        <div class="flex items-center gap-3">
+          <i data-lucide="more-horizontal" class="w-6 h-6 text-gray-600"></i>
+          <span class="font-medium">Other</span>
+        </div>
+      </button>
+    </div>
+
+    <div class="mt-6 flex justify-between">
+      <a href="{{ url_for('room.room_crud.index') }}" class="px-6 py-3 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-gray-100 transition-colors">
+        Back to Home
+      </a>
+      <button id="next-step-1" class="px-6 py-3 bg-indigo-500 text-white font-medium rounded-lg hover:bg-indigo-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+        Next Step
+      </button>
+    </div>
+  </div>
+
+  <!-- Step 2: Team Size -->
+  <div id="step-2" class="bg-card border border-border rounded-lg p-8 mb-6 hidden">
+    <div class="mb-6">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-8 h-8 bg-indigo-500 text-white rounded-full flex items-center justify-center text-sm font-medium">2</div>
+        <h2 class="text-xl font-semibold text-foreground">How will your team collaborate to explore this learning journey?</h2>
+      </div>
+      <p class="text-muted-foreground">Consider how your team size will affect your experimental learning process and collaborative discovery</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <button class="template-option p-6 border border-border rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-colors text-center" data-value="small">
+        <div class="mb-3">
+          <i data-lucide="users" class="w-8 h-8 text-indigo-600 mx-auto"></i>
+        </div>
+        <h3 class="font-semibold text-foreground mb-2">Small Group</h3>
+        <p class="text-sm text-muted-foreground">2-5 people</p>
+        <p class="text-xs text-muted-foreground mt-2">Intimate learning, focused experimentation</p>
+      </button>
+      <button class="template-option p-6 border border-border rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-colors text-center" data-value="medium">
+        <div class="mb-3">
+          <i data-lucide="users" class="w-8 h-8 text-blue-600 mx-auto"></i>
+        </div>
+        <h3 class="font-semibold text-foreground mb-2">Medium Group</h3>
+        <p class="text-sm text-muted-foreground">6-10 people</p>
+        <p class="text-xs text-muted-foreground mt-2">Diverse perspectives, structured learning</p>
+      </button>
+      <button class="template-option p-6 border border-border rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-colors text-center" data-value="large">
+        <div class="mb-3">
+          <i data-lucide="users" class="w-8 h-8 text-green-600 mx-auto"></i>
+        </div>
+        <h3 class="font-semibold text-foreground mb-2">Large Group</h3>
+        <p class="text-sm text-muted-foreground">10+ people</p>
+        <p class="text-xs text-muted-foreground mt-2">Learning community, knowledge networks</p>
+      </button>
+    </div>
+
+    <div class="mt-6 flex justify-between">
+      <button id="back-step-2" class="px-6 py-3 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-gray-100 transition-colors">
+        Back
+      </button>
+      <button id="next-step-2" class="px-6 py-3 bg-indigo-500 text-white font-medium rounded-lg hover:bg-indigo-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+        Next Step
+      </button>
+    </div>
+  </div>
+
+  <!-- Step 3: Learning Goal -->
+  <div id="step-3" class="bg-card border border-border rounded-lg p-8 mb-6 hidden">
+    <div class="mb-6">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-8 h-8 bg-indigo-500 text-white rounded-full flex items-center justify-center text-sm font-medium">3</div>
+        <h2 class="text-xl font-semibold text-foreground">What learning questions are you trying to answer?</h2>
+      </div>
+      <p class="text-muted-foreground">Consider what learning challenges you're facing and what outcomes you want to achieve</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <button class="template-option p-6 border border-border rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-colors text-left" data-value="skill_building">
+        <div class="flex items-start gap-4">
+          <i data-lucide="target" class="w-6 h-6 text-indigo-600 mt-1"></i>
+          <div>
+            <h3 class="font-semibold text-foreground mb-2">Skill Building</h3>
+            <p class="text-sm text-muted-foreground">Developing practical skills and competencies</p>
+          </div>
+        </div>
+      </button>
+      <button class="template-option p-6 border border-border rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-colors text-left" data-value="research_projects">
+        <div class="flex items-start gap-4">
+          <i data-lucide="microscope" class="w-6 h-6 text-blue-600 mt-1"></i>
+          <div>
+            <h3 class="font-semibold text-foreground mb-2">Research Projects</h3>
+            <p class="text-sm text-muted-foreground">Conducting research and experimental studies</p>
+          </div>
+        </div>
+      </button>
+      <button class="template-option p-6 border border-border rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-colors text-left" data-value="educational_innovation">
+        <div class="flex items-start gap-4">
+          <i data-lucide="lightbulb" class="w-6 h-6 text-green-600 mt-1"></i>
+          <div>
+            <h3 class="font-semibold text-foreground mb-2">Educational Innovation</h3>
+            <p class="text-sm text-muted-foreground">Exploring new teaching and learning methods</p>
+          </div>
+        </div>
+      </button>
+      <button class="template-option p-6 border border-border rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-colors text-left" data-value="experimentation">
+        <div class="flex items-start gap-4">
+          <i data-lucide="flask-conical" class="w-6 h-6 text-purple-600 mt-1"></i>
+          <div>
+            <h3 class="font-semibold text-foreground mb-2">Experimentation</h3>
+            <p class="text-sm text-muted-foreground">Testing hypotheses and exploring new approaches</p>
+          </div>
+        </div>
+      </button>
+      <button class="template-option p-6 border border-border rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-colors text-left" data-value="knowledge_sharing">
+        <div class="flex items-start gap-4">
+          <i data-lucide="share-2" class="w-6 h-6 text-amber-600 mt-1"></i>
+          <div>
+            <h3 class="font-semibold text-foreground mb-2">Knowledge Sharing</h3>
+            <p class="text-sm text-muted-foreground">Sharing expertise and collaborative learning</p>
+          </div>
+        </div>
+      </button>
+      <button class="template-option p-6 border border-border rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-colors text-left" data-value="certification">
+        <div class="flex items-start gap-4">
+          <i data-lucide="award" class="w-6 h-6 text-red-600 mt-1"></i>
+          <div>
+            <h3 class="font-semibold text-foreground mb-2">Certification Prep</h3>
+            <p class="text-sm text-muted-foreground">Preparing for professional certifications</p>
+          </div>
+        </div>
+      </button>
+    </div>
+
+    <div class="mt-6 flex justify-between">
+      <button id="back-step-3" class="px-6 py-3 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-gray-100 transition-colors">
+        Back
+      </button>
+      <button id="next-step-3" class="px-6 py-3 bg-indigo-500 text-white font-medium rounded-lg hover:bg-indigo-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+        Generate Goals
+      </button>
+    </div>
+  </div>
+
+  <!-- Step 4: Generated Goals -->
+  <div id="step-4" class="bg-card border border-border rounded-lg p-8 mb-6 hidden">
+    <div class="mb-6">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-8 h-8 bg-indigo-500 text-white rounded-full flex items-center justify-center text-sm font-medium">4</div>
+        <h2 class="text-xl font-semibold text-foreground">Your Learning Goals</h2>
+      </div>
+      <p class="text-muted-foreground">Based on your answers, here are the learning goals for your lab:</p>
+    </div>
+
+    <!-- Core Goals (Always Visible) -->
+    <div id="core-goals" class="mb-6">
+      <div class="goal-category bg-blue-50 border border-blue-200 rounded-lg">
+        <div class="category-header bg-blue-100 px-4 py-3 rounded-t-lg flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <i data-lucide="target" class="w-5 h-5 text-blue-600"></i>
+            <h3 class="font-semibold text-blue-900">Core Learning Goals</h3>
+            <span class="goal-count bg-blue-200 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">0</span>
+          </div>
+        </div>
+        <div class="goals-container p-4 space-y-3">
+          <!-- Core goals will be populated here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Collaboration Goals (Collapsible) -->
+    <div id="collaboration-goals" class="mb-6">
+      <div class="goal-category bg-green-50 border border-green-200 rounded-lg">
+        <div class="category-header bg-green-100 px-4 py-3 rounded-t-lg flex items-center justify-between cursor-pointer" onclick="toggleCategory('collaboration-goals')">
+          <div class="flex items-center gap-3">
+            <i data-lucide="users" class="w-5 h-5 text-green-600"></i>
+            <h3 class="font-semibold text-green-900">Collaboration Goals</h3>
+            <span class="goal-count bg-green-200 text-green-800 px-2 py-1 rounded-full text-sm font-medium">0</span>
+          </div>
+          <i data-lucide="chevron-down" class="toggle-icon w-5 h-5 text-green-600 transition-transform"></i>
+        </div>
+        <div class="goals-container p-4 space-y-3 hidden">
+          <!-- Collaboration goals will be populated here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Reflection Goals (Collapsible) -->
+    <div id="reflection-goals" class="mb-6">
+      <div class="goal-category bg-purple-50 border border-purple-200 rounded-lg">
+        <div class="category-header bg-purple-100 px-4 py-3 rounded-t-lg flex items-center justify-between cursor-pointer" onclick="toggleCategory('reflection-goals')">
+          <div class="flex items-center gap-3">
+            <i data-lucide="brain" class="w-5 h-5 text-purple-600"></i>
+            <h3 class="font-semibold text-purple-900">Reflection Goals</h3>
+            <span class="goal-count bg-purple-200 text-purple-800 px-2 py-1 rounded-full text-sm font-medium">0</span>
+          </div>
+          <i data-lucide="chevron-down" class="toggle-icon w-5 h-5 text-purple-600 transition-transform"></i>
+        </div>
+        <div class="goals-container p-4 space-y-3 hidden">
+          <!-- Reflection goals will be populated here -->
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6">
+      <div class="flex items-start gap-3">
+        <i data-lucide="lightbulb" class="w-5 h-5 text-indigo-600 mt-1"></i>
+        <div>
+          <h4 class="font-medium text-indigo-900 mb-2">Customize Your Goals</h4>
+          <p class="text-sm text-indigo-700">You can edit these goals or add your own specific objectives. The more detailed your goals, the better we can tailor your learning lab experience.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-6">
+      <label for="custom-goals" class="block text-sm font-medium text-foreground mb-2">Add Your Own Goals</label>
+      <textarea id="custom-goals" rows="4" placeholder="Add additional learning goals here..."
+                class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
+                       focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                       placeholder:text-muted-foreground resize-none"></textarea>
+    </div>
+
+    <div class="mt-6 flex justify-between">
+      <button id="back-step-4" class="px-6 py-3 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-gray-100 transition-colors">
+        Back
+      </button>
+      <button id="create-room" class="px-6 py-3 bg-indigo-500 text-white font-medium rounded-lg hover:bg-indigo-600 transition-colors">
+        Create Learning Lab
+      </button>
+    </div>
+  </div>
+</div>
+
+ <script>
+   // Global variables
+   let currentStep = 1;
+   let answers = {};
+   let currentGoals = [];
+   let categorizedGoals = {}; // New variable for categorized goals
+   let isGeneratingGoals = false;
+   let isCreatingRoom = false;
+   
+   // Utility functions
+   function showError(message) {
+     const errorDiv = document.getElementById('error-message');
+     if (errorDiv) {
+       errorDiv.textContent = message;
+       errorDiv.classList.remove('hidden');
+       setTimeout(() => {
+         errorDiv.classList.add('hidden');
+       }, 5000);
+     } else {
+       alert(message);
+     }
+   }
+   
+   function showSuccess(message) {
+     const successDiv = document.getElementById('success-message');
+     if (successDiv) {
+       successDiv.textContent = message;
+       successDiv.classList.remove('hidden');
+       setTimeout(() => {
+         successDiv.classList.add('hidden');
+       }, 3000);
+     }
+   }
+   
+   function setLoadingState(buttonId, isLoading, loadingText = 'Loading...') {
+     const button = document.getElementById(buttonId);
+     if (button) {
+       if (isLoading) {
+         button.disabled = true;
+         button.dataset.originalText = button.textContent;
+         button.textContent = loadingText;
+       } else {
+         button.disabled = false;
+         if (button.dataset.originalText) {
+           button.textContent = button.dataset.originalText;
+         }
+       }
+     }
+   }
+   
+   // Global function for deleting goals from categorized structure
+   function deleteGoal(categoryId, index) {
+     if (!categorizedGoals[categoryId] || index < 0 || index >= categorizedGoals[categoryId].length) {
+       console.error('Invalid goal category or index:', categoryId, index);
+       return;
+     }
+     
+     // Remove the goal from the categorized structure
+     categorizedGoals[categoryId].splice(index, 1);
+     
+     // Update the flat currentGoals array for backward compatibility
+     currentGoals = [];
+     Object.values(categorizedGoals).forEach(goals => {
+       currentGoals.push(...goals);
+     });
+     
+     // Re-render the goals
+     renderGoals();
+   }
+   
+   function renderGoals() {
+     // Check if we have categorized goals
+     if (window.categorizedGoals && Object.keys(window.categorizedGoals).length > 0) {
+       renderCategorizedGoals();
+     } else {
+       renderFlatGoals();
+     }
+   }
+   
+   function renderCategorizedGoals() {
+     const categories = ['core_goals', 'collaboration_goals', 'reflection_goals'];
+     
+     categories.forEach(categoryId => {
+       const categoryElement = document.getElementById(categoryId.replace('_', '-'));
+       if (!categoryElement) return;
+       
+       const goals = window.categorizedGoals[categoryId] || [];
+       const container = categoryElement.querySelector('.goals-container');
+       const countElement = categoryElement.querySelector('.goal-count');
+       
+       // Update count
+       if (countElement) {
+         countElement.textContent = goals.length;
+       }
+       
+       // Render goals
+       if (container) {
+         container.innerHTML = goals.map((goal, index) => `
+           <div class="goal-item flex items-start justify-between p-3 bg-white border border-gray-200 rounded-lg hover:shadow-sm" data-category="${categoryId}" data-index="${index}">
+             <div class="flex items-start gap-3 flex-1">
+               <i data-lucide="check-circle" class="w-5 h-5 text-amber-600 mt-1"></i>
+               <span class="text-gray-900">${goal}</span>
+             </div>
+             <button onclick="deleteGoal('${categoryId}', ${index})" class="ml-3 p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded transition-colors" title="Delete this goal">
+               <i data-lucide="trash-2" class="w-4 h-4"></i>
+             </button>
+           </div>
+         `).join('');
+       }
+     });
+     
+     // Re-initialize Lucide icons
+     if (typeof lucide !== 'undefined') {
+       lucide.createIcons();
+     }
+   }
+   
+   function renderFlatGoals() {
+     // Fallback to flat rendering for backward compatibility
+     const categories = ['core-goals', 'collaboration-goals', 'reflection-goals'];
+     
+     categories.forEach(categoryId => {
+       const categoryElement = document.getElementById(categoryId);
+       if (!categoryElement) return;
+       
+       const container = categoryElement.querySelector('.goals-container');
+       const countElement = categoryElement.querySelector('.goal-count');
+       
+       if (countElement) {
+         countElement.textContent = '0';
+       }
+       
+       if (container) {
+         container.innerHTML = '<p class="text-gray-500 text-sm">No goals available</p>';
+       }
+     });
+   }
+   
+   function toggleCategory(categoryId) {
+     const categoryElement = document.getElementById(categoryId);
+     if (!categoryElement) return;
+     
+     const container = categoryElement.querySelector('.goals-container');
+     const icon = categoryElement.querySelector('.toggle-icon');
+     
+     if (container && icon) {
+       container.classList.toggle('hidden');
+       icon.classList.toggle('rotated');
+     }
+   }
+   
+   function updateGoalCounts() {
+     if (window.categorizedGoals) {
+       Object.keys(window.categorizedGoals).forEach(categoryId => {
+         const categoryElement = document.getElementById(categoryId.replace('_', '-'));
+         if (categoryElement) {
+           const countElement = categoryElement.querySelector('.goal-count');
+           const goals = window.categorizedGoals[categoryId] || [];
+           if (countElement) {
+             countElement.textContent = goals.length;
+           }
+         }
+       });
+     }
+   }
+   
+   document.addEventListener('DOMContentLoaded', function() {
+     // Template option selection
+     document.querySelectorAll('.template-option').forEach(button => {
+       button.addEventListener('click', function() {
+         // Remove selection from siblings
+         this.parentElement.querySelectorAll('.template-option').forEach(btn => {
+           btn.classList.remove('border-indigo-500', 'bg-indigo-50');
+           btn.classList.add('border-border');
+         });
+         
+         // Select this option
+         this.classList.remove('border-border');
+         this.classList.add('border-indigo-500', 'bg-indigo-50');
+         
+         // Enable next button
+         const nextButton = document.getElementById(`next-step-${currentStep}`);
+         if (nextButton) {
+           nextButton.disabled = false;
+         }
+       });
+     });
+     
+     // Next step buttons
+     document.getElementById('next-step-1').addEventListener('click', () => {
+       const selected = document.querySelector('#step-1 .template-option.border-indigo-500');
+       if (selected) {
+         answers.learning_style = selected.dataset.value;
+         showStep(2);
+       } else {
+         showError('Please select a learning style before continuing');
+       }
+     });
+     
+     document.getElementById('next-step-2').addEventListener('click', () => {
+       const selected = document.querySelector('#step-2 .template-option.border-indigo-500');
+       if (selected) {
+                   answers.group_size = selected.dataset.value;
+         showStep(3);
+       } else {
+         showError('Please select a team size before continuing');
+       }
+     });
+     
+     document.getElementById('next-step-3').addEventListener('click', async () => {
+       const selected = document.querySelector('#step-3 .template-option.border-indigo-500');
+       if (selected) {
+         answers.goal = selected.dataset.value;
+         await generateGoals();
+         // Only proceed to step 4 if goals were generated successfully
+         if (currentGoals.length > 0) {
+           showStep(4);
+         }
+       } else {
+         showError('Please select a learning goal before continuing');
+       }
+     });
+     
+     // Back buttons
+     document.getElementById('back-step-2').addEventListener('click', () => showStep(1));
+     document.getElementById('back-step-3').addEventListener('click', () => showStep(2));
+     document.getElementById('back-step-4').addEventListener('click', () => showStep(3));
+     
+     // Create room button
+     document.getElementById('create-room').addEventListener('click', createRoom);
+    
+    function showStep(step) {
+      // Hide all steps
+      document.querySelectorAll('[id^="step-"]').forEach(el => el.classList.add('hidden'));
+      
+      // Show current step
+      document.getElementById(`step-${step}`).classList.remove('hidden');
+      currentStep = step;
+      
+      // Reset next button state
+      const nextButton = document.getElementById(`next-step-${step}`);
+      if (nextButton) {
+        nextButton.disabled = true;
+      }
+    }
+    
+    async function generateGoals() {
+      if (isGeneratingGoals) return;
+      
+      try {
+        isGeneratingGoals = true;
+        setLoadingState('next-step-3', true, 'Generating Goals...');
+        
+        // Validate answers before sending
+        if (!answers.learning_style || !answers.group_size || !answers.goal) {
+          throw new Error('Please complete all previous steps before generating goals');
+        }
+        
+        const response = await fetch('{{ url_for("room.room_templates.generate_template_goals", template_type="learning-lab") }}', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify({ answers: answers })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success && result.goals) {
+          // Check if we have categorized goals (new format)
+          if (typeof result.goals === 'object' && result.goals.core_goals) {
+            // Store categorized goals
+            window.categorizedGoals = result.goals;
+            
+            // Also store flat goals for backward compatibility
+            currentGoals = [];
+            Object.values(result.goals).forEach(goals => {
+              currentGoals.push(...goals);
+            });
+            
+            showSuccess(`Generated ${currentGoals.length} learning goals successfully!`);
+          } else if (Array.isArray(result.goals)) {
+            // Legacy flat format
+            currentGoals = result.goals;
+            showSuccess(`Generated ${currentGoals.length} learning goals successfully!`);
+          } else {
+            throw new Error('Invalid goals format received from server');
+          }
+          
+          // Render the goals
+          renderGoals();
+        } else {
+          throw new Error(result.error || 'Invalid response from server');
+        }
+        
+      } catch (error) {
+        console.error('Error generating goals:', error);
+        showError(error.message || 'Failed to generate goals. Please try again.');
+      } finally {
+        isGeneratingGoals = false;
+        setLoadingState('next-step-3', false);
+      }
+    }
+    
+         async function createRoom() {
+       if (isCreatingRoom) return;
+       
+       try {
+         isCreatingRoom = true;
+         setLoadingState('create-room', true, 'Creating Room...');
+         
+         // Validate required data
+         if (!answers.learning_style || !answers.group_size || !answers.goal) {
+           throw new Error('Please complete all steps before creating the room');
+         }
+         
+         const customGoals = document.getElementById('custom-goals').value;
+         
+         // Combine current goals with custom goals
+         let finalGoals = currentGoals.join('\n');
+         if (customGoals.trim()) {
+           finalGoals += '\n' + customGoals.trim();
+         }
+         
+         // Validate that we have at least some goals
+         if (!finalGoals.trim()) {
+           throw new Error('Please generate goals or add your own goals before creating the room');
+         }
+         
+         // Create room name and description
+         const roomName = `${answers.learning_style.charAt(0).toUpperCase() + answers.learning_style.slice(1)} Learning Lab`;
+         const roomDescription = `An experimental learning space for ${answers.learning_style} learning with ${answers.group_size} group focus on ${answers.goal.replace('_', ' ')}.`;
+         
+         const response = await fetch('{{ url_for("room.room_templates.create_template_room", template_type="learning-lab") }}', {
+           method: 'POST',
+           headers: {
+             'Content-Type': 'application/json',
+             'X-Requested-With': 'XMLHttpRequest'
+           },
+           body: JSON.stringify({
+             goals: finalGoals,
+             room_name: roomName,
+             room_description: roomDescription,
+             group_size: answers.group_size
+           })
+         });
+         
+         if (!response.ok) {
+           const errorData = await response.json().catch(() => ({}));
+           throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+         }
+         
+         const result = await response.json();
+         
+         if (result.success && result.redirect_url) {
+           showSuccess(`Learning Lab "${result.room_name}" created successfully!`);
+           
+           // Small delay to show success message before redirect
+           setTimeout(() => {
+             window.location.href = result.redirect_url;
+           }, 1000);
+         } else {
+           throw new Error(result.error || 'Failed to create room');
+         }
+         
+       } catch (error) {
+         console.error('Error creating room:', error);
+         showError(error.message || 'Failed to create room. Please try again.');
+       } finally {
+         isCreatingRoom = false;
+         setLoadingState('create-room', false);
+       }
+     }
+  });
+</script>
+{% endblock %}

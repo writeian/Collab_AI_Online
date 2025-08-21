@@ -1,0 +1,773 @@
+{% extends "base.html" %}
+{% block title %}Business Hub Template - AI Collab{% endblock %}
+
+<style>
+  .goal-category {
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .category-header {
+    padding: 16px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+  }
+  
+  .category-header:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+  }
+  
+  .goal-count {
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  
+  .toggle-icon {
+    transition: transform 0.2s ease;
+  }
+  
+  .toggle-icon.rotated {
+    transform: rotate(180deg);
+  }
+  
+  .goals-container {
+    padding: 0 16px 16px 16px;
+  }
+  
+  .core-goals .category-header {
+    background-color: rgba(59, 130, 246, 0.05);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+  }
+  
+  .collaboration-goals .category-header {
+    background-color: rgba(34, 197, 94, 0.05);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+  }
+  
+  .reflection-goals .category-header {
+    background-color: rgba(147, 51, 234, 0.05);
+    border: 1px solid rgba(147, 51, 234, 0.2);
+  }
+  
+  @media (max-width: 640px) {
+    .category-header {
+      padding: 12px;
+    }
+    
+    .goals-container {
+      padding: 0 12px 12px 12px;
+    }
+  }
+</style>
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Header -->
+  <div class="text-center mb-8">
+    <div class="inline-flex items-center justify-center w-16 h-16 bg-green-500 rounded-full mb-4">
+      <i data-lucide="briefcase" class="w-8 h-8 text-white"></i>
+    </div>
+    <h1 class="text-3xl font-bold text-foreground mb-2">Business Hub Setup</h1>
+    <p class="text-lg text-muted-foreground">Create a professional collaboration space for business teams and entrepreneurs</p>
+  </div>
+
+  <!-- Error and Success Messages -->
+  <div id="error-message" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+  </div>
+  <div id="success-message" class="hidden bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">
+  </div>
+
+  <!-- Step 1: Business Type Selection -->
+  <div id="step-1" class="bg-card border border-border rounded-lg p-8 mb-6">
+    <div class="mb-6">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">1</div>
+        <h2 class="text-xl font-semibold text-foreground">What type of business challenge are you exploring?</h2>
+      </div>
+      <p class="text-muted-foreground">Consider what business problems you're trying to solve and what opportunities you're pursuing</p>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <button class="template-option p-4 border border-border rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors text-left" data-value="startup">
+        <div class="flex items-center gap-3">
+          <i data-lucide="rocket" class="w-6 h-6 text-green-600"></i>
+          <div>
+            <span class="font-medium">Startup</span>
+            <p class="text-xs text-muted-foreground mt-1">How can we validate and scale innovative ideas?</p>
+          </div>
+        </div>
+      </button>
+      <button class="template-option p-4 border border-border rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors text-left" data-value="entrepreneurship">
+        <div class="flex items-center gap-3">
+          <i data-lucide="trending-up" class="w-6 h-6 text-blue-600"></i>
+          <div>
+            <span class="font-medium">Entrepreneurship</span>
+            <p class="text-xs text-muted-foreground mt-1">How can we identify and pursue business opportunities?</p>
+          </div>
+        </div>
+      </button>
+      <button class="template-option p-4 border border-border rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors text-left" data-value="consulting">
+        <div class="flex items-center gap-3">
+          <i data-lucide="users" class="w-6 h-6 text-purple-600"></i>
+          <div>
+            <span class="font-medium">Consulting</span>
+            <p class="text-xs text-muted-foreground mt-1">How can we solve complex business problems?</p>
+          </div>
+        </div>
+      </button>
+      <button class="template-option p-4 border border-border rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors text-left" data-value="corporate">
+        <div class="flex items-center gap-3">
+          <i data-lucide="building" class="w-6 h-6 text-amber-600"></i>
+          <div>
+            <span class="font-medium">Corporate</span>
+            <p class="text-xs text-muted-foreground mt-1">How can we optimize organizational performance?</p>
+          </div>
+        </div>
+      </button>
+      <button class="template-option p-4 border border-border rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors text-left" data-value="freelance">
+        <div class="flex items-center gap-3">
+          <i data-lucide="user-check" class="w-6 h-6 text-red-600"></i>
+          <div>
+            <span class="font-medium">Freelance</span>
+            <p class="text-xs text-muted-foreground mt-1">How can we build sustainable independent businesses?</p>
+          </div>
+        </div>
+      </button>
+      <button class="template-option p-4 border border-border rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors text-left" data-value="other">
+        <div class="flex items-center gap-3">
+          <i data-lucide="more-horizontal" class="w-6 h-6 text-gray-600"></i>
+          <div>
+            <span class="font-medium">Other</span>
+            <p class="text-xs text-muted-foreground mt-1">How can we address unique business challenges?</p>
+          </div>
+        </div>
+      </button>
+    </div>
+
+    <div class="mt-6 flex justify-between">
+      <a href="{{ url_for('room.room_crud.index') }}" class="px-6 py-3 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-gray-100 transition-colors">
+        Back to Home
+      </a>
+      <button id="next-step-1" class="px-6 py-3 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+        Next Step
+      </button>
+    </div>
+  </div>
+
+  <!-- Step 2: Team Size -->
+  <div id="step-2" class="bg-card border border-border rounded-lg p-8 mb-6 hidden">
+    <div class="mb-6">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">2</div>
+        <h2 class="text-xl font-semibold text-foreground">How will your team collaborate to solve this challenge?</h2>
+      </div>
+      <p class="text-muted-foreground">Consider how your team size will affect your approach to problem-solving and decision-making</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <button class="template-option p-6 border border-border rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors text-center" data-value="small">
+        <div class="mb-3">
+          <i data-lucide="users" class="w-8 h-8 text-green-600 mx-auto"></i>
+        </div>
+        <h3 class="font-semibold text-foreground mb-2">Small Team</h3>
+        <p class="text-sm text-muted-foreground">2-5 people</p>
+        <p class="text-xs text-muted-foreground mt-2">How can we leverage our intimate collaboration for rapid iteration?</p>
+      </button>
+      <button class="template-option p-6 border border-border rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors text-center" data-value="medium">
+        <div class="mb-3">
+          <i data-lucide="users" class="w-8 h-8 text-blue-600 mx-auto"></i>
+        </div>
+        <h3 class="font-semibold text-foreground mb-2">Medium Team</h3>
+        <p class="text-sm text-muted-foreground">6-10 people</p>
+        <p class="text-xs text-muted-foreground mt-2">How can we coordinate diverse expertise for comprehensive solutions?</p>
+      </button>
+      <button class="template-option p-6 border border-border rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors text-center" data-value="large">
+        <div class="mb-3">
+          <i data-lucide="users" class="w-8 h-8 text-purple-600 mx-auto"></i>
+        </div>
+        <h3 class="font-semibold text-foreground mb-2">Large Team</h3>
+        <p class="text-sm text-muted-foreground">10+ people</p>
+        <p class="text-xs text-muted-foreground mt-2">How can we orchestrate complex team dynamics for strategic impact?</p>
+      </button>
+    </div>
+
+    <div class="mt-6 flex justify-between">
+      <button id="back-step-2" class="px-6 py-3 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-gray-100 transition-colors">
+        Back
+      </button>
+      <button id="next-step-2" class="px-6 py-3 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+        Next Step
+      </button>
+    </div>
+  </div>
+
+  <!-- Step 3: Focus Area -->
+  <div id="step-3" class="bg-card border border-border rounded-lg p-8 mb-6 hidden">
+    <div class="mb-6">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">3</div>
+        <h2 class="text-xl font-semibold text-foreground">What business questions are you trying to answer?</h2>
+      </div>
+      <p class="text-muted-foreground">Think about the specific business problems you need to solve or opportunities you want to explore</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <button class="template-option p-6 border border-border rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors text-left" data-value="business_planning">
+        <div class="flex items-start gap-4">
+          <i data-lucide="file-text" class="w-6 h-6 text-green-600 mt-1"></i>
+          <div>
+            <h3 class="font-semibold text-foreground mb-2">Business Planning</h3>
+            <p class="text-sm text-muted-foreground">How can we develop comprehensive strategies for sustainable growth?</p>
+          </div>
+        </div>
+      </button>
+      <button class="template-option p-6 border border-border rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors text-left" data-value="market_research">
+        <div class="flex items-start gap-4">
+          <i data-lucide="search" class="w-6 h-6 text-blue-600 mt-1"></i>
+          <div>
+            <h3 class="font-semibold text-foreground mb-2">Market Research</h3>
+            <p class="text-sm text-muted-foreground">How can we uncover market opportunities and customer needs?</p>
+          </div>
+        </div>
+      </button>
+      <button class="template-option p-6 border border-border rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors text-left" data-value="product_development">
+        <div class="flex items-start gap-4">
+          <i data-lucide="package" class="w-6 h-6 text-purple-600 mt-1"></i>
+          <div>
+            <h3 class="font-semibold text-foreground mb-2">Product Development</h3>
+            <p class="text-sm text-muted-foreground">How can we create products that solve real customer problems?</p>
+          </div>
+        </div>
+      </button>
+      <button class="template-option p-6 border border-border rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors text-left" data-value="financial_planning">
+        <div class="flex items-start gap-4">
+          <i data-lucide="dollar-sign" class="w-6 h-6 text-amber-600 mt-1"></i>
+          <div>
+            <h3 class="font-semibold text-foreground mb-2">Financial Planning</h3>
+            <p class="text-sm text-muted-foreground">How can we build sustainable financial models for long-term success?</p>
+          </div>
+        </div>
+      </button>
+      <button class="template-option p-6 border border-border rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors text-left" data-value="team_management">
+        <div class="flex items-start gap-4">
+          <i data-lucide="user-plus" class="w-6 h-6 text-red-600 mt-1"></i>
+          <div>
+            <h3 class="font-semibold text-foreground mb-2">Team Management</h3>
+            <p class="text-sm text-muted-foreground">How can we build high-performing teams that drive results?</p>
+          </div>
+        </div>
+      </button>
+      <button class="template-option p-6 border border-border rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors text-left" data-value="strategy_development">
+        <div class="flex items-start gap-4">
+          <i data-lucide="target" class="w-6 h-6 text-indigo-600 mt-1"></i>
+          <div>
+            <h3 class="font-semibold text-foreground mb-2">Strategy Development</h3>
+            <p class="text-sm text-muted-foreground">How can we develop competitive advantages in our market?</p>
+          </div>
+        </div>
+      </button>
+    </div>
+
+    <div class="mt-6 flex justify-between">
+      <button id="back-step-3" class="px-6 py-3 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-gray-100 transition-colors">
+        Back
+      </button>
+      <button id="next-step-3" class="px-6 py-3 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+        Generate Goals
+      </button>
+    </div>
+  </div>
+
+  <!-- Step 4: Generated Goals -->
+  <div id="step-4" class="bg-card border border-border rounded-lg p-8 mb-6 hidden">
+    <div class="mb-6">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">4</div>
+        <h2 class="text-xl font-semibold text-foreground">Your Business Goals</h2>
+      </div>
+      <p class="text-muted-foreground">Based on your answers, here are the business goals for your team:</p>
+    </div>
+
+    <div id="generated-goals" class="space-y-4 mb-6">
+      <!-- Goals will be populated here -->
+    </div>
+
+    <!-- Categorized Goals Structure -->
+    <div id="categorized-goals" class="space-y-6 mb-6 hidden">
+      <!-- Core Goals (Always Visible) -->
+      <div class="goal-category core-goals">
+        <div class="category-header">
+          <div class="flex items-center gap-3">
+            <i data-lucide="target" class="w-5 h-5 text-blue-600"></i>
+            <h3 class="text-lg font-semibold text-blue-900">Core Business Goals</h3>
+            <span class="goal-count bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">0</span>
+          </div>
+        </div>
+        <div class="goals-container space-y-3">
+          <!-- Core goals will be populated here -->
+        </div>
+      </div>
+
+      <!-- Collaboration Goals (Collapsible) -->
+      <div class="goal-category collaboration-goals">
+        <div class="category-header cursor-pointer" onclick="toggleCategory('collaboration')">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <i data-lucide="users" class="w-5 h-5 text-green-600"></i>
+              <h3 class="text-lg font-semibold text-green-900">Collaboration Goals</h3>
+              <span class="goal-count bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">0</span>
+            </div>
+            <i data-lucide="chevron-down" class="w-5 h-5 text-green-600 toggle-icon transition-transform"></i>
+          </div>
+        </div>
+        <div class="goals-container space-y-3 hidden">
+          <!-- Collaboration goals will be populated here -->
+        </div>
+      </div>
+
+      <!-- Reflection Goals (Collapsible) -->
+      <div class="goal-category reflection-goals">
+        <div class="category-header cursor-pointer" onclick="toggleCategory('reflection')">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <i data-lucide="brain" class="w-5 h-5 text-purple-600"></i>
+              <h3 class="text-lg font-semibold text-purple-900">Reflection Goals</h3>
+              <span class="goal-count bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-sm font-medium">0</span>
+            </div>
+            <i data-lucide="chevron-down" class="w-5 h-5 text-purple-600 toggle-icon transition-transform"></i>
+          </div>
+        </div>
+        <div class="goals-container space-y-3 hidden">
+          <!-- Reflection goals will be populated here -->
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+      <div class="flex items-start gap-3">
+        <i data-lucide="lightbulb" class="w-5 h-5 text-green-600 mt-1"></i>
+        <div>
+          <h4 class="font-medium text-green-900 mb-2">Customize Your Goals</h4>
+          <p class="text-sm text-green-700">You can edit these goals or add your own specific objectives. The more detailed your goals, the better we can tailor your business collaboration experience.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-6">
+      <label for="custom-goals" class="block text-sm font-medium text-foreground mb-2">Add Your Own Goals</label>
+      <textarea id="custom-goals" rows="4" placeholder="Add additional business goals here..."
+                class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
+                       focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent
+                       placeholder:text-muted-foreground resize-none"></textarea>
+    </div>
+
+    <div class="mt-6 flex justify-between">
+      <button id="back-step-4" class="px-6 py-3 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-gray-100 transition-colors">
+        Back
+      </button>
+      <button id="create-room" class="px-6 py-3 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 transition-colors">
+        Create Business Hub
+      </button>
+    </div>
+  </div>
+</div>
+
+ <script>
+   // Global variables
+   let currentStep = 1;
+   let answers = {};
+   let currentGoals = [];
+   let categorizedGoals = null; // Store categorized goals
+   let isGeneratingGoals = false;
+   let isCreatingRoom = false;
+   
+   // Utility functions
+   function showError(message) {
+     const errorDiv = document.getElementById('error-message');
+     if (errorDiv) {
+       errorDiv.textContent = message;
+       errorDiv.classList.remove('hidden');
+       setTimeout(() => {
+         errorDiv.classList.add('hidden');
+       }, 5000);
+     } else {
+       alert(message);
+     }
+   }
+   
+   function showSuccess(message) {
+     const successDiv = document.getElementById('success-message');
+     if (successDiv) {
+       successDiv.textContent = message;
+       successDiv.classList.remove('hidden');
+       setTimeout(() => {
+         successDiv.classList.add('hidden');
+       }, 3000);
+     }
+   }
+   
+   function setLoadingState(buttonId, isLoading, loadingText = 'Loading...') {
+     const button = document.getElementById(buttonId);
+     if (button) {
+       if (isLoading) {
+         button.disabled = true;
+         button.dataset.originalText = button.textContent;
+         button.textContent = loadingText;
+       } else {
+         button.disabled = false;
+         if (button.dataset.originalText) {
+           button.textContent = button.dataset.originalText;
+         }
+       }
+     }
+   }
+   
+   // Global function for deleting goals
+   function deleteGoal(categoryId, index) {
+     // Handle categorized goals
+     if (window.categorizedGoals && typeof categoryId === 'string') {
+       const category = categoryId === 'core' ? 'core_goals' : 
+                       categoryId === 'collaboration' ? 'collaboration_goals' : 
+                       categoryId === 'reflection' ? 'reflection_goals' : null;
+       
+       if (category && window.categorizedGoals[category]) {
+         if (index < 0 || index >= window.categorizedGoals[category].length) {
+           console.error('Invalid goal index:', index);
+           return;
+         }
+         
+         // Remove the goal from the categorized structure
+         window.categorizedGoals[category].splice(index, 1);
+         
+         // Update the flat goals array for backward compatibility
+         currentGoals = [];
+         currentGoals.push(...(window.categorizedGoals.core_goals || []));
+         currentGoals.push(...(window.categorizedGoals.collaboration_goals || []));
+         currentGoals.push(...(window.categorizedGoals.reflection_goals || []));
+         
+         // Re-render the goals
+         renderGoals();
+       }
+     } else {
+       // Handle flat goals (backward compatibility)
+       if (index < 0 || index >= currentGoals.length) {
+         console.error('Invalid goal index:', index);
+         return;
+       }
+       
+       // Remove the goal from the array
+       currentGoals.splice(index, 1);
+       
+       // Re-render the goals list
+       renderGoals();
+     }
+   }
+   
+   function renderGoals() {
+     // Check if we have categorized goals
+     if (window.categorizedGoals) {
+       renderCategorizedGoals();
+     } else {
+       renderFlatGoals();
+     }
+   }
+   
+   function renderCategorizedGoals() {
+     const categorizedContainer = document.getElementById('categorized-goals');
+     const flatContainer = document.getElementById('generated-goals');
+     
+     if (categorizedContainer && flatContainer) {
+       categorizedContainer.classList.remove('hidden');
+       flatContainer.classList.add('hidden');
+       
+       // Render each category
+       renderGoalCategory('core', window.categorizedGoals.core_goals || []);
+       renderGoalCategory('collaboration', window.categorizedGoals.collaboration_goals || []);
+       renderGoalCategory('reflection', window.categorizedGoals.reflection_goals || []);
+       
+       // Update goal counts
+       updateGoalCounts();
+     }
+   }
+   
+   function renderGoalCategory(category, goals) {
+     const container = document.querySelector(`.${category}-goals .goals-container`);
+     if (!container) return;
+     
+     container.innerHTML = goals.map((goal, index) => `
+       <div class="flex items-start justify-between p-4 bg-white border border-gray-200 rounded-lg" data-category="${category}" data-goal-index="${index}">
+         <div class="flex items-start gap-3 flex-1">
+           <i data-lucide="check-circle" class="w-5 h-5 text-gray-600 mt-1"></i>
+           <span class="text-gray-900">${goal}</span>
+         </div>
+         <button onclick="deleteGoal('${category}', ${index})" class="ml-3 p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded transition-colors" title="Delete this goal">
+           <i data-lucide="trash-2" class="w-4 h-4"></i>
+         </button>
+       </div>
+     `).join('');
+   }
+   
+   function renderFlatGoals() {
+     const goalsContainer = document.getElementById('generated-goals');
+     const categorizedContainer = document.getElementById('categorized-goals');
+     
+     if (goalsContainer && categorizedContainer) {
+       goalsContainer.classList.remove('hidden');
+       categorizedContainer.classList.add('hidden');
+       
+       goalsContainer.innerHTML = currentGoals.map((goal, newIndex) => `
+         <div class="flex items-start justify-between p-4 bg-green-50 border border-green-200 rounded-lg" data-goal-index="${newIndex}">
+           <div class="flex items-start gap-3 flex-1">
+             <i data-lucide="check-circle" class="w-5 h-5 text-green-600 mt-1"></i>
+             <span class="text-green-900">${goal}</span>
+           </div>
+           <button onclick="deleteGoal(${newIndex})" class="ml-3 p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded transition-colors" title="Delete this goal">
+             <i data-lucide="trash-2" class="w-4 h-4"></i>
+           </button>
+         </div>
+       `).join('');
+     }
+     
+     // Re-initialize Lucide icons
+     if (typeof lucide !== 'undefined') {
+       lucide.createIcons();
+     }
+   }
+   
+   function updateGoalCounts() {
+     const coreCount = (window.categorizedGoals?.core_goals || []).length;
+     const collabCount = (window.categorizedGoals?.collaboration_goals || []).length;
+     const reflectionCount = (window.categorizedGoals?.reflection_goals || []).length;
+     
+     document.querySelector('.core-goals .goal-count').textContent = coreCount;
+     document.querySelector('.collaboration-goals .goal-count').textContent = collabCount;
+     document.querySelector('.reflection-goals .goal-count').textContent = reflectionCount;
+   }
+   
+   function toggleCategory(category) {
+     const container = document.querySelector(`.${category}-goals .goals-container`);
+     const icon = document.querySelector(`.${category}-goals .toggle-icon`);
+     
+     if (container && icon) {
+       container.classList.toggle('hidden');
+       icon.classList.toggle('rotated');
+     }
+   }
+   
+   document.addEventListener('DOMContentLoaded', function() {
+     // Template option selection
+     document.querySelectorAll('.template-option').forEach(button => {
+       button.addEventListener('click', function() {
+         // Remove selection from siblings
+         this.parentElement.querySelectorAll('.template-option').forEach(btn => {
+           btn.classList.remove('border-green-500', 'bg-green-50');
+           btn.classList.add('border-border');
+         });
+         
+         // Select this option
+         this.classList.remove('border-border');
+         this.classList.add('border-green-500', 'bg-green-50');
+         
+         // Enable next button
+         const nextButton = document.getElementById(`next-step-${currentStep}`);
+         if (nextButton) {
+           nextButton.disabled = false;
+         }
+       });
+     });
+     
+     // Next step buttons
+     document.getElementById('next-step-1').addEventListener('click', () => {
+       const selected = document.querySelector('#step-1 .template-option.border-green-500');
+       if (selected) {
+         answers.business_type = selected.dataset.value;
+         showStep(2);
+       } else {
+         showError('Please select a business type before continuing');
+       }
+     });
+     
+     document.getElementById('next-step-2').addEventListener('click', () => {
+       const selected = document.querySelector('#step-2 .template-option.border-green-500');
+       if (selected) {
+         answers.team_structure = selected.dataset.value;
+         showStep(3);
+       } else {
+         showError('Please select a team size before continuing');
+       }
+     });
+     
+     document.getElementById('next-step-3').addEventListener('click', async () => {
+       const selected = document.querySelector('#step-3 .template-option.border-green-500');
+       if (selected) {
+         answers.focus_area = selected.dataset.value;
+         await generateGoals();
+         // Only proceed to step 4 if goals were generated successfully
+         if (currentGoals.length > 0) {
+           showStep(4);
+         }
+       } else {
+         showError('Please select a focus area before continuing');
+       }
+     });
+     
+     // Back buttons
+     document.getElementById('back-step-2').addEventListener('click', () => showStep(1));
+     document.getElementById('back-step-3').addEventListener('click', () => showStep(2));
+     document.getElementById('back-step-4').addEventListener('click', () => showStep(3));
+     
+     // Create room button
+     document.getElementById('create-room').addEventListener('click', createRoom);
+    
+    function showStep(step) {
+      // Hide all steps
+      document.querySelectorAll('[id^="step-"]').forEach(el => el.classList.add('hidden'));
+      
+      // Show current step
+      document.getElementById(`step-${step}`).classList.remove('hidden');
+      currentStep = step;
+      
+      // Reset next button state
+      const nextButton = document.getElementById(`next-step-${step}`);
+      if (nextButton) {
+        nextButton.disabled = true;
+      }
+    }
+    
+    async function generateGoals() {
+      if (isGeneratingGoals) return;
+      
+      try {
+        isGeneratingGoals = true;
+        setLoadingState('next-step-3', true, 'Generating Goals...');
+        
+        // Validate answers before sending
+        if (!answers.business_type || !answers.team_structure || !answers.focus_area) {
+          throw new Error('Please complete all previous steps before generating goals');
+        }
+        
+        const response = await fetch('{{ url_for("room.room_templates.generate_template_goals", template_type="business-hub") }}', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify({ answers: answers })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success && result.goals) {
+          // Check if we got categorized goals (new format) or flat goals (legacy format)
+          if (typeof result.goals === 'object' && result.goals.core_goals) {
+            // New categorized format
+            window.categorizedGoals = result.goals;
+            
+            // Also store flat goals for backward compatibility
+            currentGoals = [];
+            currentGoals.push(...(result.goals.core_goals || []));
+            currentGoals.push(...(result.goals.collaboration_goals || []));
+            currentGoals.push(...(result.goals.reflection_goals || []));
+            
+            showSuccess(`Generated ${currentGoals.length} business goals successfully!`);
+          } else if (Array.isArray(result.goals)) {
+            // Legacy flat format
+            currentGoals = result.goals;
+            window.categorizedGoals = null;
+            
+            showSuccess(`Generated ${currentGoals.length} business goals successfully!`);
+          } else {
+            throw new Error('Invalid goals format received from server');
+          }
+          
+          // Render the goals
+          renderGoals();
+        } else {
+          throw new Error(result.error || 'Invalid response from server');
+        }
+        
+      } catch (error) {
+        console.error('Error generating goals:', error);
+        showError(error.message || 'Failed to generate goals. Please try again.');
+      } finally {
+        isGeneratingGoals = false;
+        setLoadingState('next-step-3', false);
+      }
+    }
+    
+         async function createRoom() {
+       if (isCreatingRoom) return;
+       
+       try {
+         isCreatingRoom = true;
+         setLoadingState('create-room', true, 'Creating Room...');
+         
+         // Validate required data
+         if (!answers.business_type || !answers.team_structure || !answers.focus_area) {
+           throw new Error('Please complete all steps before creating the room');
+         }
+         
+         const customGoals = document.getElementById('custom-goals').value;
+         
+         // Combine current goals with custom goals
+         let finalGoals = currentGoals.join('\n');
+         if (customGoals.trim()) {
+           finalGoals += '\n' + customGoals.trim();
+         }
+         
+         // Validate that we have at least some goals
+         if (!finalGoals.trim()) {
+           throw new Error('Please generate goals or add your own goals before creating the room');
+         }
+         
+         // Create room name and description
+         const roomName = `${answers.business_type.charAt(0).toUpperCase() + answers.business_type.slice(1)} Business Hub`;
+         const roomDescription = `A professional business collaboration space for ${answers.business_type} with ${answers.team_structure} team focus on ${answers.focus_area.replace('_', ' ')}.`;
+         
+         const response = await fetch('{{ url_for("room.room_templates.create_template_room", template_type="business-hub") }}', {
+           method: 'POST',
+           headers: {
+             'Content-Type': 'application/json',
+             'X-Requested-With': 'XMLHttpRequest'
+           },
+           body: JSON.stringify({
+             goals: finalGoals,
+             room_name: roomName,
+             room_description: roomDescription,
+             group_size: answers.team_structure
+           })
+         });
+         
+         if (!response.ok) {
+           const errorData = await response.json().catch(() => ({}));
+           throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+         }
+         
+         const result = await response.json();
+         
+         if (result.success && result.redirect_url) {
+           showSuccess(`Business Hub "${result.room_name}" created successfully!`);
+           
+           // Small delay to show success message before redirect
+           setTimeout(() => {
+             window.location.href = result.redirect_url;
+           }, 1000);
+         } else {
+           throw new Error(result.error || 'Failed to create room');
+         }
+         
+       } catch (error) {
+         console.error('Error creating room:', error);
+         showError(error.message || 'Failed to create room. Please try again.');
+       } finally {
+         isCreatingRoom = false;
+         setLoadingState('create-room', false);
+       }
+     }
+  });
+</script>
+{% endblock %}

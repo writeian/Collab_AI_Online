@@ -1,0 +1,1126 @@
+{% extends "base.html" %}
+{% block title %}{% if is_editing %}Edit Learning Steps - {{ room.name }}{% else %}Create New Room{% endif %}{% endblock %}
+{% block content %}
+  <!-- Main Content Container -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Navigation Breadcrumb -->
+    {% if is_editing %}
+    <div class="navigation-breadcrumb mb-6">
+      <a href="{{ url_for('room.room_crud.index') }}" class="breadcrumb-link">
+        <i data-lucide="home" class="w-4 h-4"></i>
+        Home
+      </a>
+      <span class="breadcrumb-separator">/</span>
+      <a href="{{ url_for('room.room_crud.view_room', room_id=room.id) }}" class="breadcrumb-link">
+        <i data-lucide="users" class="w-4 h-4"></i>
+        {{ room.name }}
+      </a>
+      <span class="breadcrumb-separator">/</span>
+      <span class="breadcrumb-current">Learning Steps</span>
+    </div>
+    {% endif %}
+
+            <!-- Page Header -->
+        <div class="mb-8">
+          <h1 class="text-3xl font-bold text-foreground mb-2">
+            {% if is_editing %}Edit Learning Steps{% else %}Create New Room{% endif %}
+          </h1>
+          <p class="text-muted-foreground">
+        {% if is_editing %}
+          Manage the learning steps, AI instructions, and assessment rubrics for "{{ room.name }}"
+        {% else %}
+          Set up a new collaboration space with AI-guided learning steps
+        {% endif %}
+      </p>
+    </div>
+
+    <!-- Step 1: Goals Input -->
+    <div id="step-1" class="max-w-4xl mx-auto">
+      <div class="bg-card border border-border rounded-lg p-8 shadow-lg">
+        <div class="mb-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">1</div>
+            <h2 class="text-xl font-semibold text-foreground">Define Your Learning Goals</h2>
+          </div>
+          <p class="text-muted-foreground">
+            {% if is_editing %}
+              Update the learning goals for this room. This will help refine the AI-generated learning steps and assessment rubrics.
+            {% else %}
+              Describe what you want to achieve in this room. This will help AI generate learning steps that guide students through your goals and suggest a room title.
+            {% endif %}
+          </p>
+        </div>
+
+        <form id="goals-form" class="space-y-6">
+          <div class="form-group">
+            <label for="goals" class="block text-sm font-medium text-foreground mb-2">Learning Goals *</label>
+            <textarea id="goals" name="goals" required rows="4"
+                      placeholder="e.g., To teach the steps of crafting and delivering a professional presentation"
+                      class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
+                             focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent focus:ring-offset-2
+                             placeholder:text-muted-foreground resize-none transition-all duration-200">{{ room.goals if is_editing else '' }}</textarea>
+            <p class="mt-2 text-sm text-muted-foreground">
+              {% if is_editing %}
+                Update your learning goals to refine the AI-generated content and rubrics.
+              {% else %}
+                Be specific about what you want to accomplish. Your goals will be used to generate a complete room with title, description, and learning steps.
+              {% endif %}
+            </p>
+          </div>
+
+          <!-- Template Selector -->
+          {% if not is_editing and available_templates %}
+          <div class="form-group mt-8 p-6 bg-muted/20 rounded-lg border border-border shadow-sm">
+            <label for="template-select" class="block text-sm font-medium text-foreground mb-3">Use a Template (Optional)</label>
+            <select id="template-select" name="template" 
+                    class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
+                           focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent focus:ring-offset-2
+                           transition-all duration-200">
+              <option value="">AI-Generated Steps - Let AI create custom learning steps based on your goals</option>
+              {% for template_id, template in available_templates.items() %}
+              <option value="{{ template_id }}">{{ template.name }} - {{ template.description }}</option>
+              {% endfor %}
+            </select>
+            <p class="mt-3 text-sm text-muted-foreground">
+              Choose AI-generated steps for custom learning, or select a template for proven structures.
+            </p>
+          </div>
+          {% endif %}
+
+                                  <!-- Learning Steps Management Section -->
+            <div class="learning-steps-management-section mt-8 p-6 bg-muted/30 rounded-lg border border-border">
+              <h3 class="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                <i data-lucide="{% if is_editing %}settings{% else %}sparkles{% endif %}" class="w-5 h-5 text-primary"></i>
+                {% if is_editing %}Learning Steps Management{% else %}Generate Room{% endif %}
+              </h3>
+                        
+                        <div class="space-y-4">
+                                           <!-- Edit Current Learning Steps Button -->
+                 <div class="edit-section">
+                   <button type="submit" id="generate-proposal-btn"
+                           class="w-full inline-flex items-center justify-center px-6 py-4 bg-success text-white font-medium rounded-lg hover:bg-success-hover hover:shadow-md active:shadow-sm transition-all duration-200 shadow-sm">
+                     <i data-lucide="{% if is_editing %}edit-3{% else %}sparkles{% endif %}" class="w-5 h-5 mr-2"></i>
+                     {% if is_editing %}Edit Current Learning Steps{% else %}Create Room{% endif %}
+                   </button>
+                   <p class="mt-2 text-sm text-muted-foreground text-center">
+                     {% if is_editing %}
+                       Load and modify your existing learning steps and AI instructions
+                     {% else %}
+                       Create a complete room with title, description, and learning steps
+                     {% endif %}
+                   </p>
+                 </div>
+
+                 <!-- Regenerate Learning Steps Button -->
+                 {% if is_editing %}
+                 <div class="regenerate-section">
+                   <button type="button" id="regenerate-steps-btn"
+                           class="w-full inline-flex items-center justify-center px-6 py-4 text-white font-medium rounded-lg transition-colors shadow-sm"
+                           style="background-color: #d97706 !important; border: 2px solid #d97706 !important;">
+                     <i data-lucide="refresh-cw" class="w-5 h-5 mr-2"></i>
+                     Generate New Learning Steps
+                   </button>
+                   <p class="mt-2 text-sm text-muted-foreground text-center">
+                     Create completely new learning steps based on your current goals
+                   </p>
+                 </div>
+                 {% endif %}
+                        </div>
+                        
+                        <!-- Cancel Button -->
+                        <div class="mt-6 pt-4 border-t border-border">
+                          <a href="{% if is_editing %}{{ url_for('room.room_crud.view_room', room_id=room.id) }}{% else %}{{ url_for('room.room_crud.index') }}{% endif %}" 
+                             class="w-full inline-flex items-center justify-center px-6 py-4 bg-white text-black font-medium rounded-lg hover:bg-gray-50 hover:shadow-md active:shadow-sm transition-all duration-200 shadow-sm border border-gray-300">
+                            <i data-lucide="x" class="w-5 h-5 mr-2"></i>
+                            Cancel
+                          </a>
+                        </div>
+                      </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Step 2: AI Proposal and Learning Steps Management (Hidden initially) -->
+    <div id="step-2" class="max-w-4xl mx-auto hidden">
+      <div class="bg-card border border-border rounded-lg p-8">
+        <div class="mb-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">2</div>
+            <h2 class="text-xl font-semibold text-foreground">
+              {% if is_editing %}Learning Steps Management{% else %}AI Room Proposal{% endif %}
+            </h2>
+          </div>
+          <p class="text-muted-foreground">
+            {% if is_editing %}
+              Manage the learning steps, AI instructions, and assessment rubrics for your room.
+            {% else %}
+              Based on your goals, here's what I suggest for your room:
+            {% endif %}
+          </p>
+        </div>
+
+        <!-- Room Title and Description -->
+        <div class="mb-8">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label for="room-name" class="block text-sm font-medium text-foreground mb-2">Room Title</label>
+              <input type="text" id="room-name" name="name" required
+                     value="{{ room.name if is_editing else '' }}"
+                     class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
+                            focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+            </div>
+            <div>
+              <label for="room-description" class="block text-sm font-medium text-foreground mb-2">Room Description (Optional)</label>
+              <textarea id="room-description" name="description" rows="2"
+                        placeholder="Brief description of what this room is for..."
+                        class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
+                               focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                               placeholder:text-muted-foreground resize-none">{{ room.description if is_editing else '' }}</textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Learning Steps Management -->
+        <div class="mb-8">
+          <h3 class="text-lg font-semibold text-foreground mb-4">Learning Steps</h3>
+          <div id="learning-steps-container" class="space-y-6">
+            <!-- Learning steps will be populated here -->
+          </div>
+        </div>
+
+        <!-- Refinement Chat -->
+        <div class="mb-8">
+          <h3 class="text-lg font-semibold text-foreground mb-4">Refine Your Learning Steps</h3>
+          <p class="text-muted-foreground mb-4">Not quite right? Chat with me to improve the title, description, or learning steps:</p>
+          
+          <div class="bg-muted/20 rounded-lg p-4 mb-4">
+            <div id="refinement-chat" class="space-y-4 max-h-64 overflow-y-auto">
+              <!-- Chat messages will appear here -->
+            </div>
+          </div>
+          
+          <div class="flex gap-2">
+            <input type="text" id="refinement-input" placeholder="e.g., 'Make the title more specific' or 'Add a learning step for practicing delivery'"
+                   class="flex-1 px-3 py-2 border border-border rounded-md bg-background text-foreground 
+                          focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                          placeholder:text-muted-foreground">
+            <button id="send-refinement-btn" class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
+              Send
+            </button>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex gap-3 pt-4">
+          <button type="button" id="save-room-btn"
+                  class="inline-flex items-center px-6 py-3 bg-success text-white font-medium rounded-lg hover:bg-success-hover transition-colors">
+            <i data-lucide="{% if is_editing %}save{% else %}check{% endif %}" class="w-5 h-5 mr-2"></i>
+            {% if is_editing %}Save Room & All Changes{% else %}Create Room{% endif %}
+          </button>
+
+          <button type="button" id="back-to-goals-btn"
+                  class="px-6 py-3 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-gray-100 transition-colors">
+            Back to Goals
+          </button>
+          <a href="{% if is_editing %}{{ url_for('room.room_crud.view_room', room_id=room.id) }}{% else %}{{ url_for('room.room_crud.index') }}{% endif %}" 
+             class="px-6 py-3 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-gray-100 transition-colors">
+            Cancel
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden form for final submission -->
+    <form id="final-room-form" method="POST" class="hidden">
+      <input type="hidden" id="final-name" name="name" value="">
+      <input type="hidden" id="final-description" name="description" value="">
+      <input type="hidden" id="final-goals" name="goals" value="">
+      <input type="hidden" id="final-modes" name="refined_modes" value="">
+    </form>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const step1 = document.getElementById('step-1');
+      const step2 = document.getElementById('step-2');
+      const goalsForm = document.getElementById('goals-form');
+      const generateBtn = document.getElementById('generate-proposal-btn');
+      const backToGoalsBtn = document.getElementById('back-to-goals-btn');
+      const saveRoomBtn = document.getElementById('save-room-btn');
+      const finalForm = document.getElementById('final-room-form');
+      
+      const roomNameInput = document.getElementById('room-name');
+      const roomDescriptionInput = document.getElementById('room-description');
+      const goalsInput = document.getElementById('goals');
+      const learningStepsContainer = document.getElementById('learning-steps-container');
+      const refinementChat = document.getElementById('refinement-chat');
+      const refinementInput = document.getElementById('refinement-input');
+      const sendRefinementBtn = document.getElementById('send-refinement-btn');
+      const templateSelect = document.getElementById('template-select');
+      
+      // Template selection functionality
+      if (templateSelect) {
+        templateSelect.addEventListener('change', function() {
+          const selectedTemplate = this.value;
+          if (selectedTemplate) {
+            // Auto-populate goals based on selected template
+            const templateGoals = {
+              'academic_essay': 'To master academic research essay writing through a structured 10-step process, including topic exploration, research methodology, evidence integration, and proper citation practices.',
+              'study-group': 'To create an effective collaborative learning environment where students can work together to understand complex topics, share knowledge, and support each other\'s academic growth.',
+              'business-hub': 'To develop entrepreneurial skills and business acumen through collaborative projects, market analysis, strategic planning, and professional networking opportunities.',
+              'creative-studio': 'To foster creative expression and artistic collaboration, enabling students to explore design thinking, develop artistic skills, and create innovative projects together.',
+              'writing-workshop': 'To improve writing skills through structured workshops, peer feedback, and collaborative writing projects that enhance communication and creative expression.',
+              'learning-lab': 'To develop practical skills through hands-on learning experiences, experimentation, and iterative improvement in a supportive collaborative environment.',
+              'community-space': 'To build meaningful connections and foster community engagement through networking, collaborative projects, and shared learning experiences.'
+            };
+            
+            if (templateGoals[selectedTemplate]) {
+              goalsInput.value = templateGoals[selectedTemplate];
+              // Trigger input event to update any validation or UI state
+              goalsInput.dispatchEvent(new Event('input', { bubbles: true }));
+              
+              // Add visual feedback
+              goalsInput.style.borderColor = '#10b981';
+              goalsInput.style.backgroundColor = '#f0fdf4';
+              setTimeout(() => {
+                goalsInput.style.borderColor = '';
+                goalsInput.style.backgroundColor = '';
+              }, 2000);
+            }
+          } else {
+            // Clear goals when "AI-Generated Steps" is selected
+            goalsInput.value = '';
+            goalsInput.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        });
+      }
+      
+      window.currentModes = [];
+      let conversationId = null;
+      let currentGoals = '';
+      let isEditing = {{ 'true' if is_editing else 'false' }};
+      let roomId = {{ room.id if is_editing else 'null' }};
+      let savedRubrics = {{ saved_rubrics|tojson|safe if is_editing else '{}' }};
+
+      // If editing, load existing learning steps
+      if (isEditing) {
+        loadExistingLearningSteps();
+      }
+
+      // Regenerate Learning Steps button (only in editing mode)
+      const regenerateStepsBtn = document.getElementById('regenerate-steps-btn');
+      if (regenerateStepsBtn) {
+        regenerateStepsBtn.addEventListener('click', async function() {
+          if (!confirm('This will generate new learning steps based on your current goals. Do you want to continue?')) {
+            return;
+          }
+          
+          regenerateStepsBtn.disabled = true;
+          regenerateStepsBtn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 mr-2 animate-spin"></i>Regenerating...';
+          
+          try {
+            const response = await fetch(`/room/${roomId}/regenerate-learning-steps`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+              // Apply new learning steps immediately
+              window.currentModes = result.new_modes;
+              displayLearningSteps(window.currentModes);
+              
+              // Show success message
+              addChatMessage('AI', `Generated ${result.new_modes.length} new learning steps based on your current goals: "${goalsInput.value}". You can now refine them further using the chat below.`);
+              
+              // Initialize Lucide icons
+              lucide.createIcons();
+              
+              // Ensure step 2 is visible (important for mobile)
+              step1.classList.add('hidden');
+              step2.classList.remove('hidden');
+              
+              // Scroll to the learning steps section for mobile
+              step2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+              alert('Error: ' + result.error);
+            }
+          } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred while regenerating learning steps.');
+          } finally {
+            regenerateStepsBtn.disabled = false;
+            regenerateStepsBtn.innerHTML = '<i data-lucide="refresh-cw" class="w-5 h-5 mr-2"></i>Regenerate Learning Steps';
+          }
+        });
+      }
+
+      // Step 1: Generate proposal from goals
+      goalsForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        console.log('Form submitted - mobile debug');
+        
+        const goals = goalsInput.value.trim();
+        if (!goals) return;
+        
+        currentGoals = goals;
+        generateBtn.disabled = true;
+        generateBtn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 mr-2 animate-spin"></i>Generating...';
+        
+        try {
+          if (isEditing) {
+            console.log('Editing mode - loading existing learning steps');
+            // For editing mode, use the existing room's learning steps
+            const existingModes = {{ existing_modes|tojson if existing_modes else '[]' }};
+            window.currentModes = existingModes;
+            
+            // Populate the form with existing data
+            roomNameInput.value = '{{ room.name if is_editing else "" }}';
+            roomDescriptionInput.value = '{{ room.description if is_editing else "" }}';
+            
+            // Display existing learning steps
+            displayLearningSteps(window.currentModes);
+            
+            // Initialize Lucide icons
+            lucide.createIcons();
+            
+            // Show step 2
+            step1.classList.add('hidden');
+            step2.classList.remove('hidden');
+            
+            // Add initial message
+            addChatMessage('AI', 'I\'ve loaded your existing learning steps. You can refine them using the chat below.');
+            
+          } else {
+            // For new room creation, generate proposal
+            // Get selected template from dropdown
+            const selectedTemplate = templateSelect ? templateSelect.value : '';
+            
+            const response = await fetch('/room/generate-room-proposal', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ 
+                goals: goals,
+                template: selectedTemplate
+              })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+              // Populate the proposal
+              roomNameInput.value = result.room_title;
+              roomDescriptionInput.value = result.room_description || '';
+              window.currentModes = result.modes;
+              conversationId = result.conversation_id;
+              
+              // Display learning steps
+              displayLearningSteps(window.currentModes);
+              
+              // Initialize Lucide icons
+              lucide.createIcons();
+              
+              // Show step 2
+              step1.classList.add('hidden');
+              step2.classList.remove('hidden');
+              
+              // Add initial AI message
+              addChatMessage('AI', result.ai_message);
+            } else {
+              alert('Error: ' + result.error);
+            }
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          alert('An error occurred while generating the proposal.');
+        } finally {
+          generateBtn.disabled = false;
+          generateBtn.innerHTML = '<i data-lucide="sparkles" class="w-5 h-5 mr-2"></i>' + (isEditing ? 'Update Learning Steps' : 'Generate Room Proposal');
+        }
+      });
+
+      // Add mobile-specific touch event handling
+      generateBtn.addEventListener('touchstart', function(e) {
+        console.log('Touch start on generate button - mobile debug');
+      });
+      
+      generateBtn.addEventListener('touchend', function(e) {
+        console.log('Touch end on generate button - mobile debug');
+      });
+
+      // Mobile-specific improvements
+      if ('ontouchstart' in window) {
+        console.log('Mobile device detected - applying mobile optimizations');
+        
+        // Ensure buttons have proper touch targets
+        const buttons = document.querySelectorAll('button');
+        buttons.forEach(btn => {
+          btn.style.minHeight = '44px'; // iOS recommended minimum
+          btn.style.minWidth = '44px';
+        });
+        
+        // Add mobile-specific form handling
+        goalsForm.addEventListener('touchend', function(e) {
+          console.log('Mobile form touch event - mobile debug');
+        });
+      }
+
+      // Back to goals button
+      backToGoalsBtn.addEventListener('click', function() {
+        step2.classList.add('hidden');
+        step1.classList.remove('hidden');
+      });
+
+      // Save/Create room button
+      saveRoomBtn.addEventListener('click', function() {
+        if (isEditing) {
+          saveRoomChanges();
+        } else {
+          createRoom();
+        }
+      });
+
+
+
+      // Refinement chat functionality
+      sendRefinementBtn.addEventListener('click', sendRefinement);
+      refinementInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          sendRefinement();
+        }
+      });
+
+      function loadExistingLearningSteps() {
+        // Load existing learning steps for editing mode
+        console.log('Loading existing learning steps for room:', roomId);
+        
+        // Get existing modes from the template
+        const existingModesData = {{ existing_modes|tojson|safe if is_editing else '[]' }};
+        window.currentModes = existingModesData;
+        
+        // Display the learning steps
+        displayLearningSteps(window.currentModes);
+        
+        // Show step 2 (learning steps management)
+        step1.classList.add('hidden');
+        step2.classList.remove('hidden');
+      }
+
+
+
+      function displayLearningSteps(modes) {
+        // Update global currentModes variable
+        window.currentModes = modes;
+        
+        learningStepsContainer.innerHTML = '';
+        
+        modes.forEach((mode, index) => {
+          const stepElement = createLearningStepElement(mode, index);
+          learningStepsContainer.appendChild(stepElement);
+        });
+      }
+
+      function createLearningStepElement(mode, index) {
+        const stepDiv = document.createElement('div');
+        stepDiv.className = 'learning-step-card bg-muted/20 rounded-lg p-6 border border-border';
+        stepDiv.innerHTML = `
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="text-lg font-semibold text-foreground">${mode.label}</h4>
+            <span class="text-sm text-muted-foreground bg-background px-2 py-1 rounded">${mode.key}</span>
+          </div>
+          
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-foreground mb-2">AI Instructions:</label>
+            <textarea class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
+                           focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none" 
+                      rows="4" data-mode-index="${index}" data-field="prompt">${mode.prompt}</textarea>
+          </div>
+          
+          <!-- Assessment Rubric Section -->
+          <div class="rubric-section">
+            <div class="flex items-center justify-between mb-3">
+              <h5 class="text-md font-medium text-foreground">Assessment Rubric</h5>
+              <button type="button" class="text-sm text-primary hover:text-primary/80" 
+                      onclick="toggleRubric(${index})">
+                📋 Toggle Rubric
+              </button>
+            </div>
+            
+            <div class="rubric-content hidden" id="rubric-content-${index}">
+              <div class="text-sm text-muted-foreground mb-3">
+                The rubric helps determine when students are ready to progress to the next learning step.
+              </div>
+              
+              <!-- Mobile Accordion Rubric Structure -->
+              <div class="rubric-accordion" id="rubric-accordion-${index}">
+                <!-- Rubric criteria will be populated here -->
+              </div>
+              
+
+            </div>
+          </div>
+        `;
+        
+        // Populate rubric with default template
+        setTimeout(() => {
+          populateRubricTemplate(index, mode.key);
+        }, 100);
+        
+        return stepDiv;
+      }
+
+      function sendRefinement() {
+        const message = refinementInput.value.trim();
+        if (!message) return;
+        
+        addChatMessage('User', message);
+        refinementInput.value = '';
+        
+        // Send refinement request
+        sendRefinementRequest(message);
+      }
+
+      function sendRefinementRequest(message) {
+        const endpoint = isEditing ? `/room/${roomId}/refine-room-proposal` : '/room/refine-room-proposal';
+        
+        fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            message: message,
+            conversation_id: conversationId,
+            current_modes: window.currentModes,
+            current_room_title: roomNameInput.value,
+            current_room_description: roomDescriptionInput.value
+          })
+        })
+        .then(response => response.json())
+        .then(result => {
+          if (result.success) {
+            // Apply changes to the interface
+            if (result.room_title && result.room_title !== roomNameInput.value) {
+              roomNameInput.value = result.room_title;
+            }
+            if (result.room_description && result.room_description !== roomDescriptionInput.value) {
+              roomDescriptionInput.value = result.room_description;
+            }
+            if (result.modes && JSON.stringify(result.modes) !== JSON.stringify(window.currentModes)) {
+              console.log('AI applied new modes:', result.modes);
+              window.currentModes = result.modes;
+              displayLearningSteps(window.currentModes);
+            }
+            
+            // Add AI message to chat
+            addChatMessage('AI', result.ai_message);
+            
+            // Show success feedback if changes were applied
+            if (result.changes_applied) {
+              showEditFeedback('Changes applied successfully!', 'success');
+            }
+            
+            // Reinitialize Lucide icons for new content
+            lucide.createIcons();
+          } else {
+            addChatMessage('AI', 'Error: ' + result.error);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          addChatMessage('AI', 'An error occurred while processing your request.');
+        });
+      }
+
+      function addChatMessage(sender, message) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'flex gap-2';
+        messageDiv.innerHTML = `
+          <div class="font-medium text-sm">${sender}:</div>
+          <div class="text-sm">${message}</div>
+        `;
+        refinementChat.appendChild(messageDiv);
+        refinementChat.scrollTop = refinementChat.scrollHeight;
+      }
+
+      function saveRoomChanges() {
+        // Collect all the data and save
+        console.log('Saving room changes with currentModes:', window.currentModes);
+        const roomData = {
+          name: roomNameInput.value,
+          description: roomDescriptionInput.value,
+          goals: goalsInput.value,
+          modes: window.currentModes
+        };
+        
+        // Save room changes
+        fetch(`/room/${roomId}/update-learning-steps`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(roomData)
+        })
+        .then(response => response.json())
+        .then(result => {
+          if (result.success) {
+            alert('Room updated successfully!');
+            window.location.href = `/room/${roomId}`;
+          } else {
+            alert('Error: ' + result.error);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred while saving changes.');
+        });
+      }
+
+      function createRoom() {
+        // Set final form values
+        document.getElementById('final-name').value = roomNameInput.value;
+        document.getElementById('final-description').value = roomDescriptionInput.value;
+        document.getElementById('final-goals').value = goalsInput.value;
+        document.getElementById('final-modes').value = JSON.stringify(window.currentModes);
+        
+        // Submit the form
+        finalForm.submit();
+      }
+    });
+
+    // Global variables for rubric management
+    window.isEditing = false;
+    window.savedRubrics = {};
+    window.currentModes = [];
+    
+    // Global functions for rubric management
+    window.toggleRubric = function(modeIndex) {
+      const rubricContent = document.getElementById(`rubric-content-${modeIndex}`);
+      
+      if (!rubricContent) {
+        console.error(`Rubric content element not found for mode ${modeIndex}`);
+        return;
+      }
+      
+      // Check if element has 'hidden' class by looking at the actual class string
+      const hasHiddenClass = rubricContent.className.includes('hidden');
+      
+      if (hasHiddenClass) {
+        rubricContent.classList.remove('hidden');
+        rubricContent.style.display = 'block';
+        rubricContent.style.height = 'auto';
+        rubricContent.style.overflow = 'visible';
+        
+        // Check if rubric content is empty and populate if needed
+        const rubricAccordion = document.getElementById(`rubric-accordion-${modeIndex}`);
+        if (rubricAccordion && rubricAccordion.children.length === 0) {
+          // Get the step key from the current modes
+          const currentMode = currentModes[modeIndex];
+          if (currentMode && currentMode.key) {
+            populateRubricTemplate(modeIndex, currentMode.key);
+          }
+        }
+      } else {
+        rubricContent.classList.add('hidden');
+        rubricContent.style.display = 'none';
+      }
+    };
+
+    // Populate rubric with default template or saved data
+    function populateRubricTemplate(modeIndex, stepKey) {
+      const rubricAccordion = document.getElementById(`rubric-accordion-${modeIndex}`);
+      if (!rubricAccordion) {
+        console.error(`Rubric accordion not found for mode ${modeIndex}`);
+        return;
+      }
+      
+      // Check if we have saved rubric data for this step
+      let template;
+      if (typeof isEditing !== 'undefined' && isEditing && typeof savedRubrics !== 'undefined' && savedRubrics && savedRubrics[stepKey]) {
+        template = savedRubrics[stepKey];
+      } else {
+        // Use default rubric template based on step key
+        template = getDefaultRubricTemplate(stepKey);
+      }
+      
+      if (!template || !Array.isArray(template)) {
+        console.error(`Invalid template for ${stepKey}:`, template);
+        return;
+      }
+      const html = template.map((criterion, criterionIndex) => `
+        <div class="criterion-accordion bg-background border border-border rounded-lg mb-3">
+          <button class="criterion-header w-full p-4 text-left flex items-center justify-between hover:bg-muted/50 transition-colors"
+                  onclick="toggleCriterion(${modeIndex}, ${criterionIndex})">
+            <div class="flex items-center gap-3">
+              <i data-lucide="chevron-right" class="w-4 h-4 transition-transform" id="criterion-icon-${modeIndex}-${criterionIndex}"></i>
+              <span class="font-medium">${criterion.name}</span>
+            </div>
+            <span class="text-sm text-muted-foreground">Weight: ${(criterion.weight * 100).toFixed(0)}%</span>
+          </button>
+          
+          <div class="criterion-content hidden p-4 pt-0" id="criterion-content-${modeIndex}-${criterionIndex}">
+            <div class="space-y-4">
+              ${criterion.levels.map((level, levelIndex) => `
+                <div class="level-item bg-muted/30 rounded-lg p-3">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="font-medium text-sm">${level.level} (Score: ${level.score})</span>
+                    <button type="button" class="text-primary hover:text-primary/80 text-sm"
+                            onclick="editLevel(${modeIndex}, ${criterionIndex}, ${levelIndex})">
+                      Edit
+                    </button>
+                  </div>
+                  <div class="level-content" id="level-content-${modeIndex}-${criterionIndex}-${levelIndex}">
+                    <div class="view-mode">
+                      <div class="level-description text-sm text-muted-foreground">
+                        ${level.description}
+                      </div>
+                    </div>
+                    <div class="edit-mode hidden">
+                      <textarea class="level-description-edit w-full p-2 text-sm border border-gray-300 rounded mb-2" rows="3" placeholder="Enter level description">${level.description}</textarea>
+                      <div class="flex gap-2">
+                        <button type="button" class="bg-primary text-primary-foreground px-3 py-1 rounded text-sm hover:bg-primary/90 transition-colors"
+                                onclick="saveLevelEdit(${modeIndex}, ${criterionIndex}, ${levelIndex})">
+                          Done
+                        </button>
+                        <button type="button" class="bg-secondary text-secondary-foreground px-3 py-1 rounded text-sm hover:bg-gray-100 transition-colors"
+                                onclick="cancelLevelEdit(${modeIndex}, ${criterionIndex}, ${levelIndex})">
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `).join('');
+      
+      rubricAccordion.innerHTML = html;
+    }
+
+    // Get default rubric template
+    function getDefaultRubricTemplate(stepKey) {
+      // Default rubric templates with 4 criteria, each with 25% weight
+      const templates = {
+        'explore': [
+          {
+            name: 'Topic Exploration',
+            weight: 0.25,
+            levels: [
+              { level: 'Emerging', score: 1, description: 'Basic understanding of the topic area' },
+              { level: 'Developing', score: 2, description: 'Some exploration of topic with basic questions' },
+              { level: 'Proficient', score: 3, description: 'Good exploration with focused questions' },
+              { level: 'Exemplary', score: 4, description: 'Deep exploration with insightful questions' }
+            ]
+          },
+          {
+            name: 'Personal Connection',
+            weight: 0.25,
+            levels: [
+              { level: 'Emerging', score: 1, description: 'Shows basic interest in topic' },
+              { level: 'Developing', score: 2, description: 'Demonstrates some personal motivation' },
+              { level: 'Proficient', score: 3, description: 'Clear personal connection established' },
+              { level: 'Exemplary', score: 4, description: 'Strong intrinsic motivation with clear personal stakes' }
+            ]
+          },
+          {
+            name: 'Question Development',
+            weight: 0.25,
+            levels: [
+              { level: 'Emerging', score: 1, description: 'Basic questions about the topic' },
+              { level: 'Developing', score: 2, description: 'More specific questions emerging' },
+              { level: 'Proficient', score: 3, description: 'Focused, researchable questions' },
+              { level: 'Exemplary', score: 4, description: 'Sharp, specific, researchable questions' }
+            ]
+          },
+          {
+            name: 'Significance Assessment',
+            weight: 0.25,
+            levels: [
+              { level: 'Emerging', score: 1, description: 'Basic awareness of topic importance' },
+              { level: 'Developing', score: 2, description: 'Some understanding of significance' },
+              { level: 'Proficient', score: 3, description: 'Good understanding of broader significance' },
+              { level: 'Exemplary', score: 4, description: 'Deep understanding of significance and implications' }
+            ]
+          }
+        ],
+        'focus': [
+          {
+            name: 'Question Formulation',
+            weight: 0.25,
+            levels: [
+              { level: 'Emerging', score: 1, description: 'Broad, general questions' },
+              { level: 'Developing', score: 2, description: 'Somewhat focused questions' },
+              { level: 'Proficient', score: 3, description: 'Focused, researchable questions' },
+              { level: 'Exemplary', score: 4, description: 'Sharp, specific, researchable questions' }
+            ]
+          },
+          {
+            name: 'Scope Definition',
+            weight: 0.25,
+            levels: [
+              { level: 'Emerging', score: 1, description: 'Very broad scope' },
+              { level: 'Developing', score: 2, description: 'Some scope narrowing' },
+              { level: 'Proficient', score: 3, description: 'Well-defined scope' },
+              { level: 'Exemplary', score: 4, description: 'Precisely defined, manageable scope' }
+            ]
+          },
+          {
+            name: 'Researchability',
+            weight: 0.25,
+            levels: [
+              { level: 'Emerging', score: 1, description: 'Question may not be researchable' },
+              { level: 'Developing', score: 2, description: 'Some researchability concerns' },
+              { level: 'Proficient', score: 3, description: 'Good researchable question' },
+              { level: 'Exemplary', score: 4, description: 'Highly researchable question' }
+            ]
+          },
+          {
+            name: 'Originality',
+            weight: 0.25,
+            levels: [
+              { level: 'Emerging', score: 1, description: 'Very common question' },
+              { level: 'Developing', score: 2, description: 'Some originality' },
+              { level: 'Proficient', score: 3, description: 'Good originality' },
+              { level: 'Exemplary', score: 4, description: 'Highly original question' }
+            ]
+          }
+        ],
+        'context': [
+          {
+            name: 'Source Evaluation',
+            weight: 0.25,
+            levels: [
+              { level: 'Emerging', score: 1, description: 'Basic source identification' },
+              { level: 'Developing', score: 2, description: 'Some evaluation of source quality' },
+              { level: 'Proficient', score: 3, description: 'Good source evaluation and selection' },
+              { level: 'Exemplary', score: 4, description: 'Excellent source evaluation and synthesis' }
+            ]
+          },
+          {
+            name: 'Information Literacy',
+            weight: 0.25,
+            levels: [
+              { level: 'Emerging', score: 1, description: 'Basic information gathering' },
+              { level: 'Developing', score: 2, description: 'Some use of academic sources' },
+              { level: 'Proficient', score: 3, description: 'Good use of diverse sources' },
+              { level: 'Exemplary', score: 4, description: 'Excellent information literacy' }
+            ]
+          },
+          {
+            name: 'Critical Analysis',
+            weight: 0.25,
+            levels: [
+              { level: 'Emerging', score: 1, description: 'Basic information acceptance' },
+              { level: 'Developing', score: 2, description: 'Some critical thinking' },
+              { level: 'Proficient', score: 3, description: 'Good critical analysis' },
+              { level: 'Exemplary', score: 4, description: 'Excellent critical analysis' }
+            ]
+          },
+          {
+            name: 'Context Integration',
+            weight: 0.25,
+            levels: [
+              { level: 'Emerging', score: 1, description: 'Basic context awareness' },
+              { level: 'Developing', score: 2, description: 'Some context integration' },
+              { level: 'Proficient', score: 3, description: 'Good context integration' },
+              { level: 'Exemplary', score: 4, description: 'Excellent context integration' }
+            ]
+          }
+        ]
+      };
+      
+      return templates[stepKey] || templates['explore'];
+    }
+
+    // Toggle criterion visibility
+    window.toggleCriterion = function(modeIndex, criterionIndex) {
+      const content = document.getElementById(`criterion-content-${modeIndex}-${criterionIndex}`);
+      const icon = document.getElementById(`criterion-icon-${modeIndex}-${criterionIndex}`);
+      
+      if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        icon.style.transform = 'rotate(90deg)';
+      } else {
+        content.classList.add('hidden');
+        icon.style.transform = 'rotate(0deg)';
+      }
+    };
+
+    // Edit level content
+    window.editLevel = function(modeIndex, criterionIndex, levelIndex) {
+      const levelContent = document.getElementById(`level-content-${modeIndex}-${criterionIndex}-${levelIndex}`);
+      const viewMode = levelContent.querySelector('.view-mode');
+      const editMode = levelContent.querySelector('.edit-mode');
+      const editButton = levelContent.querySelector('button[onclick^="editLevel"]');
+      
+      viewMode.classList.add('hidden');
+      editMode.classList.remove('hidden');
+      editButton.classList.add('hidden');
+      
+      // Focus on description textarea
+      const textarea = editMode.querySelector('.level-description-edit');
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+      }, 100);
+    };
+
+    // Save level edit (auto-saves to database)
+    window.saveLevelEdit = function(modeIndex, criterionIndex, levelIndex) {
+      const levelContent = document.getElementById(`level-content-${modeIndex}-${criterionIndex}-${levelIndex}`);
+      const viewMode = levelContent.querySelector('.view-mode');
+      const editMode = levelContent.querySelector('.edit-mode');
+      const editButton = levelContent.querySelector('button[onclick^="editLevel"]');
+      
+      const descriptionTextarea = editMode.querySelector('.level-description-edit');
+      const newDescription = descriptionTextarea.value.trim();
+      
+      // Update the view mode content
+      const descriptionDiv = viewMode.querySelector('.level-description');
+      descriptionDiv.textContent = newDescription;
+      
+      // Switch back to view mode
+      viewMode.classList.remove('hidden');
+      editMode.classList.add('hidden');
+      editButton.classList.remove('hidden');
+      
+      // Auto-save the entire rubric to database
+      if (isEditing && roomId) {
+        saveRubric(modeIndex);
+      }
+      
+      // Show success feedback
+      showEditFeedback('Level updated and saved!', 'success');
+    };
+
+    // Cancel level edit
+    window.cancelLevelEdit = function(modeIndex, criterionIndex, levelIndex) {
+      const levelContent = document.getElementById(`level-content-${modeIndex}-${criterionIndex}-${levelIndex}`);
+      const viewMode = levelContent.querySelector('.view-mode');
+      const editMode = levelContent.querySelector('.edit-mode');
+      const editButton = levelContent.querySelector('button[onclick^="editLevel"]');
+      
+      // Reset textarea value to original content
+      const descriptionDiv = viewMode.querySelector('.level-description');
+      const descriptionTextarea = editMode.querySelector('.level-description-edit');
+      
+      descriptionTextarea.value = descriptionDiv.textContent;
+      
+      // Switch back to view mode
+      viewMode.classList.remove('hidden');
+      editMode.classList.add('hidden');
+      editButton.classList.remove('hidden');
+    };
+
+    // Show edit feedback
+    function showEditFeedback(message, type) {
+      // Create a temporary feedback element
+      const feedback = document.createElement('div');
+      feedback.className = `fixed top-4 right-4 p-3 rounded-lg text-white text-sm z-50 ${
+        type === 'success' ? 'bg-green-500' : 'bg-red-500'
+      }`;
+      feedback.textContent = message;
+      
+      document.body.appendChild(feedback);
+      
+      // Remove after 3 seconds
+      setTimeout(() => {
+        feedback.remove();
+      }, 3000);
+    }
+
+    // Global function for edit feedback (accessible from window scope)
+    window.showEditFeedback = showEditFeedback;
+
+    // Save rubric
+    window.saveRubric = function(modeIndex) {
+      const rubricData = collectRubricData(modeIndex);
+      const stepKey = currentModes[modeIndex].key;
+      
+      console.log('Saving rubric for step:', stepKey, 'Data:', rubricData);
+      
+      if (isEditing && roomId) {
+        // Save to existing room
+        fetch(`/room/${roomId}/rubric/${stepKey}/update`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            criteria: rubricData
+          })
+        })
+        .then(response => response.json())
+        .then(result => {
+          if (result.success) {
+            // Silent success for auto-save (no alert)
+            console.log('Rubric auto-saved successfully');
+          } else {
+            console.error('Error saving rubric:', result.error);
+            showEditFeedback('Error saving rubric: ' + result.error, 'error');
+          }
+        })
+        .catch(error => {
+          console.error('Error saving rubric:', error);
+          showEditFeedback('Error saving rubric', 'error');
+        });
+      } else {
+        // Store for room creation
+        console.log('Rubric data stored for room creation:', rubricData);
+      }
+    };
+
+
+
+
+
+    // Collect rubric data from the DOM
+    function collectRubricData(modeIndex) {
+      const rubricAccordion = document.getElementById(`rubric-accordion-${modeIndex}`);
+      if (!rubricAccordion) return [];
+      
+      const criteria = [];
+      const criterionElements = rubricAccordion.querySelectorAll('.criterion-accordion');
+      
+      criterionElements.forEach((criterionElement, criterionIndex) => {
+        const criterionName = criterionElement.querySelector('.criterion-header span').textContent;
+        const weight = parseFloat(criterionElement.querySelector('.text-muted-foreground').textContent.replace('Weight: ', ''));
+        
+        const levels = [];
+        const levelElements = criterionElement.querySelectorAll('.level-item');
+        
+        levelElements.forEach((levelElement, levelIndex) => {
+          const levelText = levelElement.querySelector('.font-medium').textContent;
+          const levelMatch = levelText.match(/(.+) \(Score: (\d+)\)/);
+          const levelName = levelMatch ? levelMatch[1] : levelText;
+          const score = levelMatch ? parseInt(levelMatch[2]) : levelIndex + 1;
+          
+          const description = levelElement.querySelector('.level-description').textContent;
+          
+          levels.push({
+            level: levelName,
+            score: score,
+            description: description
+          });
+        });
+        
+        criteria.push({
+          name: criterionName,
+          weight: weight,
+          levels: levels
+        });
+      });
+      
+      return criteria;
+    }
+
+
+  </script>
+{% endblock %} 

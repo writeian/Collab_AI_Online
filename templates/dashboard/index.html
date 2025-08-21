@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Instructor Dashboard - AI Collab{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Instructor Dashboard</h1>
+    <p class="dashboard-subtitle">Manage your rooms and track student activity</p>
+    
+    <!-- Quick Actions -->
+    <div class="dashboard-actions">
+        <a href="{{ url_for('room.room_crud.create_room') }}" class="btn btn-primary">Create New Room</a>
+        <a href="{{ url_for('dashboard.view_prompts') }}" class="btn btn-secondary">View All Prompts</a>
+        <a href="{{ url_for('dashboard.system_instructions') }}" class="btn btn-info">Manage System Instructions</a>
+    </div>
+    
+    <!-- Room Overview -->
+    <div class="dashboard-section">
+        <h2>Your Rooms</h2>
+        
+        {% if rooms %}
+            <div class="room-grid">
+                {% for room in rooms %}
+                    <div class="room-card">
+                        <div class="room-header">
+                            <h3><a href="{{ url_for('dashboard.room_detail', room_id=room.id) }}">{{ room.name }}</a></h3>
+                            {% if room.group_size %}
+                              <span class="group-size-badge group-size-{{ room.group_size }}">
+                                {% if room.group_size == 'individual' %}👤 Individual (1 person)
+                                {% elif room.group_size == 'small' %}👥 Small Group (2-3 people)
+                                {% elif room.group_size == 'medium' %}👨‍👩‍👧‍👦 Medium Group (4-6 people)
+                                {% elif room.group_size == 'large' %}🎯 Large Group (7-10 people)
+                                {% else %}👥 {{ room.group_size|title }}{% endif %}
+                              </span>
+                            {% endif %}
+                            {% if room.description %}
+                                <p class="room-description">{{ room.description }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="room-stats">
+                            <div class="stat-item">
+                                <span class="stat-number">{{ room_stats[room.id].member_count }}</span>
+                                <span class="stat-label">Members</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number">{{ room_stats[room.id].chat_count }}</span>
+                                <span class="stat-label">Chats</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number">{{ room_stats[room.id].prompt_count }}</span>
+                                <span class="stat-label">Prompts</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number">{{ room_stats[room.id].message_count }}</span>
+                                <span class="stat-label">Messages</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number">{{ room_stats[room.id].comment_count }}</span>
+                                <span class="stat-label">Comments</span>
+                            </div>
+                        </div>
+                        
+                        <div class="room-info">
+                            <small>
+                                Created {{ room.created_at.strftime('%Y-%m-%d') }}
+                                {% if room_stats[room.id].last_activity %}
+                                    | Last activity: {{ room_stats[room.id].last_activity.strftime('%Y-%m-%d %H:%M') }}
+                                {% else %}
+                                    | No activity yet
+                                {% endif %}
+                            </small>
+                        </div>
+                        
+                        <div class="room-actions">
+                            <a href="{{ url_for('room.room_crud.view_room', room_id=room.id) }}" class="btn btn-sm btn-outline">View Room</a>
+                            <a href="{{ url_for('room.room_crud.edit_room', room_id=room.id) }}" class="btn btn-sm btn-secondary">Edit</a>
+                            <a href="{{ url_for('room.room_invitations.invite_members', room_id=room.id) }}" class="btn btn-sm btn-info">Invite</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>You don't have any rooms yet.</p>
+                <a href="{{ url_for('room.room_crud.create_room') }}" class="btn btn-primary">Create Your First Room</a>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Summary Statistics -->
+    {% if rooms %}
+        <div class="dashboard-section">
+            <h2>Summary</h2>
+            <div class="summary-stats">
+                <div class="summary-item">
+                    <h3>{{ rooms|length }}</h3>
+                    <p>Total Rooms</p>
+                </div>
+                <div class="summary-item">
+                    <h3>{{ room_stats.values()|sum(attribute='member_count') }}</h3>
+                    <p>Total Members</p>
+                </div>
+                <div class="summary-item">
+                    <h3>{{ room_stats.values()|sum(attribute='prompt_count') }}</h3>
+                    <p>Total Prompts</p>
+                </div>
+                <div class="summary-item">
+                    <h3>{{ room_stats.values()|sum(attribute='message_count') }}</h3>
+                    <p>Total Messages</p>
+                </div>
+                <div class="summary-item">
+                    <h3>{{ room_stats.values()|sum(attribute='comment_count') }}</h3>
+                    <p>Total Comments</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

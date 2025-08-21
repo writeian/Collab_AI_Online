@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics{% endblock %}
+
+{% block content %}
+<div class="analytics-container">
+    <h2>📊 Admin Analytics Dashboard</h2>
+    
+    <div class="analytics-grid">
+        <div class="stat-card">
+            <h3>Total Users</h3>
+            <div class="stat-number" id="total-users">Loading...</div>
+            <small id="recent-users">Loading...</small>
+        </div>
+        
+        <div class="stat-card">
+            <h3>Total Rooms</h3>
+            <div class="stat-number" id="total-rooms">Loading...</div>
+            <small id="recent-rooms">Loading...</small>
+        </div>
+        
+        <div class="stat-card">
+            <h3>Total Chats</h3>
+            <div class="stat-number" id="total-chats">Loading...</div>
+            <small id="recent-chats">Loading...</small>
+        </div>
+        
+        <div class="stat-card">
+            <h3>Total Messages</h3>
+            <div class="stat-number" id="total-messages">Loading...</div>
+            <small id="recent-messages">Loading...</small>
+        </div>
+        
+        <div class="stat-card">
+            <h3>Page Views</h3>
+            <div class="stat-number" id="total-views">Loading...</div>
+            <small id="recent-views">Loading...</small>
+        </div>
+    </div>
+    
+    <div class="analytics-section">
+        <h3>Most Active Users</h3>
+        <div id="active-users">Loading...</div>
+    </div>
+    
+    <div class="analytics-section">
+        <h3>Most Active Rooms</h3>
+        <div id="active-rooms">Loading...</div>
+    </div>
+    
+    <div class="analytics-section">
+        <h3>Most Popular Pages</h3>
+        <div id="popular-pages">Loading...</div>
+    </div>
+</div>
+
+<script>
+// Load comprehensive analytics data
+fetch('/analytics/admin-stats')
+    .then(response => response.json())
+    .then(data => {
+        // Update user stats
+        document.getElementById('total-users').textContent = data.users.total;
+        document.getElementById('recent-users').textContent = `${data.users.recent_7_days} new this week`;
+        
+        // Update room stats
+        document.getElementById('total-rooms').textContent = data.rooms.total;
+        document.getElementById('recent-rooms').textContent = `${data.rooms.recent_7_days} new this week`;
+        
+        // Update chat stats
+        document.getElementById('total-chats').textContent = data.chats.total;
+        document.getElementById('recent-chats').textContent = `${data.chats.recent_7_days} new this week`;
+        
+        // Update message stats
+        document.getElementById('total-messages').textContent = data.messages.total;
+        document.getElementById('recent-messages').textContent = `${data.messages.recent_7_days} new this week`;
+        
+        // Update page view stats
+        document.getElementById('total-views').textContent = data.page_views.total;
+        document.getElementById('recent-views').textContent = `${data.page_views.recent_7_days} this week`;
+        
+        // Display most active users
+        const activeUsers = document.getElementById('active-users');
+        activeUsers.innerHTML = data.most_active_users.map(user => 
+            `<div class="user-stat">
+                <span class="user-name">${user.name}</span>
+                <span class="user-count">${user.messages} messages</span>
+            </div>`
+        ).join('');
+        
+        // Display most active rooms
+        const activeRooms = document.getElementById('active-rooms');
+        activeRooms.innerHTML = data.most_active_rooms.map(room => 
+            `<div class="room-stat">
+                <span class="room-name">${room.name}</span>
+                <span class="room-count">${room.messages} messages</span>
+            </div>`
+        ).join('');
+    })
+    .catch(error => {
+        console.error('Error loading analytics:', error);
+        document.getElementById('total-users').textContent = 'Error loading data';
+    });
+
+// Also load basic page view stats
+fetch('/analytics/stats')
+    .then(response => response.json())
+    .then(data => {
+        // Display popular pages
+        const popularPages = document.getElementById('popular-pages');
+        popularPages.innerHTML = data.popular_pages.map(page => 
+            `<div class="page-stat">
+                <span class="page-name">${page.page}</span>
+                <span class="page-count">${page.count} views</span>
+            </div>`
+        ).join('');
+    })
+    .catch(error => {
+        console.error('Error loading page stats:', error);
+    });
+</script>
+
+<style>
+.analytics-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 2em;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.stat-card small {
+    color: #666;
+    font-size: 0.9em;
+}
+
+.analytics-section {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.user-stat, .room-stat, .page-stat {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.user-name, .room-name, .page-name {
+    font-weight: 500;
+}
+
+.user-count, .room-count, .page-count {
+    color: #666;
+}
+</style>
+{% endblock %} 

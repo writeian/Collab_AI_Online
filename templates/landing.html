@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Collaboration, Reimagined</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='landing.css') }}">
+</head>
+<body>
+    <div class="landing-bg"></div>
+    
+    <!-- Navigation Header -->
+    <header class="bg-card border-b border-border" style="position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo and Title -->
+                <div class="flex items-center">
+                    <a href="{{ url_for('room.room_crud.index') }}" class="text-2xl font-bold text-foreground hover:text-primary transition-colors">
+                        AI Collab
+                    </a>
+                </div>
+                
+                <!-- Navigation Links -->
+                <nav class="flex items-center space-x-8">
+                    <a href="{{ url_for('auth.login') }}" class="text-muted-foreground hover:text-foreground transition-colors">Login</a>
+                    <a href="{{ url_for('auth.register') }}" class="text-muted-foreground hover:text-foreground transition-colors">Register</a>
+                    <a href="{{ url_for('about') }}" class="text-muted-foreground hover:text-foreground transition-colors">About</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+    
+    <header class="landing-hero" style="margin-top: 4rem;">
+        <div class="hero-content">
+            <h1>AI Collaboration, Reimagined</h1>
+            <div class="badge">Non-profit & Open Source</div>
+        </div>
+    </header>
+    <main class="landing-steps">
+        <section class="landing-step">
+            <img src="{{ url_for('static', filename='Landing page image no text 1.png') }}" alt="Step 1" class="landing-img">
+            <div class="caption">
+                <p><strong>AI tools remain black boxes, positioned just outside the circle of learning and collaboration.</strong> Students and teammates step into isolated chatrooms, but their process remains invisible to instructors, leaders, and peers.</p>
+            </div>
+        </section>
+        <section class="landing-step">
+            <img src="{{ url_for('static', filename='Landing page image no text 2.png') }}" alt="Step 2" class="landing-img">
+            <div class="caption">
+                <p><strong>What if AI were no longer used as a black box</strong> but a shared tool inside the circle of learning and collaboration?</p>
+            </div>
+        </section>
+        <section class="landing-step">
+            <img src="{{ url_for('static', filename='Landing page image no text 3.png') }}" alt="Step 3" class="landing-img">
+            <div class="caption">
+                <p>To do so, let's first take off the black box's lid to see what everyone is doing.</p>
+            </div>
+        </section>
+        <section class="landing-step">
+            <img src="{{ url_for('static', filename='Landing page image no text 4.png') }}" alt="Step 4" class="landing-img">
+            <div class="caption">
+                <p>Next, let's remove some of the walls to allow communication and collaboration.</p>
+            </div>
+        </section>
+        <section class="landing-step">
+            <img src="{{ url_for('static', filename='Landing page image no text 5.png') }}" alt="Step 5" class="landing-img">
+            <div class="caption">
+                <p>Let's shape the collaborative space to improve quality, safety, and privacy.</p>
+            </div>
+        </section>
+        <section class="landing-step">
+            <img src="{{ url_for('static', filename='Landing page image no text 6.png') }}" alt="Step 6" class="landing-img">
+            <div class="caption">
+                <p>Finally, let's bring teams together.</p>
+            </div>
+        </section>
+        <div class="cta-container">
+            <a href="{{ url_for('auth.register') }}" class="cta-btn">Try AI Collab Now</a>
+        </div>
+    </main>
+    <script src="{{ url_for('static', filename='landing.js') }}" defer></script>
+</body>
+</html> 

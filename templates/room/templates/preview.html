@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}{{ template_type.replace('-', ' ').title() }} Template{% endblock %}
+{% block content %}
+  <!-- Main Content Container -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Page Header -->
+    <div class="mb-8">
+      <div class="flex items-center mb-4">
+        <a href="{{ url_for('room.room_templates.template_wizard') }}" class="text-muted-foreground hover:text-foreground mr-4">
+          <i data-lucide="arrow-left" class="w-5 h-5"></i>
+        </a>
+        <h1 class="text-3xl font-bold text-foreground">{{ template_type.replace('-', ' ').title() }} Template</h1>
+      </div>
+      <p class="text-muted-foreground">Preview and customize your {{ template_type.replace('-', ' ').title() }} room</p>
+    </div>
+
+    <!-- Template Preview -->
+    <div class="max-w-4xl mx-auto">
+      <div class="bg-card border border-border rounded-lg p-8">
+        <div class="mb-8">
+          <h2 class="text-2xl font-semibold text-foreground mb-4">Template Overview</h2>
+          <p class="text-muted-foreground">{{ template_info.description if template_info.description else 'This template provides a structured approach to ' + template_type.replace('-', ' ') + ' collaboration.' }}</p>
+        </div>
+
+        <!-- Template Goals -->
+        <div class="mb-8">
+          <h3 class="text-lg font-semibold text-foreground mb-4">Learning Goals</h3>
+          
+          {% if template_goals.core_goals %}
+          <div class="mb-6">
+            <h4 class="text-md font-medium text-foreground mb-3">Core Goals</h4>
+            <ul class="space-y-2">
+              {% for goal in template_goals.core_goals %}
+              <li class="flex items-start">
+                <i data-lucide="check-circle" class="w-5 h-5 text-green-600 mr-2 mt-0.5 flex-shrink-0"></i>
+                <span class="text-foreground">{{ goal }}</span>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+
+          {% if template_goals.collaboration_goals %}
+          <div class="mb-6">
+            <h4 class="text-md font-medium text-foreground mb-3">Collaboration Goals</h4>
+            <ul class="space-y-2">
+              {% for goal in template_goals.collaboration_goals %}
+              <li class="flex items-start">
+                <i data-lucide="users" class="w-5 h-5 text-blue-600 mr-2 mt-0.5 flex-shrink-0"></i>
+                <span class="text-foreground">{{ goal }}</span>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+
+          {% if template_goals.reflection_goals %}
+          <div class="mb-6">
+            <h4 class="text-md font-medium text-foreground mb-3">Reflection Goals</h4>
+            <ul class="space-y-2">
+              {% for goal in template_goals.reflection_goals %}
+              <li class="flex items-start">
+                <i data-lucide="lightbulb" class="w-5 h-5 text-amber-600 mr-2 mt-0.5 flex-shrink-0"></i>
+                <span class="text-foreground">{{ goal }}</span>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Create Room Form -->
+        <div class="border-t border-border pt-8">
+          <h3 class="text-lg font-semibold text-foreground mb-6">Create Your Room</h3>
+          
+          <form method="POST" action="{{ url_for('room.room_templates.create_from_template') }}" class="space-y-6">
+            <input type="hidden" name="template_type" value="{{ template_type }}">
+            
+            <!-- Room Name -->
+            <div>
+              <label for="room_name" class="block text-sm font-medium text-foreground mb-2">Room Name *</label>
+              <input type="text" id="room_name" name="room_name" required
+                     placeholder="{{ template_type.replace('-', ' ').title() }} Room"
+                     class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
+                            focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                            placeholder:text-muted-foreground">
+            </div>
+
+            <!-- Room Description -->
+            <div>
+              <label for="room_description" class="block text-sm font-medium text-foreground mb-2">Room Description (Optional)</label>
+              <textarea id="room_description" name="room_description" rows="3"
+                        placeholder="Brief description of what this room is for..."
+                        class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
+                               focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                               placeholder:text-muted-foreground resize-none"></textarea>
+            </div>
+
+            <!-- Group Size -->
+            <div>
+              <label for="group_size" class="block text-sm font-medium text-foreground mb-2">Group Size (Optional)</label>
+              <select id="group_size" name="group_size"
+                      class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
+                             focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                <option value="">Select group size...</option>
+                <option value="1-3">1-3 people</option>
+                <option value="4-6">4-6 people</option>
+                <option value="7-10">7-10 people</option>
+                <option value="11-15">11-15 people</option>
+                <option value="16+">16+ people</option>
+              </select>
+            </div>
+
+            <!-- Custom Goals -->
+            <div>
+              <label for="custom_goals" class="block text-sm font-medium text-foreground mb-2">Custom Goals (Optional)</label>
+              <textarea id="custom_goals" name="custom_goals" rows="4"
+                        placeholder="Add any additional goals or modify the template goals..."
+                        class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
+                               focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                               placeholder:text-muted-foreground resize-none"></textarea>
+              <p class="mt-2 text-sm text-muted-foreground">Leave blank to use the template's default goals, or customize them to fit your specific needs.</p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-4 pt-4">
+              <button type="submit" 
+                      class="inline-flex items-center px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors">
+                <i data-lucide="plus" class="w-5 h-5 mr-2"></i>
+                Create Room
+              </button>
+              <a href="{{ url_for('room.room_templates.template_wizard') }}" 
+                 class="px-6 py-3 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-gray-100 transition-colors">
+                Back to Templates
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+  </script>
+{% endblock %}
