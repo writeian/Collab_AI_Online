@@ -12,9 +12,9 @@
     <!-- Login Form Card -->
     <div class="max-w-md mx-auto">
       <div class="bg-card border border-border rounded-lg p-8">
-        <form method="post" class="space-y-6">
-          {{ csrf_token() }}
-          <div class="form-group">
+                    <form method="post" class="space-y-6">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <div class="form-group">
             <label for="username" class="block text-sm font-medium text-foreground mb-2">Username</label>
             <input type="text" id="username" name="username" value="{{ username or '' }}" required 
                    class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
