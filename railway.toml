@@ -3,11 +3,13 @@ builder = "nixpacks"
 
 [deploy]
 startCommand = "gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
-healthcheckPath = "/health"
-healthcheckTimeout = 300
+# healthcheckPath = "/health"  # Temporarily disabled
+# healthcheckTimeout = 60      # Temporarily disabled
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
 
 [deploy.envs]
 FLASK_ENV = "production"
+
+
 
