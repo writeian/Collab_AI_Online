@@ -75,8 +75,8 @@ def register() -> Any:
             flash("Invalid form data. Please try again.", "error")
             return render_template("register.html"), 400
 
-        # Import User model to avoid conflicts
-        from src.models import User
+        # Import User model directly to avoid conflicts
+        from src.models.user import User
         
         # Check if username or email already exists
         if User.query.filter_by(username=username).first():
@@ -257,8 +257,8 @@ def register() -> Any:
 @auth.route("/login", methods=["GET", "POST"])
 def login() -> Any:
     if request.method == "POST":
-        # Import User model to avoid conflicts
-        from src.models import User
+        # Import User model directly to avoid conflicts
+        from src.models.user import User
         
         username = request.form["username"].strip()
         password = request.form["password"]
@@ -319,6 +319,9 @@ def logout() -> Any:
 @auth.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password() -> Any:
     if request.method == "POST":
+        # Import User model directly to avoid conflicts
+        from src.models.user import User
+        
         email = request.form["email"].strip()
 
         if not email:
@@ -365,6 +368,9 @@ def forgot_password() -> Any:
 
 @auth.route("/reset-password/<token>", methods=["GET", "POST"])
 def reset_password(token: str) -> Any:
+    # Import User model directly to avoid conflicts
+    from src.models.user import User
+    
     # Find user by reset token
     user = User.query.filter_by(reset_token=token).first()
 
@@ -435,6 +441,9 @@ def edit_profile() -> Any:
             flash("Display Name and Email are required.", "error")
             return render_template("edit_profile.html", user=user, invitation_count=invitation_count)
 
+        # Import User model directly to avoid conflicts
+        from src.models.user import User
+        
         # Check if email is already taken by another user
         existing_user = User.query.filter_by(email=email).first()
         if existing_user and existing_user.id != user.id:
