@@ -15,6 +15,9 @@ from src.app import db
 
 class PromptRecord(db.Model):
     """Records student prompts for dashboard analytics."""
+    
+    __tablename__ = 'prompt_record'
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
@@ -35,6 +38,9 @@ class PromptRecord(db.Model):
 
 class PageView(db.Model):
     """Track page views for analytics."""
+    
+    __tablename__ = 'page_view'
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
     page = db.Column(db.String(200), nullable=False)
@@ -54,6 +60,12 @@ class PageView(db.Model):
 
 class UserModeUsage(db.Model):
     """Track which modes each user has used in each room for achievements."""
+    
+    __tablename__ = 'user_mode_usage'
+    __table_args__ = (
+        db.UniqueConstraint("user_id", "room_id", "mode", name="unique_user_room_mode"),
+        {'extend_existing': True}
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
@@ -72,16 +84,23 @@ class UserModeUsage(db.Model):
     # Relationships
     user = db.relationship("User", backref="mode_usage")
 
-    __table_args__ = (
-        db.UniqueConstraint("user_id", "room_id", "mode", name="unique_user_room_mode"),
-    )
-
     def __repr__(self):
         return f"<UserModeUsage user_id={self.user_id} room_id={self.room_id} mode={self.mode}>"
 
 
 class Achievement(db.Model):
     """Track user achievements/milestones in rooms."""
+    
+    __tablename__ = 'achievement'
+    __table_args__ = (
+        db.UniqueConstraint(
+            "user_id",
+            "room_id",
+            "achievement_type",
+            name="unique_user_room_achievement",
+        ),
+        {'extend_existing': True}
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
@@ -95,15 +114,6 @@ class Achievement(db.Model):
 
     # Relationships
     user = db.relationship("User", backref="achievements")
-
-    __table_args__ = (
-        db.UniqueConstraint(
-            "user_id",
-            "room_id",
-            "achievement_type",
-            name="unique_user_room_achievement",
-        ),
-    )
 
     def __repr__(self):
         return f"<Achievement {self.achievement_type} for user {self.user_id} in room {self.room_id}>"

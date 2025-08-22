@@ -15,6 +15,9 @@ from src.app import db
 
 class GoogleAuth(db.Model):
     """Stores Google OAuth tokens for Docs API access."""
+    
+    __tablename__ = 'google_auth'
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(

@@ -15,6 +15,12 @@ from src.app import db
 
 class CustomPrompt(db.Model):
     """Custom system instructions created by instructors for specific modes and rooms."""
+    
+    __tablename__ = 'custom_prompt'
+    __table_args__ = (
+        db.UniqueConstraint("room_id", "mode_key", name="unique_room_mode"),
+        {'extend_existing': True}
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     room_id = db.Column(
@@ -38,10 +44,6 @@ class CustomPrompt(db.Model):
     # Relationships
     creator = db.relationship(
         "User", backref="custom_prompts", foreign_keys=[created_by]
-    )
-
-    __table_args__ = (
-        db.UniqueConstraint("room_id", "mode_key", name="unique_room_mode"),
     )
 
     def __repr__(self):

@@ -15,6 +15,14 @@ from src.app import db
 
 class RubricCriterion(db.Model):
     """Rubric criteria for assessing learning step progress."""
+    
+    __tablename__ = 'rubric_criterion'
+    __table_args__ = (
+        db.UniqueConstraint(
+            "room_id", "step_key", "name", name="unique_room_step_criterion"
+        ),
+        {'extend_existing': True}
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     room_id = db.Column(db.Integer, db.ForeignKey("room.id"), nullable=False)
@@ -34,12 +42,6 @@ class RubricCriterion(db.Model):
         "RubricLevel", backref="criterion", lazy=True, cascade="all, delete-orphan"
     )
 
-    __table_args__ = (
-        db.UniqueConstraint(
-            "room_id", "step_key", "name", name="unique_room_step_criterion"
-        ),
-    )
-
     def __repr__(self):
         return (
             f"<RubricCriterion {self.name} for {self.step_key} in room {self.room_id}>"
@@ -48,6 +50,9 @@ class RubricCriterion(db.Model):
 
 class RubricLevel(db.Model):
     """Individual levels within a rubric criterion."""
+    
+    __tablename__ = 'rubric_level'
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
     criterion_id = db.Column(
@@ -68,6 +73,12 @@ class RubricLevel(db.Model):
 
 class RoomRubric(db.Model):
     """Overall rubric configuration for a learning step in a room."""
+    
+    __tablename__ = 'room_rubric'
+    __table_args__ = (
+        db.UniqueConstraint("room_id", "step_key", name="unique_room_step_rubric"),
+        {'extend_existing': True}
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     room_id = db.Column(db.Integer, db.ForeignKey("room.id"), nullable=False)
@@ -84,10 +95,6 @@ class RoomRubric(db.Model):
     )
 
     # Relationships
-
-    __table_args__ = (
-        db.UniqueConstraint("room_id", "step_key", name="unique_room_step_rubric"),
-    )
 
     def __repr__(self):
         return f"<RoomRubric for {self.step_key} in room {self.room_id}>"
