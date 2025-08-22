@@ -78,6 +78,45 @@ def register() -> Any:
         # Import User model to avoid conflicts
         from src.models import User
         
+        # Check if username or email already exists
+        if User.query.filter_by(username=username).first():
+            flash("Username already exists.", "error")
+            return render_template(
+                "register.html",
+                username=username,
+                email=email,
+                full_name=full_name,
+                display_name=display_name,
+                institution=institution,
+                department=department,
+                research_area=research_area,
+                role=role,
+                primary_use_case=primary_use_case,
+                team_size=team_size,
+                heard_from=heard_from,
+                receive_updates=receive_updates,
+                contact_for_research=contact_for_research,
+            )
+
+        if User.query.filter_by(email=email).first():
+            flash("Email already registered.", "error")
+            return render_template(
+                "register.html",
+                username=username,
+                email=email,
+                full_name=full_name,
+                display_name=display_name,
+                institution=institution,
+                department=department,
+                research_area=research_area,
+                role=role,
+                primary_use_case=primary_use_case,
+                team_size=team_size,
+                heard_from=heard_from,
+                receive_updates=receive_updates,
+                contact_for_research=contact_for_research,
+            )
+        
         # Validate required input
         if not all([username, email, full_name, display_name, password]):
             flash(
@@ -146,45 +185,6 @@ def register() -> Any:
         # Validate password strength
         if len(password) < 6:
             flash("Password must be at least 6 characters long.", "error")
-            return render_template(
-                "register.html",
-                username=username,
-                email=email,
-                full_name=full_name,
-                display_name=display_name,
-                institution=institution,
-                department=department,
-                research_area=research_area,
-                role=role,
-                primary_use_case=primary_use_case,
-                team_size=team_size,
-                heard_from=heard_from,
-                receive_updates=receive_updates,
-                contact_for_research=contact_for_research,
-            )
-
-        # Check if username or email already exists
-        if User.query.filter_by(username=username).first():
-            flash("Username already exists.", "error")
-            return render_template(
-                "register.html",
-                username=username,
-                email=email,
-                full_name=full_name,
-                display_name=display_name,
-                institution=institution,
-                department=department,
-                research_area=research_area,
-                role=role,
-                primary_use_case=primary_use_case,
-                team_size=team_size,
-                heard_from=heard_from,
-                receive_updates=receive_updates,
-                contact_for_research=contact_for_research,
-            )
-
-        if User.query.filter_by(email=email).first():
-            flash("Email already registered.", "error")
             return render_template(
                 "register.html",
                 username=username,
