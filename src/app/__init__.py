@@ -146,10 +146,12 @@ def create_app(config_name=None):
     def metrics():
         """Application metrics endpoint for monitoring."""
         from flask import jsonify
-        from src.models import User, Room, Chat, Message
         from datetime import datetime, timedelta
         
         try:
+            # Import models only when needed to avoid conflicts
+            from src.models import User, Room, Chat, Message
+            
             # Basic metrics
             total_users = User.query.count()
             total_rooms = Room.query.count()

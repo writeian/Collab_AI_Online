@@ -20,7 +20,6 @@ from flask import (
     current_app,
 )
 from src.app import db
-from src.models import User
 from src.app.access_control import get_current_user, require_login
 from typing import Any
 import datetime
@@ -76,6 +75,9 @@ def register() -> Any:
             flash("Invalid form data. Please try again.", "error")
             return render_template("register.html"), 400
 
+        # Import User model to avoid conflicts
+        from src.models import User
+        
         # Validate required input
         if not all([username, email, full_name, display_name, password]):
             flash(
@@ -255,6 +257,9 @@ def register() -> Any:
 @auth.route("/login", methods=["GET", "POST"])
 def login() -> Any:
     if request.method == "POST":
+        # Import User model to avoid conflicts
+        from src.models import User
+        
         username = request.form["username"].strip()
         password = request.form["password"]
 

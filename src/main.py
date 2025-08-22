@@ -54,7 +54,6 @@ def run_production_migrations():
         try:
             print("Ensuring basic tables exist...")
             from src.app import db
-            from src.models import User, Room
             
             # Create tables if they don't exist
             with app.app_context():
