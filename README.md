@@ -20,6 +20,44 @@ python run.py
 
 ---
 
+## 📋 Version Management
+
+### **Current Versions**
+This repository contains multiple versions of AI Collab Online. Use this guide to avoid confusion:
+
+#### **Version 2 (Current/Revised)**
+- **Branch**: `deployment-clean-v2`
+- **Status**: Latest revised version with enhanced features
+- **Deployment**: Digital Ocean (production)
+- **Features**: Modular architecture, type safety, improved UX
+
+#### **Version 1 (Legacy)**
+- **Branch**: `clean-deploy`
+- **Status**: Previous version (legacy)
+- **Deployment**: Previously deployed
+- **Features**: Original implementation
+
+#### **Railway Deployment**
+- **Branch**: `feature/railway-deployment`
+- **Based on**: Version 2 (`deployment-clean-v2`)
+- **Purpose**: Railway deployment configuration
+- **Status**: Ready for Railway deployment
+
+### **Deployment Guidelines**
+- ✅ **For Railway**: Use `feature/railway-deployment` branch
+- ✅ **For Digital Ocean**: Use `deployment-clean-v2` branch
+- ✅ **For Development**: Use `dev` branch
+- ⚠️ **Avoid**: Mixing versions between deployments
+
+### **Branch Strategy**
+```
+v1-production (legacy) ← clean-deploy
+v2-production (current) ← deployment-clean-v2
+v2-railway (deployment) ← feature/railway-deployment
+```
+
+---
+
 ## 🎯 What It Does
 
 AI Collab Online is a **collaborative writing platform** that helps teams and educators create better content together using AI assistance.
@@ -215,6 +253,8 @@ AI_Collab_Online/
 2. **Environment Variables**: Set all required environment variables
 3. **Database**: Railway automatically provisions PostgreSQL
 4. **Deploy**: Railway automatically deploys on every push to main
+
+**📖 [Complete Railway Deployment Guide](RAILWAY_DEPLOYMENT.md)**
 
 ### Digital Ocean Deployment
 ```bash

@@ -67,7 +67,7 @@ echo "🗃️ Initializing database..."
 source venv/bin/activate
 export FLASK_ENV=production
 export DATABASE_URL="postgresql://ai_collab_user:your_secure_password_here@localhost:5432/ai_collab_online"
-python -c "from src.app import create_app; from src.models import db; app = create_app('production'); app.app_context().push(); db.create_all(); print('Database initialized successfully!')"
+python -c "from src.main import app; from src.app import db; app('production'); app.app_context().push(); db.create_all(); print('Database initialized successfully!')"
 
 # Start the application
 echo "🚀 Starting the application..."
