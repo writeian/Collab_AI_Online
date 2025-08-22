@@ -16,6 +16,9 @@ from typing import Optional, List
 
 class Room(db.Model):
     """A collaborative learning space where users can create and share chats."""
+    
+    __tablename__ = 'room'
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
@@ -63,6 +66,12 @@ class Room(db.Model):
 
 class RoomMember(db.Model):
     """Represents a user's membership in a room."""
+    
+    __tablename__ = 'room_member'
+    __table_args__ = (
+        db.UniqueConstraint("room_id", "user_id", name="unique_room_user"),
+        {'extend_existing': True}
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     room_id = db.Column(
@@ -79,10 +88,6 @@ class RoomMember(db.Model):
     )  # When user first accessed the room
     can_create_chats = db.Column(db.Boolean, default=True, nullable=False)
     can_invite_members = db.Column(db.Boolean, default=False, nullable=False)
-
-    __table_args__ = (
-        db.UniqueConstraint("room_id", "user_id", name="unique_room_user"),
-    )
 
     def __repr__(self) -> str:
         return f"<RoomMember room_id={self.room_id} user_id={self.user_id}>"

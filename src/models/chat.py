@@ -16,6 +16,9 @@ from typing import Optional, List
 
 class Chat(db.Model):
     """A conversation within a room that can be accessed by all room members."""
+    
+    __tablename__ = 'chat'
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(120), nullable=False)
@@ -54,6 +57,9 @@ class Chat(db.Model):
 
 class Message(db.Model):
     """A single turn in the conversation (user or assistant)."""
+    
+    __tablename__ = 'message'
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
     chat_id = db.Column(
@@ -81,6 +87,9 @@ class Message(db.Model):
 
 class Comment(db.Model):
     """Comments on specific dialogue items in a chat."""
+    
+    __tablename__ = 'comment'
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
     chat_id = db.Column(db.Integer, db.ForeignKey("chat.id"), nullable=False)
