@@ -35,26 +35,35 @@ auth = Blueprint("auth", __name__)
 @auth.route("/register", methods=["GET", "POST"])
 def register() -> Any:
     if request.method == "POST":
-        # Required fields
-        username = request.form["username"].strip()
-        email = request.form["email"].strip()
-        full_name = request.form["full_name"].strip()
-        display_name = request.form["display_name"].strip()
-        password = request.form["password"]
-
-        # Optional fields
-        institution = request.form.get("institution", "").strip()
-        department = request.form.get("department", "").strip()
-        research_area = request.form.get("research_area", "").strip()
-        role = request.form.get("role", "").strip()
-        primary_use_case = request.form.get("primary_use_case", "").strip()
-        team_size = request.form.get("team_size", "").strip()
-        heard_from = request.form.get("heard_from", "").strip()
-        receive_updates = request.form.get("receive_updates") == "1"
-        contact_for_research = request.form.get("contact_for_research") == "1"
-
         # Debug logging
-        # print(f"Registration attempt for username: {username}, email: {email}")
+        print(f"Registration POST request received")
+        print(f"Form data: {request.form}")
+        print(f"Content-Type: {request.content_type}")
+        
+        try:
+            # Required fields
+            username = request.form["username"].strip()
+            email = request.form["email"].strip()
+            full_name = request.form["full_name"].strip()
+            display_name = request.form["display_name"].strip()
+            password = request.form["password"]
+
+            # Optional fields
+            institution = request.form.get("institution", "").strip()
+            department = request.form.get("department", "").strip()
+            research_area = request.form.get("research_area", "").strip()
+            role = request.form.get("role", "").strip()
+            primary_use_case = request.form.get("primary_use_case", "").strip()
+            team_size = request.form.get("team_size", "").strip()
+            heard_from = request.form.get("heard_from", "").strip()
+            receive_updates = request.form.get("receive_updates") == "1"
+            contact_for_research = request.form.get("contact_for_research") == "1"
+
+            print(f"Parsed form data - username: {username}, email: {email}")
+        except Exception as e:
+            print(f"Error parsing form data: {e}")
+            flash("Invalid form data. Please try again.", "error")
+            return render_template("register.html"), 400
 
         # Validate required input
         if not all([username, email, full_name, display_name, password]):

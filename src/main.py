@@ -49,6 +49,20 @@ def run_production_migrations():
         except Exception as e:
             print("Alembic migration failed:", e)
             print("Continuing with app startup...")
+        
+        # Ensure basic tables exist
+        try:
+            print("Ensuring basic tables exist...")
+            from src.app import db
+            from src.models import User, Room
+            
+            # Create tables if they don't exist
+            with app.app_context():
+                db.create_all()
+                print("✓ Basic tables ensured")
+        except Exception as e:
+            print(f"Table creation warning: {e}")
+            print("Continuing with app startup...")
 
 
 # Automatically run Alembic migrations in production (e.g., on Railway)
