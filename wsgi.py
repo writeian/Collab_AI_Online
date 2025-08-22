@@ -2,6 +2,7 @@
 """
 WSGI entry point for production deployment.
 This file is used by Gunicorn to serve the Flask application.
+Updated for Railway deployment - 2025-08-21
 """
 
 import os
@@ -18,11 +19,11 @@ try:
     import os
     # Add src directory to Python path
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
-    from app import create_app
+    from main import app
     
     print("Creating Flask application...")
-    # Create the Flask application
-    app = create_app(os.getenv('FLASK_ENV', 'production'))
+    # The Flask application is already created in main.py
+    # app is imported from main - Railway deployment ready
     print("Flask app created successfully!")
     
     # Test basic app functionality
