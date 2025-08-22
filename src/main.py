@@ -39,29 +39,16 @@ def run_production_migrations():
 
             print("Running Alembic migrations...")
             alembic_cfg = Config("alembic.ini")
-            command.upgrade(alembic_cfg, "head")
-            print("Alembic migrations complete.")
+            # Try to run migrations, but don't fail if tables don't exist yet
+            try:
+                command.upgrade(alembic_cfg, "head")
+                print("Alembic migrations complete.")
+            except Exception as e:
+                print(f"Alembic migration warning: {e}")
+                print("Continuing with app startup...")
         except Exception as e:
             print("Alembic migration failed:", e)
-
-        # Also ensure achievement tables exist
-        try:
-            print("Ensuring achievement tables exist...")
-            from src.models import UserModeUsage, Achievement
-
-            # Create a temporary app context
-            temp_app = Flask(__name__)
-            temp_app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
-            temp_app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-            db.init_app(temp_app)
-
-            with temp_app.app_context():
-                # Create achievement tables if they don't exist
-                UserModeUsage.__table__.create(db.engine, checkfirst=True)
-                Achievement.__table__.create(db.engine, checkfirst=True)
-                print("✓ Achievement tables ensured")
-        except Exception as e:
-            print(f"Achievement table creation failed: {e}")
+            print("Continuing with app startup...")
 
 
 # Automatically run Alembic migrations in production (e.g., on Railway)
@@ -81,63 +68,15 @@ def health():
             with app.app_context():
                 with db.engine.connect() as conn:
                     conn.execute(db.text("SELECT 1"))
-
-                    # Also check and create achievement tables
-            try:
-                # Import models here to avoid circular imports
-                from src.models import UserModeUsage, Achievement
-
-                # Create tables directly using SQL to avoid import issues
-                with db.engine.connect() as conn:
-                    # Create user_mode_usage table
-                    conn.execute(
-                        db.text(
-                            """
-                        CREATE TABLE IF NOT EXISTS user_mode_usage (
-                            id SERIAL PRIMARY KEY,
-                            user_id INTEGER NOT NULL REFERENCES "user"(id),
-                            room_id INTEGER NOT NULL REFERENCES room(id),
-                            mode VARCHAR(32) NOT NULL,
-                            first_used_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
-                            last_used_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
-                            usage_count INTEGER NOT NULL DEFAULT 1,
-                            UNIQUE(user_id, room_id, mode)
-                        )
-                    """
-                        )
-                    )
-
-                    # Create achievement table
-                    conn.execute(
-                        db.text(
-                            """
-                        CREATE TABLE IF NOT EXISTS achievement (
-                            id SERIAL PRIMARY KEY,
-                            user_id INTEGER NOT NULL REFERENCES "user"(id),
-                            room_id INTEGER NOT NULL REFERENCES room(id),
-                            achievement_type VARCHAR(50) NOT NULL,
-                            earned_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
-                            UNIQUE(user_id, room_id, achievement_type)
-                        )
-                    """
-                        )
-                    )
-
-                    conn.commit()
-                achievement_status = "✓ Achievement tables ensured"
-            except Exception as e:
-                achievement_status = f"⚠ Achievement tables error: {str(e)}"
-
-                return {
-                    "status": "healthy",
-                    "message": "App is running - PHASE 3 RESTRUCTURING COMPLETE",
-                    "database": "connected",
-                    "achievement_tables": achievement_status,
-                    "version": "3.0.0",
-                    "deployment_test": "PHASE 3 SUCCESSFUL",
-                    "timestamp": "2025-01-27 15:00",
-                    "commit": "phase3-complete",
-                }, 200
+            return {
+                "status": "healthy",
+                "message": "App is running - PHASE 3 RESTRUCTURING COMPLETE",
+                "database": "connected",
+                "version": "3.0.0",
+                "deployment_test": "PHASE 3 SUCCESSFUL",
+                "timestamp": "2025-01-27 15:00",
+                "commit": "phase3-complete",
+            }, 200
         else:
             return {
                 "status": "healthy",

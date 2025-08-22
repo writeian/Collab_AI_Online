@@ -17,6 +17,9 @@ from typing import Optional, List
 
 class User(db.Model):
     """A registered user of the application."""
+    
+    __tablename__ = 'user'
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
