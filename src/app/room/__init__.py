@@ -62,17 +62,80 @@ def update_learning_steps(room_id: int):
         current_app.logger.error(f"[learning-steps.update] error: {e}")
         return jsonify({"success": False, "error": "Failed to save changes"}), 500
 
-@room.route('/create/learning-steps', methods=['GET'])
+@room.route('/create/learning-steps', methods=['GET', 'POST', 'OPTIONS'])
+@csrf.exempt
 def new_learning_steps():
-    from flask import render_template, request
-    from src.models import Room
+    from flask import render_template, request, redirect, url_for, jsonify, current_app, flash
+    from src.models import Room, CustomPrompt
+    from src.app import db
+    from src.app.access_control import get_current_user
+    from .types import RoomCreationData
+    from .services.room_service import RoomService
+    from src.utils.openai_utils import get_available_templates
+    import json as _json
+
+    # Handle CORS preflight if any
+    if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
+
     room = None
     is_editing = False
     room_id = request.args.get('room_id', type=int)
+
+    if request.method == 'POST':
+        try:
+            user = get_current_user()
+            # Create the room from submitted form/json
+            creation_data = RoomCreationData.from_request(request)
+            result = RoomService.create_room(creation_data, user)
+            if not result.success or not result.room_id:
+                flash(result.error or 'Failed to create room', 'error')
+                return redirect(url_for('room.new_learning_steps'))
+
+            new_room_id = result.room_id
+
+            # Persist refined modes if provided
+            refined_modes = None
+            # Accept either form field or JSON body
+            if request.form.get('refined_modes'):
+                refined_modes = request.form.get('refined_modes')
+            else:
+                body = request.get_json(silent=True) or {}
+                refined_modes = body.get('refined_modes')
+            if isinstance(refined_modes, str):
+                try:
+                    refined_modes = _json.loads(refined_modes)
+                except Exception:
+                    refined_modes = None
+            if isinstance(refined_modes, list):
+                try:
+                    for m in refined_modes:
+                        key = m.get('key')
+                        label = m.get('label')
+                        prompt = m.get('prompt')
+                        if key and label and prompt:
+                            db.session.add(CustomPrompt(
+                                mode_key=key,
+                                label=label,
+                                prompt=prompt,
+                                room_id=new_room_id,
+                                created_by=getattr(user, 'id', None) or 0
+                            ))
+                    db.session.commit()
+                except Exception as e:
+                    current_app.logger.warning(f"[learning-steps.create] Failed to save refined modes for room {new_room_id}: {e}")
+
+            return redirect(url_for('room.room_crud.view_room', room_id=new_room_id))
+        except Exception as e:
+            current_app.logger.error(f"[learning-steps.create] error: {e}")
+            flash('An unexpected error occurred. Please try again.', 'error')
+            return redirect(url_for('room.new_learning_steps'))
+
+    # GET request
     if room_id:
         room = Room.query.get(room_id)
         is_editing = room is not None
-    # Creation mode: no room yet; show the good editor UI in creation mode
+
     return render_template(
         'room/learning_steps.html',
         room=room,
@@ -80,7 +143,8 @@ def new_learning_steps():
         existing_modes=[],
         saved_rubrics={},
         user=None,
-        invitation_count=0
+        invitation_count=0,
+        available_templates=get_available_templates(),
     )
 
 # Import all routes to ensure they're registered
