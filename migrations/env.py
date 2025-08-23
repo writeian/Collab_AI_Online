@@ -9,16 +9,16 @@ from alembic import context
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 # Import your models
-from models.room import Room
-from models.user import User
-from models.chat import Chat
-from models.custom_prompt import CustomPrompt
-from models.analytics import PromptRecord, PageView, UserModeUsage, Achievement
-from models.google_auth import GoogleAuth
-from models.rubric import RubricCriterion, RubricLevel, RoomRubric
+from src.models.room import Room
+from src.models.user import User
+from src.models.chat import Chat
+from src.models.custom_prompt import CustomPrompt
+from src.models.analytics import PromptRecord, PageView, UserModeUsage, Achievement
+from src.models.google_auth import GoogleAuth
+from src.models.rubric import RubricCriterion, RubricLevel, RoomRubric
 
 # Import the database configuration
-from config.settings import Config
+from src.config.settings import Config
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -31,7 +31,7 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-from app import db
+from src.app import db
 target_metadata = db.metadata
 
 # other values from the config, defined by the needs of env.py,
