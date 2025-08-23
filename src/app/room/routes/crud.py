@@ -11,6 +11,7 @@ from ..services.room_service import RoomService
 from ..types import RoomCreationData, RoomUpdateData
 from ..utils.room_utils import get_invitation_count
 from src.app.access_control import get_current_user, require_login, require_room_access
+from src.app import csrf
 
 crud_bp = Blueprint('room_crud', __name__)
 
@@ -62,6 +63,7 @@ def index() -> Any:
 
 @crud_bp.route("/create", methods=["GET", "POST"])
 @require_login
+@csrf.exempt
 def create_room() -> Any:
     """Create a new room."""
     try:

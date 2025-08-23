@@ -12,7 +12,8 @@ from ..types import RoomCreationData
 from ..utils.room_utils import get_invitation_count
 from src.app.access_control import get_current_user, require_login
 from src.utils.openai_utils import get_available_templates, generate_room_modes
-from src.app.goals import generate_template_goals, get_supported_templates
+from src.app.goals import generate_categorized_goals, get_supported_templates
+from src.app import csrf
 
 templates_bp = Blueprint('room_templates', __name__)
 
@@ -58,7 +59,7 @@ def load_template(template_type: str) -> Any:
             return jsonify({"error": "Invalid template type"}), 400
         
         # Generate template goals
-        template_goals = generate_template_goals(template_type, {})
+        template_goals = generate_categorized_goals(template_type, {})
         
         # Get template-specific modes
         try:
@@ -99,7 +100,8 @@ def load_template(template_type: str) -> Any:
 
 @templates_bp.route("/<template_type>/generate-goals", methods=["POST"])
 @require_login
-def generate_template_goals(template_type: str) -> Any:
+@csrf.exempt
+def post_generate_template_goals(template_type: str) -> Any:
     """Generate learning goals based on template wizard answers."""
     try:
         # Lenient JSON parse (accept missing Content-Type)
@@ -125,7 +127,6 @@ def generate_template_goals(template_type: str) -> Any:
             supported_templates = ["study-group", "business-hub", "creative-studio", "writing-workshop", "learning-lab", "community-space", "academic-essay"]
             
             if template_type in supported_templates:
-                from src.app.goals import generate_categorized_goals
                 goals = generate_categorized_goals(template_type, answers)
                 if not goals or not isinstance(goals, dict):
                     raise ValueError("Categorized goal generation returned invalid result")
@@ -138,10 +139,46 @@ def generate_template_goals(template_type: str) -> Any:
                     "reflection_goals": []
                 }
             
+            # Build modes for this template (use predefined modes for supported templates)
+            try:
+                # Build a temporary room-like object for mode generation using provided goals text if any
+                tmp_goals_text = answers.get("goals") if isinstance(answers.get("goals"), str) else "\n".join(goals.get("core_goals", []))
+                temp_room = type('obj', (object,), {
+                    'id': 0,
+                    'name': f'{template_type.replace("-", " ").title()} Room',
+                    'goals': tmp_goals_text or '',
+                    'description': f'A {template_type.replace("-", " ")} room'
+                })
+                modes_dict = generate_room_modes(temp_room, template_name=template_type)
+                modes_list = [
+                    {"key": key, "label": mode.label, "prompt": mode.prompt}
+                    for key, mode in (modes_dict.items() if isinstance(modes_dict, dict) else [])
+                ]
+            except Exception as mode_err:
+                current_app.logger.warning(f"Mode generation failed for template {template_type}: {mode_err}")
+                modes_list = []
+
+            # Suggest a room title and AI message for UI
+            first_goal = (goals.get("core_goals") or [None])[0]
+            suggested_title = f"{template_type.replace('-', ' ').title()}" + (f": {first_goal}" if first_goal else " Room")
+            ai_message = (
+                f"I generated {len(modes_list)} learning steps for a {template_type.replace('-', ' ')} based on your goals. "
+                "You can refine the title, description, or steps below."
+            )
+            
+            # Lightweight conversation id (not persisted; just for UI continuity)
+            import uuid
+            conversation_id = str(uuid.uuid4())
+            
             return jsonify({
-                "success": True, 
+                "success": True,
+                "template_type": template_type,
                 "goals": goals,
-                "template_type": template_type
+                "modes": modes_list,
+                "room_title": suggested_title,
+                "room_description": "",
+                "ai_message": ai_message,
+                "conversation_id": conversation_id
             })
             
         except ValueError as ve:
@@ -343,7 +380,7 @@ def get_template_goals(template_type: str) -> Any:
                 answers[key] = value
         
         # Generate goals
-        template_goals = generate_template_goals(template_type, answers)
+        template_goals = generate_categorized_goals(template_type, answers)
         
         return jsonify({
             "success": True,

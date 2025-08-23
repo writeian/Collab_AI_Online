@@ -44,9 +44,11 @@ def create_app(config_name=None):
     """Application factory pattern for Flask app creation."""
     from src.config.settings import config
 
+    # Note: Repository uses capitalized directories `Static/` and `Templates/` at project root.
+    # Linux filesystems are case-sensitive, so we must point Flask to the exact paths.
     app = Flask(
         __name__,
-        static_folder="../../static",
+        static_folder="../../Static",
         static_url_path="/static",
         template_folder="../../templates",
     )

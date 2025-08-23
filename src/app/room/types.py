@@ -21,13 +21,17 @@ class RoomCreationData:
     @classmethod
     def from_request(cls, request: Request) -> 'RoomCreationData':
         """Create from Flask request with validation."""
-        data = request.get_json() or {}
+        data = request.get_json(silent=True) or {}
+        # Fallback to form data for standard form submissions
+        if not data and request.form:
+            data = request.form.to_dict()
         return cls(
-            name=data.get('room_name', '').strip(),
-            description=data.get('room_description', '').strip(),
-            goals=data.get('goals', '').strip(),
-            group_size=data.get('group_size', '').strip(),
-            template_type=data.get('template_type', '').strip()
+            # Accept both legacy keys (room_name/room_description) and simple keys (name/description)
+            name=(data.get('room_name') or data.get('name') or '').strip(),
+            description=(data.get('room_description') or data.get('description') or '').strip(),
+            goals=(data.get('goals') or '').strip(),
+            group_size=(data.get('group_size') or '').strip() or None,
+            template_type=(data.get('template_type') or data.get('template') or '').strip() or None
         )
 
 @dataclass
