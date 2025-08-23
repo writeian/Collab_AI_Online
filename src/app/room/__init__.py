@@ -55,6 +55,9 @@ def update_learning_steps(room_id: int):
                 ))
         db.session.commit()
         return jsonify({"success": True, "redirect_url": f"/room/{room_id}"})
+    except Exception as e:
+        current_app.logger.error(f"[learning-steps.update] error: {e}")
+        return jsonify({"success": False, "error": "Failed to save changes"}), 500
 
 @room.route('/create/learning-steps', methods=['GET'])
 def new_learning_steps():
@@ -69,9 +72,6 @@ def new_learning_steps():
         user=None,
         invitation_count=0
     )
-    except Exception as e:
-        current_app.logger.error(f"[learning-steps.update] error: {e}")
-        return jsonify({"success": False, "error": "Failed to save changes"}), 500
 
 # Import all routes to ensure they're registered
 from .routes import crud, templates, invitations, api
