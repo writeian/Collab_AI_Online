@@ -5,7 +5,7 @@ Contains core Flask application and blueprints
 
 from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_wtf import FlaskForm
@@ -101,6 +101,15 @@ def create_app(config_name=None):
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-Frame-Options'] = 'SAMEORIGIN'
         response.headers['X-XSS-Protection'] = '1; mode=block'
+        # CSP configuration that allows CDN resources
+
+        # Set CSRF cookie for JS fetch
+        try:
+            token = generate_csrf()
+            response.set_cookie('csrf_token', token, secure=not app.debug, httponly=False, samesite='Lax', path='/')
+        except Exception:
+            pass
+
         # CSP configuration that allows CDN resources
         response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; img-src 'self' data:; connect-src 'self';"
         if not app.config.get('TESTING', False) and not app.debug:
