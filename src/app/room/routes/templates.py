@@ -102,13 +102,16 @@ def load_template(template_type: str) -> Any:
 def generate_template_goals(template_type: str) -> Any:
     """Generate learning goals based on template wizard answers."""
     try:
-        # Validate request data
-        if not request.is_json:
-            return jsonify({"error": "Request must be JSON"}), 400
-        
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": "No data provided"}), 400
+        # Lenient JSON parse (accept missing Content-Type)
+        data = request.get_json(silent=True)
+        if data is None:
+            try:
+                import json
+                data = json.loads(request.data or b"{}")
+            except Exception:
+                data = {}
+        if not isinstance(data, dict):
+            data = {}
         
         answers = data.get("answers", {})
         if not isinstance(answers, dict):
@@ -164,13 +167,16 @@ def generate_template_goals(template_type: str) -> Any:
 def create_template_room(template_type: str) -> Any:
     """Create a room from template wizard data."""
     try:
-        # Validate request data
-        if not request.is_json:
-            return jsonify({"error": "Request must be JSON"}), 400
-        
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": "No data provided"}), 400
+        # Lenient JSON parse (accept missing Content-Type)
+        data = request.get_json(silent=True)
+        if data is None:
+            try:
+                import json
+                data = json.loads(request.data or b"{}")
+            except Exception:
+                data = {}
+        if not isinstance(data, dict):
+            data = {}
         
         # Extract and validate required fields
         goals = data.get("goals", "").strip()

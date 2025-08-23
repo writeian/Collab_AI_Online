@@ -14,6 +14,29 @@ from src.app.access_control import get_current_user, require_login, require_room
 
 crud_bp = Blueprint('room_crud', __name__)
 
+
+@crud_bp.route("/generate-room-proposal", methods=["POST"])
+@require_login
+def legacy_generate_room_proposal() -> Any:
+    """Compatibility endpoint used by older templates.
+    Returns a minimal proposal structure so the UI can proceed.
+    """
+    try:
+        return jsonify({
+            "success": True,
+            "proposal": {
+                "goals": {
+                    "core_goals": [],
+                    "collaboration_goals": [],
+                    "reflection_goals": []
+                }
+            }
+        }), 200
+    except Exception:
+        return jsonify({"success": True, "proposal": {}}), 200
+
+
+
 @crud_bp.route("/")
 @require_login
 def index() -> Any:
