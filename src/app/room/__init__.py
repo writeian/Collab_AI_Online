@@ -62,11 +62,18 @@ def update_learning_steps(room_id: int):
 @room.route('/create/learning-steps', methods=['GET'])
 def new_learning_steps():
     from flask import render_template, request
+    from src.models import Room
+    room = None
+    is_editing = False
+    room_id = request.args.get('room_id', type=int)
+    if room_id:
+        room = Room.query.get(room_id)
+        is_editing = room is not None
     # Creation mode: no room yet; show the good editor UI in creation mode
     return render_template(
         'room/learning_steps.html',
-        room=None,
-        is_editing=False,
+        room=room,
+        is_editing=is_editing,
         existing_modes=[],
         saved_rubrics={},
         user=None,

@@ -140,7 +140,7 @@ def create_room() -> Any:
                 return redirect(url_for("room.room_crud.create_room"))
         
         # GET request - redirect to the unified learning steps editor (creation mode)
-        return redirect(url_for('room.room_crud.new_learning_steps'))
+        return redirect(url_for('room.new_learning_steps'))
         
     except Exception as e:
         current_app.logger.error(f"Error in create room: {e}")

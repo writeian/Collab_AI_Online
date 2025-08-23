@@ -79,7 +79,7 @@
             <div class="dropdown-menu" id="room-actions-menu">
             <!-- Owner-only actions -->
             {% if user.id == room.owner_id %}
-              <a href="{{ url_for('room.room_crud.edit_room', room_id=room.id) }}" class="dropdown-item">
+              <a href="{{ url_for('room.new_learning_steps') }}?room_id={{ room.id }}" class="dropdown-item">
                 <i data-lucide="edit" class="w-4 h-4"></i>
                 Edit Room
               </a>
