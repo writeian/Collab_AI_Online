@@ -62,6 +62,11 @@ def create_app(config_name=None):
 
     # Initialize database
     db.init_app(app)
+
+    # Eagerly import models and ensure tables exist
+    from src import models as _models
+    with app.app_context():
+        db.create_all()
     
     # Initialize CSRF protection
     csrf.init_app(app)
