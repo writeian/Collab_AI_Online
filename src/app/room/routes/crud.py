@@ -133,7 +133,7 @@ def create_room() -> Any:
             result = RoomService.create_room(data, user)
             
             if result.success:
-                flash(f"Room '{result.data['room_name']}' created successfully!", "success")
+                # Redirect directly to learning steps management for newly created room
                 return redirect(url_for('room.room_crud.view_room', room_id=result.room_id))
             else:
                 flash(f"Error: {result.error}", "error")
