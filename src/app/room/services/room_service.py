@@ -63,7 +63,7 @@ class RoomService:
             
             # Generate description
             short_description = generate_room_short_description(
-                template_type=data.template_type,
+                template_type=data.template_type or "general",
                 room_name=sanitized_data["name"],
                 group_size=sanitized_data["group_size"],
                 goals=sanitized_data["goals"]

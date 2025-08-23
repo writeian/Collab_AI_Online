@@ -100,12 +100,17 @@ def generate_room_short_description(template_type: str, room_name: str = "", gro
     """
     
     # Get base description for template type
-    template_info = TEMPLATE_DESCRIPTIONS.get(template_type, {})
+    template_key = template_type or "general"
+    template_info = TEMPLATE_DESCRIPTIONS.get(template_key, {})
     base_description = template_info.get("short_description", "")
     
     if not base_description:
         # Fallback for unknown template types
-        return f"A collaborative learning space for {template_type.replace('-', ' ')}. Designed to help you achieve your learning goals through structured guidance and support."
+        safe_label = str(template_key).replace('-', ' ')
+        return (
+            f"A collaborative learning space for {safe_label}. Designed to help you "
+            f"achieve your learning goals through structured guidance and support."
+        )
     
     # Customize based on group size if provided
     if group_size:
@@ -148,8 +153,9 @@ def get_template_display_name(template_type: str) -> str:
     Returns:
         Display name for the template
     """
-    template_info = TEMPLATE_DESCRIPTIONS.get(template_type, {})
-    return template_info.get("name", template_type.replace("-", " ").title())
+    template_key = template_type or "general"
+    template_info = TEMPLATE_DESCRIPTIONS.get(template_key, {})
+    return template_info.get("name", str(template_key).replace("-", " ").title())
 
 
 def get_available_template_descriptions() -> Dict[str, Dict[str, str]]:
