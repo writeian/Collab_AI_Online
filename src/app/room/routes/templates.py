@@ -202,7 +202,8 @@ def post_generate_template_goals(template_type: str) -> Any:
                     "collaboration_goals": [],
                     "reflection_goals": []
                 },
-                "template_type": template_type
+                "template_type": template_type,
+                "modes": []
             }), 200
         
     except Exception as e:

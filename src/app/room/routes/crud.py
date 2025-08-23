@@ -20,22 +20,54 @@ crud_bp = Blueprint('room_crud', __name__)
 @require_login
 @csrf.exempt
 def legacy_generate_room_proposal() -> Any:
-    """Compatibility endpoint used by older templates.
-    Returns a minimal proposal structure so the UI can proceed.
+    """Compatibility endpoint for non-template room creation.
+    Returns fields expected by the new UI (title/description/modes/conversation_id/ai_message),
+    with safe fallbacks when AI mode generation is not used.
     """
     try:
+        from uuid import uuid4
+        import json as _json
+        # Parse goals from JSON body
+        data = request.get_json(silent=True)
+        if data is None:
+            try:
+                data = _json.loads(request.data or b"{}")
+            except Exception:
+                data = {}
+        if not isinstance(data, dict):
+            data = {}
+        goals_text = (data.get("goals") or "").strip()
+
+        # Suggest a room title based on goals
+        first_line = (goals_text.splitlines() or [""])[0].strip()
+        suggested_title = first_line[:60] + ("…" if len(first_line) > 60 else "") if first_line else "New Learning Room"
+
+        # Build empty modes list (non-template flow). UI tolerates empty array.
+        modes_list = []
+
+        ai_message = (
+            "I drafted a starter proposal based on your goals. You can refine the title, "
+            "description, or add learning steps now."
+        )
+
         return jsonify({
             "success": True,
-            "proposal": {
-                "goals": {
-                    "core_goals": [],
-                    "collaboration_goals": [],
-                    "reflection_goals": []
-                }
-            }
-        }), 200
-    except Exception:
-        return jsonify({"success": True, "proposal": {}}), 200
+            "room_title": suggested_title,
+            "room_description": "",
+            "modes": modes_list,
+            "conversation_id": str(uuid4()),
+            "ai_message": ai_message
+        })
+    except Exception as e:
+        current_app.logger.error(f"[legacy_generate_room_proposal] error: {e}")
+        return jsonify({
+            "success": True,
+            "room_title": "New Learning Room",
+            "room_description": "",
+            "modes": [],
+            "conversation_id": str(uuid4()),
+            "ai_message": "Let's refine your room details."
+        })
 
 
 
