@@ -11,7 +11,7 @@ from ..services.room_service import RoomService
 from ..types import RoomCreationData, RoomUpdateData
 from ..utils.room_utils import get_invitation_count
 from src.app.access_control import get_current_user, require_login, require_room_access
-from src.utils.openai_utils import get_modes_for_room
+from src.utils.openai_utils import get_modes_for_room, get_available_templates
 from src.app import csrf
 
 crud_bp = Blueprint('room_crud', __name__)
@@ -139,12 +139,8 @@ def create_room() -> Any:
                 flash(f"Error: {result.error}", "error")
                 return redirect(url_for("room.room_crud.create_room"))
         
-        # GET request - show create form
-        return render_template(
-            "room/create.html",
-            user=user,
-            invitation_count=get_invitation_count(user)
-        )
+        # GET request - redirect to the unified learning steps editor (creation mode)
+        return redirect(url_for('room.room_crud.new_learning_steps'))
         
     except Exception as e:
         current_app.logger.error(f"Error in create room: {e}")

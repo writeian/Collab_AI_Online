@@ -55,6 +55,20 @@ def update_learning_steps(room_id: int):
                 ))
         db.session.commit()
         return jsonify({"success": True, "redirect_url": f"/room/{room_id}"})
+
+@room.route('/create/learning-steps', methods=['GET'])
+def new_learning_steps():
+    from flask import render_template, request
+    # Creation mode: no room yet; show the good editor UI in creation mode
+    return render_template(
+        'room/learning_steps.html',
+        room=None,
+        is_editing=False,
+        existing_modes=[],
+        saved_rubrics={},
+        user=None,
+        invitation_count=0
+    )
     except Exception as e:
         current_app.logger.error(f"[learning-steps.update] error: {e}")
         return jsonify({"success": False, "error": "Failed to save changes"}), 500
