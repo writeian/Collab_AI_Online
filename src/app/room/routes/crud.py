@@ -364,6 +364,7 @@ def room_chats(room_id: int) -> Any:
 
 @crud_bp.route("/<int:room_id>/chat/create", methods=["GET", "POST"])
 @require_login
+@csrf.exempt
 def create_chat(room_id: int) -> Any:
     """Create a new chat within a room."""
     from src.models import Chat, Message
