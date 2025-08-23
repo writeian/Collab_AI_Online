@@ -113,9 +113,11 @@ def generate_template_goals(template_type: str) -> Any:
         if not isinstance(data, dict):
             data = {}
         
-        answers = data.get("answers", {})
+        answers = data.get("answers")
         if not isinstance(answers, dict):
-            return jsonify({"error": "Answers must be a dictionary"}), 400
+            answers = {k: v for k, v in data.items() if k != "answers"}
+        if not isinstance(answers, dict):
+            answers = {}
         
         # Generate goals with proper error handling
         try:
