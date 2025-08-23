@@ -58,14 +58,18 @@ def view_chat(chat_id: int) -> Any:
         current_app.logger.info(f"Chat room_id: {chat_obj.room_id}, created_by: {chat_obj.created_by}")
 
         if request.method == "POST":
+            # CSRF-friendly: accept both form POST and fetch-based JSON
             if not user:
                 flash("Please log in to send messages.")
                 return redirect(url_for("auth.login"))
 
-            content = request.form.get("content", "").strip()
-            ai_response_enabled = (
-                request.form.get("ai_response") == "1"
-            )  # Check if AI response is enabled
+            # Try form first, then JSON fallback
+            content = (request.form.get("content") or "").strip()
+            ai_response_enabled = request.form.get("ai_response") == "1"
+            if not content and request.is_json:
+                data = request.get_json(silent=True) or {}
+                content = (data.get("content") or "").strip()
+                ai_response_enabled = bool(data.get("ai_response", ai_response_enabled))
 
             # Debug logging
             current_app.logger.info(
