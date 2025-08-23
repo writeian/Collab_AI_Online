@@ -145,13 +145,13 @@ def generate_template_goals(template_type: str) -> Any:
         except Exception as ge:
             current_app.logger.error(f"Goal generation error: {ge}")
             return jsonify({
-                \"success\": True,
-                \"goals\": {
-                    \"core_goals\": [],
-                    \"collaboration_goals\": [],
-                    \"reflection_goals\": []
+                "success": True,
+                "goals": {
+                    "core_goals": [],
+                    "collaboration_goals": [],
+                    "reflection_goals": []
                 },
-                \"template_type\": template_type
+                "template_type": template_type
             }), 200
         
     except Exception as e:
