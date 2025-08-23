@@ -42,8 +42,20 @@ def legacy_generate_room_proposal() -> Any:
         first_line = (goals_text.splitlines() or [""])[0].strip()
         suggested_title = first_line[:60] + ("…" if len(first_line) > 60 else "") if first_line else "New Learning Room"
 
-        # Build empty modes list (non-template flow). UI tolerates empty array.
-        modes_list = []
+        # Heuristic: infer a template type from goals and use predefined modes
+        try:
+            from src.utils.room_descriptions import infer_template_type_from_room
+            from src.utils.openai_utils import BASE_TEMPLATES
+            inferred = infer_template_type_from_room(suggested_title, goals_text, "") or "academic_essay"
+            template_key = inferred.replace("-", "_")
+            template_data = BASE_TEMPLATES.get(template_key) or BASE_TEMPLATES.get("academic_essay")
+            modes_dict = template_data.get("modes", {}) if template_data else {}
+            modes_list = [
+                {"key": key, "label": mode.label, "prompt": mode.prompt}
+                for key, mode in modes_dict.items()
+            ]
+        except Exception:
+            modes_list = []
 
         ai_message = (
             "I drafted a starter proposal based on your goals. You can refine the title, "
@@ -146,7 +158,7 @@ def view_room(room_id: int) -> Any:
         room_data = RoomService.get_room_display_data(room, user)
         
         return render_template(
-            "room/view.html",
+            "room/learning_steps.html",
             room=room,
             room_data=room_data,
             chats=chats,
