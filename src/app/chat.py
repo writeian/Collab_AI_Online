@@ -66,10 +66,21 @@ def view_chat(chat_id: int) -> Any:
             # Try form first, then JSON fallback
             content = (request.form.get("content") or "").strip()
             ai_response_enabled = request.form.get("ai_response") == "1"
-            if not content and request.is_json:
-                data = request.get_json(silent=True) or {}
-                content = (data.get("content") or "").strip()
-                ai_response_enabled = bool(data.get("ai_response", ai_response_enabled))
+            if not content:
+                # Try JSON then raw body parse
+                if request.is_json:
+                    data = request.get_json(silent=True) or {}
+                    content = (data.get("content") or "").strip()
+                    ai_response_enabled = bool(data.get("ai_response", ai_response_enabled))
+                else:
+                    try:
+                        import json
+                        data = json.loads(request.data or b"{}")
+                        if isinstance(data, dict):
+                            content = (data.get("content") or "").strip()
+                            ai_response_enabled = bool(data.get("ai_response", ai_response_enabled))
+                    except Exception:
+                        pass
 
             # Debug logging
             current_app.logger.info(
