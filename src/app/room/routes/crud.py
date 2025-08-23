@@ -28,6 +28,7 @@ def legacy_generate_room_proposal() -> Any:
     try:
         from uuid import uuid4
         import json as _json
+        from src.utils.openai_utils import generate_room_modes, BASE_TEMPLATES
         # Parse goals from JSON body
         data = request.get_json(silent=True)
         if data is None:
@@ -43,20 +44,29 @@ def legacy_generate_room_proposal() -> Any:
         first_line = (goals_text.splitlines() or [""])[0].strip()
         suggested_title = first_line[:60] + ("…" if len(first_line) > 60 else "") if first_line else "New Learning Room"
 
-        # Heuristic: infer a template type from goals and use predefined modes
+        # Generate contextual modes directly from goals (no template) for better tailoring
         try:
-            from src.utils.room_descriptions import infer_template_type_from_room
-            from src.utils.openai_utils import BASE_TEMPLATES
-            inferred = infer_template_type_from_room(suggested_title, goals_text, "") or "academic_essay"
-            template_key = inferred.replace("-", "_")
-            template_data = BASE_TEMPLATES.get(template_key) or BASE_TEMPLATES.get("academic_essay")
-            modes_dict = template_data.get("modes", {}) if template_data else {}
+            # Temporary room-like object
+            temp_room = type('obj', (object,), {
+                'id': 0,
+                'name': suggested_title or 'New Room',
+                'goals': goals_text,
+                'description': ''
+            })
+            modes_obj = generate_room_modes(temp_room)
+            if modes_obj:
+                modes_list = [
+                    {"key": key, "label": mode.label, "prompt": mode.prompt}
+                    for key, mode in modes_obj.items()
+                ]
+            else:
+                modes_list = []
+        except Exception:
+            # Fallback to base template if AI generation fails
             modes_list = [
                 {"key": key, "label": mode.label, "prompt": mode.prompt}
-                for key, mode in modes_dict.items()
+                for key, mode in (BASE_TEMPLATES.get("academic_essay", {}).get("modes", {}).items())
             ]
-        except Exception:
-            modes_list = []
 
         ai_message = (
             "I drafted a starter proposal based on your goals. You can refine the title, "
