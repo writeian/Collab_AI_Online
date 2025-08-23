@@ -173,9 +173,9 @@ def get_room_stats(room: Room) -> Dict[str, Any]:
     
     # Count members
     total_members = RoomMember.query.filter_by(room_id=room.id).count()
-    active_members = RoomMember.query.filter_by(
-        room_id=room.id, 
-        accepted_at=RoomMember.accepted_at.isnot(None)
+    active_members = RoomMember.query.filter(
+        RoomMember.room_id == room.id,
+        RoomMember.accepted_at.isnot(None)
     ).count()
     
     # Count chats and messages
