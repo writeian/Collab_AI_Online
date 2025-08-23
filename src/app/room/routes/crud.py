@@ -16,8 +16,9 @@ from src.app import csrf
 crud_bp = Blueprint('room_crud', __name__)
 
 
-@crud_bp.route("/generate-room-proposal", methods=["POST"])
+@crud_bp.route("/generate-room-proposal", methods=["POST"], endpoint="legacy_generate_room_proposal")
 @require_login
+@csrf.exempt
 def legacy_generate_room_proposal() -> Any:
     """Compatibility endpoint used by older templates.
     Returns a minimal proposal structure so the UI can proceed.

@@ -98,7 +98,7 @@ def load_template(template_type: str) -> Any:
         current_app.logger.error(f"Error loading template {template_type}: {e}")
         return jsonify({"error": "Failed to load template"}), 500
 
-@templates_bp.route("/<template_type>/generate-goals", methods=["POST"])
+@templates_bp.route("/<template_type>/generate-goals", methods=["POST"], endpoint="generate_template_goals")
 @require_login
 @csrf.exempt
 def post_generate_template_goals(template_type: str) -> Any:
