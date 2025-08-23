@@ -212,9 +212,11 @@ def post_generate_template_goals(template_type: str) -> Any:
 
 @templates_bp.route("/<template_type>/create-room", methods=["POST"])
 @require_login
+@csrf.exempt
 def create_template_room(template_type: str) -> Any:
     """Create a room from template wizard data."""
     try:
+        current_app.logger.info(f"[templates.create-room] template_type={template_type} incoming request")
         # Lenient JSON parse (accept missing Content-Type)
         data = request.get_json(silent=True)
         if data is None:
@@ -227,10 +229,15 @@ def create_template_room(template_type: str) -> Any:
             data = {}
         
         # Extract and validate required fields
-        goals = data.get("goals", "").strip()
-        room_name = data.get("room_name", "").strip()
-        room_description = data.get("room_description", "").strip()
-        group_size = data.get("group_size", "").strip()
+        # Accept both legacy and new keys
+        goals = (data.get("goals") or "").strip()
+        room_name = (data.get("room_name") or data.get("name") or "").strip()
+        room_description = (data.get("room_description") or data.get("description") or "").strip()
+        group_size = (data.get("group_size") or data.get("team_structure") or "").strip()
+
+        current_app.logger.info(
+            f"[templates.create-room] parsed payload name={bool(room_name)} goals_len={len(goals)} group_size={group_size!r}"
+        )
         
         # Validate required fields
         if not room_name:
@@ -310,7 +317,7 @@ def create_template_room(template_type: str) -> Any:
         
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error creating template room: {e}")
+        current_app.logger.error(f"[templates.create-room] error: {e}")
         return jsonify({"error": "Failed to create room. Please try again."}), 500
 
 @templates_bp.route("/preview/<template_type>")
