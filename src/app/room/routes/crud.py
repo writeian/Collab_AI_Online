@@ -154,7 +154,7 @@ def create_room() -> Any:
 @crud_bp.route("/<int:room_id>")
 @require_room_access
 def view_room(room_id: int) -> Any:
-    """View a specific room."""
+    """View a specific room (overview)."""
     try:
         user = get_current_user()
         room = RoomService.get_room_by_id(room_id, user)
@@ -179,16 +179,13 @@ def view_room(room_id: int) -> Any:
             existing_modes = []
 
         return render_template(
-            "room/learning_steps.html",
+            "room/view.html",
             room=room,
             room_data=room_data,
             chats=chats,
             members=members,
             user=user,
-            invitation_count=get_invitation_count(user),
-            is_editing=True,
-            existing_modes=existing_modes,
-            saved_rubrics={}
+            invitation_count=get_invitation_count(user)
         )
     except Exception as e:
         current_app.logger.error(f"Error viewing room {room_id}: {e}")

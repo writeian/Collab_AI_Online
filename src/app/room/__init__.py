@@ -54,7 +54,7 @@ def update_learning_steps(room_id: int):
                     created_by=created_by
                 ))
         db.session.commit()
-        return jsonify({"success": True})
+        return jsonify({"success": True, "redirect_url": f"/room/{room_id}"})
     except Exception as e:
         current_app.logger.error(f"[learning-steps.update] error: {e}")
         return jsonify({"success": False, "error": "Failed to save changes"}), 500
