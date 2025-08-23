@@ -956,6 +956,10 @@
     // Edit level content
     window.editLevel = function(modeIndex, criterionIndex, levelIndex) {
       const levelContent = document.getElementById(`level-content-${modeIndex}-${criterionIndex}-${levelIndex}`);
+      if (!levelContent) {
+        console.error('Level content not found for', modeIndex, criterionIndex, levelIndex);
+        return;
+      }
       const viewMode = levelContent.querySelector('.view-mode');
       const editMode = levelContent.querySelector('.edit-mode');
       const editButton = levelContent.querySelector('button[onclick^="editLevel"]');
@@ -975,6 +979,10 @@
     // Save level edit (auto-saves to database)
     window.saveLevelEdit = function(modeIndex, criterionIndex, levelIndex) {
       const levelContent = document.getElementById(`level-content-${modeIndex}-${criterionIndex}-${levelIndex}`);
+      if (!levelContent) {
+        console.error('Level content not found for', modeIndex, criterionIndex, levelIndex);
+        return;
+      }
       const viewMode = levelContent.querySelector('.view-mode');
       const editMode = levelContent.querySelector('.edit-mode');
       const editButton = levelContent.querySelector('button[onclick^="editLevel"]');

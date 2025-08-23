@@ -19,7 +19,7 @@ room.register_blueprint(invitations.invitations_bp, url_prefix="/<int:room_id>")
 room.register_blueprint(api.api_bp, url_prefix="/api")
 
 # Learning steps management routes (backward-compat)
-@room.route('/<int:room_id>/update-learning-steps', methods=['POST'])
+@room.route('/<int:room_id>/update-learning-steps', methods=['POST', 'OPTIONS'])
 @csrf.exempt
 def update_learning_steps(room_id: int):
     from flask import request, jsonify, current_app
@@ -27,6 +27,9 @@ def update_learning_steps(room_id: int):
     from src.app import db
     from src.app.access_control import get_current_user
     try:
+        # Handle preflight/same-origin OPTIONS
+        if request.method == 'OPTIONS':
+            return jsonify({"success": True}), 200
         data = request.get_json(silent=True) or {}
         modes = data.get('modes') or data.get('refined_modes')
         if isinstance(modes, str):
