@@ -11,6 +11,7 @@ from ..services.room_service import RoomService
 from ..types import RoomCreationData, RoomUpdateData
 from ..utils.room_utils import get_invitation_count
 from src.app.access_control import get_current_user, require_login, require_room_access
+from src.utils.openai_utils import get_modes_for_room
 from src.app import csrf
 
 crud_bp = Blueprint('room_crud', __name__)
@@ -164,7 +165,13 @@ def view_room(room_id: int) -> Any:
             chats=chats,
             members=members,
             user=user,
-            invitation_count=get_invitation_count(user)
+            invitation_count=get_invitation_count(user),
+            is_editing=True,
+            existing_modes=[
+                {"key": k, "label": v.label, "prompt": v.prompt}
+                for k, v in (get_modes_for_room(room).items() if hasattr(v := get_modes_for_room(room), 'items') else [])
+            ],
+            saved_rubrics={}
         )
     except Exception as e:
         current_app.logger.error(f"Error viewing room {room_id}: {e}")

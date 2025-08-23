@@ -381,14 +381,18 @@
         event.stopPropagation();
         
         const promptContent = button.nextElementSibling;
-        const icon = button.querySelector('i');
+        const icon = button.querySelector('i') || button.querySelector('svg');
         
         if (promptContent.classList.contains('hidden')) {
           promptContent.classList.remove('hidden');
-          icon.setAttribute('data-lucide', 'chevron-up');
+          if (icon && icon.setAttribute) {
+            icon.setAttribute('data-lucide', 'chevron-up');
+          }
         } else {
           promptContent.classList.add('hidden');
-          icon.setAttribute('data-lucide', 'chevron-down');
+          if (icon && icon.setAttribute) {
+            icon.setAttribute('data-lucide', 'chevron-down');
+          }
         }
         
         lucide.createIcons();
@@ -400,12 +404,14 @@
         event.stopPropagation();
         
         const rubricContent = button.nextElementSibling;
-        const icon = button.querySelector('i');
+        const icon = button.querySelector('i') || button.querySelector('svg');
         const rubricAccordion = rubricContent.querySelector(`#rubric-accordion-${modeIndex}`);
         
         if (rubricContent.classList.contains('hidden')) {
           rubricContent.classList.remove('hidden');
-          icon.setAttribute('data-lucide', 'chevron-up');
+          if (icon && icon.setAttribute) {
+            icon.setAttribute('data-lucide', 'chevron-up');
+          }
           
           // Populate rubric if empty
           if (rubricAccordion && rubricAccordion.children.length === 0) {
@@ -416,7 +422,9 @@
           }
         } else {
           rubricContent.classList.add('hidden');
-          icon.setAttribute('data-lucide', 'chevron-down');
+          if (icon && icon.setAttribute) {
+            icon.setAttribute('data-lucide', 'chevron-down');
+          }
         }
         
         lucide.createIcons();
