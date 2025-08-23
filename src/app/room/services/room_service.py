@@ -30,6 +30,9 @@ class RoomService:
     def create_room(data: RoomCreationData, user: User) -> RoomServiceResult:
         """Create a new room with comprehensive error handling."""
         try:
+            current_app.logger.info(
+                f"[RoomService.create_room] user_id={getattr(user, 'id', None)} name={data.name!r} group_size={data.group_size!r} template_type={data.template_type!r}"
+            )
             # Validate input
             name_valid, name_error = validate_room_name(data.name)
             if not name_valid:
@@ -82,6 +85,9 @@ class RoomService:
             
             # Generate modes
             try:
+                current_app.logger.info(
+                    f"[RoomService.create_room] generating modes for room_id={room.id} template_type={data.template_type!r}"
+                )
                 modes = generate_room_modes(room, template_name=data.template_type)
                 if modes:
                     for mode_key, mode_info in modes.items():
@@ -93,6 +99,9 @@ class RoomService:
                             created_by=user.id,
                         )
                         db.session.add(custom_prompt)
+                current_app.logger.info(
+                    f"[RoomService.create_room] modes_saved={len(modes) if modes else 0} for room_id={room.id}"
+                )
             except Exception as mode_error:
                 current_app.logger.warning(f"Mode generation failed for room {room.id}: {mode_error}")
             
@@ -112,7 +121,7 @@ class RoomService:
             
         except Exception as e:
             db.session.rollback()
-            current_app.logger.error(f"Error creating room: {e}")
+            current_app.logger.error(f"[RoomService.create_room] error: {e}")
             return RoomServiceResult(
                 success=False,
                 error="Failed to create room. Please try again."

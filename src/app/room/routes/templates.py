@@ -104,6 +104,9 @@ def load_template(template_type: str) -> Any:
 def post_generate_template_goals(template_type: str) -> Any:
     """Generate learning goals based on template wizard answers."""
     try:
+        current_app.logger.info(
+            f"[templates.generate-goals] template_type={template_type} incoming request"
+        )
         # Lenient JSON parse (accept missing Content-Type)
         data = request.get_json(silent=True)
         if data is None:
@@ -121,6 +124,9 @@ def post_generate_template_goals(template_type: str) -> Any:
         if not isinstance(answers, dict):
             answers = {}
         
+        current_app.logger.info(
+            f"[templates.generate-goals] parsed data keys={list(data.keys())}"
+        )
         # Generate goals with proper error handling
         try:
             # Use new categorized goals for all supported templates
@@ -154,6 +160,9 @@ def post_generate_template_goals(template_type: str) -> Any:
                     {"key": key, "label": mode.label, "prompt": mode.prompt}
                     for key, mode in (modes_dict.items() if isinstance(modes_dict, dict) else [])
                 ]
+                current_app.logger.info(
+                    f"[templates.generate-goals] goals_counts core={len(goals.get('core_goals', []))} collab={len(goals.get('collaboration_goals', []))} refl={len(goals.get('reflection_goals', []))} modes={len(modes_list)}"
+                )
             except Exception as mode_err:
                 current_app.logger.warning(f"Mode generation failed for template {template_type}: {mode_err}")
                 modes_list = []
@@ -182,10 +191,10 @@ def post_generate_template_goals(template_type: str) -> Any:
             })
             
         except ValueError as ve:
-            current_app.logger.error(f"Validation error in goal generation: {ve}")
+            current_app.logger.error(f"[templates.generate-goals] validation error: {ve}")
             return jsonify({"error": "Invalid input data provided"}), 400
         except Exception as ge:
-            current_app.logger.error(f"Goal generation error: {ge}")
+            current_app.logger.error(f"[templates.generate-goals] unexpected error: {ge}")
             return jsonify({
                 "success": True,
                 "goals": {
@@ -197,7 +206,7 @@ def post_generate_template_goals(template_type: str) -> Any:
             }), 200
         
     except Exception as e:
-        current_app.logger.error(f"Unexpected error in generate_template_goals: {e}")
+        current_app.logger.error(f"[templates.generate-goals] outer error: {e}")
         return jsonify({"error": "An unexpected error occurred"}), 500
 
 
