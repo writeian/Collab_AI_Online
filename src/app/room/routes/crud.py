@@ -158,6 +158,16 @@ def view_room(room_id: int) -> Any:
         members = RoomService.get_room_members(room, user)
         room_data = RoomService.get_room_display_data(room, user)
         
+        # Prepare existing modes for learning steps view
+        existing_modes = []
+        try:
+            modes_obj = get_modes_for_room(room)
+            if hasattr(modes_obj, 'items'):
+                for k, v in modes_obj.items():
+                    existing_modes.append({"key": k, "label": v.label, "prompt": v.prompt})
+        except Exception:
+            existing_modes = []
+
         return render_template(
             "room/learning_steps.html",
             room=room,
@@ -167,10 +177,7 @@ def view_room(room_id: int) -> Any:
             user=user,
             invitation_count=get_invitation_count(user),
             is_editing=True,
-            existing_modes=[
-                {"key": k, "label": v.label, "prompt": v.prompt}
-                for k, v in (get_modes_for_room(room).items() if hasattr(v := get_modes_for_room(room), 'items') else [])
-            ],
+            existing_modes=existing_modes,
             saved_rubrics={}
         )
     except Exception as e:
