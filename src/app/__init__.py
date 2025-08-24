@@ -245,6 +245,18 @@ def create_app(config_name=None):
         except Exception as e:
             return { 'ok': False, 'error': str(e) }, 500
 
+    # Targeted fallback route to serve CSS from the configured Static/css directory
+    # This guards against case/path mismatches causing 404s on /static/css/* in production
+    @app.route("/static/css/<path:filename>")
+    def __static_css_fallback(filename: str):
+        try:
+            from flask import send_from_directory
+            import os as __os
+            css_dir = __os.path.join(app.static_folder or '', 'css')
+            return send_from_directory(css_dir, filename)
+        except Exception as e:
+            return (f"CSS not found: {filename}", 404)
+
     # Error handlers
     @app.errorhandler(404)
     def not_found_error(error):
