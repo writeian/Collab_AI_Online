@@ -623,29 +623,7 @@
   }
 }
 
-/* Desktop buffer improvements */
-@media (min-width: 769px) {
-  #chat-messages {
-    padding-bottom: 80px !important; /* Reduced since input is now in normal flow */
-  }
-}
-
-/* Force the bottom padding to be applied */
-#chat-messages {
-  padding-bottom: 80px !important; /* Reduced since input is now in normal flow */
-}
-
-/* More specific selector to override any conflicts */
-.chat-main #chat-messages {
-  padding-bottom: 80px !important; /* Reduced since input is now in normal flow */
-}
-
-/* Mobile specific override */
-@media (max-width: 768px) {
-  #chat-messages {
-    padding-bottom: 100px !important; /* Reduced since input is now in normal flow */
-  }
-}
+/* Remove hard-coded padding-bottom so JS can control it precisely */
 
 /* Footer spacing handled by chat container height reduction */
 
