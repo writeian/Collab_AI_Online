@@ -98,9 +98,10 @@
                                            <!-- Edit Current Learning Steps Button -->
                  <div class="edit-section">
                    <button type="submit" id="generate-proposal-btn"
-                           class="w-full inline-flex items-center justify-center px-6 py-4 bg-success text-white font-medium rounded-lg hover:bg-success-hover hover:shadow-md active:shadow-sm transition-all duration-200 shadow-sm">
+                           class="btn btn-primary btn-lg w-full inline-flex items-center justify-center"
+                           style="appearance: button; -webkit-appearance: button;">
                      <i data-lucide="{% if is_editing %}edit-3{% else %}sparkles{% endif %}" class="w-5 h-5 mr-2"></i>
-                     {% if is_editing %}Edit Current Learning Steps{% else %}Create Room{% endif %}
+                     {% if is_editing %}Edit Current Learning Steps{% else %}Generate Room Proposal{% endif %}
                    </button>
                    <p class="mt-2 text-sm text-muted-foreground text-center">
                      {% if is_editing %}
@@ -444,22 +445,23 @@
         }
       });
 
-      // Improve mobile tap reliability: also trigger submit logic on button click
+      // Improve mobile tap reliability: trigger native submit when available
       if (generateBtn) {
         generateBtn.addEventListener('click', function(ev) {
-          // Let the submit handler own the logic; ensure form is valid first
           if (!goalsForm) return;
-          // If the button is inside the form with type="submit", some mobile browsers
-          // may not fire the submit handler reliably. Manually nudge it.
           try {
             if (typeof goalsForm.reportValidity === 'function' && !goalsForm.reportValidity()) {
-              return; // native validation will display messages
+              return;
             }
           } catch (e) { /* ignore */ }
-          // Prevent double execution if submit already in-flight
           if (generateBtn.disabled) return;
           ev.preventDefault();
-          goalsForm.dispatchEvent(new Event('submit', { cancelable: true }));
+          // Prefer native requestSubmit when available (iOS 15+)
+          if (typeof goalsForm.requestSubmit === 'function') {
+            goalsForm.requestSubmit(generateBtn);
+          } else {
+            goalsForm.dispatchEvent(new Event('submit', { cancelable: true }));
+          }
         });
       }
 
