@@ -4,11 +4,17 @@
 {% block extra_css %}
 <style>
   /* Minimal Focus Mode: hides chrome to maximize chat space */
-  body.focus-mode > header { display: none !important; }
+  body.focus-mode > header, body.focus-mode header { display: none !important; }
   body.focus-mode .navigation-breadcrumb { display: none !important; }
   body.focus-mode .chat-sidebar { display: none !important; }
   body.focus-mode .system-instructions { display: none !important; }
   body.focus-mode .chat-header { padding-top: 6px; padding-bottom: 6px; }
+  /* Strengthen focus mode to reclaim full viewport */
+  body.focus-mode > footer, body.focus-mode footer { display: none !important; }
+  body.focus-mode main { padding: 0 !important; margin: 0 !important; }
+  body.focus-mode, body.focus-mode html { height: 100%; }
+  body.focus-mode .chat-layout, body.focus-mode .chat-container, body.focus-mode .chat-main { height: 100vh !important; }
+  body.focus-mode #chat-messages { max-height: calc(100vh - 120px) !important; }
 </style>
 {% endblock %}
 
@@ -201,9 +207,9 @@
         </div>
 
         <!-- Messages Area -->
-        <div class="flex-1 overflow-y-auto px-4 py-6 space-y-4 pb-24" id="chat-messages">
+        <div class="flex-1 overflow-y-auto px-4 py-6 space-y-4 pb-24" id="chat-messages" data-last-id="{{ messages[-1].id if messages else 0 }}">
             {% for message in messages %}
-            <div class="flex {% if message.role == 'user' %}justify-end{% else %}justify-start{% endif %}">
+            <div class="flex {% if message.role == 'user' %}justify-end{% else %}justify-start{% endif %}" data-message-id="{{ message.id }}">
                 <div class="message-bubble {% if message.role == 'user' %}user{% else %}assistant{% endif %}">
                     {% if message.role == 'assistant' %}
                     <div class="flex items-start gap-3">
@@ -374,30 +380,30 @@
 
     // Scroll to bottom function
     function scrollToBottom() {
-        const chatMessages = document.getElementById('chat-messages');
-        if (chatMessages) {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+        const chatMessagesEl = document.getElementById('chat-messages');
+        if (chatMessagesEl) {
+            chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
         }
     }
 
     // Auto-scroll to bottom when page loads
     function autoScrollOnLoad() {
-        const chatMessages = document.getElementById('chat-messages');
-        if (chatMessages) {
+        const chatMessagesEl = document.getElementById('chat-messages');
+        if (chatMessagesEl) {
             // Use setTimeout to ensure DOM is fully loaded
             setTimeout(() => {
-                chatMessages.scrollTop = chatMessages.scrollHeight;
+                chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
             }, 100);
         }
     }
 
     // Show/hide scroll to bottom button based on scroll position
     function updateScrollButton() {
-        const chatMessages = document.getElementById('chat-messages');
+        const chatMessagesEl = document.getElementById('chat-messages');
         const scrollButton = document.getElementById('scroll-to-bottom');
         
-        if (chatMessages && scrollButton) {
-            const isNearBottom = (chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight) < 100;
+        if (chatMessagesEl && scrollButton) {
+            const isNearBottom = (chatMessagesEl.scrollHeight - chatMessagesEl.scrollTop - chatMessagesEl.clientHeight) < 100;
             
             if (isNearBottom) {
                 // Hide button when near bottom
@@ -610,7 +616,7 @@
         }
 
         // Ensure latest message isn't hidden by the translucent input bar
-        const chatMessages = document.getElementById('chat-messages');
+        const chatMessagesRef = document.getElementById('chat-messages');
         const inputBar = document.querySelector('.chat-input-container');
         const EXTRA_OFFSET_PX = 12; // small breathing room above the overlay
 
@@ -620,19 +626,20 @@
         }
 
         function applyBottomPadding(nudgeScroll) {
-            if (!chatMessages || !inputBar) return;
-            const wasNearBottom = isNearBottom(chatMessages);
+            if (!chatMessagesRef || !inputBar) return;
+            const wasNearBottom = isNearBottom(chatMessagesRef);
             const h = inputBar.offsetHeight || 0;
             // Use !important to override any stylesheet !important rules
-            chatMessages.style.setProperty('padding-bottom', (h + EXTRA_OFFSET_PX) + 'px', 'important');
+            chatMessagesRef.style.setProperty('padding-bottom', (h + EXTRA_OFFSET_PX) + 'px', 'important');
             // If user was near bottom, keep them seeing the latest message fully
             if (nudgeScroll && wasNearBottom) {
-                chatMessages.scrollTop = chatMessages.scrollHeight - chatMessages.clientHeight;
+                chatMessagesRef.scrollTop = chatMessagesRef.scrollHeight - chatMessagesRef.clientHeight;
             }
         }
 
-        // Initial application after first paint
+        // Initial application after first paint and after soft keyboard settles
         setTimeout(() => applyBottomPadding(true), 50);
+        setTimeout(() => applyBottomPadding(true), 400);
         window.addEventListener('resize', () => applyBottomPadding(false));
 
         // React to input bar size changes (responsive/font changes)
@@ -742,46 +749,46 @@
         }
         
         // Try multiple selectors to find the chat messages container
-        let chatMessages = document.querySelector('.flex-1.overflow-y-auto.p-4.space-y-4');
-        if (!chatMessages) {
-            chatMessages = document.querySelector('.flex-1.overflow-y-auto');
+        let chatMessagesEl = document.querySelector('.flex-1.overflow-y-auto.p-4.space-y-4');
+        if (!chatMessagesEl) {
+            chatMessagesEl = document.querySelector('.flex-1.overflow-y-auto');
         }
-        if (!chatMessages) {
+        if (!chatMessagesEl) {
             // Fallback: look for any scrollable container with messages
-            chatMessages = document.querySelector('[class*="overflow-y-auto"]');
+            chatMessagesEl = document.querySelector('[class*="overflow-y-auto"]');
         }
         
-        console.log('Chat messages container found:', chatMessages);
+        console.log('Chat messages container found:', chatMessagesEl);
         
-        if (chatMessages) {
+        if (chatMessagesEl) {
             console.log('Scrolling to bottom...');
-            console.log('Initial scrollTop:', chatMessages.scrollTop);
-            console.log('ScrollHeight:', chatMessages.scrollHeight);
+            console.log('Initial scrollTop:', chatMessagesEl.scrollTop);
+            console.log('ScrollHeight:', chatMessagesEl.scrollHeight);
             
             // Always scroll to bottom on page load to show latest messages
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-            console.log('After scroll - scrollTop:', chatMessages.scrollTop);
+            chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+            console.log('After scroll - scrollTop:', chatMessagesEl.scrollTop);
             
             // Also scroll after a short delay to ensure all content is loaded
             setTimeout(() => {
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-                console.log('After 100ms scroll - scrollTop:', chatMessages.scrollTop);
+                chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+                console.log('After 100ms scroll - scrollTop:', chatMessagesEl.scrollTop);
             }, 100);
             
             // Scroll again after images and other content load
             setTimeout(() => {
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-                console.log('After 500ms scroll - scrollTop:', chatMessages.scrollTop);
+                chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+                console.log('After 500ms scroll - scrollTop:', chatMessagesEl.scrollTop);
             }, 500);
             
             // One more scroll after everything should be loaded
             setTimeout(() => {
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-                console.log('After 1000ms scroll - scrollTop:', chatMessages.scrollTop);
+                chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+                console.log('After 1000ms scroll - scrollTop:', chatMessagesEl.scrollTop);
             }, 1000);
             
             // Add scroll event listener to show/hide scroll-to-bottom button
-            chatMessages.addEventListener('scroll', updateScrollButton);
+            chatMessagesEl.addEventListener('scroll', updateScrollButton);
             
             // Initial check for scroll button visibility
             updateScrollButton();
@@ -789,7 +796,7 @@
             console.error('Could not find chat messages container');
         }
         
-        // Simple double submission prevention - only disable after validation
+        // Simple submission UX: show sending state without disabling submit on iOS
         const form = document.getElementById('message-form');
         if (form) {
             form.addEventListener('submit', function(e) {
@@ -807,37 +814,118 @@
                     return false;
                 }
                 
-                // Check if already submitting
-                if (btn && btn.disabled) {
-                    e.preventDefault();
-                    console.log('Already submitting, prevented');
-                    return false;
-                }
-                
                 // Log AI response status
                 const aiEnabled = aiToggle ? aiToggle.checked : true;
                 console.log('Sending message with AI response:', aiEnabled ? 'enabled' : 'disabled');
                 
-                // Disable button only after validation passes
+                // Show non-blocking sending state (do not disable to avoid iOS submission issues)
                 if (btn) {
-                    btn.disabled = true;
-                    
-                    // Hide the send icon and show loading spinner
+                    btn.classList.add('sending-state');
                     const sendIcon = btn.querySelector('#send-icon');
                     const loadingIcon = btn.querySelector('#loading-icon');
-                    
-                    if (sendIcon) {
-                        sendIcon.style.display = 'none';
-                    }
-                    
-                    if (loadingIcon) {
-                        loadingIcon.classList.remove('hidden');
-                    }
+                    if (sendIcon) sendIcon.style.display = 'none';
+                    if (loadingIcon) loadingIcon.classList.remove('hidden');
                 }
                 
                 console.log('Form submitted with content:', messageContent);
             });
         }
+
+        // Incremental polling for new messages
+        const POLL_INTERVAL_MS = 5000;
+        let pollTimer = null;
+        let backoff = POLL_INTERVAL_MS;
+        const maxBackoff = 30000;
+
+        function getLastMessageId() {
+            const container = document.getElementById('chat-messages');
+            if (!container) return 0;
+            const dataAttr = container.getAttribute('data-last-id');
+            const last = parseInt(dataAttr || '0', 10);
+            if (last) return last;
+            // Fallback: read last element
+            const items = container.querySelectorAll('[data-message-id]');
+            if (items.length) {
+                const id = parseInt(items[items.length - 1].getAttribute('data-message-id') || '0', 10);
+                return isNaN(id) ? 0 : id;
+            }
+            return 0;
+        }
+
+        function setLastMessageId(id) {
+            const container = document.getElementById('chat-messages');
+            if (container) container.setAttribute('data-last-id', String(id || 0));
+        }
+
+        function isNearBottom(el) {
+            if (!el) return false;
+            return (el.scrollHeight - el.scrollTop - el.clientHeight) < 120;
+        }
+
+        async function pollNewMessages() {
+            if (document.hidden) return; // pause when tab hidden
+            try {
+                const lastId = getLastMessageId();
+                const resp = await fetch(`/chat/{{ chat.id }}/messages?after_id=${lastId}`);
+                const data = await resp.json();
+                if (!data.success) throw new Error(data.error || 'poll failed');
+                const list = data.messages || [];
+                if (list.length === 0) {
+                    backoff = POLL_INTERVAL_MS; // reset backoff on empty success
+                    return;
+                }
+                const container = document.getElementById('chat-messages');
+                const wasNearBottom = isNearBottom(container);
+                list.forEach(msg => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = `flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`;
+                    wrapper.setAttribute('data-message-id', String(msg.id));
+                    wrapper.innerHTML = `
+                      <div class="message-bubble ${msg.role === 'user' ? 'user' : 'assistant'}">
+                        ${msg.role === 'assistant' ? `
+                        <div class="flex items-start gap-3">
+                          <div class="ai-avatar">AI</div>
+                          <div class="flex-1"><div class="message-content"><p>${msg.content}</p>
+                          <p class="message-timestamp">${new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                          </div></div>
+                        </div>` : `
+                        <div class="flex items-start gap-3">
+                          <div class="flex-1"><div class="message-content text-right"><p>${msg.content}</p>
+                          <p class="message-timestamp">${new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                          </div></div>
+                        </div>`}
+                      </div>`;
+                    container.appendChild(wrapper);
+                });
+                if (typeof lucide !== 'undefined') { try { lucide.createIcons(); } catch (e) {} }
+                setLastMessageId(data.last_id || getLastMessageId());
+                if (wasNearBottom) {
+                    container.scrollTop = container.scrollHeight;
+                } else {
+                    // reveal scroll-to-bottom chip
+                    updateScrollButton();
+                }
+                backoff = POLL_INTERVAL_MS; // reset after success
+            } catch (e) {
+                // backoff on errors
+                backoff = Math.min(backoff * 2, maxBackoff);
+            }
+        }
+
+        function startPolling() {
+            if (pollTimer) clearInterval(pollTimer);
+            pollTimer = setInterval(pollNewMessages, POLL_INTERVAL_MS);
+        }
+
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                // trigger an immediate poll when tab becomes visible
+                pollNewMessages();
+            }
+        });
+
+        // kick off
+        startPolling();
     });
     
     // Learning Progress Assessment Functions
