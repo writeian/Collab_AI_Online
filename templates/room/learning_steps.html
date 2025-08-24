@@ -498,8 +498,16 @@
         step1.classList.remove('hidden');
       });
 
-      // Save/Create room button
+      // Save/Create room button with loading state
       saveRoomBtn.addEventListener('click', function() {
+        if (saveRoomBtn.disabled) return;
+        // Visual feedback during processing
+        saveRoomBtn.disabled = true;
+        saveRoomBtn.classList.add('sending-state');
+        saveRoomBtn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 mr-2 animate-spin"></i>' + (isEditing ? 'Saving...' : 'Creating...');
+        if (typeof lucide !== 'undefined') {
+          try { lucide.createIcons(); } catch (e) {}
+        }
         if (isEditing) {
           saveRoomChanges();
         } else {
