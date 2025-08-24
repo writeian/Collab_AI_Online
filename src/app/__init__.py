@@ -257,6 +257,17 @@ def create_app(config_name=None):
         except Exception as e:
             return (f"CSS not found: {filename}", 404)
 
+    # Non-conflicting assets route we fully control (bypasses Flask's built-in static rule)
+    @app.route("/assets/css/<path:filename>")
+    def assets_css(filename: str):
+        try:
+            from flask import send_from_directory
+            import os as __os
+            css_dir = __os.path.join(app.static_folder or '', 'css')
+            return send_from_directory(css_dir, filename)
+        except Exception:
+            return ("Not found", 404)
+
     # Error handlers
     @app.errorhandler(404)
     def not_found_error(error):
