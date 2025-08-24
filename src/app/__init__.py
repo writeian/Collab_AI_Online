@@ -4,6 +4,7 @@ Contains core Flask application and blueprints
 """
 
 from flask import Flask, request
+import os as _os
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from flask_limiter import Limiter
@@ -46,11 +47,17 @@ def create_app(config_name=None):
 
     # Note: Repository uses capitalized directories `Static/` and `Templates/` at project root.
     # Linux filesystems are case-sensitive, so we must point Flask to the exact paths.
+    # Resolve absolute paths for static and template folders to avoid case-sensitivity issues in production
+    _here = _os.path.dirname(__file__)
+    _root = _os.path.abspath(_os.path.join(_here, '..', '..'))
+    _static_abs = _os.path.join(_root, 'Static')  # capital S in repo
+    _templates_abs = _os.path.join(_root, 'templates')  # lowercase in repo
+
     app = Flask(
         __name__,
-        static_folder="../../Static",
+        static_folder=_static_abs,
         static_url_path="/static",
-        template_folder="../../templates",
+        template_folder=_templates_abs,
     )
 
     # Get configuration
