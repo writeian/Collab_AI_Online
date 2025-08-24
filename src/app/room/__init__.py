@@ -136,14 +136,37 @@ def new_learning_steps():
         room = Room.query.get(room_id)
         is_editing = room is not None
 
+    # Prepare existing modes for editing
+    existing_modes = []
+    saved_rubrics = {}
+    if is_editing and room:
+        try:
+            from src.utils.openai_utils import get_modes_for_room
+            modes_obj = get_modes_for_room(room)
+            if hasattr(modes_obj, 'items'):
+                for k, v in modes_obj.items():
+                    existing_modes.append({"key": k, "label": v.label, "prompt": v.prompt})
+        except Exception as e:
+            current_app.logger.warning(f"[learning-steps.load] Failed to load modes for room {room_id}: {e}")
+
+        # TODO: Load saved rubrics if available (future enhancement)
+
+    # Provide user context for header/breadcrumb
+    try:
+        user_ctx = get_current_user()
+        inv_count = get_invitation_count(user_ctx) if user_ctx else 0
+    except Exception:
+        user_ctx = None
+        inv_count = 0
+
     return render_template(
         'room/learning_steps.html',
         room=room,
         is_editing=is_editing,
-        existing_modes=[],
-        saved_rubrics={},
-        user=None,
-        invitation_count=0,
+        existing_modes=existing_modes,
+        saved_rubrics=saved_rubrics,
+        user=user_ctx,
+        invitation_count=inv_count,
         available_templates=get_available_templates(),
     )
 

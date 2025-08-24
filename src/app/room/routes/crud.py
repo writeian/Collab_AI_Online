@@ -191,50 +191,24 @@ def view_room(room_id: int) -> Any:
 @crud_bp.route("/<int:room_id>/edit", methods=["GET", "POST"])
 @require_room_access
 def edit_room(room_id: int) -> Any:
-    """Edit a room."""
+    """Redirect legacy edit route to the unified learning steps editor."""
     try:
+        # Preserve authorization check and then redirect
         user = get_current_user()
         room = RoomService.get_room_by_id(room_id, user)
-        
         if not room:
             flash("Room not found or you don't have access to it.", "error")
             return redirect(url_for('room.room_crud.index'))
-        
-        # Check if user can manage the room
+
         permissions = RoomService.get_room_permissions(room, user)
-        if not permissions["can_manage"]:
+        if not permissions.get("can_manage"):
             flash("You don't have permission to edit this room.", "error")
             return redirect(url_for('room.room_crud.view_room', room_id=room_id))
-        
-        if request.method == "POST":
-            # Extract update data
-            update_data = RoomUpdateData(
-                name=request.form.get('name'),
-                description=request.form.get('description'),
-                goals=request.form.get('goals'),
-                group_size=request.form.get('group_size')
-            )
-            
-            # Use service layer
-            result = RoomService.update_room(room_id, update_data, user)
-            
-            if result.success:
-                flash("Room updated successfully!", "success")
-                return redirect(url_for('room.room_crud.view_room', room_id=room_id))
-            else:
-                flash(f"Error: {result.error}", "error")
-        
-        # GET request - show edit form
-        return render_template(
-            "room/edit.html",
-            room=room,
-            user=user,
-            invitation_count=get_invitation_count(user)
-        )
-        
+
+        # Redirect to unified editor with rubrics
+        return redirect(url_for('room.new_learning_steps', room_id=room_id))
     except Exception as e:
-        current_app.logger.error(f"Error editing room {room_id}: {e}")
-        flash("An unexpected error occurred. Please try again.", "error")
+        current_app.logger.error(f"Error redirecting edit room {room_id}: {e}")
         return redirect(url_for('room.room_crud.view_room', room_id=room_id))
 
 @crud_bp.route("/<int:room_id>/delete", methods=["GET", "POST"])
