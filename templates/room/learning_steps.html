@@ -214,7 +214,8 @@
         <!-- Action Buttons -->
         <div class="flex gap-3 pt-4">
           <button type="button" id="save-room-btn"
-                  class="inline-flex items-center px-6 py-3 bg-success text-white font-medium rounded-lg hover:bg-success-hover transition-colors">
+                  class="btn btn-primary btn-lg inline-flex items-center justify-center shadow-sm"
+                  style="appearance: button; -webkit-appearance: button; border-radius: 0.5rem;">
             <i data-lucide="{% if is_editing %}save{% else %}check{% endif %}" class="w-5 h-5 mr-2"></i>
             {% if is_editing %}Save Room & All Changes{% else %}Create Room{% endif %}
           </button>
