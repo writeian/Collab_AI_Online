@@ -532,6 +532,193 @@ def get_progression_recommendation(chat: Any, target_mode: Optional[str] = None)
     }
 
 
+def get_progression_recommendation_with_rubric(chat: Any) -> Dict[str, Any]:
+    """Assess progression using saved rubric for the chat's current step.
+
+    If a rubric exists for (room_id, chat.mode), we ask the LLM to score each
+    criterion and compute a weighted average. If no API key or rubric, we
+    gracefully fall back to get_progression_recommendation().
+    """
+    try:
+        # Lazy import to avoid circulars
+        from src.models import RubricCriterion, RubricLevel, RoomRubric
+
+        room_id = chat.room_id
+        step_key = getattr(chat, 'mode', None)
+        if not step_key:
+            return get_progression_recommendation(chat)
+
+        # Load rubric
+        criteria = (
+            RubricCriterion.query.filter_by(room_id=room_id, step_key=step_key)
+            .order_by(RubricCriterion.order)
+            .all()
+        )
+        if not criteria:
+            return get_progression_recommendation(chat)
+
+        rubric = []
+        for c in criteria:
+            levels = RubricLevel.query.filter_by(criterion_id=c.id).order_by(RubricLevel.score).all()
+            rubric.append({
+                'name': c.name,
+                'weight': float(c.weight or 1.0),
+                'levels': [
+                    {
+                        'level': lv.level,
+                        'score': int(lv.score),
+                        'description': lv.description or ''
+                    } for lv in levels
+                ]
+            })
+
+        room_rubric = RoomRubric.query.filter_by(room_id=room_id, step_key=step_key).first()
+        progression_threshold = float(room_rubric.progression_threshold if room_rubric else 2.5)
+
+        # Build transcript (limit to last ~15 messages for brevity)
+        from src.models import Message
+        messages = (
+            Message.query.filter_by(chat_id=chat.id)
+            .order_by(Message.timestamp)
+            .all()
+        )
+        tail = messages[-15:]
+
+        # Prepare LLM prompt
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        if api_key:
+            try:
+                # Compose rubric summary
+                rubric_text_lines: List[str] = []
+                for rc in rubric:
+                    rubric_text_lines.append(f"Criterion: {rc['name']} (weight {rc['weight']:.2f})")
+                    for lv in rc['levels']:
+                        rubric_text_lines.append(f"  - {lv['score']}: {lv['level']} — {lv['description']}")
+                rubric_text = "\n".join(rubric_text_lines)
+
+                # Compose transcript summary
+                transcript_lines: List[str] = []
+                for m in tail:
+                    who = 'User' if m.role == 'user' else 'Assistant'
+                    content = (m.content or '')[:800]
+                    transcript_lines.append(f"[{who}] {content}")
+                transcript_text = "\n".join(transcript_lines)
+
+                system = (
+                    "You are an expert assessor. Score the user's current progress in the current learning step "
+                    "using the provided rubric. Choose one score (1-4) per criterion with a one-sentence rationale. "
+                    "Return ONLY JSON with this shape: {\n"
+                    "  \"criteria\": [{\"name\": str, \"score\": 1|2|3|4, \"rationale\": str}],\n"
+                    "  \"suggestions\": [str,...]\n"
+                    "}. Do not include any extra text."
+                )
+
+                user_content = (
+                    f"Rubric for step '{step_key}':\n{rubric_text}\n\n"
+                    f"Recent transcript (most recent last):\n{transcript_text}"
+                )
+
+                response_text, _ = call_anthropic_api(
+                    [{"role": "user", "content": user_content}], system_prompt=system, max_tokens=800
+                )
+
+                # Extract JSON
+                import json, re
+                match = re.search(r"\{[\s\S]*\}", response_text)
+                parsed = json.loads(match.group(0)) if match else {}
+                crit_scores = parsed.get('criteria', []) if isinstance(parsed, dict) else []
+                suggestions = parsed.get('suggestions', []) if isinstance(parsed, dict) else []
+
+            except Exception as e:
+                current_app = None
+                try:
+                    from flask import current_app as _ca
+                    current_app = _ca
+                except Exception:
+                    pass
+                if current_app:
+                    current_app.logger.warning(f"Rubric LLM assessment failed, falling back: {e}")
+                crit_scores = []
+                suggestions = []
+        else:
+            crit_scores = []
+            suggestions = []
+
+        # If no LLM scores, build naive mid-scores and generic suggestions
+        if not crit_scores:
+            crit_scores = [{"name": rc['name'], "score": 2, "rationale": "Baseline estimate without AI scoring."} for rc in rubric]
+            if not suggestions:
+                # Suggest next level descriptors from first two criteria
+                for rc in rubric[:2]:
+                    lv3 = next((lv for lv in rc['levels'] if lv['score'] == 3), None)
+                    if lv3:
+                        suggestions.append(f"Strengthen: {rc['name']} — {lv3['description']}")
+
+        # Compute weighted average
+        # Map criterion names to weights for safety
+        name_to_weight = {rc['name']: rc['weight'] for rc in rubric}
+        total_weight = sum(name_to_weight.values()) or 1.0
+        weighted_sum = 0.0
+        for cs in crit_scores:
+            w = float(name_to_weight.get(cs.get('name'), 1.0))
+            s = float(cs.get('score') or 0)
+            weighted_sum += w * s
+        overall = weighted_sum / total_weight
+
+        # Determine recommendation type
+        if overall >= progression_threshold + 0.2:
+            rec_type = 'ready'
+            msg = f"Overall score {overall:.2f} meets the rubric threshold {progression_threshold:.2f}."
+            confidence = 0.85
+        elif overall >= progression_threshold - 0.2:
+            rec_type = 'almost_ready'
+            msg = f"Overall score {overall:.2f} is close to the threshold {progression_threshold:.2f}."
+            confidence = 0.7
+        else:
+            rec_type = 'not_ready'
+            msg = f"Overall score {overall:.2f} is below the threshold {progression_threshold:.2f}."
+            confidence = 0.55
+
+        # Build next_step similar to previous helper
+        try:
+            modes_for_room = get_modes_for_room(chat.room) if getattr(chat, 'room', None) else BASE_MODES
+        except Exception:
+            modes_for_room = BASE_MODES
+        mode_keys: List[str] = list(modes_for_room.keys())
+        current_key: str = getattr(chat, 'mode', '') or (mode_keys[0] if mode_keys else '')
+        next_key = None
+        if current_key in mode_keys:
+            idx = mode_keys.index(current_key)
+            if idx + 1 < len(mode_keys):
+                next_key = mode_keys[idx + 1]
+        next_step = None
+        if next_key:
+            mi = modes_for_room.get(next_key)
+            next_step = {
+                'key': next_key,
+                'label': getattr(mi, 'label', str(mi)) or next_key,
+                'description': (getattr(mi, 'prompt', '') or '')[:300]
+            }
+
+        # If suggestions empty, create from lowest scored criteria
+        if not suggestions:
+            # Pick up to 3 lowest
+            sorted_crit = sorted(crit_scores, key=lambda x: x.get('score', 0))
+            for cs in sorted_crit[:3]:
+                suggestions.append(f"Improve: {cs.get('name')} — {cs.get('rationale') or 'Provide stronger evidence or clarity.'}")
+
+        return {
+            'type': rec_type,
+            'message': msg,
+            'confidence': confidence,
+            'suggestions': suggestions,
+            'next_step': next_step,
+        }
+    except Exception:
+        # Any failure, fall back to heuristic
+        return get_progression_recommendation(chat)
+
+
 def get_next_learning_step(chat: Any, target_mode: Optional[str] = None) -> str:
     """Get next learning step - simplified implementation."""
     return "Focus on integrating evidence and strengthening your argument structure."

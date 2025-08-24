@@ -386,7 +386,7 @@ def assess_progression(chat_id: int) -> Any:
         return jsonify({"error": "User not authenticated"}), 401
 
     try:
-        from src.utils.openai_utils import get_progression_recommendation
+        from src.utils.openai_utils import get_progression_recommendation_with_rubric as get_progression_recommendation
 
         # Get progression recommendation
         recommendation = get_progression_recommendation(chat_obj)
