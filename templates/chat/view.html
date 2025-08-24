@@ -740,24 +740,39 @@
         }
         // Keep layout correct on resize while in focus mode
         window.addEventListener('resize', () => { if (document.body.classList.contains('focus-mode')) enforceFocusModeLayout(); });
-        // iOS VisualViewport-aware adjustments
-        if (window.visualViewport) {
+        // iOS VisualViewport-aware adjustments (single registration)
+        if (!window.__chat_vv_bound && window.visualViewport) {
             const vvHandler = () => { try { applyBottomPadding(false); enforceFocusModeLayout(); } catch(e){} };
             window.visualViewport.addEventListener('resize', vvHandler);
             window.visualViewport.addEventListener('scroll', vvHandler);
+            window.__chat_vv_bound = true;
         }
-        // Input focus/blur adjustments for mobile keyboards
-        const messageInput = document.getElementById('message-input');
-        if (messageInput) {
-            messageInput.addEventListener('focus', () => { setTimeout(() => { applyBottomPadding(true); enforceFocusModeLayout(); }, 50); });
-            messageInput.addEventListener('blur', () => { setTimeout(() => { applyBottomPadding(true); enforceFocusModeLayout(); }, 50); });
+        // Input focus/blur adjustments for mobile keyboards (single registration)
+        if (!window.__chat_input_bound) {
+            const inputEl = document.getElementById('message-input');
+            if (inputEl) {
+                inputEl.addEventListener('focus', () => { setTimeout(() => { applyBottomPadding(true); enforceFocusModeLayout(); }, 50); });
+                inputEl.addEventListener('blur', () => { setTimeout(() => { applyBottomPadding(true); enforceFocusModeLayout(); }, 50); });
+            }
+            window.__chat_input_bound = true;
         }
-        // iOS VisualViewport-aware adjustments
-        if (window.visualViewport) {
+        // iOS VisualViewport-aware adjustments (single registration)
+        if (!window.__chat_vv_bound && window.visualViewport) {
             const vvHandler = () => { try { applyBottomPadding(false); enforceFocusModeLayout(); } catch(e){} };
             window.visualViewport.addEventListener('resize', vvHandler);
             window.visualViewport.addEventListener('scroll', vvHandler);
+            window.__chat_vv_bound = true;
         }
+        // Input focus/blur adjustments for mobile keyboards (single registration)
+        if (!window.__chat_input_bound) {
+            const inputEl = document.getElementById('message-input');
+            if (inputEl) {
+                inputEl.addEventListener('focus', () => { setTimeout(() => { applyBottomPadding(true); enforceFocusModeLayout(); }, 50); });
+                inputEl.addEventListener('blur', () => { setTimeout(() => { applyBottomPadding(true); enforceFocusModeLayout(); }, 50); });
+            }
+            window.__chat_input_bound = true;
+        }
+        // (deduped above)
         // Input focus/blur adjustments for mobile keyboards
         const messageInput = document.getElementById('message-input');
         if (messageInput) {
