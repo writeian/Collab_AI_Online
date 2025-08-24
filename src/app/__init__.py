@@ -50,7 +50,8 @@ def create_app(config_name=None):
     # Resolve absolute paths for static and template folders to avoid case-sensitivity issues in production
     _here = _os.path.dirname(__file__)
     _root = _os.path.abspath(_os.path.join(_here, '..', '..'))
-    _static_abs = _os.path.join(_root, 'Static')  # capital S in repo
+    # Packaged static lives alongside this file under src/app/static
+    _static_abs = _os.path.join(_here, 'static')
     _templates_abs = _os.path.join(_root, 'templates')  # lowercase in repo
 
     app = Flask(
@@ -252,8 +253,7 @@ def create_app(config_name=None):
         try:
             from flask import send_from_directory
             import os as __os
-            # Prefer absolute project path resolution to avoid env CWD issues
-            _abs_css = __os.path.abspath(__os.path.join(__os.path.dirname(__file__), '..', '..', 'Static', 'css'))
+            _abs_css = __os.path.join(app.static_folder or '', 'css')
             return send_from_directory(_abs_css, filename, mimetype='text/css')
         except Exception as e:
             return (f"CSS not found: {filename}", 404)
@@ -264,7 +264,7 @@ def create_app(config_name=None):
         try:
             from flask import send_from_directory
             import os as __os
-            _abs_css = __os.path.abspath(__os.path.join(__os.path.dirname(__file__), '..', '..', 'Static', 'css'))
+            _abs_css = __os.path.join(app.static_folder or '', 'css')
             return send_from_directory(_abs_css, filename, mimetype='text/css')
         except Exception:
             return ("Not found", 404)
