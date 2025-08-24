@@ -384,7 +384,7 @@
 
 /* Modern Input Area */
 .chat-input-container {
-  position: absolute; /* Key change from sticky */
+  position: absolute; /* Desktop default; overridden on mobile */
   bottom: 0;
   left: 0;
   right: 0;
@@ -629,6 +629,12 @@
   }
   
   .chat-input-container {
+    /* Pin the input to viewport bottom on mobile/iOS to prevent clipping */
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
     padding-bottom: calc(1rem + env(safe-area-inset-bottom));
   }
 }
