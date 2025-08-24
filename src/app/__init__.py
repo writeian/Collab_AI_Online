@@ -128,6 +128,21 @@ def create_app(config_name=None):
     # Register custom template filters
     app.jinja_env.filters['markdown'] = markdown_filter
 
+    # Debug: Log static/template paths and CSS existence at startup
+    try:
+        import os as __os
+        css_paths = [
+            __os.path.join(app.static_folder or '', 'css', 'globals.css'),
+            __os.path.join(app.static_folder or '', 'css', 'components.css'),
+            __os.path.join(app.static_folder or '', 'css', 'style.css'),
+        ]
+        print(f"[static] static_folder={app.static_folder}")
+        print(f"[static] template_folder={app.template_folder}")
+        for p in css_paths:
+            print(f"[static] exists({p})={__os.path.exists(p)}")
+    except Exception as _e:
+        print(f"[static] startup static check failed: {_e}")
+
     # Register blueprints
     from src.app.auth import auth
     from src.app.chat import chat
@@ -208,6 +223,27 @@ def create_app(config_name=None):
                 "error": str(e),
                 "timestamp": datetime.utcnow().isoformat()
             }), 500
+
+    # Lightweight endpoint to verify static file availability in prod
+    @app.route("/__static_check")
+    def __static_check():
+        import os as __os
+        try:
+            base = app.static_folder or ''
+            files = {
+                'static_folder': base,
+                'globals_css': __os.path.join(base, 'css', 'globals.css'),
+                'components_css': __os.path.join(base, 'css', 'components.css'),
+                'style_css': __os.path.join(base, 'css', 'style.css'),
+            }
+            exists = {k + '_exists': __os.path.exists(v) if k != 'static_folder' else True for k, v in files.items()}
+            return {
+                'ok': True,
+                **files,
+                **exists
+            }
+        except Exception as e:
+            return { 'ok': False, 'error': str(e) }, 500
 
     # Error handlers
     @app.errorhandler(404)
