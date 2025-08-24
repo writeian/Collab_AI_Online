@@ -1,6 +1,15 @@
 {% extends "base.html" %}
 
 {% block title %}Chat - {{ chat.title }}{% endblock %}
+{% block extra_css %}
+<style>
+  /* Minimal Focus Mode: hides chrome to maximize chat space */
+  body.focus-mode .navigation-breadcrumb { display: none !important; }
+  body.focus-mode .chat-sidebar { display: none !important; }
+  body.focus-mode .system-instructions { display: none !important; }
+  body.focus-mode .chat-header { padding-top: 6px; padding-bottom: 6px; }
+</style>
+{% endblock %}
 
 {% block content %}
 <!-- Navigation Breadcrumb -->
@@ -178,6 +187,9 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
+                    <button id="focus-mode-toggle"
+                            class="text-muted-foreground hover:text-foreground transition-colors text-sm px-2 py-1 rounded-md hover:bg-muted"
+                            title="Toggle Focus Mode">Focus</button>
                     <a href="{{ url_for('chat.edit_chat', chat_id=chat.id) }}" 
                        class="text-muted-foreground hover:text-foreground transition-colors"
                        title="Edit Chat Details">
@@ -629,6 +641,30 @@
                     icon.setAttribute('data-lucide', 'panel-left');
                     lucide.createIcons();
                 }
+            });
+        }
+
+        // Focus mode toggle with persistence
+        const focusToggle = document.getElementById('focus-mode-toggle');
+        const FOCUS_KEY = 'chat_focus_mode';
+        function applyFocusMode(enabled) {
+            if (enabled) {
+                document.body.classList.add('focus-mode');
+                if (focusToggle) focusToggle.textContent = 'Exit Focus';
+            } else {
+                document.body.classList.remove('focus-mode');
+                if (focusToggle) focusToggle.textContent = 'Focus';
+            }
+        }
+        try {
+            const saved = localStorage.getItem(FOCUS_KEY);
+            if (saved === 'true') applyFocusMode(true);
+        } catch (e) {}
+        if (focusToggle) {
+            focusToggle.addEventListener('click', function() {
+                const enabled = !document.body.classList.contains('focus-mode');
+                applyFocusMode(enabled);
+                try { localStorage.setItem(FOCUS_KEY, enabled.toString()); } catch (e) {}
             });
         }
         
