@@ -31,29 +31,37 @@
                     </a>
                 </div>
                 
-                <!-- Desktop Navigation Links (hidden on mobile) -->
-                <nav class="hidden md:flex items-center space-x-4 lg:space-x-8">
-                    {% if user %}
-                        <a href="{{ url_for('room.room_crud.index') }}" class="text-primary hover:text-primary/80 transition-colors relative text-sm sm:text-base">
-                            Home
-                            {% if invitation_count > 0 %}
-                            <span class="absolute -top-2 -right-2 bg-destructive text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
-                                {{ invitation_count }}
-                            </span>
-                            {% endif %}
-                        </a>
-                        <a href="{{ url_for('auth.profile') }}" class="text-muted-foreground hover:text-foreground transition-colors text-sm sm:text-base">Profile</a>
-                        <a href="{{ url_for('auth.logout') }}" class="text-muted-foreground hover:text-foreground transition-colors text-sm sm:text-base">Logout</a>
-                    {% else %}
-                        <a href="{{ url_for('auth.login') }}" class="text-muted-foreground hover:text-foreground transition-colors text-sm sm:text-base">Login</a>
-                        <a href="{{ url_for('auth.register') }}" class="text-muted-foreground hover:text-foreground transition-colors text-sm sm:text-base">Register</a>
-                    {% endif %}
-                </nav>
+                <!-- Right side: nav + page actions + mobile menu -->
+                <div class="flex items-center gap-3">
+                    <!-- Desktop Navigation Links (hidden on mobile) -->
+                    <nav class="hidden md:flex items-center space-x-4 lg:space-x-8">
+                        {% if user %}
+                            <a href="{{ url_for('room.room_crud.index') }}" class="text-primary hover:text-primary/80 transition-colors relative text-sm sm:text-base">
+                                Home
+                                {% if invitation_count > 0 %}
+                                <span class="absolute -top-2 -right-2 bg-destructive text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                                    {{ invitation_count }}
+                                </span>
+                                {% endif %}
+                            </a>
+                            <a href="{{ url_for('auth.profile') }}" class="text-muted-foreground hover:text-foreground transition-colors text-sm sm:text-base">Profile</a>
+                            <a href="{{ url_for('auth.logout') }}" class="text-muted-foreground hover:text-foreground transition-colors text-sm sm:text-base">Logout</a>
+                        {% else %}
+                            <a href="{{ url_for('auth.login') }}" class="text-muted-foreground hover:text-foreground transition-colors text-sm sm:text-base">Login</a>
+                            <a href="{{ url_for('auth.register') }}" class="text-muted-foreground hover:text-foreground transition-colors text-sm sm:text-base">Register</a>
+                        {% endif %}
+                    </nav>
 
-                <!-- Mobile Menu Button (hidden on desktop) -->
-                <button id="mobile-menu-button" class="block md:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" aria-label="Open mobile menu" style="display: block;">
-                    <i data-lucide="menu" class="w-6 h-6"></i>
-                </button>
+                    <!-- Page-specific header actions (e.g., Room settings) -->
+                    <div class="flex items-center gap-2">
+                        {% block header_actions %}{% endblock %}
+                    </div>
+
+                    <!-- Mobile Menu Button (hidden on desktop) -->
+                    <button id="mobile-menu-button" class="block md:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" aria-label="Open mobile menu" style="display: block;">
+                        <i data-lucide="menu" class="w-6 h-6"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </header>

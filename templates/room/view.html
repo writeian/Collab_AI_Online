@@ -1,5 +1,40 @@
 {% extends "base.html" %}
 {% block title %}{{ room.name }}{% endblock %}
+{% block header_actions %}
+  <div class="flex items-center gap-2 relative">
+    <a href="{{ url_for('room.room_invitations.invite_members', room_id=room.id) }}" class="settings-icon-btn" title="Invite Members">
+      <i data-lucide="user-plus" class="w-5 h-5"></i>
+    </a>
+    <div class="relative">
+      <button class="settings-icon-btn" onclick="toggleRoomActions(event)" title="Room Settings">
+        <i data-lucide="settings" class="w-5 h-5"></i>
+      </button>
+      <div class="dropdown-menu" id="room-actions-menu">
+        {% if user.id == room.owner_id %}
+          <a href="{{ url_for('room.new_learning_steps') }}?room_id={{ room.id }}" class="dropdown-item">
+            <i data-lucide="edit" class="w-4 h-4"></i>
+            Edit Room
+          </a>
+          <a href="{{ url_for('room.room_invitations.manage_invitations', room_id=room.id) }}" class="dropdown-item">
+            <i data-lucide="users" class="w-4 h-4"></i>
+            View Members
+          </a>
+          <a href="{{ url_for('room.room_crud.delete_room', room_id=room.id) }}" class="dropdown-item text-destructive" onclick="return confirm('Are you sure you want to delete this room? This action cannot be undone.')">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+            Delete Room
+          </a>
+          <div class="dropdown-divider"></div>
+        {% else %}
+          <a href="{{ url_for('room.room_invitations.manage_invitations', room_id=room.id) }}" class="dropdown-item">
+            <i data-lucide="users" class="w-4 h-4"></i>
+            View Members
+          </a>
+          <div class="dropdown-divider"></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}
 {% block content %}
   <!-- Main Content Container -->
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -60,49 +95,6 @@
           <p class="text-xs text-muted-foreground">
             Created by {{ room.owner.display_name }} on {{ room.created_at.strftime('%Y-%m-%d %H:%M') }}
           </p>
-        </div>
-        
-        <!-- Action buttons positioned in upper-right corner of the card -->
-        <div class="flex items-center gap-3 ml-6 relative">
-          <!-- Invite Members Button -->
-          <a href="{{ url_for('room.room_invitations.invite_members', room_id=room.id) }}" class="settings-icon-btn" title="Invite Members">
-            <i data-lucide="user-plus" class="w-5 h-5"></i>
-          </a>
-          
-          <!-- Settings Button with Dropdown -->
-          <div class="relative">
-            <button class="settings-icon-btn" onclick="toggleRoomActions()" title="Room Settings">
-              <i data-lucide="settings" class="w-5 h-5"></i>
-            </button>
-            
-            <!-- Dropdown menu positioned relative to settings button -->
-            <div class="dropdown-menu" id="room-actions-menu">
-            <!-- Owner-only actions -->
-            {% if user.id == room.owner_id %}
-              <a href="{{ url_for('room.new_learning_steps') }}?room_id={{ room.id }}" class="dropdown-item">
-                <i data-lucide="edit" class="w-4 h-4"></i>
-                Edit Room
-              </a>
-              <a href="{{ url_for('room.room_invitations.manage_invitations', room_id=room.id) }}" class="dropdown-item">
-                <i data-lucide="users" class="w-4 h-4"></i>
-                View Members
-              </a>
-              <a href="{{ url_for('room.room_crud.delete_room', room_id=room.id) }}" class="dropdown-item text-destructive" onclick="return confirm('Are you sure you want to delete this room? This action cannot be undone.')">
-                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                Delete Room
-              </a>
-              <div class="dropdown-divider"></div>
-            {% else %}
-              <!-- Member actions -->
-              <a href="{{ url_for('room.room_invitations.manage_invitations', room_id=room.id) }}" class="dropdown-item">
-                <i data-lucide="users" class="w-4 h-4"></i>
-                View Members
-              </a>
-              <div class="dropdown-divider"></div>
-            {% endif %}
-            
-            <!-- Common actions (Create Chat appears prominently in Your Chats section below) -->
-          </div>
         </div>
       </div>
     </div>
@@ -325,9 +317,9 @@
   </div> <!-- End of main content container -->
 
 <script>
-  function toggleRoomActions() {
+  function toggleRoomActions(ev) {
     const menu = document.getElementById('room-actions-menu');
-    const settingsButton = event.target.closest('.settings-icon-btn');
+    const settingsButton = (ev && ev.currentTarget) ? ev.currentTarget : (ev && ev.target ? ev.target.closest('.settings-icon-btn') : document.querySelector('.settings-icon-btn'));
     const isOpen = menu.classList.contains('open');
 
     const cleanup = () => {
@@ -440,6 +432,12 @@
     } else {
       if (roomInfoIcon) roomInfoIcon.style.transform = 'rotate(180deg)';
       if (yourChatsIcon) yourChatsIcon.style.transform = 'rotate(180deg)';
+    }
+    // Ensure settings dropdown is closed by default
+    const menu = document.getElementById('room-actions-menu');
+    if (menu) {
+      menu.classList.remove('open');
+      menu.style.display = 'none';
     }
   });
   
