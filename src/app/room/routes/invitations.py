@@ -33,21 +33,28 @@ def invite_members(room_id: int) -> Any:
             return redirect(url_for('room.room_crud.view_room', room_id=room_id))
         
         if request.method == "POST":
-            # Handle invitation creation
-            invitee_email = request.form.get('email', '').strip()
-            display_name = request.form.get('display_name', '').strip()
+            # Handle invitation creation (email or username)
+            invitee_email = (request.form.get('email') or '').strip()
+            invitee_username = (request.form.get('username') or '').strip()
+            display_name = (request.form.get('display_name') or '').strip()
             can_create_chats = request.form.get('can_create_chats') == 'on'
             can_invite_members = request.form.get('can_invite_members') == 'on'
-            
-            if not invitee_email:
-                flash("Email address is required.", "error")
+
+            # Require at least one identifier
+            if not invitee_email and not invitee_username:
+                flash("Please enter an email or a username to invite.", "error")
                 return redirect(url_for('room.room_invitations.invite_members', room_id=room_id))
-            
-            if not display_name:
-                display_name = invitee_email.split('@')[0]
-            
-            # Check if user already exists
-            invitee = User.query.filter_by(email=invitee_email).first()
+
+            # Resolve invitee by email first, then by username
+            invitee: Optional[User] = None
+            if invitee_email:
+                invitee = User.query.filter_by(email=invitee_email).first()
+            if not invitee and invitee_username:
+                try:
+                    from sqlalchemy import func
+                    invitee = User.query.filter(func.lower(User.username) == invitee_username.lower()).first()
+                except Exception:
+                    invitee = User.query.filter_by(username=invitee_username).first()
             
             if invitee:
                 # Check if already a member
@@ -64,7 +71,6 @@ def invite_members(room_id: int) -> Any:
                 member = RoomMember(
                     room_id=room_id,
                     user_id=invitee.id,
-                    display_name=display_name,
                     can_create_chats=can_create_chats,
                     can_invite_members=can_invite_members,
                     joined_at=datetime.utcnow(),
@@ -74,10 +80,14 @@ def invite_members(room_id: int) -> Any:
                 db.session.add(member)
                 db.session.commit()
                 
-                flash(f"Invitation sent to {invitee_email}!", "success")
+                who = invitee.email if invitee_email else f"@{invitee.username}"
+                flash(f"Invitation sent to {who}!", "success")
                 
             else:
-                flash("User not found. They need to register first.", "error")
+                if invitee_username:
+                    flash(f"No user found with username '@{invitee_username}'. Please check the spelling and try again.", "error")
+                else:
+                    flash("User not found. They need to register first.", "error")
             
             return redirect(url_for('room.room_invitations.invite_members', room_id=room_id))
         
