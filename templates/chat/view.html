@@ -4,6 +4,7 @@
 {% block extra_css %}
 <style>
   /* Minimal Focus Mode: hides chrome to maximize chat space */
+  body.focus-mode > header { display: none !important; }
   body.focus-mode .navigation-breadcrumb { display: none !important; }
   body.focus-mode .chat-sidebar { display: none !important; }
   body.focus-mode .system-instructions { display: none !important; }
@@ -607,6 +608,38 @@
             // Auto-scroll to bottom when page loads
             autoScrollOnLoad();
         }
+
+        // Ensure latest message isn't hidden by the translucent input bar
+        const chatMessages = document.getElementById('chat-messages');
+        const inputBar = document.querySelector('.chat-input-container');
+        const EXTRA_OFFSET_PX = 12; // small breathing room above the overlay
+
+        function isNearBottom(el) {
+            if (!el) return false;
+            return (el.scrollHeight - el.scrollTop - el.clientHeight) < 100;
+        }
+
+        function applyBottomPadding(nudgeScroll) {
+            if (!chatMessages || !inputBar) return;
+            const wasNearBottom = isNearBottom(chatMessages);
+            const h = inputBar.offsetHeight || 0;
+            // Use !important to override any stylesheet !important rules
+            chatMessages.style.setProperty('padding-bottom', (h + EXTRA_OFFSET_PX) + 'px', 'important');
+            // If user was near bottom, keep them seeing the latest message fully
+            if (nudgeScroll && wasNearBottom) {
+                chatMessages.scrollTop = chatMessages.scrollHeight - chatMessages.clientHeight;
+            }
+        }
+
+        // Initial application after first paint
+        setTimeout(() => applyBottomPadding(true), 50);
+        window.addEventListener('resize', () => applyBottomPadding(false));
+
+        // React to input bar size changes (responsive/font changes)
+        if (window.ResizeObserver && inputBar) {
+            const ro = new ResizeObserver(() => applyBottomPadding(true));
+            ro.observe(inputBar);
+        }
         
         // Chat Sidebar Toggle functionality (mobile only)
         const chatSidebarToggle = document.getElementById('chat-sidebar-toggle');
@@ -665,6 +698,8 @@
                 const enabled = !document.body.classList.contains('focus-mode');
                 applyFocusMode(enabled);
                 try { localStorage.setItem(FOCUS_KEY, enabled.toString()); } catch (e) {}
+                // Re-apply padding in case layout heights changed with focus toggle
+                setTimeout(() => applyBottomPadding(true), 50);
             });
         }
         

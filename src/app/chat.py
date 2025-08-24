@@ -324,6 +324,41 @@ def edit_chat(chat_id: int) -> Any:
     )
 
 
+@chat.route("/<int:chat_id>/messages", methods=["GET"])
+@require_chat_access
+def get_new_messages(chat_id: int) -> Any:
+    """Return messages newer than a given message id for incremental polling."""
+    try:
+        chat_obj = Chat.query.get_or_404(chat_id)
+        after_id = request.args.get("after_id", type=int)
+
+        q = Message.query.options(joinedload(Message.user)).filter_by(chat_id=chat_obj.id)
+        if after_id:
+            q = q.filter(Message.id > after_id)
+        q = q.order_by(Message.id.asc()).limit(50)
+
+        new_messages = q.all()
+
+        def to_payload(m: Message) -> dict:
+            return {
+                "id": m.id,
+                "role": m.role,
+                "content": m.content,
+                "timestamp": m.timestamp.isoformat(),
+                "user": {
+                    "id": m.user.id if m.user else None,
+                    "display_name": m.user.display_name if m.user else None,
+                },
+            }
+
+        payload = [to_payload(m) for m in new_messages]
+        last_id = payload[-1]["id"] if payload else (after_id or 0)
+        return jsonify({"success": True, "messages": payload, "last_id": last_id})
+    except Exception as e:
+        current_app.logger.error(f"Error fetching new messages for chat {chat_id}: {e}")
+        return jsonify({"success": False, "error": "Failed to load new messages"}), 500
+
+
 @chat.route("/<int:chat_id>/delete", methods=["GET", "POST"])
 @require_chat_delete
 def delete_chat(chat_id: int) -> Any:
