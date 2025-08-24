@@ -445,9 +445,91 @@ def assess_learning_progression(chat: Any, target_mode: Optional[str] = None) ->
     }
 
 
-def get_progression_recommendation(chat: Any, target_mode: Optional[str] = None) -> str:
-    """Get progression recommendation - simplified implementation."""
-    return "Continue with your current approach. Consider reviewing your evidence and strengthening your argument structure."
+def get_progression_recommendation(chat: Any, target_mode: Optional[str] = None) -> Dict[str, Any]:
+    """Return a structured progression recommendation the UI expects.
+
+    Shape:
+    {
+        "type": "ready" | "almost_ready" | "not_ready",
+        "message": str,
+        "confidence": float (0..1),
+        "suggestions": List[str],
+        "next_step": Optional[{"key": str, "label": str, "description": str}],
+    }
+    """
+    # Derive mode order from current room's configured modes (custom prompts first)
+    try:
+        modes_for_room = get_modes_for_room(chat.room) if getattr(chat, 'room', None) else BASE_MODES
+    except Exception:
+        modes_for_room = BASE_MODES
+
+    mode_keys: List[str] = list(modes_for_room.keys())
+    current_key: str = getattr(chat, 'mode', '') or (mode_keys[0] if mode_keys else '')
+
+    next_key: Optional[str] = None
+    if target_mode and target_mode in mode_keys:
+        next_key = target_mode
+    elif current_key in mode_keys:
+        idx = mode_keys.index(current_key)
+        if idx + 1 < len(mode_keys):
+            next_key = mode_keys[idx + 1]
+
+    # Build next_step descriptor if available
+    next_step: Optional[Dict[str, Any]] = None
+    if next_key:
+        try:
+            mode_info = modes_for_room.get(next_key)
+            next_step = {
+                "key": next_key,
+                "label": getattr(mode_info, 'label', str(mode_info)) or next_key,
+                "description": (getattr(mode_info, 'prompt', '') or '')[:300],
+            }
+        except Exception:
+            next_step = {"key": next_key, "label": next_key, "description": ""}
+
+    # Very lightweight heuristic: if chat has >8 messages and last role is assistant, consider almost ready
+    try:
+        from src.models import Message
+        messages = (
+            Message.query.filter_by(chat_id=chat.id).order_by(Message.timestamp).all()
+        )
+        num_messages = len(messages)
+        last_role = messages[-1].role if messages else 'assistant'
+    except Exception:
+        num_messages = 0
+        last_role = 'assistant'
+
+    if num_messages >= 12 and last_role == 'assistant':
+        rec_type = 'ready'
+        confidence = 0.82
+        message = 'You appear ready to progress to the next step.'
+        suggestions: List[str] = []
+    elif num_messages >= 6:
+        rec_type = 'almost_ready'
+        confidence = 0.65
+        message = 'You are close to ready. Address a few items below.'
+        suggestions = [
+            'Summarize what you have accomplished in this step.',
+            'Note any open questions to revisit later.',
+            'Check alignment between your goals and current outputs.',
+        ]
+    else:
+        rec_type = 'not_ready'
+        confidence = 0.45
+        message = 'Keep working in this step before moving forward.'
+        suggestions = [
+            'Add one specific example to support your reasoning.',
+            'Clarify your main objective for this step in one sentence.',
+            'List two next micro‑tasks you will complete.',
+        ]
+
+    return {
+        "type": rec_type,
+        "message": message,
+        "confidence": confidence,
+        "suggestions": suggestions,
+        "next_step": next_step,
+    }
 
 
 def get_next_learning_step(chat: Any, target_mode: Optional[str] = None) -> str:
