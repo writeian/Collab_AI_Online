@@ -444,6 +444,25 @@
         }
       });
 
+      // Improve mobile tap reliability: also trigger submit logic on button click
+      if (generateBtn) {
+        generateBtn.addEventListener('click', function(ev) {
+          // Let the submit handler own the logic; ensure form is valid first
+          if (!goalsForm) return;
+          // If the button is inside the form with type="submit", some mobile browsers
+          // may not fire the submit handler reliably. Manually nudge it.
+          try {
+            if (typeof goalsForm.reportValidity === 'function' && !goalsForm.reportValidity()) {
+              return; // native validation will display messages
+            }
+          } catch (e) { /* ignore */ }
+          // Prevent double execution if submit already in-flight
+          if (generateBtn.disabled) return;
+          ev.preventDefault();
+          goalsForm.dispatchEvent(new Event('submit', { cancelable: true }));
+        });
+      }
+
       // Add mobile-specific touch event handling
       generateBtn.addEventListener('touchstart', function(e) {
         console.log('Touch start on generate button - mobile debug');
