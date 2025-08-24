@@ -63,7 +63,7 @@
         </div>
         
         <!-- Action buttons positioned in upper-right corner of the card -->
-        <div class="flex items-center gap-2 ml-6 relative">
+        <div class="flex items-center gap-3 ml-6 relative">
           <!-- Invite Members Button -->
           <a href="{{ url_for('room.room_invitations.invite_members', room_id=room.id) }}" class="settings-icon-btn" title="Invite Members">
             <i data-lucide="user-plus" class="w-5 h-5"></i>
@@ -101,11 +101,7 @@
               <div class="dropdown-divider"></div>
             {% endif %}
             
-            <!-- Common action -->
-            <a href="{{ url_for('room.room_crud.create_chat', room_id=room.id) }}" class="dropdown-item text-primary">
-              <i data-lucide="message-circle" class="w-4 h-4"></i>
-              Create Chat
-            </a>
+            <!-- Common actions (Create Chat appears prominently in Your Chats section below) -->
           </div>
         </div>
       </div>
@@ -333,11 +329,24 @@
     const menu = document.getElementById('room-actions-menu');
     const settingsButton = event.target.closest('.settings-icon-btn');
     const isOpen = menu.classList.contains('open');
-    
-    if (isOpen) {
-      // Close dropdown
+
+    const cleanup = () => {
       menu.classList.remove('open');
       menu.style.display = 'none';
+      document.removeEventListener('click', outsideClick);
+      window.removeEventListener('scroll', onScrollClose, true);
+      document.removeEventListener('keydown', onEscClose);
+    };
+    const outsideClick = (e) => {
+      if (!e.target.closest('.settings-icon-btn') && !e.target.closest('.dropdown-menu')) {
+        cleanup();
+      }
+    };
+    const onScrollClose = () => cleanup();
+    const onEscClose = (e) => { if (e.key === 'Escape') cleanup(); };
+    
+    if (isOpen) {
+      cleanup();
     } else {
       // Close any other open dropdowns first
       document.querySelectorAll('.dropdown-menu.open').forEach(openMenu => {
@@ -361,6 +370,8 @@
       // Right-align the dropdown with the button
       menu.style.left = 'auto';
       menu.style.right = (viewportWidth - buttonRect.right) + 'px';
+      menu.style.zIndex = '9999';
+      menu.style.minWidth = '220px';
       menu.offsetHeight; // Force reflow
       
       const menuRect = menu.getBoundingClientRect();
@@ -388,14 +399,10 @@
       }, 10);
     }
     
-    // Close when clicking outside
-    document.addEventListener('click', function closeMenu(e) {
-      if (!e.target.closest('.settings-icon-btn') && !e.target.closest('.dropdown-menu')) {
-        menu.classList.remove('open');
-        menu.style.display = 'none';
-        document.removeEventListener('click', closeMenu);
-      }
-    });
+    // Close on outside click / scroll / Esc
+    document.addEventListener('click', outsideClick);
+    window.addEventListener('scroll', onScrollClose, true);
+    document.addEventListener('keydown', onEscClose);
   }
   
   // Expandable sections functionality
@@ -420,15 +427,19 @@
       lucide.createIcons();
     }
     
-    // Set default states: Room Info and Your Chats expanded, others collapsed
+    // Default states: prioritize chats if they exist, otherwise show room info
     const roomInfoIcon = document.getElementById('room-info-icon');
+    const roomInfoContent = document.getElementById('room-info-content');
     const yourChatsIcon = document.getElementById('your-chats-icon');
-    
-    if (roomInfoIcon) {
-      roomInfoIcon.style.transform = 'rotate(180deg)';
-    }
-    if (yourChatsIcon) {
-      yourChatsIcon.style.transform = 'rotate(180deg)';
+    const hasChats = {{ 'true' if chats else 'false' }};
+
+    if (hasChats) {
+      if (roomInfoContent) roomInfoContent.classList.add('hidden');
+      if (roomInfoIcon) roomInfoIcon.style.transform = 'rotate(0deg)';
+      if (yourChatsIcon) yourChatsIcon.style.transform = 'rotate(180deg)';
+    } else {
+      if (roomInfoIcon) roomInfoIcon.style.transform = 'rotate(180deg)';
+      if (yourChatsIcon) yourChatsIcon.style.transform = 'rotate(180deg)';
     }
   });
   
