@@ -18,7 +18,6 @@ room.register_blueprint(templates.templates_bp, url_prefix="/template")
 room.register_blueprint(invitations.invitations_bp, url_prefix="/<int:room_id>")
 room.register_blueprint(api.api_bp, url_prefix="/api")
 room.register_blueprint(refine.refine_bp, url_prefix="")
-room.register_blueprint(refine.refine_bp, url_prefix="")
 
 # Learning steps management routes (backward-compat)
 @room.route('/<int:room_id>/update-learning-steps', methods=['POST', 'OPTIONS'])
@@ -179,7 +178,6 @@ def new_learning_steps():
     )
 
 # Import all routes to ensure they're registered
-from .routes import crud, templates, invitations, api, refine
 from .routes import crud, templates, invitations, api, refine
 
 # Export the main blueprint
