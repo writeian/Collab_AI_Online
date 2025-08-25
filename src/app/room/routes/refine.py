@@ -81,7 +81,7 @@ def _parse_remove_hint(text):
     # label substring between remove and step
     m2 = re.search(r"remove\s+(.*?)\s+step", text, re.I)
     if m2:
-        sub = m2.group(1).strip('"\' ).strip()
+        sub = m2.group(1).strip("'\"").strip()
         if sub:
             return {'label_contains': sub.lower()}
     # generic remove <phrase>
