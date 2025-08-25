@@ -227,9 +227,31 @@ def refine_room_proposal_edit(room_id: int):
                 modes = current_modes if isinstance(current_modes, list) else []
                 summary = None
 
+        # Persist immediately for edit flow so changes are reflected without requiring an extra Save click
+        try:
+            CustomPrompt.query.filter_by(room_id=room_id).delete()
+            user = get_current_user()
+            created_by = getattr(user, 'id', None) or 0
+            for m in modes:
+                if m.get('key') and m.get('label') and m.get('prompt'):
+                    db.session.add(CustomPrompt(
+                        mode_key=m['key'],
+                        label=m['label'],
+                        prompt=m['prompt'],
+                        room_id=room_id,
+                        created_by=created_by,
+                    ))
+            db.session.commit()
+            persisted = True
+        except Exception as persist_err:
+            db.session.rollback()
+            current_app.logger.error(f"[refine.edit] persist error: {persist_err}")
+            persisted = False
+
         ai_message = (
-            f"I {summary}. Save changes to persist." if summary else
-            "Applied your feedback to the learning steps. Save changes to persist."
+            f"I {summary}. Changes have been saved." if summary else
+            ("Applied your feedback and saved the changes." if persisted else
+             "Applied your feedback to the learning steps.")
         )
 
         return jsonify({
@@ -238,7 +260,8 @@ def refine_room_proposal_edit(room_id: int):
             "room_description": description,
             "modes": modes,
             "ai_message": ai_message,
-            "changes_applied": True
+            "changes_applied": True,
+            "persisted": persisted
         })
     except Exception as e:
         current_app.logger.error(f"[refine.edit] error: {e}")
