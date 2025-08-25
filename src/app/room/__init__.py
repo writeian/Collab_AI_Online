@@ -10,13 +10,15 @@ from src.app import csrf
 room = Blueprint("room", __name__)
 
 # Import route blueprints to ensure they're registered
-from .routes import crud, templates, invitations, api
+from .routes import crud, templates, invitations, api, refine
 
 # Register route blueprints
 room.register_blueprint(crud.crud_bp, url_prefix="")
 room.register_blueprint(templates.templates_bp, url_prefix="/template")
 room.register_blueprint(invitations.invitations_bp, url_prefix="/<int:room_id>")
 room.register_blueprint(api.api_bp, url_prefix="/api")
+room.register_blueprint(refine.refine_bp, url_prefix="")
+room.register_blueprint(refine.refine_bp, url_prefix="")
 
 # Learning steps management routes (backward-compat)
 @room.route('/<int:room_id>/update-learning-steps', methods=['POST', 'OPTIONS'])
@@ -109,18 +111,24 @@ def new_learning_steps():
                     refined_modes = None
             if isinstance(refined_modes, list):
                 try:
+                    # Upsert refined modes to avoid unique constraint violations
                     for m in refined_modes:
                         key = m.get('key')
                         label = m.get('label')
                         prompt = m.get('prompt')
                         if key and label and prompt:
-                            db.session.add(CustomPrompt(
-                                mode_key=key,
-                                label=label,
-                                prompt=prompt,
-                                room_id=new_room_id,
-                                created_by=getattr(user, 'id', None) or 0
-                            ))
+                            existing = CustomPrompt.query.filter_by(room_id=new_room_id, mode_key=key).first()
+                            if existing:
+                                existing.label = label
+                                existing.prompt = prompt
+                            else:
+                                db.session.add(CustomPrompt(
+                                    mode_key=key,
+                                    label=label,
+                                    prompt=prompt,
+                                    room_id=new_room_id,
+                                    created_by=getattr(user, 'id', None) or 0
+                                ))
                     db.session.commit()
                 except Exception as e:
                     current_app.logger.warning(f"[learning-steps.create] Failed to save refined modes for room {new_room_id}: {e}")
@@ -171,7 +179,8 @@ def new_learning_steps():
     )
 
 # Import all routes to ensure they're registered
-from .routes import crud, templates, invitations, api
+from .routes import crud, templates, invitations, api, refine
+from .routes import crud, templates, invitations, api, refine
 
 # Export the main blueprint
 __all__ = ['room']
