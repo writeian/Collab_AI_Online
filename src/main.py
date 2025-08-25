@@ -30,7 +30,7 @@ except Exception as e:
     print(f"⚠️ Could not load .env file: {e}")
 
 
-def run_production_migrations():
+def run_production_migrations(app):
     """Run Alembic migrations in production environment."""
     if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("FLASK_ENV") == "production":
         try:
@@ -50,12 +50,10 @@ def run_production_migrations():
             print("Alembic migration failed:", e)
             print("Continuing with app startup...")
         
-        # Ensure basic tables exist
+        # Ensure basic tables exist using the created app context
         try:
             print("Ensuring basic tables exist...")
             from src.app import db
-            
-            # Create tables if they don't exist
             with app.app_context():
                 db.create_all()
                 print("✓ Basic tables ensured")
@@ -64,11 +62,11 @@ def run_production_migrations():
             print("Continuing with app startup...")
 
 
-# Automatically run Alembic migrations in production (e.g., on Railway)
-run_production_migrations()
-
 # Create the Flask application
 app = create_app()
+
+# Automatically run Alembic migrations in production (e.g., on Railway)
+run_production_migrations(app)
 
 
 # Health check endpoint for Railway
