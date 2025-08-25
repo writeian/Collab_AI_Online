@@ -81,6 +81,18 @@ def invite_members(room_id: int) -> Any:
                 db.session.commit()
                 
                 who = invitee.email if invitee_email else f"@{invitee.username}"
+                # Send email if an email was provided
+                if invitee_email and invitee.email:
+                    try:
+                        from src.utils.email import send_email
+                        room_link = url_for('room.room_crud.view_room', room_id=room_id, _external=True)
+                        html = (
+                            f"<p>You have been invited to join the room <strong>{room.name}</strong>.</p>"
+                            f"<p>Click to view the room: <a href='{room_link}' target='_blank'>{room_link}</a></p>"
+                        )
+                        send_email(invitee.email, f"Invitation to join '{room.name}'", html, f"Join the room: {room_link}")
+                    except Exception as _e:
+                        current_app.logger.warning(f"[email] Failed to send invitation email: {_e}")
                 flash(f"Invitation sent to {who}!", "success")
                 
             else:

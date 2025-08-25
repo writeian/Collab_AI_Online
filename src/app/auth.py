@@ -343,18 +343,32 @@ def forgot_password() -> Any:
             # Create reset URL
             reset_url = url_for("auth.reset_password", token=token, _external=True)
 
-            # In a real app, you would send an email here
-            # For development, we'll show the link and log it
-            print(f"=== PASSWORD RESET LINK FOR {user.email} ===")
-            print(f"Reset URL: {reset_url}")
-            print(f"Token: {token}")
-            print("=== END PASSWORD RESET LINK ===")
-
-            flash(
-                f"Password reset link generated! Check the console/logs for the reset URL.",
-                "success",
-            )
-            flash(f"Reset URL: {reset_url}", "info")
+            # Send email via helper
+            try:
+                from src.utils.email import send_email
+                html = (
+                    f"<p>You requested a password reset.</p>"
+                    f"<p>Click the link below to reset your password:</p>"
+                    f"<p><a href='{reset_url}' target='_blank'>{reset_url}</a></p>"
+                    f"<p>If you did not request this, you can ignore this email.</p>"
+                )
+                sent = send_email(user.email, "Reset your password", html, f"Reset your password: {reset_url}")
+                if sent:
+                    flash("Password reset email sent. Please check your inbox.", "success")
+                else:
+                    # Fallback to logging for visibility
+                    print(f"=== PASSWORD RESET LINK FOR {user.email} ===")
+                    print(f"Reset URL: {reset_url}")
+                    print(f"Token: {token}")
+                    print("=== END PASSWORD RESET LINK ===")
+                    flash("Password reset link generated. Email not configured; link logged on server.", "info")
+            except Exception as _e:
+                print(f"[email] Failed to send reset email: {_e}")
+                print(f"=== PASSWORD RESET LINK FOR {user.email} ===")
+                print(f"Reset URL: {reset_url}")
+                print(f"Token: {token}")
+                print("=== END PASSWORD RESET LINK ===")
+                flash("Password reset link generated. Email send failed; link logged on server.", "info")
         else:
             flash(
                 "If an account with that email exists, a reset link has been sent.",
