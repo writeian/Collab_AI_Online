@@ -132,16 +132,25 @@ def create_app(config_name=None):
     # Expose is_admin to templates
     try:
         from src.app.access_control import get_current_user, is_admin as _is_admin
+        from src.app.room.utils.room_utils import get_invitation_count as _get_inv_count
 
         @app.context_processor
-        def inject_admin_flag():
+        def inject_globals():
             user = get_current_user()
+            try:
+                inv_count = _get_inv_count(user) if user else 0
+            except Exception:
+                inv_count = 0
             return {
                 'is_admin': _is_admin(user) if user else False,
                 'user': user,
+                'invitation_count': inv_count,
             }
     except Exception:
-        pass
+        # If anything fails, still return a minimal context processor
+        @app.context_processor
+        def inject_minimal():
+            return {'is_admin': False, 'user': None, 'invitation_count': 0}
 
     # Debug: Log static/template paths and CSS existence at startup
     try:
