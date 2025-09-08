@@ -66,6 +66,22 @@
         </div>
     </header>
 
+    {# Global flash messages #}
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mt-4 space-y-3" role="status" aria-live="polite">
+                    {% for category, message in messages %}
+                        {% set bg = 'bg-green-50 border-green-200 text-green-800' if category == 'success' else 'bg-red-50 border-red-200 text-red-800' if category == 'error' else 'bg-blue-50 border-blue-200 text-blue-800' if category == 'info' else 'bg-yellow-50 border-yellow-200 text-yellow-800' %}
+                        <div class="rounded-md border {{ bg }} px-4 py-3 text-sm">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+    </div>
+
     <!-- Mobile Navigation Overlay (hidden on desktop) -->
     <div id="mobile-menu-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden md:hidden">
         <div class="fixed inset-y-0 right-0 w-80 bg-white/95 backdrop-blur-sm border-l border-border shadow-xl transform translate-x-full transition-transform duration-300 ease-in-out">
