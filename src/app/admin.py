@@ -9,15 +9,21 @@ admin = Blueprint("admin", __name__)
 @require_admin
 def dashboard():
     from src.models import User, Room, Chat, Message
+    from flask import current_app
 
-    totals = {
-        "users": db.session.query(User).count(),
-        "rooms": db.session.query(Room).count(),
-        "chats": db.session.query(Chat).count(),
-        "messages": db.session.query(Message).count(),
-    }
-
-    return render_template("admin_analytics.html", totals=totals)
+    try:
+        totals = {
+            "users": db.session.query(User).count(),
+            "rooms": db.session.query(Room).count(),
+            "chats": db.session.query(Chat).count(),
+            "messages": db.session.query(Message).count(),
+        }
+        return render_template("admin_analytics.html", totals=totals)
+    except Exception as e:
+        current_app.logger.exception(f"/admin render error: {e}")
+        # Minimal fallback to avoid 500
+        totals = {"users": 0, "rooms": 0, "chats": 0, "messages": 0}
+        return render_template("admin_analytics.html", totals=totals)
 
 
 @admin.route("/admin/users")
@@ -25,23 +31,42 @@ def dashboard():
 def users_report():
     from src.models import User, Chat
     from sqlalchemy import func
+    from flask import current_app
 
-    rows = (
-        db.session.query(
-            User.id,
-            User.username,
-            User.email,
-            User.display_name,
-            func.count(Chat.id).label("total_chats"),
-            func.max(Chat.created_at).label("last_chat_created_at"),
+    try:
+        rows = (
+            db.session.query(
+                User.id,
+                User.username,
+                User.email,
+                User.display_name,
+                func.count(Chat.id).label("total_chats"),
+                func.max(Chat.created_at).label("last_chat_created_at"),
+            )
+            .outerjoin(Chat, Chat.created_by == User.id)
+            .group_by(User.id, User.username, User.email, User.display_name)
+            .order_by(func.count(Chat.id).desc())
+            .all()
         )
-        .outerjoin(Chat, Chat.created_by == User.id)
-        .group_by(User.id, User.username, User.email, User.display_name)
-        .order_by(func.count(Chat.id).desc())
-        .all()
-    )
 
-    return render_template("admin_users.html", users_rows=rows)
+        formatted = []
+        for r in rows:
+            last_dt = r[5]
+            last_str = last_dt.strftime('%Y-%m-%d %H:%M') if last_dt else ''
+            formatted.append({
+                'user_id': r[0],
+                'username': r[1],
+                'email': r[2],
+                'display_name': r[3],
+                'total_chats': r[4] or 0,
+                'last_chat_created_at': last_str,
+            })
+
+        return render_template("admin_users.html", users_rows=formatted)
+    except Exception as e:
+        current_app.logger.exception(f"/admin/users render error: {e}")
+        # Fallback to CSV if rendering fails
+        return users_report_csv()
 
 
 @admin.route("/admin/users.csv")

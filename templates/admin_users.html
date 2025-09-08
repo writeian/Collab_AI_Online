@@ -22,12 +22,12 @@
         <tbody class="divide-y divide-border">
           {% for r in users_rows %}
           <tr>
-            <td class="px-4 py-3 text-sm">{{ r[0] }}</td>
-            <td class="px-4 py-3 text-sm">{{ r[1] }}</td>
-            <td class="px-4 py-3 text-sm">{{ r[2] }}</td>
-            <td class="px-4 py-3 text-sm">{{ r[3] }}</td>
-            <td class="px-4 py-3 text-sm">{{ r[4] or 0 }}</td>
-            <td class="px-4 py-3 text-sm">{{ r[5].strftime('%Y-%m-%d %H:%M') if r[5] else '' }}</td>
+            <td class="px-4 py-3 text-sm">{{ r.user_id }}</td>
+            <td class="px-4 py-3 text-sm">{{ r.username }}</td>
+            <td class="px-4 py-3 text-sm">{{ r.email }}</td>
+            <td class="px-4 py-3 text-sm">{{ r.display_name }}</td>
+            <td class="px-4 py-3 text-sm">{{ r.total_chats }}</td>
+            <td class="px-4 py-3 text-sm">{{ r.last_chat_created_at }}</td>
           </tr>
           {% endfor %}
         </tbody>
