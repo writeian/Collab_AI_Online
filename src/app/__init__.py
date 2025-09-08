@@ -129,6 +129,20 @@ def create_app(config_name=None):
     # Register custom template filters
     app.jinja_env.filters['markdown'] = markdown_filter
 
+    # Expose is_admin to templates
+    try:
+        from src.app.access_control import get_current_user, is_admin as _is_admin
+
+        @app.context_processor
+        def inject_admin_flag():
+            user = get_current_user()
+            return {
+                'is_admin': _is_admin(user) if user else False,
+                'user': user,
+            }
+    except Exception:
+        pass
+
     # Debug: Log static/template paths and CSS existence at startup
     try:
         import os as __os
@@ -149,6 +163,7 @@ def create_app(config_name=None):
     from src.app.chat import chat
     from src.app.room import room
     from src.app.dashboard import dashboard
+    from src.app.admin import admin
     from src.app.google_auth import google_auth
     from src.app.analytics import analytics
 
@@ -156,6 +171,7 @@ def create_app(config_name=None):
     app.register_blueprint(chat, url_prefix="/chat")
     app.register_blueprint(room, url_prefix="/room")
     app.register_blueprint(dashboard, url_prefix="/dashboard")
+    app.register_blueprint(admin, url_prefix="")
     app.register_blueprint(google_auth, url_prefix="/auth/google")
     app.register_blueprint(analytics, url_prefix="/analytics")
 

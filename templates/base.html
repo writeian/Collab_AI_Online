@@ -44,6 +44,9 @@
                                 </span>
                                 {% endif %}
                             </a>
+                            {% if is_admin %}
+                            <a href="{{ url_for('admin.dashboard') }}" class="text-muted-foreground hover:text-foreground transition-colors text-sm sm:text-base">Admin</a>
+                            {% endif %}
                             <a href="{{ url_for('auth.profile') }}" class="text-muted-foreground hover:text-foreground transition-colors text-sm sm:text-base">Profile</a>
                             <a href="{{ url_for('auth.logout') }}" class="text-muted-foreground hover:text-foreground transition-colors text-sm sm:text-base">Logout</a>
                         {% else %}

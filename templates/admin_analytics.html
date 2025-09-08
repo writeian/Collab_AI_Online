@@ -1,4 +1,36 @@
 {% extends "base.html" %}
+{% block title %}Admin - Dashboard{% endblock %}
+{% block content %}
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-6 flex items-center justify-between">
+      <h1 class="text-2xl font-bold">Admin Dashboard</h1>
+      <div class="flex items-center gap-3">
+        <a href="{{ url_for('admin.users_report_csv') }}" class="btn btn-primary">Download Users+Chats CSV</a>
+        <a href="{{ url_for('admin.users_report') }}" class="btn">View Users Report</a>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="bg-card border border-border rounded-lg p-4">
+        <div class="text-sm text-muted-foreground">Users</div>
+        <div class="text-2xl font-semibold">{{ totals.users }}</div>
+      </div>
+      <div class="bg-card border border-border rounded-lg p-4">
+        <div class="text-sm text-muted-foreground">Rooms</div>
+        <div class="text-2xl font-semibold">{{ totals.rooms }}</div>
+      </div>
+      <div class="bg-card border border-border rounded-lg p-4">
+        <div class="text-sm text-muted-foreground">Chats</div>
+        <div class="text-2xl font-semibold">{{ totals.chats }}</div>
+      </div>
+      <div class="bg-card border border-border rounded-lg p-4">
+        <div class="text-sm text-muted-foreground">Messages</div>
+        <div class="text-2xl font-semibold">{{ totals.messages }}</div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+{% extends "base.html" %}
 
 {% block title %}Analytics{% endblock %}
 

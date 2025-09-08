@@ -5,6 +5,7 @@ user permissions on rooms and chats in the room-based architecture.
 """
 
 from functools import wraps
+import os
 from flask import session, redirect, url_for, flash, abort, current_app
 from flask import request, jsonify
 from src.app import db
@@ -17,6 +18,41 @@ def get_current_user() -> Optional[User]:
     if "user_id" in session:
         return User.query.get(session["user_id"])
     return None
+
+
+def is_admin(user: Optional[User]) -> bool:
+    """Check if the given user is an admin based on ADMIN_EMAILS env var.
+
+    ADMIN_EMAILS should be a comma-separated list of email addresses.
+    Matching is case-insensitive and trimmed.
+    """
+    if not user or not getattr(user, 'email', None):
+        return False
+    allowlist = os.getenv('ADMIN_EMAILS', '')
+    if not allowlist:
+        return False
+    emails = [e.strip().lower() for e in allowlist.split(',') if e.strip()]
+    return user.email.strip().lower() in emails
+
+
+def require_admin(f):
+    """Decorator to restrict access to admin users (ENV-based allowlist)."""
+
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        user = get_current_user()
+        if not user:
+            flash("Please log in to access this page.")
+            return redirect(url_for("auth.login"))
+        if not is_admin(user):
+            # Prefer a 403 for APIs; for pages, flash + redirect
+            if request.accept_mimetypes.best == 'application/json':
+                return jsonify({"error": "forbidden"}), 403
+            flash("You don't have permission to access this page.", "error")
+            return redirect(url_for("room.room_crud.index"))
+        return f(*args, **kwargs)
+
+    return decorated_function
 
 
 def is_room_member(user: Optional[User], room: Optional[Room]) -> bool:
