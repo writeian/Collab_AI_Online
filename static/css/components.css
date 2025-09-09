@@ -43,6 +43,16 @@
   background-color: hsl(var(--primary) / 0.9);
 }
 
+/* Improve primary button affordance while matching theme */
+.btn-primary {
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  border-width: 1px;
+}
+
+.btn-primary:active {
+  transform: translateY(0.5px);
+}
+
 /* Secondary Button */
 .btn-secondary {
   background-color: hsl(var(--secondary));

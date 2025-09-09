@@ -253,7 +253,7 @@
           </div>
           <p class="text-xs text-muted-foreground mb-4">Created {{ room.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
           <div class="flex items-center space-x-2">
-            <a href="{{ url_for('room.room_crud.edit_room', room_id=room.id) }}" class="inline-flex items-center px-3 py-1.5 bg-secondary text-secondary-foreground text-xs font-medium rounded-md hover:bg-gray-100 transition-colors">
+            <a href="{{ url_for('room.new_learning_steps') }}?room_id={{ room.id }}" class="inline-flex items-center px-3 py-1.5 bg-secondary text-secondary-foreground text-xs font-medium rounded-md hover:bg-gray-100 transition-colors">
               Edit
             </a>
             <a href="{{ url_for('room.room_invitations.invite_members', room_id=room.id) }}" class="inline-flex items-center px-3 py-1.5 bg-cyan-500 text-white text-xs font-medium rounded-md hover:bg-cyan-600 transition-colors">

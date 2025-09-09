@@ -40,7 +40,8 @@
             <!-- Room Basic Information Edit Section -->
             <div class="room-info-section" style="margin-bottom: 2rem; padding: 1.5rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
                 <h3 style="margin-top: 0; margin-bottom: 1rem; color: #495057;">Room Information</h3>
-                <form method="POST" action="{{ url_for('room.room_crud.edit_room', room_id=selected_room.id) }}" style="display: grid; gap: 1rem;">
+                <form method="GET" action="{{ url_for('room.new_learning_steps') }}" style="display: grid; gap: 1rem;">
+                    <input type="hidden" name="room_id" value="{{ selected_room.id }}">
                     <div>
                         <label for="room_name" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Room Name:</label>
                         <input type="text" id="room_name" name="name" value="{{ selected_room.name }}" required 
@@ -96,7 +97,8 @@
             <!-- Room Basic Information Edit Section -->
             <div class="room-info-section" style="margin-bottom: 2rem; padding: 1.5rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
                 <h3 style="margin-top: 0; margin-bottom: 1rem; color: #495057;">Room Information</h3>
-                <form method="POST" action="{{ url_for('room.room_crud.edit_room', room_id=selected_room.id) }}" style="display: grid; gap: 1rem;">
+                <form method="GET" action="{{ url_for('room.new_learning_steps') }}" style="display: grid; gap: 1rem;">
+                    <input type="hidden" name="room_id" value="{{ selected_room.id }}">
                     <div>
                         <label for="room_name" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Room Name:</label>
                         <input type="text" id="room_name" name="name" value="{{ selected_room.name }}" required 

@@ -6,17 +6,22 @@
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
 [![Type Coverage](https://img.shields.io/badge/Type%20Coverage-85%25-green?style=for-the-badge)](https://github.com/writeian/Collab_AI_Online)
 
+## 🌐 Live
+
+- Production: https://collab.up.railway.app
+- Healthcheck: https://collab.up.railway.app/health
+
 ## 🚀 Quick Start
 
 ```bash
 git clone https://github.com/writeian/Collab_AI_Online.git
-cd AI_Collab_Online
+cd Collab_AI_Online
 python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 python run.py
 ```
 
-**Live Demo**: [Coming Soon] | **[View on GitHub](https://github.com/writeian/Collab_AI_Online)**
+**View on GitHub**: https://github.com/writeian/Collab_AI_Online
 
 ---
 
@@ -109,6 +114,10 @@ AI Collab Online is a **collaborative writing platform** that helps teams and ed
 - **Member management** with role-based permissions
 
 ### 🏗️ Modern Architecture
+
+### 💬 Chat Experience
+- Focus mode toggle in chat to maximize writing space
+- Rubric-aware "Assess Progress" with structured recommendations
 - **Modular Flask blueprint architecture** with 85% type coverage
 - **SQLAlchemy 2.0** with Alembic migrations
 - **Production-ready** with Railway and Digital Ocean deployment
@@ -249,10 +258,13 @@ AI_Collab_Online/
 ## 🚀 Deployment
 
 ### Railway Deployment
-1. **Connect Repository**: Link your GitHub repository to Railway
-2. **Environment Variables**: Set all required environment variables
-3. **Database**: Railway automatically provisions PostgreSQL
-4. **Deploy**: Railway automatically deploys on every push to main
+1. **Connect Repository**: Link this GitHub repo to your Railway project
+2. **Start Command**: `gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120` (already in `railway.toml`)
+3. **Healthcheck**: `/health` (already in `railway.toml`)
+4. **Environment Variables**: Set `SECRET_KEY`, `ANTHROPIC_API_KEY`, `DATABASE_URL`, etc.
+5. **Database**: Use PostgreSQL for production. Run migrations: `alembic upgrade head`
+6. **Endpoint Name**: Set a friendly slug in Service → Networking (globally unique)
+7. **Deploy**: Deploy from the UI or by pushing to your deployment branch
 
 **📖 [Complete Railway Deployment Guide](RAILWAY_DEPLOYMENT.md)**
 
@@ -277,6 +289,29 @@ alembic upgrade head
 # Start production server
 gunicorn src.wsgi:app
 ```
+
+### Custom Domains (Railway)
+- Recommended: add a subdomain like `app.yourdomain.com`
+- Create a CNAME to your `*.up.railway.app` endpoint, verify in Railway Networking
+- If verification fails, ensure DNS is set to DNS-only during initial verification and try again
+
+---
+
+## 🧪 Trial Mode (Optional/Future)
+
+Offer limited, server-enforced guest trials (e.g., 1 room, 1 chat, 6 messages) without registration, with a clean upgrade path to a full account.
+
+- Design doc: `docs/trial_sessions_option_2.md`
+- Highlights: DB-backed counters, expiry/cleanup, adoption on signup, and abuse safeguards
+
+---
+
+## 🛟 Troubleshooting
+
+- Endpoint slug errors (Railway): endpoint names are globally unique. Try a different slug (Service → Networking → Endpoint name)
+- Custom domains: add CNAME to your service’s `*.up.railway.app`; if using Cloudflare, set DNS-only during verification
+- Static asset 404s on Linux: ensure case-sensitive paths (e.g., `Static/` vs `static/`)
+- JSON POSTs and CSRF: app includes a global fetch wrapper that sends `X-CSRFToken` automatically
 
 ---
 
