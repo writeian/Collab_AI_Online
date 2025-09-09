@@ -9,15 +9,17 @@ from datetime import datetime, timedelta
 from ..types import ValidationResult
 
 def get_invitation_count(user: Optional[User]) -> int:
-    """Calculate invitation count for navigation."""
+    """Calculate pending invitations for navigation.
+
+    Counts only invitations that are not yet accepted, regardless of age,
+    and only for active rooms.
+    """
     if not user:
         return 0
 
-    recent_cutoff = datetime.utcnow() - timedelta(days=30)
     return (
         RoomMember.query.filter(
             RoomMember.user_id == user.id,
-            RoomMember.joined_at >= recent_cutoff,
             RoomMember.accepted_at.is_(None),
         )
         .join(Room)
