@@ -9,6 +9,7 @@ import os
 from flask import session, redirect, url_for, flash, abort, current_app
 from flask import request, jsonify
 from src.app import db
+from datetime import datetime
 from src.models import Chat, User, Room, RoomMember
 from typing import Any, Optional
 
@@ -256,6 +257,16 @@ def require_room_access(f):
         if not can_access_room(user, room):
             flash("You don't have access to this room.")
             return redirect(url_for("room.room_crud.index"))
+
+        # If the user has a pending invitation (accepted_at is NULL), mark as accepted
+        try:
+            membership = RoomMember.query.filter_by(room_id=room_id, user_id=user.id).first()
+            if membership and getattr(membership, 'accepted_at', None) is None:
+                membership.accepted_at = datetime.utcnow()
+                db.session.commit()
+        except Exception:
+            # Don't block access on failure to mark acceptance
+            db.session.rollback()
 
         return f(room_id, *args, **kwargs)
 
