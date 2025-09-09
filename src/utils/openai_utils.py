@@ -239,65 +239,89 @@ def generate_room_modes(room: Any, template_name: Optional[str] = None) -> Dict[
         return BASE_TEMPLATES[template_name]["modes"]
 
     # Otherwise, use AI to generate contextual modes based on room goals
-    if not room.goals:
-        # If no goals, return empty dict to force user to provide goals
-        return {}
+    if not getattr(room, 'goals', None):
+        # If no goals, fall back to inferred or academic_essay base modes
+        try:
+            from src.app.room.utils.room_utils import infer_template_type_from_room as _infer
+            inferred = _infer(room)
+            if inferred and inferred in BASE_TEMPLATES:
+                return BASE_TEMPLATES[inferred]["modes"]
+        except Exception:
+            pass
+        return BASE_TEMPLATES["academic_essay"]["modes"]
 
+    # Generate contextual modes using AI with retry, then fall back to template inference
+    prompt = f"""
+    Based on these learning goals: "{room.goals}"
+    
+    Generate 8-10 learning steps that follow a logical progression for achieving these goals.
+    Each step should be specific to the learning objectives, not generic academic writing steps.
+    
+    Return as JSON with this exact format:
+    {{
+        "modes": [
+            {{
+                "key": "step1",
+                "label": "1. Step Name",
+                "prompt": "Detailed prompt for this step"
+            }}
+        ]
+    }}
+    """
+
+    attempts = 2
+    for i in range(attempts):
+        try:
+            response, _ = call_anthropic_api(
+                [{"role": "user", "content": prompt}], max_tokens=1000
+            )
+            # Parse the response
+            import json
+            import re
+
+            json_match = re.search(r"\{[\s\S]*\}", response)
+            if json_match:
+                result = json.loads(json_match.group())
+                modes_data = result.get("modes", [])
+
+                generated_modes: Dict[str, ChatMode] = {}
+                for mode_data in modes_data:
+                    if (
+                        isinstance(mode_data, dict)
+                        and "key" in mode_data
+                        and "label" in mode_data
+                        and "prompt" in mode_data
+                    ):
+                        generated_modes[mode_data["key"]] = ChatMode(
+                            mode_data["label"], mode_data["prompt"]
+                        )
+                if generated_modes:
+                    return generated_modes
+        except Exception as e:
+            try:
+                current_app.logger.warning(f"AI mode generation attempt {i+1} failed: {e}")
+            except Exception:
+                print(f"Error generating room modes (attempt {i+1}): {e}")
+        # brief backoff
+        try:
+            time.sleep(0.8)
+        except Exception:
+            pass
+
+    # Fallback: infer template from goals, else use academic_essay
     try:
-        # Generate contextual modes using AI
-        prompt = f"""
-        Based on these learning goals: "{room.goals}"
-        
-        Generate 8-10 learning steps that follow a logical progression for achieving these goals.
-        Each step should be specific to the learning objectives, not generic academic writing steps.
-        
-        Return as JSON with this exact format:
-        {{
-            "modes": [
-                {{
-                    "key": "step1",
-                    "label": "1. Step Name",
-                    "prompt": "Detailed prompt for this step"
-                }}
-            ]
-        }}
-        """
-
-        response, _ = call_anthropic_api(
-            [{"role": "user", "content": prompt}], max_tokens=1000
-        )
-
-        # Parse the response
-        import json
-        import re
-
-        json_match = re.search(r"\{.*\}", response, re.DOTALL)
-        if json_match:
-            result = json.loads(json_match.group())
-            modes_data = result.get("modes", [])
-
-            # Convert to ChatMode format
-            generated_modes = {}
-            for mode_data in modes_data:
-                if (
-                    "key" in mode_data
-                    and "label" in mode_data
-                    and "prompt" in mode_data
-                ):
-                    generated_modes[mode_data["key"]] = ChatMode(
-                        mode_data["label"], mode_data["prompt"]
-                    )
-
-            if generated_modes:
-                return generated_modes
-
-        # Fallback: return empty dict if AI generation fails
-        return {}
-
-    except Exception as e:
-        # Log error but don't crash
-        print(f"Error generating room modes: {e}")
-        return {}
+        from src.app.room.utils.room_utils import infer_template_type_from_room as _infer
+        inferred = _infer(room)
+        if inferred and inferred in BASE_TEMPLATES:
+            current_app.logger.info(f"Falling back to base template '{inferred}' for modes")
+            return BASE_TEMPLATES[inferred]["modes"]
+    except Exception:
+        pass
+    try:
+        current_app.logger.info("Falling back to 'academic_essay' base modes")
+    except Exception:
+        pass
+    return BASE_TEMPLATES["academic_essay"]["modes"]
 
 
 def get_modes_for_room(room: Any) -> Dict[str, Any]:
@@ -328,8 +352,19 @@ def get_modes_for_room(room: Any) -> Dict[str, Any]:
             custom_modes[prompt.mode_key] = ChatMode(prompt.label, prompt.prompt)
         return custom_modes
     else:
-        # Generate contextual modes based on room goals (no fallback to base modes)
-        return generate_room_modes(room)
+        # Generate contextual modes based on room goals with robust fallback
+        modes = generate_room_modes(room)
+        if modes:
+            return modes
+        # As a final guard, return inferred or academic base modes
+        try:
+            from src.app.room.utils.room_utils import infer_template_type_from_room as _infer
+            inferred = _infer(room)
+            if inferred and inferred in BASE_TEMPLATES:
+                return BASE_TEMPLATES[inferred]["modes"]
+        except Exception:
+            pass
+        return BASE_TEMPLATES["academic_essay"]["modes"]
 
 
 def get_mode_system_prompt(mode: str, room_id: Optional[int] = None) -> str:
