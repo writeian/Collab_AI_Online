@@ -158,22 +158,12 @@ def new_learning_steps():
 
         # TODO: Load saved rubrics if available (future enhancement)
 
-    # Provide user context for header/breadcrumb
-    try:
-        user_ctx = get_current_user()
-        inv_count = get_invitation_count(user_ctx) if user_ctx else 0
-    except Exception:
-        user_ctx = None
-        inv_count = 0
-
     return render_template(
         'room/learning_steps.html',
         room=room,
         is_editing=is_editing,
         existing_modes=existing_modes,
         saved_rubrics=saved_rubrics,
-        user=user_ctx,
-        invitation_count=inv_count,
         available_templates=get_available_templates(),
     )
 
