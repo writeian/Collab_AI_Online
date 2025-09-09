@@ -306,6 +306,15 @@ def require_chat_access(f):
             flash("You don't have access to this chat.")
             return redirect(url_for("room.room_crud.index"))
 
+        # Mark invitation accepted when entering a chat of the room
+        try:
+            membership = RoomMember.query.filter_by(room_id=chat.room_id, user_id=user.id).first()
+            if membership and getattr(membership, 'accepted_at', None) is None:
+                membership.accepted_at = datetime.utcnow()
+                db.session.commit()
+        except Exception:
+            db.session.rollback()
+
         return f(chat_id, *args, **kwargs)
 
     return decorated_function
