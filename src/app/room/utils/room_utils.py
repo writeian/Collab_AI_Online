@@ -17,15 +17,25 @@ def get_invitation_count(user: Optional[User]) -> int:
     if not user:
         return 0
 
-    return (
-        RoomMember.query.filter(
-            RoomMember.user_id == user.id,
-            RoomMember.accepted_at.is_(None),
-        )
-        .join(Room)
-        .filter(Room.is_active == True)
-        .count()
+    # Exclude cases where the user has already participated in the room
+    # (created a chat or posted a message) even if accepted_at wasn't set historically.
+    from src.models import Chat, Message
+    from sqlalchemy import exists, and_
+
+    membership_q = RoomMember.query.join(Room).filter(
+        RoomMember.user_id == user.id,
+        Room.is_active == True,
+        RoomMember.accepted_at.is_(None),
     )
+
+    # Exists: user created a chat in this room
+    has_chat = exists().where(and_(Chat.room_id == RoomMember.room_id, Chat.created_by == user.id))
+    # Exists: user posted a message in any chat of this room
+    has_message = exists().where(and_(Message.chat_id == Chat.id, Chat.room_id == RoomMember.room_id, Message.user_id == user.id))
+
+    membership_q = membership_q.filter(~has_chat).filter(~exists().where(and_(Chat.room_id == RoomMember.room_id, has_message)))
+
+    return membership_q.count()
 
 def infer_template_type_from_room(room: Room) -> Optional[str]:
     """Infer template type from room characteristics."""
