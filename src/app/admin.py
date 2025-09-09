@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, Response
+from flask import Blueprint, render_template, Response, redirect, url_for
 from src.app.access_control import require_admin
 from src.app import db
 
@@ -8,61 +8,79 @@ admin = Blueprint("admin", __name__)
 @admin.route("/admin")
 @require_admin
 def dashboard():
-    from src.models import User, Room, Chat, Message
-    from flask import current_app
-
-    try:
-        totals = {
-            "users": db.session.query(User).count(),
-            "rooms": db.session.query(Room).count(),
-            "chats": db.session.query(Chat).count(),
-            "messages": db.session.query(Message).count(),
-        }
-        return render_template("admin_analytics.html", totals=totals)
-    except Exception as e:
-        current_app.logger.exception(f"/admin render error: {e}")
-        # Minimal fallback to avoid 500
-        totals = {"users": 0, "rooms": 0, "chats": 0, "messages": 0}
-        return render_template("admin_analytics.html", totals=totals)
+    # Redirect to primary users report for now; KPI page can be added later
+    return redirect(url_for('admin.users_report'))
 
 
 @admin.route("/admin/users")
 @require_admin
 def users_report():
-    from src.models import User, Chat
+    from src.models import User, Chat, Room
     from sqlalchemy import func
     from flask import current_app
 
     try:
-        rows = (
+        # Aggregate chats per user (avoid cartesian by subquery)
+        chats_agg = (
+            db.session.query(
+                Chat.created_by.label('uid'),
+                func.count(Chat.id).label('total_chats'),
+                func.max(Chat.created_at).label('last_chat_created_at'),
+            )
+            .group_by(Chat.created_by)
+            .subquery()
+        )
+
+        # Aggregate rooms per user (owner)
+        rooms_agg = (
+            db.session.query(
+                Room.owner_id.label('uid'),
+                func.count(Room.id).label('total_rooms'),
+                func.max(Room.created_at).label('last_room_created_at'),
+            )
+            .group_by(Room.owner_id)
+            .subquery()
+        )
+
+        q = (
             db.session.query(
                 User.id,
                 User.username,
                 User.email,
                 User.display_name,
-                func.count(Chat.id).label("total_chats"),
-                func.max(Chat.created_at).label("last_chat_created_at"),
+                func.coalesce(rooms_agg.c.total_rooms, 0),
+                rooms_agg.c.last_room_created_at,
+                func.coalesce(chats_agg.c.total_chats, 0),
+                chats_agg.c.last_chat_created_at,
             )
-            .outerjoin(Chat, Chat.created_by == User.id)
-            .group_by(User.id, User.username, User.email, User.display_name)
-            .order_by(func.count(Chat.id).desc())
-            .all()
+            .outerjoin(rooms_agg, rooms_agg.c.uid == User.id)
+            .outerjoin(chats_agg, chats_agg.c.uid == User.id)
+            .order_by(func.coalesce(chats_agg.c.total_chats, 0).desc())
         )
 
-        formatted = []
+        rows = q.all()
+
+        # Prepare two tables
+        basic = []
+        activity = []
         for r in rows:
-            last_dt = r[5]
-            last_str = last_dt.strftime('%Y-%m-%d %H:%M') if last_dt else ''
-            formatted.append({
-                'user_id': r[0],
-                'username': r[1],
-                'email': r[2],
-                'display_name': r[3],
-                'total_chats': r[4] or 0,
-                'last_chat_created_at': last_str,
+            user_id, username, email, display_name, total_rooms, last_room_dt, total_chats, last_chat_dt = r
+            basic.append({
+                'user_id': user_id,
+                'username': username,
+                'email': email,
+                'display_name': display_name,
+            })
+            activity.append({
+                'user_id': user_id,
+                'username': username,
+                'total_rooms': int(total_rooms or 0),
+                'last_room_created_at': last_room_dt.strftime('%Y-%m-%d %H:%M') if last_room_dt else '',
+                'total_chats': int(total_chats or 0),
+                'last_chat_created_at': last_chat_dt.strftime('%Y-%m-%d %H:%M') if last_chat_dt else '',
             })
 
-        return render_template("admin_users.html", users_rows=formatted)
+        return render_template("admin_users.html", users_basic=basic, users_activity=activity)
     except Exception as e:
         current_app.logger.exception(f"/admin/users render error: {e}")
         # Fallback to CSV if rendering fails
@@ -72,10 +90,30 @@ def users_report():
 @admin.route("/admin/users.csv")
 @require_admin
 def users_report_csv():
-    from src.models import User, Chat
+    from src.models import User, Chat, Room
     from sqlalchemy import func
     import csv
     from io import StringIO
+
+    chats_agg = (
+        db.session.query(
+            Chat.created_by.label('uid'),
+            func.count(Chat.id).label('total_chats'),
+            func.max(Chat.created_at).label('last_chat_created_at'),
+        )
+        .group_by(Chat.created_by)
+        .subquery()
+    )
+
+    rooms_agg = (
+        db.session.query(
+            Room.owner_id.label('uid'),
+            func.count(Room.id).label('total_rooms'),
+            func.max(Room.created_at).label('last_room_created_at'),
+        )
+        .group_by(Room.owner_id)
+        .subquery()
+    )
 
     rows = (
         db.session.query(
@@ -83,21 +121,23 @@ def users_report_csv():
             User.username,
             User.email,
             User.display_name,
-            func.count(Chat.id).label("total_chats"),
-            func.max(Chat.created_at).label("last_chat_created_at"),
+            func.coalesce(rooms_agg.c.total_rooms, 0),
+            rooms_agg.c.last_room_created_at,
+            func.coalesce(chats_agg.c.total_chats, 0),
+            chats_agg.c.last_chat_created_at,
         )
-        .outerjoin(Chat, Chat.created_by == User.id)
-        .group_by(User.id, User.username, User.email, User.display_name)
-        .order_by(func.count(Chat.id).desc())
+        .outerjoin(rooms_agg, rooms_agg.c.uid == User.id)
+        .outerjoin(chats_agg, chats_agg.c.uid == User.id)
+        .order_by(func.coalesce(chats_agg.c.total_chats, 0).desc())
         .all()
     )
 
     output = StringIO()
     writer = csv.writer(output)
-    writer.writerow(["user_id", "username", "email", "display_name", "total_chats", "last_chat_created_at"])
+    writer.writerow(["user_id", "username", "email", "display_name", "total_rooms", "last_room_created_at", "total_chats", "last_chat_created_at"])
     for r in rows:
         writer.writerow([
-            r[0], r[1], r[2], r[3], r[4] or 0, (r[5].isoformat() if r[5] else "")
+            r[0], r[1], r[2], r[3], int(r[4] or 0), (r[5].isoformat() if r[5] else ""), int(r[6] or 0), (r[7].isoformat() if r[7] else "")
         ])
 
     csv_data = output.getvalue()
