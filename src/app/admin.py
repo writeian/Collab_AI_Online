@@ -150,3 +150,50 @@ def users_report_csv():
     )
 
 
+@admin.route("/admin/invites/repair", methods=["POST"]) 
+@require_admin
+def repair_pending_invites():
+    """Admin-only: mark accepted_at for memberships where the user already interacted in the room.
+
+    Criteria: user created a chat in the room OR posted a message in any chat of the room.
+    """
+    from src.models import RoomMember, Chat, Message, Room
+    from sqlalchemy import exists, and_, or_
+    from datetime import datetime
+    from flask import flash
+
+    # Select candidate pending memberships in active rooms
+    pending_q = (
+        db.session.query(RoomMember)
+        .join(Room, RoomMember.room_id == Room.id)
+        .filter(Room.is_active == True, RoomMember.accepted_at.is_(None))
+    )
+
+    # EXISTS subqueries
+    chat_exists = (
+        db.session.query(Chat.id)
+        .filter(and_(Chat.room_id == RoomMember.room_id, Chat.created_by == RoomMember.user_id))
+        .exists()
+    )
+    msg_exists = (
+        db.session.query(Message.id)
+        .join(Chat, Message.chat_id == Chat.id)
+        .filter(and_(Chat.room_id == RoomMember.room_id, Message.user_id == RoomMember.user_id))
+        .exists()
+    )
+
+    candidates = pending_q.filter(or_(chat_exists, msg_exists)).all()
+    updated = 0
+    for m in candidates:
+        m.accepted_at = datetime.utcnow()
+        updated += 1
+
+    if updated:
+        db.session.commit()
+    else:
+        db.session.rollback()
+
+    flash(f"Repaired {updated} pending invite(s).", "success")
+    return redirect(url_for('admin.users_report'))
+
+
