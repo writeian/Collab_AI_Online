@@ -384,10 +384,8 @@
 
 /* Modern Input Area */
 .chat-input-container {
-  position: absolute; /* Desktop default; overridden on mobile */
-  bottom: 0;
-  left: 0;
-  right: 0;
+  /* Desktop: keep input in normal flow so it doesn't overlay messages */
+  position: static;
   background: hsl(var(--card));
   border-top: 1px solid hsl(var(--border));
   backdrop-filter: blur(10px);
@@ -622,7 +620,6 @@
   #chat-messages {
     padding-left: 12px;
     padding-right: 12px;
-    padding-bottom: 100px; /* Reduced since input is now in normal flow */
     max-width: 100%; /* Ensure container doesn't overflow */
     overflow-x: hidden; /* Prevent horizontal scrolling */
     box-sizing: border-box; /* Ensure padding is included in width calculation */
