@@ -133,9 +133,10 @@
 
 /* Chat Layout Wrapper */
 .chat-layout {
-  height: calc(100vh - 64px - 120px); /* header height - footer height */
-  min-height: 500px; /* Minimum usable height */
-  max-height: calc(100vh - 184px); /* Prevent any overflow */
+  /* Allow the main column to grow with content and avoid extra cropping when input occupies flow */
+  min-height: calc(100vh - 64px - 120px);
+  height: auto;
+  max-height: none;
 }
 
 /* Modern Chat Interface Styles */
@@ -608,7 +609,9 @@
   
   /* Mobile safe area and buffer improvements */
   .chat-layout {
-    height: calc(100vh - 64px - 100px); /* Smaller footer on mobile */
+    min-height: calc(100vh - 64px - 100px); /* Smaller footer on mobile */
+    height: auto;
+    max-height: none;
   }
   
   .chat-container {
@@ -1648,6 +1651,8 @@
     overscroll-behavior: contain;
     scroll-snap-type: y proximity;
     position: relative;
+    /* Ensure the message scroller can grow enough to clear sticky/flow input */
+    min-height: 200px;
 }
 
 /* Message bubbles with scroll snap */
