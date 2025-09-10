@@ -1656,6 +1656,7 @@
     /* Ensure the message scroller can grow enough to clear sticky/flow input */
     min-height: 200px;
     flex: 1 1 auto;
+    padding-bottom: var(--chat-input-h, 0px); /* CSS fallback if JS fails */
 }
 
 /* Message bubbles with scroll snap */
