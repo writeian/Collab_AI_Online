@@ -157,6 +157,8 @@
 .chat-main {
   background: hsl(var(--background));
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .chat-header {
@@ -1653,6 +1655,7 @@
     position: relative;
     /* Ensure the message scroller can grow enough to clear sticky/flow input */
     min-height: 200px;
+    flex: 1 1 auto;
 }
 
 /* Message bubbles with scroll snap */
