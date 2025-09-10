@@ -1,23 +1,24 @@
-# AI Collab Online 🤖
+# AI Collab Online
 
-**A collaborative AI-powered writing platform for teams and educators**
+Collaborative, rubric‑aware, AI‑assisted writing spaces for teams and educators.
 
 [![GitHub](https://img.shields.io/badge/GitHub-Open%20Source-green?style=for-the-badge)](https://github.com/writeian/Collab_AI_Online)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
-[![Type Coverage](https://img.shields.io/badge/Type%20Coverage-85%25-green?style=for-the-badge)](https://github.com/writeian/Collab_AI_Online)
 
 ## 🌐 Live
 
 - Production: https://collab.up.railway.app
 - Healthcheck: https://collab.up.railway.app/health
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Local)
 
 ```bash
 git clone https://github.com/writeian/Collab_AI_Online.git
 cd Collab_AI_Online
 python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
+cp env_template.txt .env  # add your keys (see Environment Variables)
+alembic upgrade head
 python run.py
 ```
 
@@ -25,41 +26,10 @@ python run.py
 
 ---
 
-## 📋 Version Management
+## 📋 Branches
 
-### **Current Versions**
-This repository contains multiple versions of AI Collab Online. Use this guide to avoid confusion:
-
-#### **Version 2 (Current/Revised)**
-- **Branch**: `deployment-clean-v2`
-- **Status**: Latest revised version with enhanced features
-- **Deployment**: Digital Ocean (production)
-- **Features**: Modular architecture, type safety, improved UX
-
-#### **Version 1 (Legacy)**
-- **Branch**: `clean-deploy`
-- **Status**: Previous version (legacy)
-- **Deployment**: Previously deployed
-- **Features**: Original implementation
-
-#### **Railway Deployment**
-- **Branch**: `feature/railway-deployment`
-- **Based on**: Version 2 (`deployment-clean-v2`)
-- **Purpose**: Railway deployment configuration
-- **Status**: Ready for Railway deployment
-
-### **Deployment Guidelines**
-- ✅ **For Railway**: Use `feature/railway-deployment` branch
-- ✅ **For Digital Ocean**: Use `deployment-clean-v2` branch
-- ✅ **For Development**: Use `dev` branch
-- ⚠️ **Avoid**: Mixing versions between deployments
-
-### **Branch Strategy**
-```
-v1-production (legacy) ← clean-deploy
-v2-production (current) ← deployment-clean-v2
-v2-railway (deployment) ← feature/railway-deployment
-```
+- Production on Railway: `feature/railway-deployment`
+- Development: `dev`
 
 ---
 
@@ -96,9 +66,9 @@ AI Collab Online is a **collaborative writing platform** that helps teams and ed
 
 ## ✨ Core Features
 
-### 🎯 Template Wizard System
+### 🎯 Template / Unified Editor
 - **7 Pre-built templates** for different use cases (Study Group, Business Hub, Academic Essay, etc.)
-- **4-step guided setup** with auto-populated goals and AI modes
+- **Unified create/edit page** (`/room/create/learning-steps`) with goals → proposal → refine → create
 - **Mobile-responsive design** with collapsible goal categories
 
 ### 🤖 AI-Powered Collaboration
@@ -107,13 +77,12 @@ AI Collab Online is a **collaborative writing platform** that helps teams and ed
 - **AI response toggle** with persistent per-chat preferences
 - **Google Docs integration** for document analysis
 
-### 📊 Instructor Dashboard
+### 📊 Admin & Reports
 - **Comprehensive analytics** for student progress tracking
-- **Achievement system** with gamification elements
+- **Users report**: `/admin/users` and CSV export `/admin/users.csv`
+- **Pending invite repair** (admin‑only) to clear legacy invitations
 - **System instructions management** for custom AI prompts
 - **Member management** with role-based permissions
-
-### 🏗️ Modern Architecture
 
 ### 💬 Chat Experience
 - Focus mode toggle in chat to maximize writing space
@@ -125,24 +94,11 @@ AI Collab Online is a **collaborative writing platform** that helps teams and ed
 
 ---
 
-## 🆕 Recent Major Updates
-
-### ✅ Backend Modularization (August 2025)
-**1,536-line monolithic file** → **5 focused modules** with clear separation of concerns
-- **100% functionality preserved** with enhanced type safety
-- **Improved maintainability** and testability
-
-### ✅ Type Safety Implementation (August 2025)
-**85% type coverage** across the codebase with mypy integration
-- **Enhanced IDE support** and developer experience
-- **Runtime safety** improvements
-
-### 🔄 Goal Categorization UX (In Progress)
-**Study Group template** fully implemented with collapsible goal categories
-- **6 remaining templates** ready for implementation
-- **Reduced cognitive load** for better user experience
-
-**[📋 View Complete Development History](CHANGELOG.md)**
+## 🆕 Notable Updates
+- Single, unified create/edit flow for rooms (legacy create page removed)
+- Anthropic 529 handling: retry + goal‑aware fallback (template inference, then Academic Essay as last resort)
+- ENV‑based admin allowlist: `ADMIN_EMAILS`
+- Email via SendGrid (Single Sender or Domain Auth)
 
 ---
 
@@ -173,7 +129,31 @@ AI Collab Online is a **collaborative writing platform** that helps teams and ed
 
 ---
 
-## 🚀 Getting Started
+## ⚙️ Environment Variables
+
+Create `.env` (or set Railway Variables):
+
+Required
+```
+SECRET_KEY=your_secret
+FLASK_ENV=development
+DATABASE_URL=postgresql+psycopg2://...  # or omit to use SQLite locally
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+Email (SendGrid)
+```
+EMAIL_PROVIDER=sendgrid
+SENDGRID_API_KEY=SG.***
+EMAIL_FROM=your_verified_sender@example.com
+EMAIL_FROM_NAME=AI Collab Online
+EMAIL_REPLY_TO=support@example.com
+```
+
+Admin allowlist
+```
+ADMIN_EMAILS=you@example.com,other@example.org
+```
 
 ### Prerequisites
 - Python 3.8+
@@ -308,6 +288,10 @@ Offer limited, server-enforced guest trials (e.g., 1 room, 1 chat, 6 messages) w
 
 ## 🛟 Troubleshooting
 
+- Anthropic 529 (service overloaded):
+  - The app retries briefly and falls back to goal‑aware templates. Check Anthropic status and org limits.
+  - Ensure `ANTHROPIC_API_KEY` is set on the correct service and org.
+
 - Endpoint slug errors (Railway): endpoint names are globally unique. Try a different slug (Service → Networking → Endpoint name)
 - Custom domains: add CNAME to your service’s `*.up.railway.app`; if using Cloudflare, set DNS-only during verification
 - Static asset 404s on Linux: ensure case-sensitive paths (e.g., `Static/` vs `static/`)
@@ -362,26 +346,24 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 📁 Detailed Project Structure
+## 📁 Project Structure (high level)
 
 ```
-AI_Collab_Online/
+Collab_AI_Online/
 ├── src/                          # Main application source
 │   ├── app/                      # Flask blueprints
-│   │   ├── goals/                # Goal generation module
-│   │   ├── room.py              # Room management (✅ Typed)
-│   │   ├── chat.py              # Chat functionality (✅ Typed)
-│   │   ├── auth.py              # Authentication (✅ Typed)
-│   │   ├── dashboard.py         # Instructor dashboard (✅ Typed)
-│   │   ├── analytics.py         # Analytics & monitoring (✅ Typed)
-│   │   ├── achievements.py      # Gamification system (✅ Typed)
-│   │   └── access_control.py    # Permission system (✅ Typed)
+│   │   ├── room/                # Room routes (create/edit flow, services, utils)
+│   │   ├── chat.py              # Chat functionality
+│   │   ├── auth.py              # Authentication
+│   │   ├── admin.py             # Admin dashboard & reports
+│   │   ├── analytics.py         # Analytics endpoints
+│   │   ├── achievements.py      # Gamification
+│   │   └── access_control.py    # Permission & guards
 │   ├── models/                   # Database models
 │   ├── utils/                    # Utility functions
 │   └── config/                   # Configuration
 ├── templates/                    # HTML templates
-│   └── room/
-│       └── templates/           # Template wizard HTML files
+│   └── room/                     # Unified learning steps create/edit
 ├── tests/                        # Test suite
 ├── migrations/                   # Database migrations
 └── requirements.txt              # Python dependencies

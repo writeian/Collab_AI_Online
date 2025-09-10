@@ -626,12 +626,12 @@
   }
   
   .chat-input-container {
-    /* Pin the input to viewport bottom on mobile/iOS to prevent clipping */
-    position: fixed;
+    /* Keep input within normal flow; stick to bottom of chat on mobile */
+    position: sticky;
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 9999;
+    z-index: 10;
     padding-bottom: calc(1rem + env(safe-area-inset-bottom));
   }
 }

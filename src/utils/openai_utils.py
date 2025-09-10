@@ -233,7 +233,7 @@ MODES = BASE_MODES.copy()
 
 
 def generate_room_modes(room: Any, template_name: Optional[str] = None) -> Dict[str, Any]:
-    """Generate contextual writing modes based on room goals."""
+    """Generate contextual writing modes based on room goals with provider failover."""
     # If a specific template is requested, use it
     if template_name and template_name in BASE_TEMPLATES:
         return BASE_TEMPLATES[template_name]["modes"]
@@ -250,7 +250,7 @@ def generate_room_modes(room: Any, template_name: Optional[str] = None) -> Dict[
             pass
         return BASE_TEMPLATES["academic_essay"]["modes"]
 
-    # Generate contextual modes using AI with retry, then fall back to template inference
+    # Build common prompt for all providers
     prompt = f"""
     Based on these learning goals: "{room.goals}"
     
@@ -269,54 +269,79 @@ def generate_room_modes(room: Any, template_name: Optional[str] = None) -> Dict[
     }}
     """
 
-    attempts = 2
-    for i in range(attempts):
+    # Helper: parse modes JSON from a text blob
+    def _parse_modes_from_text(text: str) -> Dict[str, ChatMode]:
+        import json as _json
+        import re as _re
+        match = _re.search(r"\{[\s\S]*\}", text or "")
+        if not match:
+            return {}
         try:
-            response, _ = call_anthropic_api(
-                [{"role": "user", "content": prompt}], max_tokens=1000
-            )
-            # Parse the response
-            import json
-            import re
-
-            json_match = re.search(r"\{[\s\S]*\}", response)
-            if json_match:
-                result = json.loads(json_match.group())
-                modes_data = result.get("modes", [])
-
-                generated_modes: Dict[str, ChatMode] = {}
-                for mode_data in modes_data:
-                    if (
-                        isinstance(mode_data, dict)
-                        and "key" in mode_data
-                        and "label" in mode_data
-                        and "prompt" in mode_data
-                    ):
-                        generated_modes[mode_data["key"]] = ChatMode(
-                            mode_data["label"], mode_data["prompt"]
-                        )
-                if generated_modes:
-                    return generated_modes
-        except Exception as e:
-            try:
-                current_app.logger.warning(f"AI mode generation attempt {i+1} failed: {e}")
-            except Exception:
-                print(f"Error generating room modes (attempt {i+1}): {e}")
-        # brief backoff
-        try:
-            time.sleep(0.8)
+            data = _json.loads(match.group(0))
         except Exception:
-            pass
+            return {}
+        modes_list = data.get("modes", []) if isinstance(data, dict) else []
+        generated: Dict[str, ChatMode] = {}
+        for m in modes_list:
+            if isinstance(m, dict) and all(k in m for k in ("key", "label", "prompt")):
+                generated[m["key"]] = ChatMode(m["label"], m["prompt"])
+        return generated
 
-    # Fallback: infer template from goals, else use academic_essay
-    try:
-        from src.app.room.utils.room_utils import infer_template_type_from_room as _infer
-        inferred = _infer(room)
-        if inferred and inferred in BASE_TEMPLATES:
-            current_app.logger.info(f"Falling back to base template '{inferred}' for modes")
-            return BASE_TEMPLATES[inferred]["modes"]
-    except Exception:
-        pass
+    # Determine provider failover order from env
+    def _get_failover_order() -> List[str]:
+        order_raw = os.getenv("AI_FAILOVER_ORDER", "anthropic,openai,templates")
+        return [p.strip().lower() for p in order_raw.split(',') if p.strip()]
+
+    attempts = 2
+    for provider in _get_failover_order():
+        if provider == "anthropic":
+            for i in range(attempts):
+                try:
+                    response, _ = call_anthropic_api([{"role": "user", "content": prompt}], max_tokens=1000)
+                    modes = _parse_modes_from_text(response)
+                    if modes:
+                        return modes
+                except Exception as e:
+                    try:
+                        current_app.logger.warning(f"[modes] Anthropic attempt {i+1} failed: {e}")
+                    except Exception:
+                        pass
+                try:
+                    time.sleep(0.8)
+                except Exception:
+                    pass
+
+        elif provider == "openai":
+            for i in range(attempts):
+                try:
+                    response, _ = call_openai_api([{"role": "user", "content": prompt}], max_tokens=1000)
+                    modes = _parse_modes_from_text(response)
+                    if modes:
+                        return modes
+                except Exception as e:
+                    try:
+                        current_app.logger.warning(f"[modes] OpenAI attempt {i+1} failed: {e}")
+                    except Exception:
+                        pass
+                try:
+                    time.sleep(0.8)
+                except Exception:
+                    pass
+
+        elif provider == "templates":
+            try:
+                from src.app.room.utils.room_utils import infer_template_type_from_room as _infer
+                inferred = _infer(room)
+                if inferred and inferred in BASE_TEMPLATES:
+                    try:
+                        current_app.logger.info(f"Falling back to base template '{inferred}' for modes")
+                    except Exception:
+                        pass
+                    return BASE_TEMPLATES[inferred]["modes"]
+            except Exception:
+                pass
+
+    # Final guard: default to academic essay base modes
     try:
         current_app.logger.info("Falling back to 'academic_essay' base modes")
     except Exception:
@@ -800,10 +825,50 @@ def generate_chat_introduction(room_goals: str, template_type: str = None, learn
     return f"Welcome! I'm here to help you with your learning goals:\n\n{goals_text}\n\nLet's work together to achieve these objectives.\n\n**What would you like to do first?** You can:\n\n• Ask me questions about any of these goals\n• Tell me what you're currently working on\n• Ask for help with a specific problem or concept\n• Get guidance on how to approach your learning\n\nJust let me know how I can help you get started!"
 
 
-# For backward compatibility
-def call_openai_api(messages: List[Dict[str, str]], max_tokens: int = 300) -> Tuple[str, bool]:
-    """Call OpenAI API - redirects to Anthropic for this simplified version."""
-    return call_anthropic_api(messages, max_tokens=max_tokens)
+def _get_openai_model() -> str:
+    return os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+
+
+def call_openai_api(messages: List[Dict[str, str]], system_prompt: str = "", max_tokens: int = 300) -> Tuple[str, bool]:
+    """Call OpenAI Chat Completions API with the given messages."""
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise Exception("OPENAI_API_KEY not found in environment variables")
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}",
+    }
+
+    # Convert messages to OpenAI format (single combined user message for parity with Anthropic)
+    user_messages: List[str] = []
+    for msg in messages:
+        if msg.get("role") != "system":
+            user_messages.append(msg.get("content", ""))
+    user_content = "\n\n".join(user_messages)
+
+    chat_messages: List[Dict[str, str]] = []
+    if system_prompt:
+        chat_messages.append({"role": "system", "content": system_prompt})
+    chat_messages.append({"role": "user", "content": user_content})
+
+    data = {
+        "model": _get_openai_model(),
+        "max_tokens": max_tokens,
+        "messages": chat_messages,
+        # temperature kept default; parity with Anthropic usage
+    }
+
+    try:
+        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=data)
+        response.raise_for_status()
+        result = response.json()
+        text = result["choices"][0]["message"]["content"]
+        return text, False
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"OpenAI API call failed: {str(e)}")
+    except Exception as e:
+        raise Exception(f"OpenAI API call failed: {str(e)}")
 
 
 def call_ollama_api(messages: List[Dict[str, str]], system_prompt: str = "", max_tokens: int = 300) -> Tuple[str, bool]:
