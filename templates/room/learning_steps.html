@@ -632,7 +632,15 @@
 
       function sendRefinementRequest(message) {
         const endpoint = isEditing ? `/room/${roomId}/refine-room-proposal` : '/room/refine-room-proposal';
-        
+        // UX: disable button, show spinner and progress banner
+        const oldBtnLabel = sendRefinementBtn.innerHTML;
+        sendRefinementBtn.disabled = true;
+        sendRefinementBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 mr-2 animate-spin"></i>Refining...';
+        if (summaryBanner) {
+          summaryBanner.textContent = 'Refining your learning steps...';
+          summaryBanner.classList.remove('hidden');
+        }
+
         fetch(endpoint, {
           method: 'POST',
           headers: {
@@ -657,7 +665,6 @@
               roomDescriptionInput.value = result.room_description;
             }
             if (result.modes && JSON.stringify(result.modes) !== JSON.stringify(window.currentModes)) {
-              console.log('AI applied new modes:', result.modes);
               window.currentModes = result.modes;
               displayLearningSteps(window.currentModes);
             }
@@ -673,6 +680,9 @@
                 const removed = (result.diff.removed || []).length;
                 const changed = (result.diff.changed || []).length;
                 parts.push(`Changes: +${added} / -${removed} / ~${changed}`);
+              }
+              if (result.provider) {
+                parts.push(`[Provider: ${result.provider}]`);
               }
               if (result.ai_message) {
                 parts.push(result.ai_message);
@@ -693,8 +703,16 @@
           }
         })
         .catch(error => {
-          console.error('Error:', error);
           addChatMessage('AI', 'An error occurred while processing your request.');
+          if (summaryBanner) {
+            summaryBanner.textContent = 'Refinement failed. Please try again.';
+            summaryBanner.classList.remove('hidden');
+          }
+        })
+        .finally(() => {
+          sendRefinementBtn.disabled = false;
+          sendRefinementBtn.innerHTML = oldBtnLabel;
+          try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch (e) {}
         });
       }
 
