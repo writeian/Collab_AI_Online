@@ -91,7 +91,9 @@ def can_access_room(user: Optional[User], room: Optional[Room]) -> bool:
     """
     if not room or not room.is_active:
         return False
-
+    # Admins have full access
+    if is_admin(user):
+        return True
     # Only room members can access
     return is_room_member(user, room)
 
@@ -108,7 +110,9 @@ def can_manage_room(user: Optional[User], room: Optional[Room]) -> bool:
     """
     if not user or not room:
         return False
-
+    # Admins can manage any room
+    if is_admin(user):
+        return True
     # Only room owner can manage
     return room.owner_id == user.id
 
@@ -125,9 +129,8 @@ def can_create_chats_in_room(user: Optional[User], room: Optional[Room]) -> bool
     """
     if not user or not room:
         return False
-
-    # Room owner can always create chats
-    if room.owner_id == user.id:
+    # Admins and room owner can always create chats
+    if is_admin(user) or room.owner_id == user.id:
         return True
 
     # Check if user has create_chats permission
@@ -150,9 +153,8 @@ def can_invite_to_room(user: Optional[User], room: Optional[Room]) -> bool:
     """
     if not user or not room:
         return False
-
-    # Room owner can always invite
-    if room.owner_id == user.id:
+    # Admins and room owner can always invite
+    if is_admin(user) or room.owner_id == user.id:
         return True
 
     # Check if user has invite permissions
@@ -175,7 +177,9 @@ def can_access_chat(user: Optional[User], chat: Optional[Chat]) -> bool:
     """
     if not chat:
         return False
-
+    # Admins have full access
+    if is_admin(user):
+        return True
     # Check if user can access the room that contains this chat
     return can_access_room(user, chat.room)
 
@@ -192,7 +196,9 @@ def can_edit_chat(user: Optional[User], chat: Optional[Chat]) -> bool:
     """
     if not user or not chat:
         return False
-
+    # Admins can edit any chat
+    if is_admin(user):
+        return True
     # Chat creator can always edit
     if chat.created_by == user.id:
         return True
@@ -217,7 +223,9 @@ def can_delete_chat(user: Optional[User], chat: Optional[Chat]) -> bool:
     """
     if not user or not chat:
         return False
-
+    # Admins can delete any chat
+    if is_admin(user):
+        return True
     # Chat creator can delete
     if chat.created_by == user.id:
         return True
