@@ -303,17 +303,80 @@ def create_app(config_name=None):
 
         @app.route('/landing-assets/<path:filename>')
         def landing_assets(filename: str):
-            from flask import send_from_directory
+            from flask import send_file
+            import os as __os
             # Explicit MIME types for stricter browsers
             _mimetype = None
             if filename.endswith('.css'):
                 _mimetype = 'text/css'
             elif filename.endswith('.js'):
                 _mimetype = 'application/javascript'
+            elif filename.lower().endswith('.png'):
+                _mimetype = 'image/png'
+
+            _candidate_dirs = [
+                _root_static_abs,
+                __os.path.join(_project_root, 'Static'),
+                __os.path.join(_root, 'Static'),
+                __os.path.abspath(__os.path.join(_here, '..', '..', '..', 'Static')),
+                __os.path.abspath(__os.path.join(_here, '..', '..', 'Static')),
+                __os.path.join(_project_root, 'static'),
+                __os.path.join(_root, 'static'),
+            ]
+            for _base in _candidate_dirs:
+                _abs_path = __os.path.join(_base, filename)
+                if __os.path.exists(_abs_path):
+                    print(f"[landing-assets] serving '{filename}' from '{_abs_path}' mimetype={_mimetype}")
+                    try:
+                        return send_file(_abs_path, mimetype=_mimetype)
+                    except Exception as _e:
+                        print(f"[landing-assets] send_file error for {_abs_path}: {_e}")
+                        break
+            # Not found: include diagnostics
             try:
-                return send_from_directory(_root_static_abs, filename, mimetype=_mimetype)
-            except Exception:
-                return ("Not found", 404)
+                _base = _root_static_abs
+                _listing = []
+                if __os.path.isdir(_base):
+                    _listing = sorted(__os.listdir(_base))
+                print(f"[landing-assets] NOT FOUND filename='{filename}' bases={_candidate_dirs} list_base='{_base}' items={_listing[:20]}")
+            except Exception as _e:
+                print(f"[landing-assets] listing error: {_e}")
+            return ("Not found", 404)
+
+        @app.route('/__landing_assets_check')
+        def __landing_assets_check():
+            import os as __os
+            try:
+                _base = _root_static_abs
+                _ok = __os.path.isdir(_base)
+                _landing_css = __os.path.join(_base, 'landing.css')
+                _landing_js = __os.path.join(_base, 'landing.js')
+                _img1 = __os.path.join(_base, 'Landing page image no text 1.png')
+                _img2 = __os.path.join(_base, 'Landing page image no text 2.png')
+                _img3 = __os.path.join(_base, 'Landing page image no text 3.png')
+                _img4 = __os.path.join(_base, 'Landing page image no text 4.png')
+                _img5 = __os.path.join(_base, 'Landing page image no text 5.png')
+                _img6 = __os.path.join(_base, 'Landing page image no text 6.png')
+                _listing = []
+                try:
+                    _listing = sorted(__os.listdir(_base)) if _ok else []
+                except Exception:
+                    _listing = []
+                return {
+                    'base': _base,
+                    'base_exists': _ok,
+                    'landing_css_exists': __os.path.exists(_landing_css),
+                    'landing_js_exists': __os.path.exists(_landing_js),
+                    'img1_exists': __os.path.exists(_img1),
+                    'img2_exists': __os.path.exists(_img2),
+                    'img3_exists': __os.path.exists(_img3),
+                    'img4_exists': __os.path.exists(_img4),
+                    'img5_exists': __os.path.exists(_img5),
+                    'img6_exists': __os.path.exists(_img6),
+                    'listing_sample': _listing[:20],
+                }
+            except Exception as _e:
+                return {'ok': False, 'error': str(_e)}, 500
     except Exception as _e:
         print(f"[static] landing-assets route setup failed: {_e}")
 
