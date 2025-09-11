@@ -22,6 +22,7 @@ from ..utils.room_utils import (
 )
 from src.utils.room_descriptions import generate_unique_room_name, generate_room_short_description
 from src.utils.openai_utils import generate_room_modes
+from src.app.room.utils.refinement_utils import record_refinement_history
 
 class RoomService:
     """Service class for room operations."""
@@ -109,6 +110,30 @@ class RoomService:
             
             current_app.logger.info(f"Room created successfully: {room.name} (ID: {room.id}) by user {user.id}")
             
+            # Baseline snapshot: record initial modes as history (non-blocking)
+            try:
+                baseline_modes = []
+                try:
+                    # Reconstruct modes saved to CustomPrompt
+                    from src.models import CustomPrompt as _CP
+                    cps = _CP.query.filter_by(room_id=room.id).all()
+                    baseline_modes = [
+                        {"key": cp.mode_key, "label": cp.label, "prompt": cp.prompt}
+                        for cp in cps
+                    ]
+                except Exception:
+                    baseline_modes = []
+                record_refinement_history(
+                    room_id=room.id,
+                    user_id=user.id,
+                    preference="baseline",
+                    old_modes=[],
+                    new_modes=baseline_modes,
+                    summary="Initial learning steps saved",
+                )
+            except Exception:
+                pass
+
             return RoomServiceResult(
                 success=True,
                 data={

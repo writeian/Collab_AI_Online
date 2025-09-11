@@ -13,6 +13,7 @@ from ..utils.refinement_utils import (
     run_ai_refinement,
     record_refinement_history,
 )
+from src.app.access_control import require_room_management
 
 refine_bp = Blueprint('room_refine', __name__)
 
@@ -418,4 +419,76 @@ def regenerate_learning_steps(room_id: int):
         current_app.logger.error(f"[regenerate] error: {e}")
         return jsonify({"success": False, "error": "Failed to regenerate steps"}), 500
 
+
+
+@refine_bp.route("/<int:room_id>/revert/<int:history_id>", methods=["POST"]) 
+@require_room_management
+@csrf.exempt
+def revert_learning_steps(room_id: int, history_id: int):
+    """Revert room's learning steps to a history record's new_modes snapshot."""
+    try:
+        if not current_app.config.get('REFINE_V2_ENABLED'):
+            return jsonify({"success": False, "error": "Refine v2 disabled"}), 400
+
+        from src.models.refinement import RoomRefinementHistory
+        room = Room.query.get_or_404(room_id)
+        hist = RoomRefinementHistory.query.filter_by(id=history_id, room_id=room_id).first()
+        if not hist:
+            return jsonify({"success": False, "error": "History not found"}), 404
+
+        import json as _json
+        try:
+            target_modes = _json.loads(hist.new_modes_json or '[]')
+        except Exception:
+            target_modes = []
+
+        # Validate and normalize before writing
+        normalized, _ = validate_and_normalize_modes(target_modes)
+        if not normalized:
+            return jsonify({"success": False, "error": "Invalid target modes"}), 400
+
+        # Persist transactionally
+        try:
+            CustomPrompt.query.filter_by(room_id=room_id).delete()
+            user = get_current_user()
+            created_by = getattr(user, 'id', None) or 0
+            for m in normalized:
+                db.session.add(CustomPrompt(
+                    mode_key=m['key'],
+                    label=m['label'],
+                    prompt=m['prompt'],
+                    room_id=room_id,
+                    created_by=created_by,
+                ))
+            db.session.commit()
+        except Exception as persist_err:
+            db.session.rollback()
+            current_app.logger.error(f"[revert] persist error: {persist_err}")
+            return jsonify({"success": False, "error": "Failed to persist revert"}), 500
+
+        # Record revert as history
+        try:
+            # Capture current (post-revert) snapshot for completeness
+            cps = CustomPrompt.query.filter_by(room_id=room_id).all()
+            new_snapshot = [
+                {"key": cp.mode_key, "label": cp.label, "prompt": cp.prompt}
+                for cp in cps
+            ]
+            user = get_current_user()
+            record_refinement_history(
+                room_id=room_id,
+                user_id=getattr(user, 'id', None),
+                preference=f"revert:{history_id}",
+                old_modes=[],
+                new_modes=new_snapshot,
+                summary="Reverted learning steps to a previous version",
+            )
+        except Exception:
+            pass
+
+        return jsonify({"success": True, "modes": normalized})
+
+    except Exception as e:
+        current_app.logger.error(f"[revert] error: {e}")
+        return jsonify({"success": False, "error": "Failed to revert"}), 500
 
