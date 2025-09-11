@@ -329,6 +329,17 @@ def create_app(config_name=None):
             elif filename.lower().endswith('.png'):
                 _mimetype = 'image/png'
 
+            # Special-case CSS/JS to serve from Flask static if present
+            try:
+                _static_base = app.static_folder or ''
+                if filename in ('landing.css', 'landing.js'):
+                    _static_path = __os.path.join(_static_base, filename)
+                    if __os.path.exists(_static_path):
+                        print(f"[landing-assets] special-case serving '{filename}' from static '{_static_path}'")
+                        return send_file(_static_path, mimetype=_mimetype)
+            except Exception as _e:
+                print(f"[landing-assets] special-case error: {_e}")
+
             _candidate_dirs = [_root_static_abs]
             for _base in _candidate_dirs:
                 _abs_path = __os.path.join(_base, filename)
