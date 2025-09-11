@@ -87,6 +87,7 @@ AI Collab Online is a **collaborative writing platform** that helps teams and ed
 ### 💬 Chat Experience
 - Focus mode toggle in chat to maximize writing space
 - Rubric-aware "Assess Progress" with structured recommendations
+- Per-room chat cap (default 25; configurable via `ROOM_MAX_CHATS`)
 - **Modular Flask blueprint architecture** with 85% type coverage
 - **SQLAlchemy 2.0** with Alembic migrations
 - **Production-ready** with Railway and Digital Ocean deployment
@@ -99,6 +100,7 @@ AI Collab Online is a **collaborative writing platform** that helps teams and ed
 - Anthropic 529 handling: retry + goal‑aware fallback (template inference, then Academic Essay as last resort)
 - ENV‑based admin allowlist: `ADMIN_EMAILS`
 - Email via SendGrid (Single Sender or Domain Auth)
+- Refinement v2: AI-constrained learning-steps refinement with history & revert; provider failover; UI progress banner
 
 ---
 
@@ -120,6 +122,8 @@ AI Collab Online is a **collaborative writing platform** that helps teams and ed
 - **Anthropic Claude API** for intelligent responses
 - **Contextual learning modes** based on educational stages
 - **Error handling** with graceful fallbacks
+  - Provider failover via `AI_FAILOVER_ORDER` (e.g., `anthropic,openai,templates`)
+  - Model overrides: `ANTHROPIC_MODEL` (e.g., `claude-3-5-sonnet-20241022` / `claude-3-5-haiku-20241022`), `OPENAI_MODEL` (e.g., `gpt-4o-mini`)
 
 ### Deployment
 - **Railway** with automatic deployments
@@ -153,6 +157,22 @@ EMAIL_REPLY_TO=support@example.com
 Admin allowlist
 ```
 ADMIN_EMAILS=you@example.com,other@example.org
+```
+
+Refinement & AI
+```
+# Enable new refinement flow
+REFINE_V2_ENABLED=true
+# Provider order and model overrides (optional)
+AI_FAILOVER_ORDER=anthropic,openai,templates
+ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
+OPENAI_MODEL=gpt-4o-mini
+```
+
+Limits
+```
+# Per-room chat cap (default 25)
+ROOM_MAX_CHATS=25
 ```
 
 ### Prerequisites
@@ -241,7 +261,7 @@ AI_Collab_Online/
 1. **Connect Repository**: Link this GitHub repo to your Railway project
 2. **Start Command**: `gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120` (already in `railway.toml`)
 3. **Healthcheck**: `/health` (already in `railway.toml`)
-4. **Environment Variables**: Set `SECRET_KEY`, `ANTHROPIC_API_KEY`, `DATABASE_URL`, etc.
+4. **Environment Variables**: Set `SECRET_KEY`, `ANTHROPIC_API_KEY`, `DATABASE_URL`, `REFINE_V2_ENABLED`, `AI_FAILOVER_ORDER`, `ANTHROPIC_MODEL/OPENAI_MODEL` as needed
 5. **Database**: Use PostgreSQL for production. Run migrations: `alembic upgrade head`
 6. **Endpoint Name**: Set a friendly slug in Service → Networking (globally unique)
 7. **Deploy**: Deploy from the UI or by pushing to your deployment branch
