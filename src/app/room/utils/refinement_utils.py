@@ -161,7 +161,8 @@ def run_ai_refinement(
         return cached
 
     last_err: Exception | None = None
-    for provider in _failover_order():
+    order = _failover_order()
+    for provider in order:
         try:
             if provider == "anthropic":
                 text, _ = call_anthropic_api([{"role": "user", "content": user}], system_prompt=system, max_tokens=max_tokens)
@@ -173,6 +174,7 @@ def run_ai_refinement(
                     "modes": current_modes,
                     "summary": "Used template fallback; kept existing steps.",
                     "notes": ["Template fallback invoked"],
+                    "provider": "templates",
                 }
             else:
                 continue
@@ -187,7 +189,7 @@ def run_ai_refinement(
             # Attach warnings to notes
             if warnings:
                 notes = list(notes) + warnings
-            result = {"modes": normalized, "summary": summary, "notes": notes}
+            result = {"modes": normalized, "summary": summary, "notes": notes, "provider": provider}
             _cache_set(room, current_modes, preference, result)
             return result
         except Exception as e:  # noqa: BLE001

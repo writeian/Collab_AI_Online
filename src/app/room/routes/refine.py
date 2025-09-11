@@ -146,7 +146,6 @@ def _apply_refinements(message: str, current_modes: list):
 
 
 @refine_bp.route("/refine-room-proposal", methods=["POST"]) 
-@require_login
 @csrf.exempt
 @limiter.limit("10/minute")
 def refine_room_proposal_new():
@@ -160,6 +159,12 @@ def refine_room_proposal_new():
         current_modes = data.get("current_modes") or []
         title = (data.get("current_room_title") or "").strip()
         description = (data.get("current_room_description") or "").strip()
+
+        # Auth/trial guard: allow anonymous only when TRIAL_ENABLED; otherwise require login
+        user = get_current_user()
+        if not user and not current_app.config.get('TRIAL_ENABLED'):
+            from flask import redirect, url_for
+            return redirect(url_for('auth.login'))
 
         # Create a temporary room-like object for mode generation
         tmp = type('obj', (object,), {
@@ -198,6 +203,7 @@ def refine_room_proposal_new():
                 modes = ai_out.get("modes", [])
                 summary = (ai_out.get("summary") or "").strip()
                 diff = compute_modes_diff(base_modes, modes)
+                provider = ai_out.get("provider")
                 ai_message = (
                     f"Applied your feedback. {('Summary: ' + summary) if summary else ''}"
                 )
@@ -209,7 +215,8 @@ def refine_room_proposal_new():
                     "conversation_id": str(uuid4()),
                     "ai_message": ai_message,
                     "changes_applied": True,
-                    "diff": diff
+                    "diff": diff,
+                    "provider": provider
                 }
                 # Consume trial event on success
                 try:
@@ -318,6 +325,7 @@ def refine_room_proposal_edit(room_id: int):
                 modes = ai_out.get("modes", [])
                 summary = (ai_out.get("summary") or "").strip()
                 diff = compute_modes_diff(base_modes, modes)
+                provider = ai_out.get("provider")
 
                 # Persist transactionally
                 try:
@@ -382,7 +390,8 @@ def refine_room_proposal_edit(room_id: int):
                     "ai_message": ai_message,
                     "changes_applied": True,
                     "persisted": persisted,
-                    "diff": diff
+                    "diff": diff,
+                    "provider": provider
                 }
                 # Consume trial event on success
                 try:
