@@ -297,9 +297,24 @@ def create_app(config_name=None):
     # Serve legacy assets from capitalized 'Static/' folder (images/css/js for landing page)
     try:
         import os as __os
-        # _root points to the 'src' directory; Static is at the project root, one level up
-        _project_root = __os.path.abspath(__os.path.join(_root, '..'))
-        _root_static_abs = __os.path.join(_project_root, 'Static')
+        # Detect project root Static directory robustly
+        _candidate_static_dirs = [
+            __os.path.abspath(__os.path.join(_here, '..', '..', '..', 'Static')),
+            __os.path.abspath(__os.path.join(_here, '..', '..', 'Static')),
+            __os.path.abspath(__os.path.join(_root, '..', 'Static')),
+            __os.path.abspath(__os.path.join(_root, 'Static')),
+            __os.path.abspath(__os.path.join(__os.getcwd(), 'Static')),
+            '/app/Static',
+        ]
+        _root_static_abs = None
+        for _cand in _candidate_static_dirs:
+            if __os.path.isdir(_cand):
+                _root_static_abs = _cand
+                break
+        if not _root_static_abs:
+            # Default guess; will 404 but diagnostics will show base
+            _root_static_abs = __os.path.abspath(__os.path.join(_here, '..', '..', '..', 'Static'))
+        print(f"[landing-assets] resolved base='{_root_static_abs}' candidates={_candidate_static_dirs}")
 
         @app.route('/landing-assets/<path:filename>')
         def landing_assets(filename: str):
@@ -314,15 +329,7 @@ def create_app(config_name=None):
             elif filename.lower().endswith('.png'):
                 _mimetype = 'image/png'
 
-            _candidate_dirs = [
-                _root_static_abs,
-                __os.path.join(_project_root, 'Static'),
-                __os.path.join(_root, 'Static'),
-                __os.path.abspath(__os.path.join(_here, '..', '..', '..', 'Static')),
-                __os.path.abspath(__os.path.join(_here, '..', '..', 'Static')),
-                __os.path.join(_project_root, 'static'),
-                __os.path.join(_root, 'static'),
-            ]
+            _candidate_dirs = [_root_static_abs]
             for _base in _candidate_dirs:
                 _abs_path = __os.path.join(_base, filename)
                 if __os.path.exists(_abs_path):
@@ -338,7 +345,7 @@ def create_app(config_name=None):
                 _listing = []
                 if __os.path.isdir(_base):
                     _listing = sorted(__os.listdir(_base))
-                print(f"[landing-assets] NOT FOUND filename='{filename}' bases={_candidate_dirs} list_base='{_base}' items={_listing[:20]}")
+                print(f"[landing-assets] NOT FOUND filename='{filename}' base='{_base}' items={_listing[:20]}")
             except Exception as _e:
                 print(f"[landing-assets] listing error: {_e}")
             return ("Not found", 404)
@@ -365,6 +372,9 @@ def create_app(config_name=None):
                 return {
                     'base': _base,
                     'base_exists': _ok,
+                    'cwd': __os.getcwd(),
+                    'here': _here,
+                    'root': _root,
                     'landing_css_exists': __os.path.exists(_landing_css),
                     'landing_js_exists': __os.path.exists(_landing_js),
                     'img1_exists': __os.path.exists(_img1),
