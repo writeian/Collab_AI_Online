@@ -43,6 +43,23 @@ body {
   flex-wrap: nowrap;
 }
 
+/* Override legacy white header if template wasn't updated */
+header.bg-card {
+  background: #000 !important;
+  color: #fff !important;
+}
+header.bg-card a {
+  color: #fff !important;
+}
+.landing-nav-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 4rem; /* 64px */
+  white-space: nowrap;
+  flex-wrap: nowrap;
+}
+
 .landing-hero {
   padding: 3rem 1rem 2rem 1rem;
   text-align: center;
