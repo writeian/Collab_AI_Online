@@ -108,6 +108,8 @@ header.bg-card nav {
 header.bg-card nav a {
   white-space: nowrap !important;
   display: inline-block;
+  font-size: 0.75rem !important;      /* ~25% smaller than base 1rem */
+  line-height: 1.25rem !important;     /* maintain readability */
 }
 
 /* Responsive navbar behavior */
