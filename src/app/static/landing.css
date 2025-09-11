@@ -108,8 +108,14 @@ header.bg-card nav {
 header.bg-card nav a {
   white-space: nowrap !important;
   display: inline-block;
-  font-size: 0.75rem !important;      /* ~25% smaller than base 1rem */
-  line-height: 1.25rem !important;     /* maintain readability */
+  font-size: 1rem !important;          /* ~33% smaller than 1.5rem */
+  line-height: 1.5rem !important;      /* maintain readability */
+}
+
+/* Override generic .flex.items-center > a rule for nav specifically */
+header.bg-card nav.flex.items-center > a {
+  font-size: 1rem !important;
+  line-height: 1.5rem !important;
 }
 
 /* Responsive navbar behavior */
