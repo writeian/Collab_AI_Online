@@ -428,6 +428,32 @@ def regenerate_learning_steps(room_id: int):
         return jsonify({"success": False, "error": "Failed to regenerate steps"}), 500
 
 
+@refine_bp.route("/<int:room_id>/history", methods=["GET"]) 
+@require_room_management
+def list_refinement_history(room_id: int):
+    """Return recent refinement history entries for a room (management only)."""
+    try:
+        from src.models.refinement import RoomRefinementHistory
+        rows = (
+            RoomRefinementHistory.query
+            .filter_by(room_id=room_id)
+            .order_by(RoomRefinementHistory.created_at.desc())
+            .limit(20)
+            .all()
+        )
+        items = []
+        for r in rows:
+            items.append({
+                "id": r.id,
+                "summary": r.summary or "",
+                "preference": r.preference or "",
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            })
+        return jsonify({"success": True, "history": items, "count": len(items)})
+    except Exception as e:
+        current_app.logger.error(f"[history] error: {e}")
+        return jsonify({"success": False, "error": "Failed to load history"}), 500
+
 
 @refine_bp.route("/<int:room_id>/revert/<int:history_id>", methods=["POST"]) 
 @require_room_management

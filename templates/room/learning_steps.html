@@ -74,7 +74,7 @@
             <label for="template-select" class="block text-sm font-medium text-foreground mb-3">Use a Template (Optional)</label>
             <select id="template-select" name="template" 
                     class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
-                           focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent focus:ring-offset-2
+                           focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
                            transition-all duration-200">
               <option value="">AI-Generated Steps - Let AI create custom learning steps based on your goals</option>
               {% for template_id, template in available_templates.items() %}
@@ -160,6 +160,11 @@
           </p>
         </div>
 
+        <!-- Summary / Diff Banner (Feature-flagged) -->
+        {% if config and config.REFINE_V2_ENABLED %}
+        <div id="refine-summary" class="hidden mb-6 p-4 rounded-lg border border-border bg-muted/30 text-sm"></div>
+        {% endif %}
+
         <!-- Room Title and Description -->
         <div class="mb-8">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -187,6 +192,14 @@
           <div id="learning-steps-container" class="space-y-6">
             <!-- Learning steps will be populated here -->
           </div>
+
+          {% if is_editing and config and config.REFINE_V2_ENABLED %}
+          <div class="mt-2">
+            <button id="revert-latest-btn" type="button" class="text-sm text-primary hover:text-primary/80">
+              ↩ Revert to Previous Version
+            </button>
+          </div>
+          {% endif %}
         </div>
 
         <!-- Refinement Chat -->
@@ -259,6 +272,8 @@
       const refinementInput = document.getElementById('refinement-input');
       const sendRefinementBtn = document.getElementById('send-refinement-btn');
       const templateSelect = document.getElementById('template-select');
+      const summaryBanner = document.getElementById('refine-summary');
+      const revertBtn = document.getElementById('revert-latest-btn');
       
       // Template selection functionality
       if (templateSelect) {
@@ -649,6 +664,22 @@
             
             // Add AI message to chat
             addChatMessage('AI', result.ai_message);
+
+            // Show diff/summary if available
+            if (summaryBanner && (result.diff || result.ai_message)) {
+              const parts = [];
+              if (result.diff) {
+                const added = (result.diff.added || []).length;
+                const removed = (result.diff.removed || []).length;
+                const changed = (result.diff.changed || []).length;
+                parts.push(`Changes: +${added} / -${removed} / ~${changed}`);
+              }
+              if (result.ai_message) {
+                parts.push(result.ai_message);
+              }
+              summaryBanner.textContent = parts.join(' — ');
+              summaryBanner.classList.remove('hidden');
+            }
             
             // Show success feedback if changes were applied
             if (result.changes_applied) {
