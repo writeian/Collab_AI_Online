@@ -72,9 +72,16 @@ header.bg-card nav a {
 @media (min-width: 768px) {
   /* Keep everything on one row when there is room */
   header.bg-card .max-w-7xl > .flex {
+    display: flex !important;
+    align-items: center !important;
     flex-wrap: nowrap !important;
     white-space: nowrap !important;
     height: 4rem; /* align with h-16 */
+    gap: 1rem;
+  }
+  /* Push menu to the right; prevent second row */
+  header.bg-card .max-w-7xl > .flex > nav {
+    margin-left: auto !important;
   }
   header.bg-card nav {
     gap: 1.25rem;
