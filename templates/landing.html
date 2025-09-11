@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Collaboration, Reimagined</title>
-    <link rel="stylesheet" href="{{ url_for('landing_assets', filename='landing.css') }}">
+    <!-- Reuse app design tokens and components so navbar renders properly -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/globals.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='landing.css') }}">
 </head>
 <body>
     <div class="landing-bg"></div>
@@ -38,37 +42,37 @@
     </header>
     <main class="landing-steps">
         <section class="landing-step">
-            <img src="{{ url_for('landing_assets', filename='Landing page image no text 1.png') }}" alt="Step 1" class="landing-img">
+            <img src="{{ url_for('static', filename='images/Landing page image no text 1.png') }}" alt="Step 1" class="landing-img">
             <div class="caption">
                 <p><strong>AI tools remain opaque, closed rooms, positioned just outside the circle of learning and collaboration.</strong> Students and teammates step into isolated chatrooms, but their process remains invisible to instructors, leaders, and peers.</p>
             </div>
         </section>
         <section class="landing-step">
-            <img src="{{ url_for('landing_assets', filename='Landing page image no text 2.png') }}" alt="Step 2" class="landing-img">
+            <img src="{{ url_for('static', filename='images/Landing page image no text 2.png') }}" alt="Step 2" class="landing-img">
             <div class="caption">
-                <p><strong>What if AI were no longer used as an isolated and separated room</strong> but a shared tool inside the circle of learning and collaboration?</p>
+                <p><strong>What if AI were no longer used as an isolated workroom</strong> but a shared tool inside the circle of learning and collaboration?</p>
             </div>
         </section>
         <section class="landing-step">
-            <img src="{{ url_for('landing_assets', filename='Landing page image no text 3.png') }}" alt="Step 3" class="landing-img">
+            <img src="{{ url_for('static', filename='images/Landing page image no text 3.png') }}" alt="Step 3" class="landing-img">
             <div class="caption">
                 <p>To do so, let's first open the door to the room to share what we are doing.</p>
             </div>
         </section>
         <section class="landing-step">
-            <img src="{{ url_for('landing_assets', filename='Landing page image no text 4.png') }}" alt="Step 4" class="landing-img">
+            <img src="{{ url_for('static', filename='images/Landing page image no text 4.png') }}" alt="Step 4" class="landing-img">
             <div class="caption">
                 <p>Next, let's remove some of the walls to allow communication and collaboration.</p>
             </div>
         </section>
         <section class="landing-step">
-            <img src="{{ url_for('landing_assets', filename='Landing page image no text 5.png') }}" alt="Step 5" class="landing-img">
+            <img src="{{ url_for('static', filename='images/Landing page image no text 5.png') }}" alt="Step 5" class="landing-img">
             <div class="caption">
                 <p>Let's shape the collaborative space to improve quality, safety, and privacy.</p>
             </div>
         </section>
         <section class="landing-step">
-            <img src="{{ url_for('landing_assets', filename='Landing page image no text 6.png') }}" alt="Step 6" class="landing-img">
+            <img src="{{ url_for('static', filename='images/Landing page image no text 6.png') }}" alt="Step 6" class="landing-img">
             <div class="caption">
                 <p>Finally, let's bring teams together.</p>
             </div>
@@ -77,6 +81,6 @@
             <a href="{{ url_for('auth.register') }}" class="cta-btn">Try AI Collab Now</a>
         </div>
     </main>
-    <script src="{{ url_for('landing_assets', filename='landing.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='landing.js') }}" defer></script>
 </body>
 </html> 
