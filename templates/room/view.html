@@ -15,7 +15,7 @@
         <span class="breadcrumb-current">{{ room.name }}</span>
       </div>
       <div class="flex items-center gap-2">
-        {% if user.id == room.owner_id %}
+        {% if is_admin or user.id == room.owner_id %}
           <a href="{{ url_for('room.new_learning_steps') }}?room_id={{ room.id }}" 
              class="btn btn-primary btn-sm inline-flex items-center justify-center" aria-label="Edit Room">
             <i data-lucide="edit" class="w-4 h-4 mr-1"></i>
@@ -27,15 +27,17 @@
             <i data-lucide="settings" class="w-5 h-5"></i>
           </button>
           <div class="dropdown-menu" id="room-actions-menu">
-            {% if user.id == room.owner_id %}
+            {% if is_admin or user.id == room.owner_id %}
               <a href="{{ url_for('room.room_invitations.manage_invitations', room_id=room.id) }}" class="dropdown-item">
                 <i data-lucide="users" class="w-4 h-4"></i>
                 View Members
               </a>
+              {% if is_admin or user.id == room.owner_id %}
               <a href="{{ url_for('room.room_crud.delete_room', room_id=room.id) }}" class="dropdown-item text-destructive" onclick="return confirm('Are you sure you want to delete this room? This action cannot be undone.')">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
                 Delete Room
               </a>
+              {% endif %}
               <div class="dropdown-divider"></div>
             {% else %}
               <a href="{{ url_for('room.room_invitations.manage_invitations', room_id=room.id) }}" class="dropdown-item">
