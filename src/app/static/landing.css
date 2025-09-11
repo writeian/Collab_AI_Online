@@ -51,6 +51,10 @@ header.bg-card {
 header.bg-card a {
   color: #fff !important;
 }
+/* Ensure the logo link uses the same font weight/size and white color */
+header.bg-card a.text-2xl.font-bold {
+  color: #fff !important;
+}
 
 /* Keep legacy header on a single row */
 header.bg-card .max-w-7xl > .flex {
