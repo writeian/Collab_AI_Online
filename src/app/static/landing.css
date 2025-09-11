@@ -23,6 +23,26 @@ body {
   overflow-x: hidden;
 }
 
+/* Landing navbar: single row, dark theme */
+.landing-navbar-dark {
+  background: #000;
+  color: #fff;
+}
+.landing-navbar-dark a {
+  color: #fff !important;
+}
+.landing-navbar-dark a:hover {
+  color: #dddddd !important;
+}
+.landing-nav-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 4rem; /* 64px */
+  white-space: nowrap;
+  flex-wrap: nowrap;
+}
+
 .landing-hero {
   padding: 3rem 1rem 2rem 1rem;
   text-align: center;
