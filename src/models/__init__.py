@@ -10,6 +10,7 @@ from .analytics import PromptRecord, UserModeUsage, Achievement, PageView
 from .google_auth import GoogleAuth
 from .custom_prompt import CustomPrompt
 from .rubric import RubricCriterion, RubricLevel, RoomRubric
+from .refinement import RoomRefinementHistory
 
 __all__ = [
     "User",
@@ -27,4 +28,5 @@ __all__ = [
     "RubricCriterion",
     "RubricLevel",
     "RoomRubric",
+    "RoomRefinementHistory",
 ]

@@ -77,6 +77,9 @@ class Config:
     # Rate limiting settings
     REDIS_URL = os.getenv("REDIS_URL")
 
+    # Feature flags
+    REFINE_V2_ENABLED = os.getenv("REFINE_V2_ENABLED", "false").lower() == "true"
+
     # Google Docs settings
     GOOGLE_SERVICE_ACCOUNT_FILE = os.getenv(
         "GOOGLE_SERVICE_ACCOUNT_FILE", "service-account-key.json"

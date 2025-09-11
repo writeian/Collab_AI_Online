@@ -8,6 +8,11 @@ from src.app import db, csrf
 from src.models import Room, CustomPrompt
 from src.app.access_control import get_current_user, require_login, require_room_access
 from src.utils.openai_utils import generate_room_modes
+from ..utils.refinement_utils import (
+    validate_and_normalize_modes,
+    run_ai_refinement,
+    record_refinement_history,
+)
 
 refine_bp = Blueprint('room_refine', __name__)
 
@@ -160,8 +165,40 @@ def refine_room_proposal_new():
             'goals': description or '',
             'description': description or ''
         })
+        # If feature flag enabled, run AI refinement v2 with strict validation
+        if current_app.config.get('REFINE_V2_ENABLED'):
+            try:
+                base_modes = current_modes
+                if not isinstance(base_modes, list) or not base_modes:
+                    try:
+                        modes_obj = generate_room_modes(tmp)
+                        base_modes = [
+                            {"key": k, "label": v.label, "prompt": v.prompt}
+                            for k, v in (modes_obj.items() if hasattr(modes_obj, 'items') else [])
+                        ]
+                    except Exception:
+                        base_modes = []
 
-        # If user provided modes and a refinement message, try to apply a deterministic transform first
+                ai_out = run_ai_refinement(tmp, base_modes, message)
+                modes = ai_out.get("modes", [])
+                summary = (ai_out.get("summary") or "").strip()
+                ai_message = (
+                    f"Applied your feedback. {('Summary: ' + summary) if summary else ''}"
+                )
+                return jsonify({
+                    "success": True,
+                    "room_title": title or 'New Room',
+                    "room_description": description or '',
+                    "modes": modes,
+                    "conversation_id": str(uuid4()),
+                    "ai_message": ai_message,
+                    "changes_applied": True
+                })
+            except Exception:
+                # Fall through to deterministic path
+                pass
+
+        # Deterministic fast path (pre-pass + generation fallback)
         modes, summary = _apply_refinements(message, current_modes)
         if modes is None:
             try:
@@ -212,8 +249,87 @@ def refine_room_proposal_edit(room_id: int):
             'goals': room.goals or description or '',
             'description': description or room.description or ''
         })
+        # If feature flag enabled, use AI refinement pipeline with history
+        if current_app.config.get('REFINE_V2_ENABLED'):
+            try:
+                # Build base_modes from current custom prompts if current_modes missing
+                base_modes = current_modes
+                if not isinstance(base_modes, list) or not base_modes:
+                    cps = CustomPrompt.query.filter_by(room_id=room_id).all()
+                    base_modes = [
+                        {"key": cp.mode_key, "label": cp.label, "prompt": cp.prompt}
+                        for cp in cps
+                    ]
+                if not base_modes:
+                    try:
+                        modes_obj = generate_room_modes(tmp)
+                        base_modes = [
+                            {"key": k, "label": v.label, "prompt": v.prompt}
+                            for k, v in (modes_obj.items() if hasattr(modes_obj, 'items') else [])
+                        ]
+                    except Exception:
+                        base_modes = []
 
-        # Prefer deterministic transform on provided modes for edit flow
+                # Save old modes snapshot before update
+                old_modes_snapshot = list(base_modes)
+
+                ai_out = run_ai_refinement(tmp, base_modes, data.get("message", ""))
+                modes = ai_out.get("modes", [])
+                summary = (ai_out.get("summary") or "").strip()
+
+                # Persist transactionally
+                try:
+                    CustomPrompt.query.filter_by(room_id=room_id).delete()
+                    user = get_current_user()
+                    created_by = getattr(user, 'id', None) or 0
+                    for m in modes:
+                        if m.get('key') and m.get('label') and m.get('prompt'):
+                            db.session.add(CustomPrompt(
+                                mode_key=m['key'],
+                                label=m['label'],
+                                prompt=m['prompt'],
+                                room_id=room_id,
+                                created_by=created_by,
+                            ))
+                    db.session.commit()
+                    persisted = True
+                except Exception as persist_err:
+                    db.session.rollback()
+                    current_app.logger.error(f"[refine.edit] persist error: {persist_err}")
+                    persisted = False
+
+                # Record history (non-blocking)
+                try:
+                    user = get_current_user()
+                    record_refinement_history(
+                        room_id=room_id,
+                        user_id=getattr(user, 'id', None),
+                        preference=(data.get("message") or ""),
+                        old_modes=old_modes_snapshot,
+                        new_modes=modes,
+                        summary=summary,
+                    )
+                except Exception:
+                    pass
+
+                ai_message = (
+                    f"Applied your feedback. {('Summary: ' + summary) if summary else ''}"
+                )
+
+                return jsonify({
+                    "success": True,
+                    "room_title": title,
+                    "room_description": description,
+                    "modes": modes,
+                    "ai_message": ai_message,
+                    "changes_applied": True,
+                    "persisted": persisted
+                })
+            except Exception:
+                # Fall through to deterministic path
+                pass
+
+        # Deterministic path (pre-pass + generate fallback, then persist)
         modes, summary = _apply_refinements(data.get("message"), current_modes)
         if modes is None:
             try:

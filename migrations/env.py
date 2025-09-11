@@ -16,6 +16,7 @@ from src.models.custom_prompt import CustomPrompt
 from src.models.analytics import PromptRecord, PageView, UserModeUsage, Achievement
 from src.models.google_auth import GoogleAuth
 from src.models.rubric import RubricCriterion, RubricLevel, RoomRubric
+from src.models.refinement import RoomRefinementHistory
 
 # Import the database configuration
 from src.config.settings import Config
