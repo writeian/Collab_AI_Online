@@ -182,6 +182,18 @@ def refine_room_proposal_new():
                     except Exception:
                         base_modes = []
 
+                # Trial counters: if anonymous and TRIAL_ENABLED, enforce max refines
+                try:
+                    if current_app.config.get('TRIAL_ENABLED'):
+                        user = get_current_user()
+                        if not user:
+                            from src.app.trial import ensure_trial_session, can_consume_event, consume_event
+                            sess = ensure_trial_session()
+                            if not can_consume_event(sess, 'refine', current_app.config.get('TRIAL_MAX_REFINES', 3)):
+                                return jsonify({"success": False, "error": "Trial limit reached for refinements"}), 403
+                except Exception:
+                    pass
+
                 ai_out = run_ai_refinement(tmp, base_modes, message)
                 modes = ai_out.get("modes", [])
                 summary = (ai_out.get("summary") or "").strip()
@@ -189,7 +201,7 @@ def refine_room_proposal_new():
                 ai_message = (
                     f"Applied your feedback. {('Summary: ' + summary) if summary else ''}"
                 )
-                return jsonify({
+                resp = {
                     "success": True,
                     "room_title": title or 'New Room',
                     "room_description": description or '',
@@ -198,7 +210,18 @@ def refine_room_proposal_new():
                     "ai_message": ai_message,
                     "changes_applied": True,
                     "diff": diff
-                })
+                }
+                # Consume trial event on success
+                try:
+                    if current_app.config.get('TRIAL_ENABLED'):
+                        user = get_current_user()
+                        if not user:
+                            from src.app.trial import ensure_trial_session, consume_event
+                            sess = ensure_trial_session()
+                            consume_event(sess, 'refine')
+                except Exception:
+                    pass
+                return jsonify(resp)
             except Exception:
                 # Fall through to deterministic path
                 pass
@@ -279,6 +302,18 @@ def refine_room_proposal_edit(room_id: int):
                 # Save old modes snapshot before update
                 old_modes_snapshot = list(base_modes)
 
+                # Trial counters for anonymous users only
+                try:
+                    if current_app.config.get('TRIAL_ENABLED'):
+                        user = get_current_user()
+                        if not user:
+                            from src.app.trial import ensure_trial_session, can_consume_event
+                            sess = ensure_trial_session()
+                            if not can_consume_event(sess, 'refine', current_app.config.get('TRIAL_MAX_REFINES', 3)):
+                                return jsonify({"success": False, "error": "Trial limit reached for refinements"}), 403
+                except Exception:
+                    pass
+
                 ai_out = run_ai_refinement(tmp, base_modes, data.get("message", ""))
                 modes = ai_out.get("modes", [])
                 summary = (ai_out.get("summary") or "").strip()
@@ -339,7 +374,7 @@ def refine_room_proposal_edit(room_id: int):
                     f"Applied your feedback. {('Summary: ' + summary) if summary else ''}"
                 )
 
-                return jsonify({
+                resp = {
                     "success": True,
                     "room_title": title,
                     "room_description": description,
@@ -348,7 +383,18 @@ def refine_room_proposal_edit(room_id: int):
                     "changes_applied": True,
                     "persisted": persisted,
                     "diff": diff
-                })
+                }
+                # Consume trial event on success
+                try:
+                    if current_app.config.get('TRIAL_ENABLED'):
+                        user = get_current_user()
+                        if not user:
+                            from src.app.trial import ensure_trial_session, consume_event
+                            sess = ensure_trial_session()
+                            consume_event(sess, 'refine')
+                except Exception:
+                    pass
+                return jsonify(resp)
             except Exception:
                 # Fall through to deterministic path
                 pass

@@ -80,6 +80,11 @@ class Config:
     # Feature flags
     REFINE_V2_ENABLED = os.getenv("REFINE_V2_ENABLED", "false").lower() == "true"
 
+    # Trial mode (scaffold)
+    TRIAL_ENABLED = os.getenv("TRIAL_ENABLED", "false").lower() == "true"
+    TRIAL_TTL_DAYS = int(os.getenv("TRIAL_TTL_DAYS", "7") or 7)
+    TRIAL_MAX_REFINES = int(os.getenv("TRIAL_MAX_REFINES", "3") or 3)
+
     # Google Docs settings
     GOOGLE_SERVICE_ACCOUNT_FILE = os.getenv(
         "GOOGLE_SERVICE_ACCOUNT_FILE", "service-account-key.json"
