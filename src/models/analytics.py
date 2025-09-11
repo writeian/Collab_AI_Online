@@ -117,3 +117,23 @@ class Achievement(db.Model):
 
     def __repr__(self):
         return f"<Achievement {self.achievement_type} for user {self.user_id} in room {self.room_id}>"
+
+
+class RefinementEvent(db.Model):
+    """Track refinement pipeline usage for analytics and monitoring."""
+
+    __tablename__ = 'refinement_event'
+    __table_args__ = {'extend_existing': True}
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True, index=True)
+    room_id = db.Column(db.Integer, db.ForeignKey("room.id"), nullable=True, index=True)
+    event_type = db.Column(db.String(32), nullable=False)  # refine_new, refine_edit, regenerate, revert
+    preference = db.Column(db.Text, nullable=True)
+    added = db.Column(db.Integer, default=0, nullable=False)
+    removed = db.Column(db.Integer, default=0, nullable=False)
+    changed = db.Column(db.Integer, default=0, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True)
+
+    def __repr__(self):
+        return f"<RefinementEvent {self.event_type} room={self.room_id} user={self.user_id}>"

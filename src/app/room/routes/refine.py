@@ -316,6 +316,22 @@ def refine_room_proposal_edit(room_id: int):
                         new_modes=modes,
                         summary=summary,
                     )
+                    # Analytics event
+                    try:
+                        from src.models.analytics import RefinementEvent
+                        ev = RefinementEvent(
+                            user_id=getattr(user, 'id', None),
+                            room_id=room_id,
+                            event_type='refine_edit',
+                            preference=(data.get("message") or ""),
+                            added=len(diff.get('added', [])),
+                            removed=len(diff.get('removed', [])),
+                            changed=len(diff.get('changed', [])),
+                        )
+                        db.session.add(ev)
+                        db.session.commit()
+                    except Exception:
+                        db.session.rollback()
                 except Exception:
                     pass
 
@@ -520,6 +536,24 @@ def revert_learning_steps(room_id: int, history_id: int):
             )
         except Exception:
             pass
+
+        # Analytics event
+        try:
+            from src.models.analytics import RefinementEvent
+            user = get_current_user()
+            ev = RefinementEvent(
+                user_id=getattr(user, 'id', None),
+                room_id=room_id,
+                event_type='revert',
+                preference=f"revert:{history_id}",
+                added=0,
+                removed=0,
+                changed=0,
+            )
+            db.session.add(ev)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
 
         return jsonify({"success": True, "modes": normalized})
 
