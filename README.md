@@ -28,8 +28,20 @@ python run.py
 
 ## 📋 Branches
 
-- Production on Railway: `feature/railway-deployment`
+- Production (Railway tracked branch): `feature/railway-deployment`
 - Development: `dev`
+
+### How to deploy to Railway
+- Ensure you are on the tracked branch:
+  ```bash
+  git checkout feature/railway-deployment && git pull --ff-only
+  ```
+- Commit your changes and push to trigger a deploy:
+  ```bash
+  git commit -m "deploy: landing updates" # or --allow-empty to force
+  git push origin feature/railway-deployment
+  ```
+- After deploy, hard refresh the browser to bypass cached assets.
 
 ---
 
