@@ -55,6 +55,9 @@ header.bg-card a {
 header.bg-card a.text-2xl.font-bold {
   color: #fff !important;
 }
+header.bg-card a.no-underline {
+  text-decoration: none !important;
+}
 
 /* Keep legacy header on a single row */
 header.bg-card .max-w-7xl > .flex {
