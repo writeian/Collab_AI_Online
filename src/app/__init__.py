@@ -294,6 +294,18 @@ def create_app(config_name=None):
         except Exception:
             return ("Not found", 404)
 
+    # Serve legacy assets from capitalized 'Static/' folder (images/css/js for landing page)
+    try:
+        import os as __os
+        _root_static_abs = __os.path.join(_root, 'Static')
+
+        @app.route('/landing-assets/<path:filename>')
+        def landing_assets(filename: str):
+            from flask import send_from_directory
+            return send_from_directory(_root_static_abs, filename)
+    except Exception as _e:
+        print(f"[static] landing-assets route setup failed: {_e}")
+
     # Error handlers
     @app.errorhandler(404)
     def not_found_error(error):
