@@ -8,9 +8,11 @@ SECRET_KEY=your_secret_key_here
 # AI Services (choose one or both)
 # Get from: https://platform.openai.com/api-keys
 OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_MODEL=gpt-4o-mini
 
 # Get from: https://console.anthropic.com/
 ANTHROPIC_API_KEY=your_anthropic_api_key_here
+ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
 
 # Google Services (optional - for Google Docs integration)
 # Service account file path (default: service-account-key.json)

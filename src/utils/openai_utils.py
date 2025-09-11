@@ -435,8 +435,11 @@ def call_anthropic_api(messages: List[Dict[str, str]], system_prompt: str = "", 
     # Combine user messages
     user_content = "\n\n".join(user_messages)
 
+    def _get_anthropic_model() -> str:
+        return os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022")
+
     data = {
-        "model": "claude-3-5-sonnet-20241022",
+        "model": _get_anthropic_model(),
         "max_tokens": max_tokens,
         "messages": [{"role": "user", "content": user_content}],
     }
