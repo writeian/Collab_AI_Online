@@ -297,12 +297,23 @@ def create_app(config_name=None):
     # Serve legacy assets from capitalized 'Static/' folder (images/css/js for landing page)
     try:
         import os as __os
-        _root_static_abs = __os.path.join(_root, 'Static')
+        # _root points to the 'src' directory; Static is at the project root, one level up
+        _project_root = __os.path.abspath(__os.path.join(_root, '..'))
+        _root_static_abs = __os.path.join(_project_root, 'Static')
 
         @app.route('/landing-assets/<path:filename>')
         def landing_assets(filename: str):
             from flask import send_from_directory
-            return send_from_directory(_root_static_abs, filename)
+            # Explicit MIME types for stricter browsers
+            _mimetype = None
+            if filename.endswith('.css'):
+                _mimetype = 'text/css'
+            elif filename.endswith('.js'):
+                _mimetype = 'application/javascript'
+            try:
+                return send_from_directory(_root_static_abs, filename, mimetype=_mimetype)
+            except Exception:
+                return ("Not found", 404)
     except Exception as _e:
         print(f"[static] landing-assets route setup failed: {_e}")
 
