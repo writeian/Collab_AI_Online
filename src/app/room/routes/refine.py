@@ -4,7 +4,7 @@ Refinement and regeneration routes for learning steps.
 
 from flask import Blueprint, request, jsonify, current_app
 import re
-from src.app import db, csrf
+from src.app import db, csrf, limiter
 from src.models import Room, CustomPrompt
 from src.app.access_control import get_current_user, require_login, require_room_access
 from src.utils.openai_utils import generate_room_modes
@@ -12,6 +12,7 @@ from ..utils.refinement_utils import (
     validate_and_normalize_modes,
     run_ai_refinement,
     record_refinement_history,
+    compute_modes_diff,
 )
 from src.app.access_control import require_room_management
 
@@ -147,6 +148,7 @@ def _apply_refinements(message: str, current_modes: list):
 @refine_bp.route("/refine-room-proposal", methods=["POST"]) 
 @require_login
 @csrf.exempt
+@limiter.limit("10/minute")
 def refine_room_proposal_new():
     """Refine proposal during new-room flow (no room_id yet).
     Regenerates modes based on current title/description hints; returns updates for UI.
@@ -183,6 +185,7 @@ def refine_room_proposal_new():
                 ai_out = run_ai_refinement(tmp, base_modes, message)
                 modes = ai_out.get("modes", [])
                 summary = (ai_out.get("summary") or "").strip()
+                diff = compute_modes_diff(base_modes, modes)
                 ai_message = (
                     f"Applied your feedback. {('Summary: ' + summary) if summary else ''}"
                 )
@@ -193,7 +196,8 @@ def refine_room_proposal_new():
                     "modes": modes,
                     "conversation_id": str(uuid4()),
                     "ai_message": ai_message,
-                    "changes_applied": True
+                    "changes_applied": True,
+                    "diff": diff
                 })
             except Exception:
                 # Fall through to deterministic path
@@ -235,6 +239,7 @@ def refine_room_proposal_new():
 @refine_bp.route("/<int:room_id>/refine-room-proposal", methods=["POST"]) 
 @require_room_access
 @csrf.exempt
+@limiter.limit("10/minute")
 def refine_room_proposal_edit(room_id: int):
     """Refine proposal for an existing room. Returns updated modes, not persisted."""
     try:
@@ -277,6 +282,7 @@ def refine_room_proposal_edit(room_id: int):
                 ai_out = run_ai_refinement(tmp, base_modes, data.get("message", ""))
                 modes = ai_out.get("modes", [])
                 summary = (ai_out.get("summary") or "").strip()
+                diff = compute_modes_diff(base_modes, modes)
 
                 # Persist transactionally
                 try:
@@ -324,7 +330,8 @@ def refine_room_proposal_edit(room_id: int):
                     "modes": modes,
                     "ai_message": ai_message,
                     "changes_applied": True,
-                    "persisted": persisted
+                    "persisted": persisted,
+                    "diff": diff
                 })
             except Exception:
                 # Fall through to deterministic path
@@ -388,6 +395,7 @@ def refine_room_proposal_edit(room_id: int):
 @refine_bp.route("/<int:room_id>/regenerate-learning-steps", methods=["POST"]) 
 @require_room_access
 @csrf.exempt
+@limiter.limit("6/minute")
 def regenerate_learning_steps(room_id: int):
     """Generate a fresh set of modes for the room and replace existing CustomPrompt rows."""
     try:
@@ -424,6 +432,7 @@ def regenerate_learning_steps(room_id: int):
 @refine_bp.route("/<int:room_id>/revert/<int:history_id>", methods=["POST"]) 
 @require_room_management
 @csrf.exempt
+@limiter.limit("6/minute")
 def revert_learning_steps(room_id: int, history_id: int):
     """Revert room's learning steps to a history record's new_modes snapshot."""
     try:

@@ -13,6 +13,7 @@ import os
 import json
 import re
 from typing import Any, Dict, List, Tuple
+import time
 
 from flask import current_app
 from src.app import db
@@ -154,6 +155,11 @@ def run_ai_refinement(
     """
     system, user = build_refinement_prompt(room, current_modes, preference)
 
+    # Short-lived in-process cache (per worker)
+    cached = _cache_get(room, current_modes, preference)
+    if cached is not None:
+        return cached
+
     last_err: Exception | None = None
     for provider in _failover_order():
         try:
@@ -181,7 +187,9 @@ def run_ai_refinement(
             # Attach warnings to notes
             if warnings:
                 notes = list(notes) + warnings
-            return {"modes": normalized, "summary": summary, "notes": notes}
+            result = {"modes": normalized, "summary": summary, "notes": notes}
+            _cache_set(room, current_modes, preference, result)
+            return result
         except Exception as e:  # noqa: BLE001
             last_err = e
             try:
@@ -219,5 +227,71 @@ def record_refinement_history(
             current_app.logger.warning("[refine] failed to record refinement history")
         except Exception:
             pass
+
+
+# -----------------
+# Caching utilities
+# -----------------
+_REFINE_CACHE: Dict[str, Tuple[float, Dict[str, Any]]] = {}
+_REFINE_TTL_SECS = 120
+
+
+def _cache_key(room: Room, current_modes: List[Dict[str, Any]], preference: str) -> str:
+    # Build a compact signature
+    rid = getattr(room, 'id', 0) or 0
+    labels = ":".join([(m.get('label') or '') for m in (current_modes or [])])[:512]
+    pref = (preference or '').strip()[:256]
+    return f"{rid}|{hash(labels)}|{hash(pref)}"
+
+
+def _cache_get(room: Room, current_modes: List[Dict[str, Any]], preference: str) -> Dict[str, Any] | None:
+    try:
+        key = _cache_key(room, current_modes, preference)
+        ts, val = _REFINE_CACHE.get(key, (0.0, None))  # type: ignore[assignment]
+        if val is None:
+            return None
+        if (time.time() - ts) <= _REFINE_TTL_SECS:
+            return val
+        # expired
+        _REFINE_CACHE.pop(key, None)
+        return None
+    except Exception:
+        return None
+
+
+def _cache_set(room: Room, current_modes: List[Dict[str, Any]], preference: str, result: Dict[str, Any]) -> None:
+    try:
+        key = _cache_key(room, current_modes, preference)
+        _REFINE_CACHE[key] = (time.time(), result)
+    except Exception:
+        pass
+
+
+# -------------
+# Diff utility
+# -------------
+def compute_modes_diff(before: List[Dict[str, Any]], after: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Compute a simple diff between two mode lists by label.
+
+    Returns dict with keys: added, removed, changed (list of {from_label,to_label}).
+    """
+    before_labels = [ (m.get('key'), (m.get('label') or '')) for m in (before or []) ]
+    after_labels = [ (m.get('key'), (m.get('label') or '')) for m in (after or []) ]
+
+    bset = set([lbl for _, lbl in before_labels])
+    aset = set([lbl for _, lbl in after_labels])
+
+    added = [lbl for lbl in (aset - bset)]
+    removed = [lbl for lbl in (bset - aset)]
+
+    # Changed: same index but different label length or content
+    changed: List[Dict[str, str]] = []
+    for i in range(min(len(before_labels), len(after_labels))):
+        b_lbl = before_labels[i][1]
+        a_lbl = after_labels[i][1]
+        if b_lbl != a_lbl:
+            changed.append({"from_label": b_lbl, "to_label": a_lbl})
+
+    return {"added": added, "removed": removed, "changed": changed}
 
 
