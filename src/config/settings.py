@@ -85,6 +85,9 @@ class Config:
     TRIAL_TTL_DAYS = int(os.getenv("TRIAL_TTL_DAYS", "7") or 7)
     TRIAL_MAX_REFINES = int(os.getenv("TRIAL_MAX_REFINES", "3") or 3)
 
+    # Room limits
+    ROOM_MAX_CHATS = int(os.getenv("ROOM_MAX_CHATS", "25") or 25)
+
     # Google Docs settings
     GOOGLE_SERVICE_ACCOUNT_FILE = os.getenv(
         "GOOGLE_SERVICE_ACCOUNT_FILE", "service-account-key.json"

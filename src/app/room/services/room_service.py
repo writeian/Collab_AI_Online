@@ -23,6 +23,7 @@ from ..utils.room_utils import (
 from src.utils.room_descriptions import generate_unique_room_name, generate_room_short_description
 from src.utils.openai_utils import generate_room_modes
 from src.app.room.utils.refinement_utils import record_refinement_history
+from src.models import Chat as _Chat
 
 class RoomService:
     """Service class for room operations."""
@@ -337,6 +338,13 @@ class RoomService:
         except Exception as e:
             current_app.logger.error(f"Error getting room chats: {e}")
             return []
+
+    @staticmethod
+    def get_room_chat_count(room: Room) -> int:
+        try:
+            return _Chat.query.filter_by(room_id=room.id).count()
+        except Exception:
+            return 0
     
     @staticmethod
     def get_room_members(room: Room, user: User) -> List[User]:

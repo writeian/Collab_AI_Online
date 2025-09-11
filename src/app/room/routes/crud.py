@@ -416,6 +416,18 @@ def create_chat(room_id: int) -> Any:
         flash("You don't have permission to create chats in this room.")
         return redirect(url_for("room.room_crud.view_room", room_id=room.id))
 
+    # Enforce per-room chat cap
+    try:
+        from flask import current_app as _ca
+        max_chats = int((_ca.config.get('ROOM_MAX_CHATS') or 25))
+    except Exception:
+        max_chats = 25
+    from src.models import Chat as _Chat
+    existing_count = _Chat.query.filter_by(room_id=room.id).count()
+    if existing_count >= max_chats:
+        flash(f"Chat limit reached for this room (max {max_chats}). Please create a new room to continue.", "error")
+        return redirect(url_for("room.room_crud.view_room", room_id=room.id))
+
     if request.method == "POST":
         title = request.form["title"].strip()
         mode = request.form.get("mode", "explore")
