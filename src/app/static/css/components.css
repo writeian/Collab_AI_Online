@@ -405,9 +405,10 @@
 .chat-input {
   background: #ffffff; /* Solid white background */
   border: 1px solid hsl(var(--border));
-  border-radius: 1.5rem;
-  padding: 0.75rem 1rem;
-  font-size: 0.9375rem;
+  border-radius: 1.25rem;
+  padding: 0.5rem 0.875rem; /* tighter vertical rhythm */
+  font-size: 0.9rem;
+  line-height: 1.25; /* reduce internal line spacing */
   transition: all 0.2s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
