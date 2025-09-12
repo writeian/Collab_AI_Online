@@ -249,7 +249,7 @@
                             <div class="message-content">
                                 <p>{{ message.content|markdown|safe }}</p>
                                 <p class="message-timestamp">
-                                    {{ message.timestamp.strftime('%I:%M %p') }}
+                                    <time class="msg-time" data-ts="{{ (message.timestamp.timestamp())|int }}"></time>
                                     {% if user %}
                                     <button type="button" class="text-xs text-muted-foreground hover:text-foreground ml-2"
                                             onclick="toggleCommentForm({{ loop.index }})">
@@ -266,7 +266,7 @@
                             <div class="message-content text-right">
                                 <p>{{ message.content|markdown|safe }}</p>
                                 <p class="message-timestamp">
-                                    {{ message.timestamp.strftime('%I:%M %p') }}
+                                    <time class="msg-time" data-ts="{{ (message.timestamp.timestamp())|int }}"></time>
                                     {% if user %}
                                     <button type="button" class="text-xs text-muted-foreground hover:text-foreground ml-2"
                                             onclick="toggleCommentForm({{ loop.index }})">
@@ -364,12 +364,14 @@
             </div>
             
             <div class="flex gap-3">
-            <input type="text" name="content" 
-                   placeholder="Type your message..." 
-                   class="chat-input flex-1"
-                   required
-                   id="message-input"
-                   autocomplete="off">
+            <textarea name="content"
+                      placeholder="Type your message..."
+                      class="chat-input chat-textarea flex-1"
+                      required
+                      id="message-input"
+                      rows="1"
+                      autocomplete="off"
+                      style="resize: vertical;"></textarea>
             <button type="submit" 
                     class="send-button"
                     id="send-button">
@@ -650,6 +652,22 @@
 
     // Initialize touch optimization when DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
+        // Format all message timestamps to the viewer's local timezone
+        function formatAllMessageTimes(root) {
+            try {
+                const scope = root || document;
+                const nodes = scope.querySelectorAll('time.msg-time');
+                const formatter = new Intl.DateTimeFormat([], { hour: '2-digit', minute: '2-digit' });
+                nodes.forEach(node => {
+                    const ts = parseInt(node.getAttribute('data-ts') || '0', 10);
+                    if (!ts) return;
+                    const d = new Date(ts * 1000);
+                    node.textContent = formatter.format(d);
+                    node.setAttribute('title', d.toLocaleString());
+                });
+            } catch (e) { /* no-op */ }
+        }
+        formatAllMessageTimes();
         // Initialize touch-optimized scrolling
         new ChatTouchOptimizer();
         
@@ -667,8 +685,15 @@
         const chatMessagesRef = document.getElementById('chat-messages');
         const inputBar = document.querySelector('.chat-input-container');
         function getExtraOffsetPx() {
-            // Tighter, industry-standard buffer: ~6px mobile, ~8px desktop
-            return (window.innerWidth <= 768) ? 6 : 8;
+            // Tighter, industry-standard buffer: ~4-6px mobile, ~6-8px desktop
+            return (window.innerWidth <= 768) ? 4 : 6;
+        }
+
+        // Allow a slight visual overlap so the last message is closer to the bar
+        function getOverlapAllowancePx() {
+            // Permit part of the translucent bar to overlap messages
+            // Larger allowance on desktop where there's more room
+            return (window.innerWidth <= 768) ? 24 : 36;
         }
 
         function isNearBottom(el) {
@@ -684,7 +709,9 @@
             if (!chatMessagesRef || !inputBar) return;
             const wasNearBottom = isNearBottom(chatMessagesRef);
             const inputHeight = inputBar.offsetHeight || 0;
-            const pad = inputHeight + getExtraOffsetPx();
+            // Reduce effective padding so content sits closer to the input bar
+            let pad = inputHeight - getOverlapAllowancePx();
+            pad = Math.max(pad, getExtraOffsetPx());
             chatMessagesRef.style.setProperty('padding-bottom', pad + 'px', 'important');
             chatMessagesRef.style.setProperty('--chat-input-h', pad + 'px');
             if (nudgeScroll && wasNearBottom) chatMessagesRef.scrollTop = chatMessagesRef.scrollHeight - chatMessagesRef.clientHeight;
@@ -807,6 +834,24 @@
         if (!window.__chat_input_bound) {
             const inputEl = document.getElementById('message-input');
             if (inputEl) {
+                // Auto-grow textarea on input (desktop). Shift+Enter newline, Enter submits
+                inputEl.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        const form = document.getElementById('message-form');
+                        if (form) form.submit();
+                    }
+                });
+                inputEl.addEventListener('input', () => {
+                    try {
+                        // Auto-grow within max-height
+                        inputEl.style.height = 'auto';
+                        const maxH = parseFloat(getComputedStyle(inputEl).maxHeight) || 320;
+                        const newH = Math.min(inputEl.scrollHeight + 2, maxH);
+                        inputEl.style.height = newH + 'px';
+                        setTimeout(() => { applyBottomPadding(true); enforceFocusModeLayout(); }, 10);
+                    } catch (e) {}
+                });
                 inputEl.addEventListener('focus', () => { setTimeout(() => { applyBottomPadding(true); enforceFocusModeLayout(); }, 50); });
                 inputEl.addEventListener('blur', () => { setTimeout(() => { applyBottomPadding(true); enforceFocusModeLayout(); }, 50); });
             }
@@ -1013,18 +1058,20 @@
                         <div class="flex items-start gap-3">
                           <div class="ai-avatar">AI</div>
                           <div class="flex-1"><div class="message-content"><p>${msg.content}</p>
-                          <p class="message-timestamp">${new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                          <p class="message-timestamp"><time class=\"msg-time\" data-ts=\"${Math.floor(new Date(msg.timestamp).getTime()/1000)}\"></time></p>
                           </div></div>
                         </div>` : `
                         <div class="flex items-start gap-3">
                           <div class="flex-1"><div class="message-content text-right"><p>${msg.content}</p>
-                          <p class="message-timestamp">${new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                          <p class="message-timestamp"><time class=\"msg-time\" data-ts=\"${Math.floor(new Date(msg.timestamp).getTime()/1000)}\"></time></p>
                           </div></div>
                         </div>`}
                       </div>`;
                     container.appendChild(wrapper);
                 });
                 if (typeof lucide !== 'undefined') { try { lucide.createIcons(); } catch (e) {} }
+                // Format timestamps for newly appended nodes
+                try { formatAllMessageTimes(container); } catch(e){}
                 setLastMessageId(data.last_id || getLastMessageId());
                 // Recompute padding now that input/messages may have shifted
                 try { applyBottomPadding(false); } catch (e) {}
