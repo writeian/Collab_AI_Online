@@ -387,15 +387,18 @@
 
 /* Modern Input Area */
 .chat-input-container {
-  /* Normalize: default in-flow; focus mode sets fixed */
-  position: static;
+  /* Unified: fixed translucent bar at bottom across views; JS adds bottom padding to messages */
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: hsl(var(--card));
   border-top: 1px solid hsl(var(--border));
   backdrop-filter: blur(10px);
   box-shadow: 0 -1px 3px 0 rgba(0, 0, 0, 0.05);
   padding: 1rem;
   padding-bottom: calc(1rem + env(safe-area-inset-bottom));
-  z-index: 10;
+  z-index: 10000;
 }
 
 .chat-input {
