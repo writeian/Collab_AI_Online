@@ -133,9 +133,10 @@
 
 /* Chat Layout Wrapper */
 .chat-layout {
-  height: calc(100vh - 64px - 120px); /* header height - footer height */
-  min-height: 500px; /* Minimum usable height */
-  max-height: calc(100vh - 184px); /* Prevent any overflow */
+  /* Align with app static: flexible layout so messages panel is the scroller */
+  min-height: calc(100vh - 64px - 120px);
+  height: auto;
+  max-height: none;
 }
 
 /* Modern Chat Interface Styles */
