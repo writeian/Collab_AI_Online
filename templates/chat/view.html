@@ -295,7 +295,7 @@
                     {% set message_comments = comments|selectattr('dialogue_number', 'equalto', loop.index)|list %}
                     {% if message_comments %}
                     <div class="comment-section">
-                        {% for comment in message_comments if (not comment.parent_comment_id if comment.parent_comment_id is defined else True) %}
+                        {% for comment in message_comments %}
                         <div class="comment-item">
                             <div class="flex items-center justify-between">
                                 <p class="font-medium">{{ comment.user.display_name }}</p>
@@ -310,38 +310,7 @@
                             </div>
                             <p class="mt-1">{{ comment.content }}</p>
                             <p class="text-xs text-muted-foreground mt-1">{{ comment.timestamp.strftime('%I:%M %p') }}</p>
-                            {# Replies #}
-                            {% set child_replies = comments|selectattr('parent_comment_id','equalto', comment.id)|list %}
-                            {% if child_replies %}
-                            <div class="mt-2 ml-3 space-y-2">
-                                {% for r in child_replies %}
-                                <div class="comment-item" style="margin:0; padding:0.5rem 0.75rem;">
-                                    <div class="flex items-center justify-between">
-                                        <p class="font-medium">{{ r.user.display_name }}</p>
-                                        {% if user and (r.user_id == user.id or chat.created_by == user.id) %}
-                                        <form method="POST" action="{{ url_for('chat.delete_comment', chat_id=chat.id, comment_id=r.id) }}" class="inline">
-                                            <button type="submit" class="text-red-600 hover:text-red-800 text-sm">
-                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                            </button>
-                                        </form>
-                                        {% endif %}
-                                    </div>
-                                    <p class="mt-1">{{ r.content }}</p>
-                                    <p class="text-xs text-muted-foreground mt-1">{{ r.timestamp.strftime('%I:%M %p') }}</p>
-                                </div>
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                            {% if user %}
-                            <form method="POST" action="{{ url_for('chat.add_comment', chat_id=chat.id) }}" class="comment-form mt-2">
-                                <input type="hidden" name="dialogue_number" value="{{ loop.index }}">
-                                <input type="hidden" name="parent_comment_id" value="{{ comment.id }}">
-                                <textarea name="comment_content" required class="comment-textarea w-full" rows="2" placeholder="Reply..."></textarea>
-                                <div class="flex gap-1 mt-1">
-                                    <button type="submit" class="px-2 py-1 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90">Reply</button>
-                                </div>
-                            </form>
-                            {% endif %}
+                            
                         </div>
                         {% endfor %}
                     </div>
