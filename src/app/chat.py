@@ -324,6 +324,7 @@ def add_comment(chat_id: int) -> Any:
         return redirect(url_for("auth.login"))
 
     dialogue_number = request.form.get("dialogue_number", type=int)
+    parent_comment_id = request.form.get("parent_comment_id", type=int)
     content = request.form.get("comment_content", "").strip()
 
     if not dialogue_number or not content:
@@ -339,11 +340,13 @@ def add_comment(chat_id: int) -> Any:
         return redirect(url_for("chat.view_chat", chat_id=chat_obj.id))
 
     # Create the comment
+    # Optional reply-to parent
     comment = Comment(
         chat_id=chat_obj.id,
         user_id=user.id,
         dialogue_number=dialogue_number,
         content=content,
+        parent_comment_id=parent_comment_id if parent_comment_id else None,
     )
     db.session.add(comment)
     db.session.commit()

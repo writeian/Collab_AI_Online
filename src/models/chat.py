@@ -101,9 +101,20 @@ class Comment(db.Model):
     timestamp = db.Column(
         db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
     )
+    # Optional parent for threaded replies (1-level)
+    parent_comment_id = db.Column(
+        db.Integer, db.ForeignKey("comment.id"), nullable=True, index=True
+    )
 
     # Relationships
     user = db.relationship("User", backref="comments")
+    # Replies; limit nesting in templates/logic to 1-level for UX
+    replies = db.relationship(
+        "Comment",
+        backref=db.backref("parent", remote_side=[id]),
+        cascade="all, delete-orphan",
+        lazy=True,
+    )
 
     def __repr__(self) -> str:
         return f"<Comment {self.id} on dialogue {self.dialogue_number}>"

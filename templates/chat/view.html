@@ -253,8 +253,7 @@
                                 <p class="message-timestamp">
                                     <time class="msg-time" data-ts="{{ (message.timestamp.timestamp())|int }}"></time>
                                     {% if user %}
-                                    <button type="button" class="text-xs text-muted-foreground hover:text-foreground ml-2"
-                                            onclick="toggleCommentForm({{ loop.index }})">
+                                    <button type="button" class="text-xs text-muted-foreground hover:text-foreground ml-2" data-toggle-comment data-dialogue="{{ loop.index }}">
                                         💬 Add Comment
                                     </button>
                                     {% endif %}
@@ -270,8 +269,7 @@
                                 <p class="message-timestamp">
                                     <time class="msg-time" data-ts="{{ (message.timestamp.timestamp())|int }}"></time>
                                     {% if user %}
-                                    <button type="button" class="text-xs text-muted-foreground hover:text-foreground ml-2"
-                                            onclick="toggleCommentForm({{ loop.index }})">
+                                    <button type="button" class="text-xs text-muted-foreground hover:text-foreground ml-2" data-toggle-comment data-dialogue="{{ loop.index }}">
                                         💬 Add Comment
                                     </button>
                                     {% endif %}
@@ -297,7 +295,7 @@
                     {% set message_comments = comments|selectattr('dialogue_number', 'equalto', loop.index)|list %}
                     {% if message_comments %}
                     <div class="comment-section">
-                        {% for comment in message_comments %}
+                        {% for comment in message_comments if not comment.parent_comment_id %}
                         <div class="comment-item">
                             <div class="flex items-center justify-between">
                                 <p class="font-medium">{{ comment.user.display_name }}</p>
@@ -312,6 +310,38 @@
                             </div>
                             <p class="mt-1">{{ comment.content }}</p>
                             <p class="text-xs text-muted-foreground mt-1">{{ comment.timestamp.strftime('%I:%M %p') }}</p>
+                            {# Replies #}
+                            {% set child_replies = comments|selectattr('parent_comment_id','equalto', comment.id)|list %}
+                            {% if child_replies %}
+                            <div class="mt-2 ml-3 space-y-2">
+                                {% for r in child_replies %}
+                                <div class="comment-item" style="margin:0; padding:0.5rem 0.75rem;">
+                                    <div class="flex items-center justify-between">
+                                        <p class="font-medium">{{ r.user.display_name }}</p>
+                                        {% if user and (r.user_id == user.id or chat.created_by == user.id) %}
+                                        <form method="POST" action="{{ url_for('chat.delete_comment', chat_id=chat.id, comment_id=r.id) }}" class="inline">
+                                            <button type="submit" class="text-red-600 hover:text-red-800 text-sm">
+                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                    <p class="mt-1">{{ r.content }}</p>
+                                    <p class="text-xs text-muted-foreground mt-1">{{ r.timestamp.strftime('%I:%M %p') }}</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if user %}
+                            <form method="POST" action="{{ url_for('chat.add_comment', chat_id=chat.id) }}" class="comment-form mt-2">
+                                <input type="hidden" name="dialogue_number" value="{{ loop.index }}">
+                                <input type="hidden" name="parent_comment_id" value="{{ comment.id }}">
+                                <textarea name="comment_content" required class="comment-textarea w-full" rows="2" placeholder="Reply..."></textarea>
+                                <div class="flex gap-1 mt-1">
+                                    <button type="submit" class="px-2 py-1 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90">Reply</button>
+                                </div>
+                            </form>
+                            {% endif %}
                         </div>
                         {% endfor %}
                     </div>
@@ -329,8 +359,7 @@
                             <button type="submit" class="px-2 py-1 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90">
                                 Add
                             </button>
-                            <button type="button" class="px-2 py-1 text-xs bg-muted text-muted-foreground rounded hover:bg-muted/80"
-                                    onclick="toggleCommentForm({{ loop.index }})">
+                            <button type="button" class="px-2 py-1 text-xs bg-muted text-muted-foreground rounded hover:bg-muted/80" data-toggle-comment data-dialogue="{{ loop.index }}">
                                 Cancel
                             </button>
                         </div>
@@ -389,11 +418,9 @@
 <script>
     function toggleCommentForm(dialogueNumber) {
         const form = document.getElementById('comment-form-' + dialogueNumber);
-        if (form.style.display === 'none') {
-            form.style.display = 'block';
-        } else {
-            form.style.display = 'none';
-        }
+        if (!form) return;
+        const current = form.style.display || 'none';
+        form.style.display = (current === 'none') ? 'block' : 'none';
     }
 
     // Smart auto-scroll function
@@ -653,6 +680,14 @@
 
     // Initialize touch optimization when DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
+        // Delegate clicks for Add Comment toggles (avoids inline handlers in HTML lints)
+        document.body.addEventListener('click', function(ev) {
+            const btn = ev.target.closest('[data-toggle-comment]');
+            if (btn) {
+                const d = btn.getAttribute('data-dialogue');
+                if (d) { try { toggleCommentForm(d); } catch(_){} }
+            }
+        });
         // Format all message timestamps to the viewer's local timezone
         function formatAllMessageTimes(root) {
             try {
