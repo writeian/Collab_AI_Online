@@ -413,6 +413,16 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
+/* Desktop-only multi-line behavior */
+@media (min-width: 768px) {
+  .chat-textarea {
+    resize: vertical;
+    min-height: 40px;
+    max-height: min(40vh, 320px);
+    overflow-y: auto;
+  }
+}
+
 .chat-input:focus {
   outline: none;
   border-color: hsl(var(--primary));
