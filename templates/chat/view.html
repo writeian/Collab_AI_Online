@@ -667,8 +667,8 @@
         const chatMessagesRef = document.getElementById('chat-messages');
         const inputBar = document.querySelector('.chat-input-container');
         function getExtraOffsetPx() {
-            // Minimal buffer: mobile 12px, desktop 40px
-            return (window.innerWidth <= 768) ? 12 : 40;
+            // Tighter, industry-standard buffer: ~6px mobile, ~8px desktop
+            return (window.innerWidth <= 768) ? 6 : 8;
         }
 
         function isNearBottom(el) {
