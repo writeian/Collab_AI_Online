@@ -365,15 +365,14 @@
                 </label>
             </div>
             
-            <div class="flex gap-3">
+            <div class="flex gap-3 items-end">
             <textarea name="content"
                       placeholder="Type your message..."
                       class="chat-input chat-textarea flex-1"
                       required
                       id="message-input"
                       rows="1"
-                      autocomplete="off"
-                      style="resize: vertical;"></textarea>
+                      autocomplete="off"></textarea>
             <button type="submit" 
                     class="send-button"
                     id="send-button">
@@ -836,19 +835,38 @@
                     if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
                         const form = document.getElementById('message-form');
-                        if (form) form.submit();
+                        if (form && typeof form.requestSubmit === 'function') {
+                            form.requestSubmit(); // triggers submit event -> spinner
+                        } else if (form) {
+                            // Fallback: manually toggle spinner then submit
+                            try {
+                                const btn = document.getElementById('send-button');
+                                if (btn) {
+                                    btn.classList.add('sending-state');
+                                    const sendIcon = btn.querySelector('#send-icon');
+                                    const loadingIcon = btn.querySelector('#loading-icon');
+                                    if (sendIcon) sendIcon.style.display = 'none';
+                                    if (loadingIcon) loadingIcon.classList.remove('hidden');
+                                }
+                            } catch(_) {}
+                            form.submit();
+                        }
                     }
                 });
-                inputEl.addEventListener('input', () => {
+                const autogrow = () => {
                     try {
-                        // Auto-grow within max-height
+                        // Cap differs by viewport size; use computed CSS max-height
                         inputEl.style.height = 'auto';
-                        const maxH = parseFloat(getComputedStyle(inputEl).maxHeight) || 320;
+                        const styles = getComputedStyle(inputEl);
+                        const maxH = parseFloat(styles.maxHeight) || (window.innerWidth <= 768 ? window.innerHeight * 0.35 : window.innerHeight * 0.45);
                         const newH = Math.min(inputEl.scrollHeight + 2, maxH);
                         inputEl.style.height = newH + 'px';
-                        setTimeout(() => { applyBottomPadding(true); enforceFocusModeLayout(); }, 10);
+                        setTimeout(() => { applyBottomPadding(true); }, 10);
                     } catch (e) {}
-                });
+                };
+                inputEl.addEventListener('input', autogrow);
+                // Run once on load to fit any prefilled text
+                setTimeout(autogrow, 0);
                 inputEl.addEventListener('focus', () => { setTimeout(() => { applyBottomPadding(true); enforceFocusModeLayout(); }, 50); });
                 inputEl.addEventListener('blur', () => { setTimeout(() => { applyBottomPadding(true); enforceFocusModeLayout(); }, 50); });
             }
