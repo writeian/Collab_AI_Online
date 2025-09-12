@@ -20,12 +20,16 @@ from flask import (
     abort,
     current_app,
     jsonify,
+    session,
 )
 from datetime import datetime
 from src.app import db
 from typing import Any
 from src.models import Chat, Message, User, PromptRecord, Room, Comment, RoomMember
 from src.utils.openai_utils import get_ai_response, get_modes_for_room, BASE_MODES
+from src.utils.progression import compute_suggestion, should_show_with_exponential_cooldown
+from src.models.analytics import ProgressSuggestionState, ProgressSuggestionEvent
+import os
 from src.app.access_control import (
     get_current_user,
     require_login,
@@ -163,6 +167,63 @@ def view_chat(chat_id: int) -> Any:
                     current_app.logger.info(
                         f"AI message committed with ID: {ai_msg.id}"
                     )
+                    # Conservative progression suggestion: feature-gated
+                    try:
+                        if os.getenv("MODE_SUGGEST_ENABLED", "true").lower() in ("1","true","yes"):
+                            # Load or create per-chat, per-mode state
+                            mode_key = chat_obj.mode or ""
+                            state = (
+                                ProgressSuggestionState.query.filter_by(chat_id=chat_obj.id, mode_key=mode_key).first()
+                            )
+                            if not state:
+                                state = ProgressSuggestionState(chat_id=chat_obj.id, mode_key=mode_key)
+                                db.session.add(state)
+                                db.session.commit()
+
+                            # Apply exponential cooldown gating based on assistant replies
+                            state_dict = {
+                                "mode": mode_key,
+                                "shown_once": bool(state.shown_once),
+                                "cooldown": int(state.cooldown or 1),
+                                "since": int(state.since or 0),
+                            }
+                            should_show = should_show_with_exponential_cooldown(state_dict, chat_obj)
+                            # Persist updated counters
+                            state.shown_once = state_dict["shown_once"]
+                            state.cooldown = state_dict["cooldown"]
+                            state.since = state_dict["since"]
+                            db.session.commit()
+
+                            if should_show:
+                                suggest = compute_suggestion(chat_obj)
+                                if suggest:
+                                    state.last_confidence = float(suggest.get("confidence", 0.0))
+                                    state.last_shown_message_id = ai_msg.id
+                                    db.session.commit()
+                                    # Audit event
+                                    try:
+                                        ev = ProgressSuggestionEvent(
+                                            chat_id=chat_obj.id,
+                                            mode_key=mode_key,
+                                            event_type="shown",
+                                            user_id=(user.id if user else None),
+                                            message_id=ai_msg.id,
+                                        )
+                                        db.session.add(ev)
+                                        db.session.commit()
+                                    except Exception:
+                                        db.session.rollback()
+                                    # Stash for next GET render
+                                    payload = {
+                                        "next_label": suggest.get("next_label") or "Next step",
+                                        "link": suggest.get("link") or url_for("room.new_learning_steps", room_id=chat_obj.room_id),
+                                        "confidence": suggest.get("confidence", 0.0),
+                                    }
+                                    session.setdefault("_mode_suggest", {})
+                                    session["_mode_suggest"][str(chat_obj.id)] = payload
+                                    session.modified = True
+                    except Exception as _e:
+                        current_app.logger.warning(f"[mode_suggest] skipped due to error: {_e}")
                     flash("Message sent successfully!")
                 else:
                     # No AI response requested
@@ -221,6 +282,17 @@ def view_chat(chat_id: int) -> Any:
 
         invitation_count = get_invitation_count(user)
 
+        # Extract one-time suggestion payload from session (if present)
+        suggestion = None
+        try:
+            ms = session.get('_mode_suggest', {}) or {}
+            suggestion = ms.pop(str(chat_obj.id), None)
+            if suggestion is not None:
+                session['_mode_suggest'] = ms
+                session.modified = True
+        except Exception:
+            suggestion = None
+
         return render_template(
             "chat/view.html",
             chat=chat_obj,
@@ -232,6 +304,7 @@ def view_chat(chat_id: int) -> Any:
             room_members=member_users,
             other_chats=other_chats,
             invitation_count=invitation_count,
+            suggestion=suggestion,
         )
     except Exception as e:
         current_app.logger.error(f"Error in chat view for chat_id {chat_id}: {str(e)}")

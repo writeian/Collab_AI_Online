@@ -16,7 +16,7 @@
   body.focus-mode .chat-layout, body.focus-mode .chat-container, body.focus-mode .chat-main { height: 100vh !important; }
   /* Ensure input is visible in focus mode on desktop */
   body.focus-mode .chat-input-container { position: fixed !important; left: 0; right: 0; bottom: 0; z-index: 10000; display: block !important; }
-  body.focus-mode #chat-messages { padding-bottom: 160px !important; }
+  /* Padding for #chat-messages in focus mode is handled dynamically via JS */
 </style>
 {% endblock %}
 
@@ -209,7 +209,18 @@
         </div>
 
         <!-- Messages Area -->
-        <div class="flex-1 overflow-y-auto px-4 py-6 space-y-4 pb-24" id="chat-messages" data-last-id="{{ messages[-1].id if messages else 0 }}">
+        <div class="flex-1 overflow-y-auto px-4 py-6 space-y-4" id="chat-messages" data-last-id="{{ messages[-1].id if messages else 0 }}">
+            {# Suggestion banner passed from view #}
+            {% if suggestion %}
+            {% set s = suggestion %}
+            <div class="rounded-md border border-border bg-card px-4 py-3" role="note" aria-live="polite">
+                <div class="text-sm">
+                    You’re making strong progress. Consider moving to the next step:
+                    <a href="{{ s.link }}" class="text-primary hover:text-primary/80 font-semibold">{{ s.next_label }}</a>
+                    <span class="text-muted-foreground">(confidence {{ '%.0f' % (s.confidence * 100) }}%)</span>
+                </div>
+            </div>
+            {% endif %}
             {% for message in messages %}
             <div class="flex {% if message.role == 'user' %}justify-end{% else %}justify-start{% endif %}" data-message-id="{{ message.id }}">
                 <div class="message-bubble {% if message.role == 'user' %}user{% else %}assistant{% endif %}">
@@ -620,7 +631,10 @@
         // Ensure latest message isn't hidden by the translucent input bar
         const chatMessagesRef = document.getElementById('chat-messages');
         const inputBar = document.querySelector('.chat-input-container');
-        const EXTRA_OFFSET_PX = 48; // larger buffer so last message clears the input bar
+        function getExtraOffsetPx() {
+            // Minimal buffer: mobile 12px, desktop 40px
+            return (window.innerWidth <= 768) ? 12 : 40;
+        }
 
         function isNearBottom(el) {
             if (!el) return false;
@@ -630,20 +644,23 @@
         function applyBottomPadding(nudgeScroll) {
             if (!chatMessagesRef || !inputBar) return;
             const wasNearBottom = isNearBottom(chatMessagesRef);
-            const h = inputBar.offsetHeight || 0;
-            // Use !important to override any stylesheet !important rules
-            chatMessagesRef.style.setProperty('padding-bottom', (h + EXTRA_OFFSET_PX) + 'px', 'important');
-            // If user was near bottom, keep them seeing the latest message fully
-            if (nudgeScroll && wasNearBottom) {
-                chatMessagesRef.scrollTop = chatMessagesRef.scrollHeight - chatMessagesRef.clientHeight;
-            }
+            const inputHeight = inputBar.offsetHeight || 0;
+            const pad = inputHeight + getExtraOffsetPx();
+            chatMessagesRef.style.setProperty('padding-bottom', pad + 'px', 'important');
+            chatMessagesRef.style.setProperty('--chat-input-h', pad + 'px');
+            if (nudgeScroll && wasNearBottom) chatMessagesRef.scrollTop = chatMessagesRef.scrollHeight - chatMessagesRef.clientHeight;
         }
 
-        // Initial application after first paint and after soft keyboard settles
-        setTimeout(() => applyBottomPadding(true), 50);
-        setTimeout(() => applyBottomPadding(true), 300);
-        setTimeout(() => applyBottomPadding(true), 700);
+        // Initial application after first paint
+        setTimeout(() => applyBottomPadding(true), 30);
+        // Re-apply after resize/input changes as needed
         window.addEventListener('resize', () => applyBottomPadding(false));
+        // Recompute when focus mode toggles (padding rule removed from CSS)
+        document.addEventListener('click', (e) => {
+            if (e.target && (e.target.id === 'focus-mode-toggle' || e.target.closest('#focus-mode-toggle'))) {
+                setTimeout(() => applyBottomPadding(true), 80);
+            }
+        });
 
         // React to input bar size changes (responsive/font changes)
         if (window.ResizeObserver && inputBar) {

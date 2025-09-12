@@ -137,3 +137,44 @@ class RefinementEvent(db.Model):
 
     def __repr__(self):
         return f"<RefinementEvent {self.event_type} room={self.room_id} user={self.user_id}>"
+
+
+class ProgressSuggestionState(db.Model):
+    """Per-chat, per-mode state for next-step suggestion cooldown."""
+
+    __tablename__ = 'progress_suggestion_state'
+    __table_args__ = (
+        db.UniqueConstraint("chat_id", "mode_key", name="unique_chat_mode_suggest"),
+        {'extend_existing': True}
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    chat_id = db.Column(db.Integer, db.ForeignKey("chat.id"), nullable=False, index=True)
+    mode_key = db.Column(db.String(32), nullable=False)
+    shown_once = db.Column(db.Boolean, default=False, nullable=False)
+    cooldown = db.Column(db.Integer, default=1, nullable=False)
+    since = db.Column(db.Integer, default=0, nullable=False)
+    last_confidence = db.Column(db.Float, default=0.0, nullable=False)
+    last_shown_message_id = db.Column(db.Integer, db.ForeignKey("message.id"), nullable=True)
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    def __repr__(self):
+        return f"<ProgressSuggestionState chat={self.chat_id} mode={self.mode_key} cd={self.cooldown} since={self.since}>"
+
+
+class ProgressSuggestionEvent(db.Model):
+    """Audit events for suggestion show/click/dismiss."""
+
+    __tablename__ = 'progress_suggestion_event'
+    __table_args__ = {'extend_existing': True}
+
+    id = db.Column(db.Integer, primary_key=True)
+    chat_id = db.Column(db.Integer, db.ForeignKey("chat.id"), nullable=False, index=True)
+    mode_key = db.Column(db.String(32), nullable=False)
+    event_type = db.Column(db.String(16), nullable=False)  # shown, clicked, dismissed
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True, index=True)
+    message_id = db.Column(db.Integer, db.ForeignKey("message.id"), nullable=True)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True)
+
+    def __repr__(self):
+        return f"<ProgressSuggestionEvent {self.event_type} chat={self.chat_id} mode={self.mode_key}>"
