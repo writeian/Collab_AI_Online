@@ -295,7 +295,7 @@
                     {% set message_comments = comments|selectattr('dialogue_number', 'equalto', loop.index)|list %}
                     {% if message_comments %}
                     <div class="comment-section">
-                        {% for comment in message_comments if not comment.parent_comment_id %}
+                        {% for comment in message_comments if (not comment.parent_comment_id if comment.parent_comment_id is defined else True) %}
                         <div class="comment-item">
                             <div class="flex items-center justify-between">
                                 <p class="font-medium">{{ comment.user.display_name }}</p>

@@ -245,13 +245,19 @@ def view_chat(chat_id: int) -> Any:
             .order_by(Message.timestamp)
             .all()
         )
-        # Get comments for this chat
-        comments = (
-            Comment.query.options(joinedload(Comment.user))
-            .filter_by(chat_id=chat_obj.id)
-            .order_by(Comment.timestamp)
-            .all()
-        )
+        # Get comments for this chat (with safe fallback if schema not yet migrated)
+        try:
+            comments = (
+                Comment.query.options(joinedload(Comment.user))
+                .filter_by(chat_id=chat_obj.id)
+                .order_by(Comment.timestamp)
+                .all()
+            )
+        except Exception as _e:
+            current_app.logger.warning(
+                f"Comments load failed (likely pending migration). Rendering without comments. err={_e}"
+            )
+            comments = []
 
         # Get room members for sidebar display
         room_members = (
