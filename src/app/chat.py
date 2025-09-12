@@ -23,7 +23,7 @@ from flask import (
     session,
 )
 from datetime import datetime
-from src.app import db
+from src.app import db, markdown_filter
 from typing import Any
 from src.models import Chat, Message, User, PromptRecord, Room, Comment, RoomMember
 from src.utils.openai_utils import get_ai_response, get_modes_for_room, BASE_MODES
@@ -418,6 +418,7 @@ def get_new_messages(chat_id: int) -> Any:
                 "role": m.role,
                 "content": m.content,
                 "timestamp": m.timestamp.isoformat(),
+                "rendered_html": markdown_filter(m.content or ""),
                 "user": {
                     "id": m.user.id if m.user else None,
                     "display_name": m.user.display_name if m.user else None,

@@ -1061,12 +1061,12 @@
                         ${msg.role === 'assistant' ? `
                         <div class="flex items-start gap-3">
                           <div class="ai-avatar">AI</div>
-                          <div class="flex-1"><div class="message-content"><p>${msg.content}</p>
+                          <div class="flex-1"><div class="message-content">${msg.rendered_html || `<p>${msg.content}</p>`}
                           <p class="message-timestamp"><time class=\"msg-time\" data-ts=\"${Math.floor(new Date(msg.timestamp).getTime()/1000)}\"></time></p>
                           </div></div>
                         </div>` : `
                         <div class="flex items-start gap-3">
-                          <div class="flex-1"><div class="message-content text-right"><p>${msg.content}</p>
+                          <div class="flex-1"><div class="message-content text-right">${msg.rendered_html || `<p>${msg.content}</p>`}
                           <p class="message-timestamp"><time class=\"msg-time\" data-ts=\"${Math.floor(new Date(msg.timestamp).getTime()/1000)}\"></time></p>
                           </div></div>
                         </div>`}
