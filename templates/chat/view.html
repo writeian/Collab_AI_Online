@@ -439,7 +439,9 @@
             setTimeout(performScroll, 120);
             setTimeout(performScroll, 400);
             setTimeout(performScroll, 800);
-            window.addEventListener('resize', () => setTimeout(performScroll, 120), { passive: true });
+            // IMPORTANT: Do not auto-scroll on resize. On iOS, address bar hide/show
+            // triggers resize while the user is scrolling up, which would yank them
+            // back to the bottom. We keep resize handlers only for padding updates below.
         });
     }
 
@@ -672,6 +674,10 @@
         function isNearBottom(el) {
             if (!el) return false;
             return (el.scrollHeight - el.scrollTop - el.clientHeight) < 100;
+        }
+        function isNearTop(el) {
+            if (!el) return false;
+            return el.scrollTop < 40; // small threshold
         }
 
         function applyBottomPadding(nudgeScroll) {
@@ -996,6 +1002,7 @@
                 }
                 const container = document.getElementById('chat-messages');
                 const wasNearBottom = isNearBottom(container);
+                const wasNearTop = isNearTop(container);
                 list.forEach(msg => {
                     const wrapper = document.createElement('div');
                     wrapper.className = `flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`;
@@ -1021,7 +1028,8 @@
                 setLastMessageId(data.last_id || getLastMessageId());
                 // Recompute padding now that input/messages may have shifted
                 try { applyBottomPadding(false); } catch (e) {}
-                if (wasNearBottom) {
+                // Only auto-scroll when user was already near bottom before update
+                if (wasNearBottom && !wasNearTop) {
                     container.scrollTop = container.scrollHeight;
                 } else {
                     // reveal scroll-to-bottom chip
