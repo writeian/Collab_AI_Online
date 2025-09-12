@@ -689,11 +689,14 @@
             return (window.innerWidth <= 768) ? 4 : 6;
         }
 
-        // Allow a slight visual overlap so the last message is closer to the bar
-        function getOverlapAllowancePx() {
-            // Permit part of the translucent bar to overlap messages
-            // Larger allowance on desktop where there's more room
-            return (window.innerWidth <= 768) ? 24 : 36;
+        // Allowed portion of the translucent input bar that can overlap messages
+        function getAllowedOverlapPx() {
+            // Conservative: allow more overlap on desktop
+            return (window.innerWidth <= 768) ? 56 : 64;
+        }
+        // Target visual padding regardless of bar size (ensures minimal gap)
+        function getTargetPadPx() {
+            return (window.innerWidth <= 768) ? 40 : 48;
         }
 
         function isNearBottom(el) {
@@ -709,9 +712,10 @@
             if (!chatMessagesRef || !inputBar) return;
             const wasNearBottom = isNearBottom(chatMessagesRef);
             const inputHeight = inputBar.offsetHeight || 0;
-            // Reduce effective padding so content sits closer to the input bar
-            let pad = inputHeight - getOverlapAllowancePx();
-            pad = Math.max(pad, getExtraOffsetPx());
+            // Ensure enough pad so content isn't hidden, but prefer a tighter target gap
+            const minPadToAvoidCover = Math.max(getExtraOffsetPx(), inputHeight - getAllowedOverlapPx());
+            const desiredTightPad = getTargetPadPx();
+            let pad = Math.max(minPadToAvoidCover, desiredTightPad);
             chatMessagesRef.style.setProperty('padding-bottom', pad + 'px', 'important');
             chatMessagesRef.style.setProperty('--chat-input-h', pad + 'px');
             if (nudgeScroll && wasNearBottom) chatMessagesRef.scrollTop = chatMessagesRef.scrollHeight - chatMessagesRef.clientHeight;
