@@ -127,6 +127,8 @@
                     </div>
                 </div>
             </div>
+            <!-- Spacer to ensure last message is never obscured by the input bar -->
+            <div id="chat-bottom-spacer" aria-hidden="true" style="height:0"></div>
         </div>
 
         <!-- Room Members -->
@@ -684,20 +686,9 @@
         // Ensure latest message isn't hidden by the translucent input bar
         const chatMessagesRef = document.getElementById('chat-messages');
         const inputBar = document.querySelector('.chat-input-container');
-        function getExtraOffsetPx() {
-            // Tighter, industry-standard buffer: ~4-6px mobile, ~6-8px desktop
-            return (window.innerWidth <= 768) ? 4 : 6;
-        }
-
-        // Allowed portion of the translucent input bar that can overlap messages
-        function getAllowedOverlapPx() {
-            // Conservative: allow more overlap on desktop
-            return (window.innerWidth <= 768) ? 56 : 64;
-        }
-        // Target visual padding regardless of bar size (ensures minimal gap)
-        function getTargetPadPx() {
-            return (window.innerWidth <= 768) ? 40 : 48;
-        }
+        // Bottom spacer buffers
+        function getNonFocusBufferPx() { return (window.innerWidth <= 768) ? 10 : 12; }
+        function getFocusBufferPx() { return (window.innerWidth <= 768) ? 16 : 20; }
 
         function isNearBottom(el) {
             if (!el) return false;
@@ -710,14 +701,16 @@
 
         function applyBottomPadding(nudgeScroll) {
             if (!chatMessagesRef || !inputBar) return;
+            const spacer = document.getElementById('chat-bottom-spacer');
             const wasNearBottom = isNearBottom(chatMessagesRef);
             const inputHeight = inputBar.offsetHeight || 0;
-            // Ensure enough pad so content isn't hidden, but prefer a tighter target gap
-            const minPadToAvoidCover = Math.max(getExtraOffsetPx(), inputHeight - getAllowedOverlapPx());
-            const desiredTightPad = getTargetPadPx();
-            let pad = Math.max(minPadToAvoidCover, desiredTightPad);
-            chatMessagesRef.style.setProperty('padding-bottom', pad + 'px', 'important');
-            chatMessagesRef.style.setProperty('--chat-input-h', pad + 'px');
+            const isFocus = document.body.classList.contains('focus-mode');
+            const buffer = isFocus ? getFocusBufferPx() : getNonFocusBufferPx();
+            const spacerHeight = Math.max(0, inputHeight + buffer);
+            if (spacer) spacer.style.height = spacerHeight + 'px';
+            // Remove direct padding-bottom manipulations to avoid conflicts
+            chatMessagesRef.style.removeProperty('padding-bottom');
+            chatMessagesRef.style.setProperty('--chat-input-h', spacerHeight + 'px');
             if (nudgeScroll && wasNearBottom) chatMessagesRef.scrollTop = chatMessagesRef.scrollHeight - chatMessagesRef.clientHeight;
         }
 
@@ -797,15 +790,15 @@
                     inputBarEl.style.right = '0';
                     inputBarEl.style.bottom = '0';
                     inputBarEl.style.zIndex = '10000';
-                    const h = inputBarEl.offsetHeight || 120;
-                    messagesEl.style.paddingBottom = (h + 40) + 'px';
+                    // Do not set padding here; spacer handles bottom clearance
+                    applyBottomPadding(true);
                 } else {
                     inputBarEl.style.position = '';
                     inputBarEl.style.left = '';
                     inputBarEl.style.right = '';
                     inputBarEl.style.bottom = '';
                     inputBarEl.style.zIndex = '';
-                    messagesEl.style.paddingBottom = '';
+                    applyBottomPadding(true);
                 }
             } catch (_) {}
         }
