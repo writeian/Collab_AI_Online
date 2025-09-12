@@ -387,7 +387,7 @@
 
 /* Modern Input Area */
 .chat-input-container {
-  /* Desktop: keep input in normal flow so it doesn't overlay messages */
+  /* Normalize: default in-flow; focus mode sets fixed */
   position: static;
   background: hsl(var(--card));
   border-top: 1px solid hsl(var(--border));

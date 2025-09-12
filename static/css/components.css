@@ -384,10 +384,8 @@
 
 /* Modern Input Area */
 .chat-input-container {
-  position: absolute; /* Key change from sticky */
-  bottom: 0;
-  left: 0;
-  right: 0;
+  /* Normalize: default in-flow to avoid overlapping messages; focus mode handles fixed */
+  position: static;
   background: hsl(var(--card));
   border-top: 1px solid hsl(var(--border));
   backdrop-filter: blur(10px);
