@@ -415,15 +415,21 @@
 
 /* Multi-line behavior with visible resize grip */
 .chat-textarea {
-  resize: vertical;
+  resize: none; /* autogrow handles height; hide native grip */
   min-height: 40px;
-  max-height: min(50vh, 380px);
+  max-height: 45vh; /* desktop cap */
   overflow-y: auto;
   /* Ensure the resize grip isn't overlapped by the send button */
   padding-right: 1rem;
   /* Make sure it can grow/shrink correctly within the flex row */
   flex: 1 1 auto;
   min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .chat-textarea {
+    max-height: 35vh; /* mobile cap */
+  }
 }
 
 .chat-input:focus {
