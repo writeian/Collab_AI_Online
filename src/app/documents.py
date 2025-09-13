@@ -89,33 +89,43 @@ def generate_document_content(messages: List[Message], chat_obj: Chat, doc_type:
     # Create AI prompt based on document type
     prompts = {
         "notes": f"""
-Based on the following chat discussion from a {template_type} learning session, create structured notes that help students organize their thinking. DO NOT write full content for them - provide frameworks, key points, and questions they need to answer.
+Based on the following chat discussion from a {template_type} learning session, create comprehensive summary notes that capture what was actually discussed. Focus on summarizing insights, not creating blanks to fill.
 
 Chat Discussion:
 {chat_text}
 
-Create structured notes with:
-1. Key questions discussed (with space for student answers)
-2. Main arguments identified (with space for evidence)
-3. Important concepts mentioned (with space for analysis)
-4. Next steps needed (action items for students)
+Create summary notes with:
+1. **Original Ideas Presented** (highlight human contributions and initial concepts)
+2. **Key Insights Developed** (main points that emerged through dialogue)
+3. **Technical Solutions Explored** (approaches and methods discussed)
+4. **Questions That Emerged** (new questions raised during discussion)
+5. **Collaborative Breakthroughs** (ideas that developed through interaction)
 
-Format as clear, organized notes that scaffold learning without doing the work for students.
+Format as a comprehensive summary of what was covered, not as a template to complete. Clearly distinguish between human-originated ideas and AI-provided frameworks.
 """,
         "outline": f"""
-Based on the following chat discussion from a {template_type} learning session, create a document outline that helps students structure their work. Provide the framework but leave the actual content for students to write.
+Based on the following chat discussion from a {template_type} learning session, create a document outline appropriate for the type of work this room is designed to produce.
 
 Chat Discussion:
 {chat_text}
 
-Create an outline with:
-- Clear section headings based on discussion topics
-- Bullet points for key areas discussed
-- [Student fills in] placeholders for actual content
-- Guiding questions for each section
-- Space for student research and analysis
+Template Context: {template_type}
 
-This should be a roadmap for student work, not completed content.
+Create an outline structure that matches the room's purpose:
+- For academic-essay: Research paper structure (thesis, literature review, methodology, analysis, conclusion)
+- For business-hub: Business document structure (executive summary, analysis, recommendations, implementation)
+- For study-group: Study material structure (concepts, applications, practice, review)
+- For learning-lab: Technical report structure (overview, methodology, findings, implementation)
+- For creative-studio: Creative project structure (concept, development, execution, reflection)
+- For writing-workshop: Writing piece structure (planning, drafting, revision, publication)
+
+Include:
+- Section headings appropriate for the intended document type
+- Framework based on chat insights but structured for the room's goal
+- [Student develops] placeholders for sections requiring original work
+- Guiding questions specific to the document type
+
+This should be a roadmap for creating the type of document this room is designed to produce.
 """,
         "summary": f"""
 Based on the following chat discussion, create an organized summary that captures the key insights and structures the thinking. Focus on frameworks and organization, not completed content.
@@ -131,9 +141,14 @@ Create a helpful organizational structure that students can build upon.
     
     try:
         # Generate document content using AI
+        if doc_type == "notes":
+            system_prompt = "You are an expert educator who creates comprehensive summaries of learning discussions. Focus on capturing what was actually discussed, highlighting human contributions, and organizing insights clearly. Do not create fill-in-the-blank templates."
+        else:  # outline
+            system_prompt = "You are an expert educator who creates document frameworks appropriate for different types of academic and professional work. Provide structure that matches the intended output type while leaving space for student development."
+        
         content, _ = call_anthropic_api(
             [{"role": "user", "content": prompt}],
-            system_prompt="You are an expert educator who helps students organize their thinking without doing their work for them. Provide scaffolding, frameworks, and questions - not completed assignments.",
+            system_prompt=system_prompt,
             max_tokens=1500
         )
         return content
