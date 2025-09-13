@@ -195,6 +195,31 @@ def create_app(config_name=None):
         }
         return info
 
+    # Diagnostics: inspect base.html to see linked CSS versions
+    @app.route("/__tpl_base")
+    def __tpl_base():
+        import os as __os
+        import re as __re
+        base_path = __os.path.join(app.template_folder or '', 'base.html')
+        result = {
+            "template_folder": app.template_folder,
+            "base_path": base_path,
+            "exists": __os.path.exists(base_path),
+            "globals_v": None,
+            "components_v": None,
+        }
+        try:
+            if __os.path.exists(base_path):
+                with open(base_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                m1 = __re.search(r"globals\.css\?v=([\d\.]+)", content)
+                m2 = __re.search(r"components\.css\?v=([\d\.]+)", content)
+                result["globals_v"] = m1.group(1) if m1 else None
+                result["components_v"] = m2.group(1) if m2 else None
+        except Exception as e:
+            result["error"] = str(e)
+        return result
+
     # Add main routes
     @app.route("/")
     def index():
