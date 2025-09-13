@@ -123,11 +123,11 @@
 }
 
 .breadcrumb-separator {
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-fg-40);
 }
 
 .breadcrumb-current {
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-fg-50);
   font-weight: 500;
 }
 
@@ -1622,7 +1622,7 @@
     
     .empty-state p {
         font-size: 0.875rem;
-        color: var(--muted-foreground);
+        color: var(--muted-fg-40);
     }
 }
 
@@ -2049,7 +2049,7 @@
 
 .stat-label {
     font-size: 0.875rem;
-    color: var(--muted-foreground);
+    color: var(--muted-fg-40);
 }
 
 /* Responsive Grid for Chat Cards */
