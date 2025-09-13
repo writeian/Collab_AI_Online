@@ -123,11 +123,11 @@
 }
 
 .breadcrumb-separator {
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-fg-40);
 }
 
 .breadcrumb-current {
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-fg-50);
   font-weight: 500;
 }
 
@@ -819,7 +819,7 @@
 
 .room-description {
   margin: 0.75rem 0;
-  color: #64748b;
+  color: var(--muted-fg-50);
   line-height: 1.6;
 }
 
@@ -1018,11 +1018,11 @@
 }
 
 .breadcrumb-separator {
-  color: #64748b;
+  color: var(--muted-fg-40);
 }
 
 .breadcrumb-current {
-  color: #1e293b;
+  color: var(--muted-fg-50);
   font-weight: 500;
 }
 
@@ -1631,7 +1631,7 @@
     
     .empty-state p {
         font-size: 0.875rem;
-        color: var(--muted-foreground);
+        color: var(--muted-fg-40);
     }
 }
 
@@ -1923,7 +1923,7 @@
 
 .room-header .room-description {
     font-size: 1.1rem;
-    color: var(--muted-foreground);
+    color: var(--muted-fg-50);
     margin-bottom: 1rem;
 }
 
@@ -1936,7 +1936,7 @@
 }
 
 .room-header small {
-    color: var(--muted-foreground);
+    color: var(--muted-fg-50);
     font-size: 0.875rem;
 }
 
@@ -2062,7 +2062,7 @@
 
 .stat-label {
     font-size: 0.875rem;
-    color: var(--muted-foreground);
+    color: var(--muted-fg-40);
 }
 
 /* Responsive Grid for Chat Cards */
@@ -2129,7 +2129,7 @@
 
 .room-header .room-description {
     font-size: 1.1rem;
-    color: var(--muted-foreground);
+    color: var(--muted-fg-50);
     margin-bottom: 1rem;
     line-height: 1.5;
 }
@@ -2149,13 +2149,13 @@
 }
 
 .room-header .room-goals p:last-child {
-    color: var(--muted-foreground);
+    color: var(--muted-fg-50);
     font-style: italic;
     line-height: 1.4;
 }
 
 .room-header small {
-    color: var(--muted-foreground);
+    color: var(--muted-fg-50);
     font-size: 0.875rem;
 }
 
@@ -2318,7 +2318,7 @@
 
 .text-center.py-16 i {
     opacity: 0.5;
-    color: var(--muted-foreground);
+    color: var(--muted-fg-50);
 }
 
 .text-center.py-16 h3 {
@@ -2327,7 +2327,7 @@
 }
 
 .text-center.py-16 p {
-    color: var(--muted-foreground);
+    color: var(--muted-fg-50);
     margin-bottom: 1.5rem;
 }
 
