@@ -239,6 +239,84 @@ def view_chat(chat_id: int) -> Any:
 
             return redirect(url_for("chat.view_chat", chat_id=chat_obj.id), code=303)
 
+        messages = (
+            Message.query.options(joinedload(Message.user))
+            .filter_by(chat_id=chat_obj.id)
+            .order_by(Message.timestamp)
+            .all()
+        )
+        # Get comments for this chat (with safe fallback if schema not yet migrated)
+        try:
+            comments = (
+                Comment.query.options(joinedload(Comment.user))
+                .filter_by(chat_id=chat_obj.id)
+                .order_by(Comment.timestamp)
+                .all()
+            )
+        except Exception as _e:
+            current_app.logger.warning(
+                f"Comments load failed (likely pending migration). Rendering without comments. err={_e}"
+            )
+            comments = []
+
+        # Get room members for sidebar display
+        room_members = (
+            RoomMember.query.options(joinedload(RoomMember.user))
+            .filter_by(room_id=chat_obj.room_id)
+            .all()
+        )
+        member_users = [member.user for member in room_members]
+
+        # Add room owner to member list if not already included
+        owner = chat_obj.room.owner
+        if owner and owner not in member_users:
+            member_users.append(owner)
+
+        # Get other chats in the same room (excluding current chat)
+        other_chats = (
+            Chat.query.filter_by(room_id=chat_obj.room_id)
+            .filter(Chat.id != chat_obj.id)
+            .order_by(Chat.created_at.desc())
+            .all()
+        )
+
+        # Get dynamic modes for this chat's room
+        modes = get_modes_for_room(chat_obj.room)
+
+        # Get invitation count for navigation
+        from src.app.room.utils.room_utils import get_invitation_count
+
+        invitation_count = get_invitation_count(user)
+
+        # Extract one-time suggestion payload from session (if present)
+        suggestion = None
+        try:
+            ms = session.get('_mode_suggest', {}) or {}
+            suggestion = ms.pop(str(chat_obj.id), None)
+            if suggestion is not None:
+                session['_mode_suggest'] = ms
+                session.modified = True
+        except Exception:
+            suggestion = None
+
+        return render_template(
+            "chat/view.html",
+            chat=chat_obj,
+            room=chat_obj.room,
+            messages=messages,
+            comments=comments,
+            user=user,
+            modes=modes,
+            room_members=member_users,
+            other_chats=other_chats,
+            invitation_count=invitation_count,
+            suggestion=suggestion,
+        )
+    except Exception as e:
+        current_app.logger.error(f"Error in chat view for chat_id {chat_id}: {str(e)}")
+        flash("An error occurred while loading the chat. Please try again.", "error")
+        return redirect(url_for("room.room_crud.index"))
+
 
 @chat.route("/<int:chat_id>/export")
 @require_chat_access
