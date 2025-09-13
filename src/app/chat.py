@@ -239,6 +239,7 @@ def view_chat(chat_id: int) -> Any:
 
             return redirect(url_for("chat.view_chat", chat_id=chat_obj.id), code=303)
 
+
         messages = (
             Message.query.options(joinedload(Message.user))
             .filter_by(chat_id=chat_obj.id)

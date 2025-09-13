@@ -174,6 +174,7 @@ def create_app(config_name=None):
     from src.app.admin import admin
     from src.app.google_auth import google_auth
     from src.app.analytics import analytics
+    from src.app.documents import documents
 
     app.register_blueprint(auth, url_prefix="/auth")
     app.register_blueprint(chat, url_prefix="/chat")
@@ -182,6 +183,7 @@ def create_app(config_name=None):
     app.register_blueprint(admin, url_prefix="")
     app.register_blueprint(google_auth, url_prefix="/auth/google")
     app.register_blueprint(analytics, url_prefix="/analytics")
+    app.register_blueprint(documents, url_prefix="/documents")
 
     # Diagnostics: template folder + which room template is found
     @app.route("/__tpl")
