@@ -11,7 +11,7 @@ body {
   padding: 0;
   font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  color: #222;
+  color: var(--foreground);
   line-height: 1.5;
   min-height: 100vh;
 }
@@ -154,7 +154,7 @@ nav a:hover {
   align-items: center;
   margin-top: 8px;
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--muted-fg-50);
 }
 
 .room-card .group-size-info .group-size-badge {
@@ -192,13 +192,13 @@ nav a:hover {
 
 .system-instructions h3 {
   margin: 0 0 1rem 0;
-  color: #495057;
+  color: var(--foreground);
   font-size: 1.1rem;
   font-weight: 600;
 }
 
 .instruction-content {
-  color: #495057;
+  color: var(--muted-fg-50);
   line-height: 1.6;
   font-size: 0.95rem;
   background: #fff;
@@ -256,7 +256,7 @@ nav a:hover {
 
 .message-content {
   line-height: 1.6;
-  color: #495057;
+  color: var(--muted-fg-50);
 }
 
 /* Comments */
@@ -292,17 +292,17 @@ nav a:hover {
 }
 
 .comment-header strong {
-  color: #495057;
+  color: var(--foreground);
   font-size: 0.9rem;
 }
 
 .comment-header small {
-  color: #6c757d;
+  color: var(--muted-fg-40);
   font-size: 0.8rem;
 }
 
 .comment-content {
-  color: #495057;
+  color: var(--muted-fg-50);
   line-height: 1.5;
   font-size: 0.9rem;
 }
@@ -408,7 +408,7 @@ form textarea {
   display: block;
   margin-top: 0.25rem;
   font-size: 0.8rem;
-  color: #666;
+  color: var(--muted-fg-40);
 }
 
 .auth-links {
@@ -494,7 +494,7 @@ form textarea {
 }
 
 .profile-subtitle {
-  color: #666;
+  color: var(--muted-fg-40);
   margin: 0;
 }
 
@@ -539,12 +539,12 @@ form textarea {
 
 .info-row label {
   font-weight: 600;
-  color: #495057;
+  color: var(--foreground);
   min-width: 120px;
 }
 
 .info-row span {
-  color: #666;
+  color: var(--muted-fg-40);
   text-align: right;
 }
 
@@ -688,7 +688,7 @@ form[action*="delete"] button[type="submit"][style*="font-size: 0.8rem"]:hover {
 
 /* Utility */
 small {
-  color: #666;
+  color: var(--muted-fg-40);
 }
 
 /* Dashboard Styles */
@@ -702,7 +702,7 @@ small {
 }
 
 .dashboard-subtitle {
-  color: #666;
+  color: var(--muted-fg-50);
   margin-bottom: 2rem;
 }
 
@@ -737,7 +737,7 @@ small {
 }
 
 .stat-label {
-  color: #6c757d;
+  color: var(--muted-fg-40);
   font-size: 0.8rem;
 }
 
@@ -777,7 +777,7 @@ small {
 }
 
 .room-description {
-  color: #666;
+  color: var(--muted-fg-50);
   margin: 0 0 1rem 0;
   font-size: 0.9rem;
 }
@@ -846,7 +846,7 @@ small {
 
 .summary-item p {
   margin: 0;
-  color: #6c757d;
+  color: var(--muted-fg-40);
   font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -869,11 +869,9 @@ small {
 }
 
 .mode-card h4 {
-  margin: 0 0 0.5rem 0;
-  color: #495057;
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  color: var(--foreground);
+  margin-bottom: 0.75rem;
+  font-size: 1.1rem;
 }
 
 .mode-count {
@@ -1292,7 +1290,7 @@ small {
 }
 
 .feature-card p {
-  color: #495057;
+  color: var(--muted-fg-50);
   line-height: 1.6;
   margin: 0;
 }
@@ -1305,7 +1303,7 @@ small {
 .feature-list li {
   padding: 0.75rem 0;
   border-bottom: 1px solid #e9ecef;
-  color: #495057;
+  color: var(--muted-fg-50);
 }
 
 .feature-list li:last-child {
@@ -1402,7 +1400,7 @@ small {
 }
 
 .support-item p {
-  color: #495057;
+  color: var(--muted-fg-50);
   margin: 0;
   line-height: 1.6;
 }
