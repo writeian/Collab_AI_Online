@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container">
     <h1>Instructor Dashboard</h1>
-    <p class="dashboard-subtitle">Manage your rooms and track student activity</p>
+    <p class="dashboard-subtitle text-muted-50">Manage your rooms and track student activity</p>
     
     <!-- Quick Actions -->
     <div class="dashboard-actions">
@@ -34,35 +34,35 @@
                               </span>
                             {% endif %}
                             {% if room.description %}
-                                <p class="room-description">{{ room.description }}</p>
+                                <p class="room-description text-muted-50">{{ room.description }}</p>
                             {% endif %}
                         </div>
                         
                         <div class="room-stats">
                             <div class="stat-item">
                                 <span class="stat-number">{{ room_stats[room.id].member_count }}</span>
-                                <span class="stat-label">Members</span>
+                                <span class="stat-label text-muted-40">Members</span>
                             </div>
                             <div class="stat-item">
                                 <span class="stat-number">{{ room_stats[room.id].chat_count }}</span>
-                                <span class="stat-label">Chats</span>
+                                <span class="stat-label text-muted-40">Chats</span>
                             </div>
                             <div class="stat-item">
                                 <span class="stat-number">{{ room_stats[room.id].prompt_count }}</span>
-                                <span class="stat-label">Prompts</span>
+                                <span class="stat-label text-muted-40">Prompts</span>
                             </div>
                             <div class="stat-item">
                                 <span class="stat-number">{{ room_stats[room.id].message_count }}</span>
-                                <span class="stat-label">Messages</span>
+                                <span class="stat-label text-muted-40">Messages</span>
                             </div>
                             <div class="stat-item">
                                 <span class="stat-number">{{ room_stats[room.id].comment_count }}</span>
-                                <span class="stat-label">Comments</span>
+                                <span class="stat-label text-muted-40">Comments</span>
                             </div>
                         </div>
                         
                         <div class="room-info">
-                            <small>
+                            <small class="text-muted-40">
                                 Created {{ room.created_at.strftime('%Y-%m-%d') }}
                                 {% if room_stats[room.id].last_activity %}
                                     | Last activity: {{ room_stats[room.id].last_activity.strftime('%Y-%m-%d %H:%M') }}
@@ -82,7 +82,7 @@
             </div>
         {% else %}
             <div class="empty-state">
-                <p>You don't have any rooms yet.</p>
+                <p class="text-muted-40">You don't have any rooms yet.</p>
                 <a href="{{ url_for('room.room_crud.create_room') }}" class="btn btn-primary">Create Your First Room</a>
             </div>
         {% endif %}
@@ -95,23 +95,23 @@
             <div class="summary-stats">
                 <div class="summary-item">
                     <h3>{{ rooms|length }}</h3>
-                    <p>Total Rooms</p>
+                    <p class="text-muted-40">Total Rooms</p>
                 </div>
                 <div class="summary-item">
                     <h3>{{ room_stats.values()|sum(attribute='member_count') }}</h3>
-                    <p>Total Members</p>
+                    <p class="text-muted-40">Total Members</p>
                 </div>
                 <div class="summary-item">
                     <h3>{{ room_stats.values()|sum(attribute='prompt_count') }}</h3>
-                    <p>Total Prompts</p>
+                    <p class="text-muted-40">Total Prompts</p>
                 </div>
                 <div class="summary-item">
                     <h3>{{ room_stats.values()|sum(attribute='message_count') }}</h3>
-                    <p>Total Messages</p>
+                    <p class="text-muted-40">Total Messages</p>
                 </div>
                 <div class="summary-item">
                     <h3>{{ room_stats.values()|sum(attribute='comment_count') }}</h3>
-                    <p>Total Comments</p>
+                    <p class="text-muted-40">Total Comments</p>
                 </div>
             </div>
         </div>
