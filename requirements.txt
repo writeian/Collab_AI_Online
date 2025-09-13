@@ -39,6 +39,7 @@ requests-oauthlib==1.4.0
 rsa==4.9
 six==1.17.0
 SQLAlchemy==2.0.41
+psycopg2-binary==2.9.10
 typing_extensions==4.12.2
 uritemplate==4.1.1
 urllib3==2.2.3
