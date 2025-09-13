@@ -240,6 +240,31 @@ def view_chat(chat_id: int) -> Any:
             return redirect(url_for("chat.view_chat", chat_id=chat_obj.id), code=303)
 
 
+@chat.route("/<int:chat_id>/export")
+@require_chat_access
+def export_chat(chat_id: int) -> Any:
+    """Show export options for a chat."""
+    try:
+        chat_obj = Chat.query.get_or_404(chat_id)
+        user = get_current_user()
+        
+        # Get all messages for this chat
+        messages = Message.query.filter_by(chat_id=chat_obj.id).order_by(Message.timestamp).all()
+        
+        return render_template(
+            "chat/export.html",
+            chat=chat_obj,
+            room=chat_obj.room,
+            messages=messages,
+            user=user
+        )
+        
+    except Exception as e:
+        current_app.logger.error(f"Error showing export page for chat {chat_id}: {e}")
+        flash("Failed to load export page. Please try again.", "error")
+        return redirect(url_for("chat.view_chat", chat_id=chat_id))
+
+
         messages = (
             Message.query.options(joinedload(Message.user))
             .filter_by(chat_id=chat_obj.id)
