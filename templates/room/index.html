@@ -341,7 +341,7 @@
             <i data-lucide="plus" class="w-5 h-5 mr-2"></i>
             Create Your First Room
           </a>
-          <button onclick="showQuickStartTemplates()" class="inline-flex items-center px-6 py-4 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-gray-100 transition-colors">
+          <button onclick="showQuickStartTemplates()" class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-green-600 to-teal-600 text-white font-semibold rounded-lg hover:from-green-700 hover:to-teal-700 transition-all transform hover:scale-105 shadow-lg">
             <i data-lucide="zap" class="w-5 h-5 mr-2"></i>
             Quick Start Templates
           </button>
@@ -496,10 +496,34 @@
 
     <script>
       function showQuickStartTemplates() {
-        const templates = document.getElementById('template-wizards');
-        templates.classList.toggle('hidden');
-      }
-    </script>
+        const templates = document.getElementById("template-wizards");
+        const button = event.target.closest("button");
+        
+        if (templates.classList.contains("hidden")) {
+          // Show templates
+          templates.classList.remove("hidden");
+          templates.scrollIntoView({ behavior: "smooth", block: "start" });
+          
+          // Update button text
+          button.innerHTML = "<i data-lucide="x" class="w-5 h-5 mr-2"></i>Hide Templates";
+          
+          // Re-initialize Lucide icons for the new icon
+          if (typeof lucide !== "undefined") {
+            lucide.createIcons();
+          }
+        } else {
+          // Hide templates
+          templates.classList.add("hidden");
+          
+          // Reset button text
+          button.innerHTML = "<i data-lucide="zap" class="w-5 h-5 mr-2"></i>Quick Start Templates";
+          
+          // Re-initialize Lucide icons
+          if (typeof lucide !== "undefined") {
+            lucide.createIcons();
+          }
+        }
+      }    </script>
     {% endif %}
 
   {% else %}
