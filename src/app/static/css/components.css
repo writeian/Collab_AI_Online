@@ -2382,3 +2382,9 @@
         font-size: 1.125rem;
     }
 }
+
+/* Forced neutral tiers for room cards to override legacy colors */
+.bg-card .text-muted-foreground { color: var(--muted-fg-50) !important; }
+.bg-card .text-xs.text-muted-foreground { color: var(--muted-fg-40) !important; }
+.bg-card .group-size-info .text-muted-foreground { color: var(--muted-fg-40) !important; }
+.bg-card p.text-sm.text-muted-foreground { color: var(--muted-fg-50) !important; }
