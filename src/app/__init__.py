@@ -207,6 +207,7 @@ def create_app(config_name=None):
             "exists": __os.path.exists(base_path),
             "globals_v": None,
             "components_v": None,
+            "hrefs": [],
         }
         try:
             if __os.path.exists(base_path):
@@ -216,6 +217,10 @@ def create_app(config_name=None):
                 m2 = __re.search(r"components\.css\?v=([\d\.]+)", content)
                 result["globals_v"] = m1.group(1) if m1 else None
                 result["components_v"] = m2.group(1) if m2 else None
+                # collect href lines
+                for line in content.splitlines():
+                    if 'globals.css' in line or 'components.css' in line:
+                        result["hrefs"].append(line.strip())
         except Exception as e:
             result["error"] = str(e)
         return result
