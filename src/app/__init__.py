@@ -45,18 +45,13 @@ def create_app(config_name=None):
     """Application factory pattern for Flask app creation."""
     from src.config.settings import config
 
-    # Note: Repository uses capitalized directories `Static/` and `Templates/` at project root.
-    # Linux filesystems are case-sensitive, so we must point Flask to the exact paths.
-    # Resolve absolute paths for static and template folders to avoid case-sensitivity issues in production
+    # Note: Use lowercase `templates/` as the single source of truth.
     _here = _os.path.dirname(__file__)
     _root = _os.path.abspath(_os.path.join(_here, '..', '..'))
-    # Packaged static lives alongside this file under src/app/static
     _static_abs = _os.path.join(_here, 'static')
-    # Resolve templates folder robustly: prefer capitalized `Templates/` if present in repo,
-    # otherwise fall back to lowercase `templates/`.
-    _templates_lower = _os.path.join(_root, 'templates')
-    _templates_upper = _os.path.join(_root, 'Templates')
-    _templates_abs = _templates_upper if _os.path.isdir(_templates_upper) else _templates_lower
+    _templates_abs = _os.path.join(_root, 'templates')
+    if not _os.path.isdir(_templates_abs):
+        raise RuntimeError(f"templates/ folder not found at {_templates_abs}; ensure lowercase templates are deployed")
 
     app = Flask(
         __name__,
