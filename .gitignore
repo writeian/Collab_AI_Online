@@ -70,4 +70,4 @@ scripts/*.log
 # Cleanup logs
 *_cleanup_log.json
 *_fix_log.json
-Templates/
+# Templates/ - removed to fix git tracking issues
