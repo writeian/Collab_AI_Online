@@ -52,7 +52,11 @@ def create_app(config_name=None):
     _root = _os.path.abspath(_os.path.join(_here, '..', '..'))
     # Packaged static lives alongside this file under src/app/static
     _static_abs = _os.path.join(_here, 'static')
-    _templates_abs = _os.path.join(_root, 'templates')  # lowercase in repo
+    # Resolve templates folder robustly: prefer capitalized `Templates/` if present in repo,
+    # otherwise fall back to lowercase `templates/`.
+    _templates_lower = _os.path.join(_root, 'templates')
+    _templates_upper = _os.path.join(_root, 'Templates')
+    _templates_abs = _templates_upper if _os.path.isdir(_templates_upper) else _templates_lower
 
     app = Flask(
         __name__,
