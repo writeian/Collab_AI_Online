@@ -81,18 +81,58 @@
             <p class="room-description text-muted-foreground mb-4">{{ room.description }}</p>
           {% endif %}
           {% if room.goals %}
+            {% set ns = namespace(core=[], collab=[], reflect=[]) %}
+            {% for g in room.goals.split('\n') %}
+              {% set goal = g.strip() %}
+              {% if goal %}
+                {% if 'collaborat' in goal|lower %}
+                  {% set _ = ns.collab.append(goal) %}
+                {% elif 'reflect' in goal|lower %}
+                  {% set _ = ns.reflect.append(goal) %}
+                {% else %}
+                  {% set _ = ns.core.append(goal) %}
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+
             <div class="room-goals bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg mb-4">
-              <p class="text-sm font-medium text-foreground mb-2">Learning Goals:</p>
-              <div class="space-y-2">
-                {% for goal in room.goals.split('\n') %}
-                  {% if goal.strip() %}
-                    <div class="flex items-start gap-2">
-                      <span class="text-primary mt-1">•</span>
-                      <span class="text-sm text-muted-foreground">{{ goal.strip() }}</span>
-                    </div>
-                  {% endif %}
+              <p class="text-sm font-medium text-foreground mb-3">Learning Goals</p>
+
+              {% macro goal_list(items) %}
+                <div class="space-y-2">
+                {% for goal in items %}
+                  <div class="flex items-start gap-2">
+                    <span class="text-primary mt-1">•</span>
+                    <span class="text-sm text-muted-foreground">{{ goal }}</span>
+                  </div>
                 {% endfor %}
-              </div>
+                </div>
+              {% endmacro %}
+
+              <details open class="mb-3">
+                <summary class="cursor-pointer text-sm font-semibold flex items-center gap-2">
+                  Core Goals <span class="text-xs text-muted-foreground">{{ ns.core|length }}</span>
+                </summary>
+                {{ goal_list(ns.core) }}
+              </details>
+
+              {% if ns.collab %}
+              <details class="mb-3">
+                <summary class="cursor-pointer text-sm font-semibold flex items-center gap-2">
+                  Collaboration Goals <span class="text-xs text-muted-foreground">{{ ns.collab|length }}</span>
+                </summary>
+                {{ goal_list(ns.collab) }}
+              </details>
+              {% endif %}
+
+              {% if ns.reflect %}
+              <details>
+                <summary class="cursor-pointer text-sm font-semibold flex items-center gap-2">
+                  Reflection Goals <span class="text-xs text-muted-foreground">{{ ns.reflect|length }}</span>
+                </summary>
+                {{ goal_list(ns.reflect) }}
+              </details>
+              {% endif %}
             </div>
           {% endif %}
           <p class="text-xs text-muted-foreground">
@@ -442,6 +482,121 @@
       menu.classList.remove('open');
       menu.style.display = 'none';
     }
+
+    // Build collapsible goals (Core expanded; Collaboration/Reflection collapsed)
+    try {
+      const raw = document.getElementById('room-goals-raw');
+      const mount = document.getElementById('room-goals');
+      const fallback = document.getElementById('room-goals-fallback');
+      if (raw && mount && fallback) {
+        const text = (raw.textContent || '').trim();
+        if (text) {
+          const lines = text.split(/\n+/).map(s => s.trim()).filter(Boolean);
+          // Heuristic bucketing: detect group headings or keywords
+          const groups = {
+            core: [],
+            collaboration: [],
+            reflection: []
+          };
+          for (const line of lines) {
+            const l = line.toLowerCase();
+            if (l.includes('collaborat')) groups.collaboration.push(line);
+            else if (l.includes('reflect') || l.includes('reflection')) groups.reflection.push(line);
+            else groups.core.push(line);
+          }
+          // Render helper
+          const renderGroup = (title, items, color, id, expanded) => {
+            const sec = document.createElement('div');
+            sec.className = 'mb-3 rounded-lg border';
+            sec.style.borderColor = 'var(--border)';
+            const btn = document.createElement('button');
+            btn.className = 'w-full flex items-center justify-between px-3 py-2 rounded-t-lg';
+            btn.style.background = `var(--card)`;
+            btn.innerHTML = `<span class="font-medium">${title} <span class="ml-2 text-xs opacity-70">${items.length}</span></span><i data-lucide="chevron-down" class="w-4 h-4"></i>`;
+            const body = document.createElement('div');
+            body.className = 'px-3 pt-2 pb-3 space-y-2';
+            if (!expanded) body.classList.add('hidden');
+            const list = document.createElement('div');
+            const collapsedMax = 3;
+            items.forEach((t, idx) => {
+              if (!expanded && idx >= collapsedMax) return;
+              const row = document.createElement('div');
+              row.className = 'flex items-start gap-2';
+              row.innerHTML = `<span class=\"mt-1\">•</span><span class=\"text-sm text-muted-foreground\">${t}</span>`;
+              list.appendChild(row);
+            });
+            if (!expanded && items.length > collapsedMax) {
+              const more = document.createElement('div');
+              more.className = 'text-xs text-muted-foreground mt-1';
+              more.textContent = `+ ${items.length - collapsedMax} more`;
+              list.appendChild(more);
+            }
+            body.appendChild(list);
+            sec.appendChild(btn);
+            sec.appendChild(body);
+            // Toggle
+            btn.addEventListener('click', () => {
+              body.classList.toggle('hidden');
+              try { lucide.createIcons(); } catch(_) {}
+            });
+            try { lucide.createIcons(); } catch(_) {}
+            return sec;
+          };
+          // Clear fallback and render groups
+          const container = document.createElement('div');
+          if (groups.core.length) container.appendChild(renderGroup('Core Goals', groups.core, 'blue', 'core', true));
+          if (groups.collaboration.length) container.appendChild(renderGroup('Collaboration Goals', groups.collaboration, 'green', 'collab', false));
+          if (groups.reflection.length) container.appendChild(renderGroup('Reflection Goals', groups.reflection, 'purple', 'reflect', false));
+          fallback.replaceWith(container);
+        }
+      }
+    } catch (_) {}
+
+    // Fallback transformer: if legacy flat bullets are rendered, convert them to collapsible groups on the client
+    try {
+      const goalsContainer = document.querySelector('.room-goals');
+      if (goalsContainer && !goalsContainer.querySelector('details')) {
+        const list = goalsContainer.querySelector('.space-y-2');
+        if (list) {
+          const items = Array.from(list.querySelectorAll('.text-sm.text-muted-foreground')).map(n => (n.textContent || '').trim()).filter(Boolean);
+          if (items.length) {
+            const groups = { core: [], collaboration: [], reflection: [] };
+            items.forEach(t => {
+              const l = t.toLowerCase();
+              if (l.includes('collaborat')) groups.collaboration.push(t);
+              else if (l.includes('reflect')) groups.reflection.push(t);
+              else groups.core.push(t);
+            });
+            const build = (title, arr, open) => {
+              if (!arr.length) return null;
+              const det = document.createElement('details');
+              if (open) det.setAttribute('open', '');
+              det.className = 'mb-3';
+              const sum = document.createElement('summary');
+              sum.className = 'cursor-pointer text-sm font-semibold flex items-center gap-2';
+              sum.innerHTML = `${title} <span class=\"text-xs text-muted-foreground\">${arr.length}</span>`;
+              det.appendChild(sum);
+              const wrap = document.createElement('div');
+              wrap.className = 'space-y-2 mt-2';
+              arr.forEach(t => {
+                const row = document.createElement('div');
+                row.className = 'flex items-start gap-2';
+                row.innerHTML = `<span class=\"text-primary mt-1\">•</span><span class=\"text-sm text-muted-foreground\">${t}</span>`;
+                wrap.appendChild(row);
+              });
+              det.appendChild(wrap);
+              return det;
+            };
+            const container = document.createElement('div');
+            const coreDet = build('Core Goals', groups.core, true);
+            const colDet = build('Collaboration Goals', groups.collaboration, false);
+            const refDet = build('Reflection Goals', groups.reflection, false);
+            [coreDet, colDet, refDet].forEach(d => { if (d) container.appendChild(d); });
+            list.replaceWith(container);
+          }
+        }
+      }
+    } catch (_) {}
   });
   
   // Learning Progress Assessment Functions
