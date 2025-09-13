@@ -126,8 +126,12 @@ function exportDocument(docType, format, chatId) {
     formatInput.value = format;
     form.appendChild(formatInput);
     
-    // Add CSRF token
-    const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+    // Add CSRF token (get from cookie that Flask sets)
+    const csrfToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrf_token='))
+        ?.split('=')[1];
+    
     if (csrfToken) {
         const csrfInput = document.createElement('input');
         csrfInput.type = 'hidden';

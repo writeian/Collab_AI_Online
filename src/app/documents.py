@@ -37,6 +37,10 @@ documents = Blueprint("documents", __name__)
 def generate_from_chat(chat_id: int) -> Any:
     """Generate a structured document from chat conversation."""
     try:
+        # Debug logging for 400 errors
+        current_app.logger.info(f"Document generation request for chat {chat_id}")
+        current_app.logger.info(f"Form data: {dict(request.form)}")
+        current_app.logger.info(f"Request method: {request.method}")
         chat_obj = Chat.query.get_or_404(chat_id)
         user = get_current_user()
         
@@ -73,6 +77,10 @@ def generate_from_chat(chat_id: int) -> Any:
 def export_raw_chat(chat_id: int) -> Any:
     """Export raw chat conversation with timestamps and usernames."""
     try:
+        # Debug logging for 400 errors
+        current_app.logger.info(f"Raw chat export request for chat {chat_id}")
+        current_app.logger.info(f"Form data: {dict(request.form)}")
+        current_app.logger.info(f"Request method: {request.method}")
         chat_obj = Chat.query.get_or_404(chat_id)
         user = get_current_user()
         
