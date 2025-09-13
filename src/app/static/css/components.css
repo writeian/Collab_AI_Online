@@ -1372,7 +1372,7 @@
   
   /* Improved room cards for mobile */
   .bg-card {
-    background-color: var(--card);
+    background-color: hsl(var(--card));
     padding: 1rem;
     border-radius: 12px;
     margin-bottom: 0.5rem;
