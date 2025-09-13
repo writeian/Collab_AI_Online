@@ -15,8 +15,8 @@
   --muted: #ececf0;
   --muted-foreground: var(--muted-fg-50);
   /* Additional neutral tiers for clearer hierarchy */
-  --muted-fg-50: #7f7f7f; /* ~50% gray for secondary text */
-  --muted-fg-40: #999999; /* ~40% gray for tertiary/help text */
+  --muted-fg-50: #6b7280; /* slate-500: clearer secondary */
+  --muted-fg-40: #9ca3af; /* slate-400: lighter tertiary */
   --tertiary-foreground: var(--muted-fg-40);
   --accent: #e9ebef;
   --accent-foreground: #030213;
