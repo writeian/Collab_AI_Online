@@ -1,0 +1,62 @@
+{# Document Generation Component for Chat Sidebar #}
+<div class="p-4 border-t border-border">
+    <h4 class="text-sm font-medium mb-3 flex items-center gap-2">
+        <i data-lucide="file-text" class="w-4 h-4"></i>
+        Generate Document
+    </h4>
+    
+    {% if messages|length >= 5 %}
+    <div class="space-y-2">
+        <div class="text-xs text-muted-foreground mb-3">
+            {{ messages|length }} messages available for export
+        </div>
+        
+        <div class="space-y-2">
+            <!-- Discussion Notes -->
+            <form method="POST" action="{{ url_for('documents.generate_from_chat', chat_id=chat.id) }}" class="w-full">
+                <input type="hidden" name="doc_type" value="notes">
+                <input type="hidden" name="format" value="docx">
+                <button type="submit" class="w-full btn btn-outline btn-sm flex items-center justify-start gap-2 text-left">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    <span>📝 Discussion Notes (.docx)</span>
+                </button>
+            </form>
+            
+            {% if messages|length >= 10 %}
+            <!-- Document Outline (unlocked at 10+ messages) -->
+            <form method="POST" action="{{ url_for('documents.generate_from_chat', chat_id=chat.id) }}" class="w-full">
+                <input type="hidden" name="doc_type" value="outline">
+                <input type="hidden" name="format" value="docx">
+                <button type="submit" class="w-full btn btn-outline btn-sm flex items-center justify-start gap-2 text-left">
+                    <i data-lucide="list" class="w-4 h-4"></i>
+                    <span>📋 Document Outline (.docx)</span>
+                </button>
+            </form>
+            {% endif %}
+            
+            <!-- Plain Text Option -->
+            <form method="POST" action="{{ url_for('documents.generate_from_chat', chat_id=chat.id) }}" class="w-full">
+                <input type="hidden" name="doc_type" value="notes">
+                <input type="hidden" name="format" value="text">
+                <button type="submit" class="w-full btn btn-ghost btn-sm flex items-center justify-start gap-2 text-left">
+                    <i data-lucide="copy" class="w-4 h-4"></i>
+                    <span>📄 Plain Text</span>
+                </button>
+            </form>
+        </div>
+        
+        <div class="text-xs text-muted-foreground mt-3">
+            <p>💡 Documents provide structure and organization without doing the work for you.</p>
+        </div>
+    </div>
+    {% else %}
+    <div class="space-y-2">
+        <div class="text-xs text-muted-foreground">
+            Continue discussion to unlock document generation
+        </div>
+        <div class="text-xs text-center py-2 bg-muted/10 rounded border border-dashed border-border">
+            {{ 5 - messages|length }} more messages needed
+        </div>
+    </div>
+    {% endif %}
+</div>
