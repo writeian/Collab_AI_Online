@@ -68,6 +68,36 @@ def generate_from_chat(chat_id: int) -> Any:
         return redirect(url_for("chat.view_chat", chat_id=chat_obj.id))
 
 
+@documents.route("/chat/<int:chat_id>/export-raw", methods=["POST"])
+@require_chat_access
+def export_raw_chat(chat_id: int) -> Any:
+    """Export raw chat conversation with timestamps and usernames."""
+    try:
+        chat_obj = Chat.query.get_or_404(chat_id)
+        user = get_current_user()
+        
+        # Get all messages for this chat
+        messages = Message.query.filter_by(chat_id=chat_obj.id).order_by(Message.timestamp).all()
+        
+        # Get format from request
+        format_type = request.form.get("format", "txt")
+        
+        # Generate raw chat content
+        raw_content = generate_raw_chat_content(messages, chat_obj)
+        
+        # Create downloadable file based on format
+        if format_type == "docx":
+            return create_raw_docx_export(raw_content, chat_obj)
+        else:
+            # Default to plain text
+            return create_raw_text_export(raw_content, chat_obj)
+            
+    except Exception as e:
+        current_app.logger.error(f"Error exporting raw chat {chat_id}: {e}")
+        flash("Failed to export chat. Please try again.", "error")
+        return redirect(url_for("chat.view_chat", chat_id=chat_obj.id))
+
+
 def generate_document_content(messages: List[Message], chat_obj: Chat, doc_type: str) -> str:
     """Generate structured document content from chat messages."""
     from src.utils.openai_utils import call_anthropic_api
@@ -297,3 +327,126 @@ def get_available_document_types(message_count: int, template_type: str = None) 
             })
     
     return types
+
+
+@documents.route("/chat/<int:chat_id>/export-raw", methods=["POST"])
+@require_chat_access
+def export_raw_chat(chat_id: int) -> Any:
+    """Export raw chat conversation with timestamps and usernames."""
+    try:
+        chat_obj = Chat.query.get_or_404(chat_id)
+        user = get_current_user()
+        
+        # Get all messages for this chat
+        messages = Message.query.filter_by(chat_id=chat_obj.id).order_by(Message.timestamp).all()
+        
+        # Get format from request
+        format_type = request.form.get("format", "txt")
+        
+        # Generate raw chat content
+        raw_content = generate_raw_chat_content(messages, chat_obj)
+        
+        # Create downloadable file based on format
+        if format_type == "docx":
+            return create_raw_docx_export(raw_content, chat_obj)
+        else:
+            return create_raw_text_export(raw_content, chat_obj)
+            
+    except Exception as e:
+        current_app.logger.error(f"Error exporting raw chat {chat_id}: {e}")
+        flash("Failed to export chat. Please try again.", "error")
+        return redirect(url_for("chat.view_chat", chat_id=chat_obj.id))
+
+
+def generate_raw_chat_content(messages: List[Message], chat_obj: Chat) -> str:
+    """Generate raw chat content with timestamps and usernames."""
+    content = f"Chat: {chat_obj.title}\n"
+    content += f"Room: {chat_obj.room.name}\n"
+    content += f"Exported: {datetime.now().strftime('%B %d, %Y at %I:%M %p')}\n"
+    content += f"Total Messages: {len(messages)}\n"
+    content += "=" * 50 + "\n\n"
+    
+    for msg in messages:
+        timestamp = msg.timestamp.strftime("%B %d, %Y at %I:%M %p")
+        if msg.role == "user" and msg.user:
+            content += f"{msg.user.display_name} ({timestamp}):\n"
+        else:
+            content += f"AI Assistant ({timestamp}):\n"
+        
+        content += f"{msg.content}\n\n"
+    
+    return content
+
+
+def create_raw_text_export(content: str, chat_obj: Chat) -> Any:
+    """Create downloadable raw chat text file with [chat_title]_[date].txt naming."""
+    safe_title = chat_obj.title.replace(' ', '_').replace('/', '_').replace('\\', '_')
+    filename = f"{safe_title}_{datetime.now().strftime('%Y%m%d')}.txt"
+    
+    response = make_response(content)
+    response.headers['Content-Type'] = 'text/plain; charset=utf-8'
+    response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    return response
+
+
+def create_raw_docx_export(content: str, chat_obj: Chat) -> Any:
+    """Create downloadable raw chat Word document with [chat_title]_[date].docx naming."""
+    try:
+        from docx import Document
+        
+        doc = Document()
+        doc.add_heading(f"Chat: {chat_obj.title}", 0)
+        doc.add_paragraph(f"Room: {chat_obj.room.name}")
+        doc.add_paragraph(f"Exported: {datetime.now().strftime('%B %d, %Y at %I:%M %p')}")
+        doc.add_paragraph("")
+        
+        # Add formatted chat content
+        lines = content.split('\n')
+        for line in lines:
+            if line.strip():
+                if '(' in line and ')' in line and (':' in line):
+                    # Message header with timestamp - make bold
+                    p = doc.add_paragraph()
+                    run = p.add_run(line.strip())
+                    run.bold = True
+                elif line.startswith('='):
+                    continue  # Skip separator
+                elif line.startswith(('Chat:', 'Room:', 'Exported:', 'Total Messages:')):
+                    # Metadata - italic
+                    p = doc.add_paragraph()
+                    run = p.add_run(line.strip())
+                    run.italic = True
+                else:
+                    # Message content
+                    doc.add_paragraph(line.strip())
+        
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.docx')
+        doc.save(temp_file.name)
+        temp_file.close()
+        
+        safe_title = chat_obj.title.replace(' ', '_').replace('/', '_').replace('\\', '_')
+        filename = f"{safe_title}_{datetime.now().strftime('%Y%m%d')}.docx"
+        
+        def cleanup_temp_file():
+            try:
+                os.unlink(temp_file.name)
+            except:
+                pass
+        
+        response = send_file(
+            temp_file.name,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        )
+        
+        import atexit
+        atexit.register(cleanup_temp_file)
+        return response
+        
+    except ImportError:
+        return create_raw_text_export(content, chat_obj)
+    except Exception as e:
+        current_app.logger.error(f"Error creating raw DOCX export: {e}")
+        return create_raw_text_export(content, chat_obj)

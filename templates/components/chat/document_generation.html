@@ -1,62 +1,149 @@
-{# Document Generation Component for Chat Sidebar #}
+{# Document Generation Dropdown Component for Chat Sidebar #}
 <div class="p-4 border-t border-border">
-    <h4 class="text-sm font-medium mb-3 flex items-center gap-2">
-        <i data-lucide="file-text" class="w-4 h-4"></i>
-        Generate Document
-    </h4>
-    
-    {% if messages|length >= 5 %}
-    <div class="space-y-2">
-        <div class="text-xs text-muted-foreground mb-3">
-            {{ messages|length }} messages available for export
-        </div>
+    <div class="relative">
+        <!-- Dropdown Header Button -->
+        <button onclick="toggleDocumentDropdown()" 
+                class="w-full flex items-center justify-between text-sm font-medium text-foreground hover:text-primary transition-colors">
+            <div class="flex items-center gap-2">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                Generate Document
+            </div>
+            <i data-lucide="chevron-down" class="w-4 h-4 dropdown-arrow transition-transform"></i>
+        </button>
         
-        <div class="space-y-2">
-            <!-- Discussion Notes -->
-            <form method="POST" action="{{ url_for('documents.generate_from_chat', chat_id=chat.id) }}" class="w-full">
-                <input type="hidden" name="doc_type" value="notes">
-                <input type="hidden" name="format" value="docx">
-                <button type="submit" class="w-full btn btn-outline btn-sm flex items-center justify-start gap-2 text-left">
-                    <i data-lucide="download" class="w-4 h-4"></i>
-                    <span>📝 Discussion Notes (.docx)</span>
-                </button>
-            </form>
+        <!-- Dropdown Content -->
+        <div id="document-dropdown" class="hidden mt-3 space-y-3">
+            <!-- Export Chat History (Always Available) -->
+            <div>
+                <div class="text-xs font-medium text-foreground mb-1">📄 Export Chat History</div>
+                <div class="flex gap-1">
+                    <button onclick="exportDocument('raw', 'txt', {{ chat.id }})" 
+                            class="flex-1 p-1 text-xs rounded border border-border hover:bg-accent transition-colors flex items-center justify-center gap-1"
+                            title="Export as .txt">
+                        📄 .txt
+                    </button>
+                    <button onclick="exportDocument('raw', 'docx', {{ chat.id }})" 
+                            class="flex-1 p-1 text-xs rounded border border-border hover:bg-accent transition-colors flex items-center justify-center gap-1"
+                            title="Export as .docx">
+                        📝 .docx
+                    </button>
+                </div>
+            </div>
             
-            {% if messages|length >= 10 %}
-            <!-- Document Outline (unlocked at 10+ messages) -->
-            <form method="POST" action="{{ url_for('documents.generate_from_chat', chat_id=chat.id) }}" class="w-full">
-                <input type="hidden" name="doc_type" value="outline">
-                <input type="hidden" name="format" value="docx">
-                <button type="submit" class="w-full btn btn-outline btn-sm flex items-center justify-start gap-2 text-left">
-                    <i data-lucide="list" class="w-4 h-4"></i>
-                    <span>📋 Document Outline (.docx)</span>
-                </button>
-            </form>
-            {% endif %}
+            <!-- Create Notes -->
+            <div>
+                <div class="text-xs font-medium text-foreground mb-1">📝 Create Notes</div>
+                {% if messages|length >= 5 %}
+                <div class="flex gap-1">
+                    <button onclick="exportDocument('notes', 'txt', {{ chat.id }})" 
+                            class="flex-1 p-1 text-xs rounded border border-border hover:bg-accent transition-colors flex items-center justify-center gap-1"
+                            title="Notes as .txt">
+                        📄 .txt
+                    </button>
+                    <button onclick="exportDocument('notes', 'docx', {{ chat.id }})" 
+                            class="flex-1 p-1 text-xs rounded border border-border hover:bg-accent transition-colors flex items-center justify-center gap-1"
+                            title="Notes as .docx">
+                        📝 .docx
+                    </button>
+                </div>
+                {% else %}
+                <div class="text-xs text-muted-foreground">
+                    {{ 5 - messages|length }} more messages needed
+                </div>
+                {% endif %}
+            </div>
             
-            <!-- Plain Text Option -->
-            <form method="POST" action="{{ url_for('documents.generate_from_chat', chat_id=chat.id) }}" class="w-full">
-                <input type="hidden" name="doc_type" value="notes">
-                <input type="hidden" name="format" value="text">
-                <button type="submit" class="w-full btn btn-ghost btn-sm flex items-center justify-start gap-2 text-left">
-                    <i data-lucide="copy" class="w-4 h-4"></i>
-                    <span>📄 Plain Text</span>
-                </button>
-            </form>
-        </div>
-        
-        <div class="text-xs text-muted-foreground mt-3">
-            <p>💡 Documents provide structure and organization without doing the work for you.</p>
+            <!-- Create Outline -->
+            <div>
+                <div class="text-xs font-medium text-foreground mb-1">📋 Create Outline</div>
+                {% if messages|length >= 10 %}
+                <div class="flex gap-1">
+                    <button onclick="exportDocument('outline', 'txt', {{ chat.id }})" 
+                            class="flex-1 p-1 text-xs rounded border border-border hover:bg-accent transition-colors flex items-center justify-center gap-1"
+                            title="Outline as .txt">
+                        📄 .txt
+                    </button>
+                    <button onclick="exportDocument('outline', 'docx', {{ chat.id }})" 
+                            class="flex-1 p-1 text-xs rounded border border-border hover:bg-accent transition-colors flex items-center justify-center gap-1"
+                            title="Outline as .docx">
+                        📝 .docx
+                    </button>
+                </div>
+                {% else %}
+                <div class="text-xs text-muted-foreground">
+                    {{ 10 - messages|length }} more messages needed
+                </div>
+                {% endif %}
+            </div>
         </div>
     </div>
-    {% else %}
-    <div class="space-y-2">
-        <div class="text-xs text-muted-foreground">
-            Continue discussion to unlock document generation
-        </div>
-        <div class="text-xs text-center py-2 bg-muted/10 rounded border border-dashed border-border">
-            {{ 5 - messages|length }} more messages needed
-        </div>
-    </div>
-    {% endif %}
 </div>
+
+<script>
+function toggleDocumentDropdown() {
+    const dropdown = document.getElementById('document-dropdown');
+    const arrow = document.querySelector('.dropdown-arrow');
+    
+    dropdown.classList.toggle('hidden');
+    
+    // Rotate arrow
+    if (dropdown.classList.contains('hidden')) {
+        arrow.style.transform = 'rotate(0deg)';
+    } else {
+        arrow.style.transform = 'rotate(180deg)';
+    }
+}
+
+function exportDocument(docType, format, chatId) {
+    const button = event.target;
+    const originalContent = button.innerHTML;
+    
+    // Show spinner
+    button.innerHTML = '⏳';
+    button.disabled = true;
+    
+    // Create form and submit
+    const form = document.createElement('form');
+    form.method = 'POST';
+    
+    if (docType === 'raw') {
+        form.action = `/documents/chat/${chatId}/export-raw`;
+    } else {
+        form.action = `/documents/chat/${chatId}/generate`;
+        
+        // Add doc_type for notes/outline
+        const docTypeInput = document.createElement('input');
+        docTypeInput.type = 'hidden';
+        docTypeInput.name = 'doc_type';
+        docTypeInput.value = docType;
+        form.appendChild(docTypeInput);
+    }
+    
+    // Add format
+    const formatInput = document.createElement('input');
+    formatInput.type = 'hidden';
+    formatInput.name = 'format';
+    formatInput.value = format;
+    form.appendChild(formatInput);
+    
+    // Add CSRF token
+    const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+    if (csrfToken) {
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+    }
+    
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+    
+    // Reset button after a delay
+    setTimeout(() => {
+        button.innerHTML = originalContent;
+        button.disabled = false;
+    }, 2000);
+}
+</script>
