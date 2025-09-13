@@ -9,14 +9,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- New Design System CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/globals.css') }}?v=2.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=5.9">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/globals.css') }}?v=2.2">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=6.1">
     
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     
     <!-- Your existing styles -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.3">
     {% block extra_css %}{% endblock %}
 </head>
 <body class="bg-background text-foreground min-h-screen flex flex-col">
@@ -61,7 +61,7 @@
                     </div>
 
                     <!-- Mobile Menu Button (hidden on desktop) -->
-                    <button id="mobile-menu-button" class="block md:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" aria-label="Open mobile menu" style="display: block;">
+                    <button id="mobile-menu-button" class="md:hidden p-2 rounded-md text-foreground hover:text-foreground hover:bg-muted transition-colors" aria-label="Open mobile menu">
                         <i data-lucide="menu" class="w-6 h-6"></i>
                     </button>
                 </div>
@@ -228,22 +228,18 @@
     <script>
         lucide.createIcons();
         
-        // Force hide hamburger menu on desktop
-        function hideHamburgerOnDesktop() {
-            const hamburgerButton = document.getElementById('mobile-menu-button');
-            if (hamburgerButton && window.innerWidth >= 768) {
-                hamburgerButton.style.display = 'none';
-                hamburgerButton.style.visibility = 'hidden';
-                hamburgerButton.style.opacity = '0';
-                hamburgerButton.style.pointerEvents = 'none';
-            }
-        }
-        
-        // Run on page load
-        hideHamburgerOnDesktop();
-        
-        // Run on window resize
-        window.addEventListener('resize', hideHamburgerOnDesktop);
+        // (Removed) Forced hamburger hide; rely on Tailwind breakpoints only
+        // function hideHamburgerOnDesktop() {
+        //     const hamburgerButton = document.getElementById('mobile-menu-button');
+        //     if (hamburgerButton && window.innerWidth >= 768) {
+        //         hamburgerButton.style.display = 'none';
+        //         hamburgerButton.style.visibility = 'hidden';
+        //         hamburgerButton.style.opacity = '0';
+        //         hamburgerButton.style.pointerEvents = 'none';
+        //     }
+        // }
+        // hideHamburgerOnDesktop();
+        // window.addEventListener('resize', hideHamburgerOnDesktop);
     </script>
 
     <!-- Mobile Menu JavaScript -->
@@ -374,5 +370,5 @@
     </script>
 
     {% block extra_js %}{% endblock %}
-</body>
+<!-- base v=2025-09-13T20:30Z deployment sentinel --></body>
 </html>
