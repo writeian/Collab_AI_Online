@@ -224,6 +224,8 @@ def register() -> Any:
             # Log in the user
             session["user_id"] = user.id
             session["username"] = user.username
+            # Mark this as a new registration to avoid "welcome back" message
+            session["just_registered"] = True
 
             flash("Registration successful! Welcome to AI Collab.", "success")
             return redirect(url_for("room.room_crud.index"))
@@ -293,8 +295,9 @@ def login() -> Any:
                 session["user_id"] = user.id
                 session["username"] = user.username  # For easier access
 
-                # print(f"Login successful for user: {user.username}")
-                flash(f"Welcome back, {user.display_name}!", "success")
+                # Only show "welcome back" for returning users, not new registrations
+                if not session.pop("just_registered", False):
+                    flash(f"Welcome back, {user.display_name}!", "success")
                 return redirect(url_for("room.room_crud.index"))
             else:
                 # Don't reveal whether username or password was wrong for security
