@@ -350,9 +350,10 @@
   .hover\:text-success:hover { color: var(--success); }
 
   /* Neutral text tiers */
-  .text-muted-50 { color: var(--muted-fg-50); }
-  .text-muted-40, .text-tertiary, .text-tertiary-foreground { color: var(--muted-fg-40); }
-  .text-secondary { color: var(--muted-fg-50); }
+  .text-muted-foreground { color: var(--muted-fg-50) !important; }
+  .text-muted-50 { color: var(--muted-fg-50) !important; }
+  .text-muted-40, .text-tertiary, .text-tertiary-foreground { color: var(--muted-fg-40) !important; }
+  .text-secondary { color: var(--muted-fg-50) !important; }
 
   /* Warning Colors */
   .bg-warning { background-color: var(--warning); }
@@ -398,3 +399,10 @@
 html {
   font-size: var(--font-size);
 }
+
+/* Plain CSS utilities (no Tailwind processing required) */
+.text-muted-foreground { color: var(--muted-fg-50) !important; }
+.text-muted-50 { color: var(--muted-fg-50) !important; }
+.text-muted-40 { color: var(--muted-fg-40) !important; }
+.text-tertiary, .text-tertiary-foreground { color: var(--muted-fg-40) !important; }
+.text-secondary { color: var(--muted-fg-50) !important; }
