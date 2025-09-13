@@ -96,6 +96,17 @@
             {% endfor %}
 
             <div class="room-goals bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg mb-4">
+              <style>
+                /* Scoped styles for collapsible goal sections */
+                .room-goals details > summary { list-style: none; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; user-select: none; padding: 0.25rem 0; }
+                .room-goals summary::-webkit-details-marker { display: none; }
+                .room-goals summary::marker { content: ""; }
+                .room-goals details > summary::before { content: ""; width: 0.9rem; height: 0.9rem; margin-right: 0.25rem; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='9 18 15 12 9 6'%3E%3C/polyline%3E%3C/svg%3E") no-repeat center / contain; opacity: 0.8; transition: transform 200ms ease; }
+                .room-goals details[open] > summary::before { transform: rotate(90deg); }
+                .room-goals summary .summary-title { font-weight: 600; }
+                .room-goals summary .count-badge { margin-left: auto; font-size: 0.75rem; line-height: 1rem; color: var(--muted-foreground); background: hsl(var(--primary) / 0.08); border: 1px solid hsl(var(--border)); border-radius: 9999px; padding: 0.1rem 0.4rem; }
+                .room-goals .goal-text { font-style: normal !important; }
+              </style>
               <p class="text-sm font-medium text-foreground mb-3">Learning Goals</p>
 
               {% macro goal_list(items) %}
@@ -103,23 +114,25 @@
                 {% for goal in items %}
                   <div class="flex items-start gap-2">
                     <span class="text-primary mt-1">•</span>
-                    <span class="text-sm text-muted-foreground">{{ goal }}</span>
+                    <span class="text-sm text-muted-foreground goal-text">{{ goal }}</span>
                   </div>
                 {% endfor %}
                 </div>
               {% endmacro %}
 
               <details open class="mb-3">
-                <summary class="cursor-pointer text-sm font-semibold flex items-center gap-2">
-                  Core Goals <span class="text-xs text-muted-foreground">{{ ns.core|length }}</span>
+                <summary class="cursor-pointer text-sm flex items-center gap-2">
+                  <span class="summary-title">Core Goals</span>
+                  <span class="count-badge">{{ ns.core|length }}</span>
                 </summary>
                 {{ goal_list(ns.core) }}
               </details>
 
               {% if ns.collab %}
               <details class="mb-3">
-                <summary class="cursor-pointer text-sm font-semibold flex items-center gap-2">
-                  Collaboration Goals <span class="text-xs text-muted-foreground">{{ ns.collab|length }}</span>
+                <summary class="cursor-pointer text-sm flex items-center gap-2">
+                  <span class="summary-title">Collaboration Goals</span>
+                  <span class="count-badge">{{ ns.collab|length }}</span>
                 </summary>
                 {{ goal_list(ns.collab) }}
               </details>
@@ -127,8 +140,9 @@
 
               {% if ns.reflect %}
               <details>
-                <summary class="cursor-pointer text-sm font-semibold flex items-center gap-2">
-                  Reflection Goals <span class="text-xs text-muted-foreground">{{ ns.reflect|length }}</span>
+                <summary class="cursor-pointer text-sm flex items-center gap-2">
+                  <span class="summary-title">Reflection Goals</span>
+                  <span class="count-badge">{{ ns.reflect|length }}</span>
                 </summary>
                 {{ goal_list(ns.reflect) }}
               </details>
@@ -573,15 +587,15 @@
               if (open) det.setAttribute('open', '');
               det.className = 'mb-3';
               const sum = document.createElement('summary');
-              sum.className = 'cursor-pointer text-sm font-semibold flex items-center gap-2';
-              sum.innerHTML = `${title} <span class=\"text-xs text-muted-foreground\">${arr.length}</span>`;
+              sum.className = 'cursor-pointer text-sm flex items-center gap-2';
+              sum.innerHTML = `<span class=\"summary-title\">${title}</span><span class=\"count-badge\">${arr.length}</span>`;
               det.appendChild(sum);
               const wrap = document.createElement('div');
               wrap.className = 'space-y-2 mt-2';
               arr.forEach(t => {
                 const row = document.createElement('div');
                 row.className = 'flex items-start gap-2';
-                row.innerHTML = `<span class=\"text-primary mt-1\">•</span><span class=\"text-sm text-muted-foreground\">${t}</span>`;
+                row.innerHTML = `<span class=\"text-primary mt-1\">•</span><span class=\"text-sm text-muted-foreground goal-text\">${t}</span>`;
                 wrap.appendChild(row);
               });
               det.appendChild(wrap);
