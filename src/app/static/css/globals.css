@@ -2,9 +2,10 @@
 
 :root {
   --font-size: 14px;
-  --background: #ffffff;
+  /* Softer app background for contrast */
+  --background: 210 20% 98%; /* HSL triple for hsl(var(--background)) */
   --foreground: oklch(0.145 0 0);
-  --card: #ffffff;
+  --card: 0 0% 100%; /* HSL triple for hsl(var(--card)) */
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
