@@ -10,13 +10,13 @@
     
     <!-- New Design System CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/globals.css') }}?v=2.2">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=6.1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=6.2">
     
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     
     <!-- Your existing styles -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.3">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.4">
     {% block extra_css %}{% endblock %}
 </head>
 <body class="bg-background text-foreground min-h-screen flex flex-col">
@@ -370,5 +370,5 @@
     </script>
 
     {% block extra_js %}{% endblock %}
-<!-- base v=2025-09-13T20:30Z deployment sentinel --></body>
+<!-- base v=2025-09-13T21:00Z deployment sentinel - fixed card bg + breakpoints --></body>
 </html>

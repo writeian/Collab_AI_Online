@@ -426,7 +426,7 @@
   min-width: 0;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .chat-textarea {
     max-height: 35vh; /* mobile cap */
   }
@@ -603,7 +603,7 @@
 }
 
 /* Responsive Design */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .message-bubble {
     max-width: 85%;
   }
@@ -1027,7 +1027,7 @@
 }
 
 /* Responsive Design for Room Page */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .room-header {
     padding: 1rem;
     margin-bottom: 1.5rem;
@@ -1087,7 +1087,7 @@
 }
 
 /* Mobile-Optimized Form Styles */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   /* Larger form inputs for mobile */
   .form-group input,
   .form-group select,
@@ -1276,7 +1276,7 @@
   }
   
   /* Ensure buttons are responsive on mobile */
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     .criterion-header button {
       min-height: 56px !important;
       min-width: 56px !important;
@@ -1618,7 +1618,7 @@
 }
 
 /* Improved empty state for mobile */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .empty-state {
         padding: 2rem 1rem;
         text-align: center;
@@ -1695,7 +1695,7 @@
 }
 
 /* Mobile-specific pull-to-refresh enhancements */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .pull-indicator {
         height: 80px;
         top: -80px;
@@ -1717,7 +1717,7 @@
 }
 
 /* 4.2 Enhanced Mobile Scrolling Performance */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     /* Optimize scrolling performance */
     #chat-messages {
         will-change: scroll-position;
@@ -1841,7 +1841,7 @@
 }
 
 /* Mobile optimizations for dropdown */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .dropdown-menu {
         min-width: 180px;
         max-width: 280px;
@@ -1941,7 +1941,7 @@
 }
 
 /* Mobile optimizations for new layout */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .room-header h2 {
         font-size: 1.5rem;
     }
@@ -2343,7 +2343,7 @@
 }
 
 /* Mobile Responsive Improvements */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .room-header h2 {
         font-size: 1.5rem;
     }
@@ -2381,6 +2381,11 @@
     .chat-card-large h3 {
         font-size: 1.125rem;
     }
+}
+
+/* Global card background - applies to all screen sizes */
+.bg-card {
+  background-color: hsl(var(--card)) !important;
 }
 
 /* Forced neutral tiers for room cards to override legacy colors */
