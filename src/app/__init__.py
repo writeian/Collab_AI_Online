@@ -184,6 +184,18 @@ def create_app(config_name=None):
     app.register_blueprint(google_auth, url_prefix="/auth/google")
     app.register_blueprint(analytics, url_prefix="/analytics")
 
+    # Diagnostics: template folder + which room template is found
+    @app.route("/__tpl")
+    def __tpl():
+        import os as __os
+        info = {
+            "template_folder": app.template_folder,
+            "cwd": __os.getcwd(),
+            "exists_lowercase": __os.path.exists(__os.path.join(app.template_folder or '', 'room', 'view.html')),
+            "exists_capitalized": __os.path.exists(__os.path.abspath(__os.path.join(__os.getcwd(), 'Templates', 'room', 'view.html'))),
+        }
+        return info
+
     # Add main routes
     @app.route("/")
     def index():
