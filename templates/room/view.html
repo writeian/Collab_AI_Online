@@ -106,14 +106,17 @@
                 .room-goals summary .summary-title { font-weight: 600; }
                 .room-goals summary .count-badge { margin-left: auto; font-size: 0.75rem; line-height: 1rem; color: var(--muted-foreground); background: hsl(var(--primary) / 0.08); border: 1px solid hsl(var(--border)); border-radius: 9999px; padding: 0.1rem 0.4rem; }
                 .room-goals .goal-text { font-style: normal !important; }
+                /* Align bullets and text baselines */
+                .room-goals .goal-row { align-items: baseline; }
+                .room-goals .goal-bullet { display: inline-block; line-height: 1; transform: translateY(1px); }
               </style>
               <p class="text-sm font-medium text-foreground mb-3">Learning Goals</p>
 
               {% macro goal_list(items) %}
                 <div class="space-y-2">
                 {% for goal in items %}
-                  <div class="flex items-start gap-2">
-                    <span class="text-primary mt-1">•</span>
+                  <div class="flex items-baseline gap-2 goal-row">
+                    <span class="text-primary goal-bullet">•</span>
                     <span class="text-sm text-muted-foreground goal-text">{{ goal }}</span>
                   </div>
                 {% endfor %}
@@ -594,8 +597,8 @@
               wrap.className = 'space-y-2 mt-2';
               arr.forEach(t => {
                 const row = document.createElement('div');
-                row.className = 'flex items-start gap-2';
-                row.innerHTML = `<span class=\"text-primary mt-1\">•</span><span class=\"text-sm text-muted-foreground goal-text\">${t}</span>`;
+                row.className = 'flex items-baseline gap-2 goal-row';
+                row.innerHTML = `<span class=\"text-primary goal-bullet\">•</span><span class=\"text-sm text-muted-foreground goal-text\">${t}</span>`;
                 wrap.appendChild(row);
               });
               det.appendChild(wrap);
