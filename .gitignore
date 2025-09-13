@@ -70,3 +70,4 @@ scripts/*.log
 # Cleanup logs
 *_cleanup_log.json
 *_fix_log.json
+Templates/
