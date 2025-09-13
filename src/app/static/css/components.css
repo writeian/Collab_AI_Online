@@ -1372,12 +1372,12 @@
   
   /* Improved room cards for mobile */
   .bg-card {
-    background-color: #ffffff !important;
+    background-color: var(--card);
     padding: 1rem;
     border-radius: 12px;
     margin-bottom: 0.5rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border: 1px solid #e5e7eb;
+    border: 1px solid hsl(var(--border));
   }
   
   /* Better button spacing in room cards */
