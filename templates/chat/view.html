@@ -98,8 +98,32 @@
                     </div>
                 </details>
                 
-                <!-- Learning Progress Component -->
-                {% include "components/chat/learning_progress.html" %}        <!-- Document Generation Component -->
+                <!-- Learning Progress Assessment -->
+                <div class="mt-4 learning-progress-section">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-sm font-medium text-foreground">Learning Progress</h4>
+                        <button id="assess-progress-btn" 
+                                class="text-xs px-2 py-1 bg-primary/10 text-primary rounded hover:bg-primary/20 transition-colors"
+                                onclick="assessLearningProgress()">
+                            🔍 Assess Progress
+                        </button>
+                    </div>
+                    
+                    <!-- Progress Status Display -->
+                    <div id="progress-status" class="hidden">
+                        <div id="progress-content" class="p-3 rounded-md text-xs">
+                            <!-- Progress content will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <!-- Loading State -->
+                    <div id="progress-loading" class="hidden">
+                        <div class="p-3 rounded-md text-xs text-muted-foreground">
+                            <div class="flex items-center gap-2">
+                                <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
+                                Analyzing your progress...
+                            </div>
+        <!-- Document Generation Component -->
         {% include "components/chat/document_generation.html" %}
                         </div>
                     </div>
@@ -107,8 +131,43 @@
             </div>
         </div>
 
-        <!-- Room Members Component -->
-        {% include "components/chat/room_members.html" %}
+        <!-- Room Members -->
+        <div class="overflow-y-auto p-4">
+            <h4 class="text-sm font-medium mb-3">Room Members</h4>
+            {% if room_members %}
+            <div class="member-list">
+                {% for member in room_members %}
+                {% set color_class = 'avatar-color-' ~ ((member.id % 6) + 1) %}
+                <div class="member-item">
+                    <div class="member-avatar {{ color_class }}">
+                        <span class="avatar-text">
+                            {% if ' ' in member.display_name %}
+                                {{ member.display_name.split(' ')[0][0] }}{{ member.display_name.split(' ')[1][0] }}
+                            {% else %}
+                                {{ member.display_name[:2] }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="member-info">
+                        <p class="member-name">{{ member.display_name }}</p>
+                    </div>
+                    <div class="member-actions">
+                        <a href="{{ url_for('auth.profile') }}" 
+                           class="member-action-btn primary" title="View Profile">
+                            👤
+                        </a>
+                        <button class="member-action-btn" title="Message (Coming Soon)" disabled>
+                            💬
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-sm text-muted-foreground">No members found.</p>
+            {% endif %}
+        </div>
+
         <!-- Chat List (if multiple chats) -->
         <div class="flex-1 overflow-y-auto p-4">
             <h4 class="text-sm font-medium mb-3">Other Chats</h4>
@@ -289,8 +348,39 @@
         </button>
 
         <!-- Message Input -->
-        <!-- Chat Input Component -->
-        {% include "components/chat/chat_input.html" %}        </div>
+        <div class="p-4 border-t border-border chat-input-container">
+        <form method="POST" action="{{ url_for('chat.view_chat', chat_id=chat.id) }}" class="flex flex-col gap-3" id="message-form">
+            <!-- AI Response Toggle -->
+            <div class="flex items-center gap-2 mb-3">
+                <input type="checkbox" 
+                       id="ai-response-toggle" 
+                       name="ai_response" 
+                       value="1" 
+                       checked
+                       class="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2">
+                <label for="ai-response-toggle" class="text-sm font-medium text-foreground">
+                    🤖 AI Response
+                </label>
+            </div>
+            
+            <div class="flex gap-3 items-end">
+            <textarea name="content"
+                      placeholder="Type your message..."
+                      class="chat-input chat-textarea flex-1"
+                      required
+                      id="message-input"
+                      rows="1"
+                      autocomplete="off"></textarea>
+            <button type="submit" 
+                    class="send-button"
+                    id="send-button">
+                <i data-lucide="send" class="w-4 h-4" id="send-icon"></i>
+                <i data-lucide="loader-2" class="w-4 h-4 animate-spin hidden" id="loading-icon"></i>
+            </button>
+            </div>
+        </form>
+    </div>
+        </div>
     </div>
 </div>
 
