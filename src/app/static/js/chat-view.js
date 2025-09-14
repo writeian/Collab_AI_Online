@@ -669,7 +669,9 @@
             if (document.hidden) return; // pause when tab hidden
             try {
                 const lastId = getLastMessageId();
-                const resp = await fetch(`/chat/{{ chat.id }}/messages?after_id=${lastId}`);
+                const chatContainer = document.querySelector('.chat-container');
+                const chatId = chatContainer.dataset.chatId;
+                const resp = await fetch(`/chat/${chatId}/messages?after_id=${lastId}`);
                 const data = await resp.json();
                 if (!data.success) throw new Error(data.error || 'poll failed');
                 const list = data.messages || [];
@@ -751,7 +753,10 @@
         progressLoading.classList.remove('hidden');
         
         // Make API request
-        fetch(`/chat/{{ chat.id }}/assess-progression`, {
+        const chatContainer = document.querySelector('.chat-container');
+        const chatId = chatContainer.dataset.chatId;
+        
+        fetch(`/chat/${chatId}/assess-progression`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -873,18 +878,23 @@
         // Redirect to create chat page with next step pre-selected
         const nextStep = getNextStepFromRecommendation();
         if (nextStep) {
-            const createChatUrl = `/room/{{ room.id }}/chat/create?mode=${nextStep.key}`;
+            const chatContainer = document.querySelector('.chat-container');
+            const roomId = chatContainer.dataset.roomId;
+            const createChatUrl = `/room/${roomId}/chat/create?mode=${nextStep.key}`;
             window.location.href = createChatUrl;
         } else {
             // Fallback to regular create chat page
-            window.location.href = `/room/{{ room.id }}/chat/create`;
+            const chatContainer = document.querySelector('.chat-container');
+            const roomId = chatContainer.dataset.roomId;
+            window.location.href = `/room/${roomId}/chat/create`;
         }
     }
     
     function getNextStepFromRecommendation() {
         // This would be populated from the recommendation data
         // For now, we'll use a simple approach
-        const currentMode = '{{ chat.mode }}';
+        const chatContainer = document.querySelector('.chat-container');
+        const currentMode = chatContainer.dataset.chatMode;
         const modeOrder = ['explore', 'focus', 'context', 'proposal', 'outline', 'draft', 'revise', 'evidence', 'citation', 'reflect'];
         const currentIndex = modeOrder.indexOf(currentMode);
         
