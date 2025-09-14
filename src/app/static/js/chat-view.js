@@ -741,10 +741,14 @@
     
     // Learning Progress Assessment Functions
     function assessLearningProgress() {
+        console.log('🔍 Assess Progress button clicked!');
+        
         const assessBtn = document.getElementById('assess-progress-btn');
         const progressStatus = document.getElementById('progress-status');
         const progressLoading = document.getElementById('progress-loading');
         const progressContent = document.getElementById('progress-content');
+        
+        console.log('Elements found:', { assessBtn, progressStatus, progressLoading, progressContent });
         
         // Show loading state
         assessBtn.disabled = true;
@@ -754,7 +758,17 @@
         
         // Make API request
         const chatContainer = document.querySelector('.chat-container');
-        const chatId = chatContainer.dataset.chatId;
+        console.log('Chat container:', chatContainer);
+        console.log('Dataset:', chatContainer ? chatContainer.dataset : 'No container found');
+        
+        const chatId = chatContainer ? chatContainer.dataset.chatId : null;
+        console.log('Chat ID:', chatId);
+        
+        if (!chatId) {
+            console.error('❌ No chat ID found! Cannot proceed.');
+            displayProgressError('Configuration error. Please refresh the page.');
+            return;
+        }
         
         fetch(`/chat/${chatId}/assess-progression`, {
             method: 'POST',
