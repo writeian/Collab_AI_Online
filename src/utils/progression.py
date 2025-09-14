@@ -35,7 +35,7 @@ def build_next_step_descriptor(chat: Any) -> Optional[Dict[str, str]]:
 
 
 def compute_suggestion(chat: Any) -> Optional[Dict[str, Any]]:
-    """Compute suggestion payload based on rubric/heuristic confidence and next step.
+    """Compute suggestion payload with discussion context, based on rubric confidence and next step.
 
     Returns None if no next step or confidence below threshold.
     """
@@ -54,12 +54,58 @@ def compute_suggestion(chat: Any) -> Optional[Dict[str, Any]]:
         next_step = build_next_step_descriptor(chat)
 
     if confidence >= threshold and next_step:
-        return {
+        suggestion = {
             "confidence": confidence,
             "next_key": next_step.get("key"),
             "next_label": next_step.get("label"),
             "link": next_step.get("link"),
         }
+        
+        # Add discussion context if 5+ messages available
+        try:
+            from src.models import Message
+            message_count = Message.query.filter_by(chat_id=chat.id).count()
+            
+            if message_count >= 5:
+                # Generate summary context using existing document generation
+                messages = Message.query.filter_by(chat_id=chat.id).order_by(Message.timestamp).all()
+                
+                # Use existing document generation logic
+                from src.app.documents import generate_document_content
+                summary_notes = generate_document_content(messages, chat, "notes")
+                
+                # Extract key insights for banner context
+                context_lines = summary_notes.split('\n')
+                context_preview = None
+                
+                # Look for key sections in summary
+                for i, line in enumerate(context_lines):
+                    if any(keyword in line for keyword in ["Key Insights", "Original Ideas", "Technical Solutions"]):
+                        # Take next few lines as context
+                        preview_lines = []
+                        for j in range(i+1, min(i+4, len(context_lines))):
+                            if context_lines[j].strip() and not context_lines[j].startswith('#'):
+                                preview_lines.append(context_lines[j].strip())
+                        context_preview = " ".join(preview_lines)[:250]
+                        break
+                
+                if not context_preview:
+                    # Fallback: use first meaningful content
+                    meaningful_lines = [line.strip() for line in context_lines 
+                                      if line.strip() and not line.startswith('#') and len(line.strip()) > 20]
+                    context_preview = " ".join(meaningful_lines[:2])[:250] if meaningful_lines else "your discussion"
+                
+                suggestion["context"] = context_preview
+                suggestion["has_context"] = True
+            else:
+                suggestion["has_context"] = False
+                
+        except Exception as e:
+            # Context generation failed - continue without context
+            suggestion["has_context"] = False
+            
+        return suggestion
+    
     return None
 
 

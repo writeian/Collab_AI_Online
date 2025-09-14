@@ -231,32 +231,16 @@
             {# Suggestion banner passed from view #}
             {% if suggestion %}
             {% set s = suggestion %}
-            {% set s = suggestion %}
-            <div class="rounded-md border border-primary/20 bg-primary/5 px-4 py-3 mb-4" role="note" aria-live="polite">
+            <div class="rounded-md border border-border bg-card px-4 py-3" role="note" aria-live="polite">
                 <div class="text-sm">
-                    <div class="flex items-start gap-2">
-                        <div class="text-primary text-base">🎯</div>
-                        <div class="flex-1">
-                            {% if suggestion.has_context %}
-                                <p class="font-medium text-primary mb-1">Learning Milestone Reached!</p>
-                                <p class="text-foreground mb-2">Based on {{ suggestion.context }}</p>
-                                <p class="text-foreground">You're ready to advance to <strong>{{ s.next_label }}</strong> where we'll build on these insights.</p>
-                            {% else %}
-                                <p class="font-medium text-primary mb-1">Ready for Next Step!</p>
-                                <p class="text-foreground">You're making strong progress. Consider moving to <strong>{{ s.next_label }}</strong></p>
-                            {% endif %}
-                            
-                            <div class="flex items-center gap-3 mt-3">
-                                <a href="{{ s.link }}" class="btn btn-primary btn-sm">
-                                    {% set step_num = s.next_label.split(".")[0] if "." in s.next_label else "Next" %}
-                                    Continue to Step {{ step_num }}
-                                </a>
-                                <span class="text-xs text-muted-foreground">Confidence: {{ "%.0f" % (s.confidence * 100) }}%</span>
-                            </div>
-                        </div>
-                    </div>
+                    You’re making strong progress. Consider moving to the next step:
+                    <a href="{{ s.link }}" class="text-primary hover:text-primary/80 font-semibold">{{ s.next_label }}</a>
+                    <span class="text-muted-foreground">(confidence {{ '%.0f' % (s.confidence * 100) }}%)</span>
                 </div>
-            </div>            <div class="flex {% if message.role == 'user' %}justify-end{% else %}justify-start{% endif %}" data-message-id="{{ message.id }}">
+            </div>
+            {% endif %}
+            {% for message in messages %}
+            <div class="flex {% if message.role == 'user' %}justify-end{% else %}justify-start{% endif %}" data-message-id="{{ message.id }}">
                 <div class="message-bubble {% if message.role == 'user' %}user{% else %}assistant{% endif %}">
                     {% if message.role == 'assistant' %}
                     <div class="flex items-start gap-3">

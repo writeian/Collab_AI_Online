@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Template Wizard{% endblock %}
+{% block content %}
+  <!-- Main Content Container -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Page Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-foreground mb-2">Template Wizard</h1>
+      <p class="text-muted-foreground">Choose a template to get started with guided room setup</p>
+    </div>
+
+    <!-- Template Selection -->
+    <div class="max-w-6xl mx-auto">
+      <div class="bg-card border border-border rounded-lg p-8">
+        <div class="mb-8">
+          <h2 class="text-2xl font-semibold text-foreground mb-4">Choose Your Template</h2>
+          <p class="text-muted-foreground">Select a template to get started with guided setup, or create a custom room from scratch.</p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <!-- Study Group -->
+          <a href="{{ url_for('room.room_templates.preview_template', template_type='study-group') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
+            <div class="flex items-center mb-3">
+              <i data-lucide="book-open" class="w-5 h-5 text-blue-600 mr-2"></i>
+              <h5 class="font-semibold text-foreground">Study Group</h5>
+            </div>
+            <p class="text-sm text-muted-foreground mb-3">Collaborative learning for students and study groups</p>
+            <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">Academic</span>
+          </a>
+          
+          <!-- Business Hub -->
+          <a href="{{ url_for('room.room_templates.preview_template', template_type='business-hub') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
+            <div class="flex items-center mb-3">
+              <i data-lucide="briefcase" class="w-5 h-5 text-green-600 mr-2"></i>
+              <h5 class="font-semibold text-foreground">Business Hub</h5>
+            </div>
+            <p class="text-sm text-muted-foreground mb-3">Professional collaboration and entrepreneurship</p>
+            <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">Professional</span>
+          </a>
+          
+          <!-- Creative Studio -->
+          <a href="{{ url_for('room.room_templates.preview_template', template_type='creative-studio') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
+            <div class="flex items-center mb-3">
+              <i data-lucide="palette" class="w-5 h-5 text-purple-600 mr-2"></i>
+              <h5 class="font-semibold text-foreground">Creative Studio</h5>
+            </div>
+            <p class="text-sm text-muted-foreground mb-3">Art, design, and creative collaboration</p>
+            <span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">Creative</span>
+          </a>
+          
+          <!-- Writing Workshop -->
+          <a href="{{ url_for('room.room_templates.preview_template', template_type='writing-workshop') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
+            <div class="flex items-center mb-3">
+              <i data-lucide="pen-tool" class="w-5 h-5 text-red-600 mr-2"></i>
+              <h5 class="font-semibold text-foreground">Writing Workshop</h5>
+            </div>
+            <p class="text-sm text-muted-foreground mb-3">Writing projects and peer feedback</p>
+            <span class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">Writing</span>
+          </a>
+          
+          <!-- Learning Lab -->
+          <a href="{{ url_for('room.room_templates.preview_template', template_type='learning-lab') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
+            <div class="flex items-center mb-3">
+              <i data-lucide="flask-conical" class="w-5 h-5 text-amber-600 mr-2"></i>
+              <h5 class="font-semibold text-foreground">Learning Lab</h5>
+            </div>
+            <p class="text-sm text-muted-foreground mb-3">Skill development and hands-on learning</p>
+            <span class="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">Skills</span>
+          </a>
+          
+          <!-- Community Space -->
+          <a href="{{ url_for('room.room_templates.preview_template', template_type='community-space') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
+            <div class="flex items-center mb-3">
+              <i data-lucide="users" class="w-5 h-5 text-indigo-600 mr-2"></i>
+              <h5 class="font-semibold text-foreground">Community Space</h5>
+            </div>
+            <p class="text-sm text-muted-foreground mb-3">Networking and community building</p>
+            <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">Social</span>
+          </a>
+          
+          <!-- Academic Essay -->
+          <a href="{{ url_for('room.room_templates.preview_template', template_type='academic-essay') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
+            <div class="flex items-center mb-3">
+              <i data-lucide="file-text" class="w-5 h-5 text-teal-600 mr-2"></i>
+              <h5 class="font-semibold text-foreground">Academic Essay</h5>
+            </div>
+            <p class="text-sm text-muted-foreground mb-3">10-step research essay process with AI guidance</p>
+            <span class="text-xs bg-teal-100 text-teal-700 px-2 py-1 rounded-full">Academic</span>
+          </a>
+        </div>
+        
+        <div class="text-center">
+          <p class="text-sm text-muted-foreground mb-4">Or create a custom room with full control</p>
+          <a href="{{ url_for('room.room_crud.create_room') }}" class="inline-flex items-center px-6 py-3 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-gray-100 transition-colors">
+            <i data-lucide="settings" class="w-5 h-5 mr-2"></i>
+            Create Custom Room
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+  </script>
+{% endblock %}
