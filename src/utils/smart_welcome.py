@@ -212,7 +212,7 @@ def generate_step_specific_task(template_type: str, learning_step: str, room_id:
     system_prompt = ""
     if room_id:
         try:
-            system_prompt = get_mode_system_prompt(learning_step, room_id)
+            system_prompt = get_mode_system_prompt(learning_step, room_id, None)
         except Exception:
             # Fallback to generic prompt
             system_prompt = f"You are an AI assistant helping with {task_def['focus']}. Focus on {task_def['description']}"
