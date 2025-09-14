@@ -123,16 +123,15 @@
                                 <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
                                 Analyzing your progress...
                             </div>
+        <!-- Document Generation Component -->
+        {% include "components/chat/document_generation.html" %}
                         </div>
                     </div>
                 </div>
             </div>
-            <!-- Spacer to ensure last message is never obscured by the input bar -->
-            <div id="chat-bottom-spacer" aria-hidden="true" style="height:0"></div>
         </div>
 
-        <!-- Document Generation Component -->
-        {% include "components/chat/document_generation.html" %}        <!-- Room Members -->
+        <!-- Room Members -->
         <div class="overflow-y-auto p-4">
             <h4 class="text-sm font-medium mb-3">Room Members</h4>
             {% if room_members %}
@@ -711,7 +710,7 @@
             const isFocus = document.body.classList.contains('focus-mode');
             const buffer = isFocus ? getFocusBufferPx() : getNonFocusBufferPx();
             const spacerHeight = Math.max(0, inputHeight + buffer);
-            if (spacer) spacer.style.height = spacerHeight + 'px';
+            // Spacer removed - if (spacer) spacer.style.height = spacerHeight + 'px';
             // Remove direct padding-bottom manipulations to avoid conflicts
             chatMessagesRef.style.removeProperty('padding-bottom');
             chatMessagesRef.style.setProperty('--chat-input-h', spacerHeight + 'px');
