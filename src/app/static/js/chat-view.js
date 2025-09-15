@@ -5,6 +5,9 @@
         form.style.display = (current === 'none') ? 'block' : 'none';
     }
 
+    // DEPLOYMENT TEST: This should appear in browser console
+    console.log('🚨 MOBILE SCROLL FIX v3.0 LOADED - If you see this, our code is deployed!');
+    
     // Smart auto-scroll function with mobile optimization
     function smartScrollToBottom(chatMessages) {
         if (!chatMessages) return;
@@ -580,6 +583,7 @@
             
             // Mobile-friendly auto-scroll on page load
             const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            console.log('📱 MOBILE DETECTION: isMobile=' + isMobile + ', width=' + window.innerWidth + ', userAgent=' + navigator.userAgent.substring(0, 50));
             
             if (isMobile) {
                 // Mobile: Single, gentle scroll after content loads
