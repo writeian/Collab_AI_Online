@@ -915,9 +915,29 @@ def generate_chat_introduction(room_goals: str, template_type: str = None, learn
         else:
             print(f"=== NO ROOM GOALS TO PROCESS ===")
         
-        enhanced_welcome = f"Welcome! Building on your previous discussion:\n\n{context_preview}{room_goals_section}\n\nWhat aspect would you like to explore next?"
-        print(f"=== ENHANCED FALLBACK WITH GOALS: {len(enhanced_welcome)} chars ===")
-        print(f"=== FULL ENHANCED CONTENT: {enhanced_welcome} ===")
+        # STEP 2 ENHANCEMENT: Add learning mode information and starting task
+        mode_section = ""
+        if room_id:
+            try:
+                from src.models import CustomPrompt
+                custom_prompt = CustomPrompt.query.filter_by(
+                    room_id=room_id, mode_key=learning_step
+                ).first()
+                
+                if custom_prompt:
+                    mode_label = custom_prompt.label
+                    mode_description = custom_prompt.prompt[:200] + "..." if len(custom_prompt.prompt) > 200 else custom_prompt.prompt
+                    
+                    mode_section = f"\n\n🚀 Your Starting Task:\n**{mode_label}**\n{mode_description}\n\nThis step builds on your previous insights and focuses on advancing your learning objectives."
+                    print(f"=== MODE SECTION ADDED: {mode_label} ===")
+                else:
+                    print(f"=== NO CUSTOM PROMPT FOUND for {learning_step} ===")
+            except Exception as e:
+                print(f"=== ERROR getting mode info: {e} ===")
+        
+        enhanced_welcome = f"Welcome! Building on your previous discussion:\n\n{context_preview}{room_goals_section}{mode_section}\n\nReady to continue? Tell me what aspect you'd like to explore first!"
+        print(f"=== STEP 2 ENHANCED FALLBACK: {len(enhanced_welcome)} chars ===")
+        print(f"=== STEP 2 FULL CONTENT: {enhanced_welcome[:300]}... ===")
         return enhanced_welcome
     
     if not room_goals:
