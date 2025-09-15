@@ -463,6 +463,9 @@ def create_chat(room_id: int) -> Any:
             template_type = infer_template_type_from_room(chat_obj.room)
             learning_step = "step1"  # Default to step 1 for new chats
             
+            current_app.logger.info(f"🔍 Chat introduction params: template_type={template_type}, learning_step={learning_step}, room_id={chat_obj.room.id}, chat_id={chat_obj.id}")
+            current_app.logger.info(f"🔍 Room goals: {chat_obj.room.goals[:100]}...")
+            
             introduction = generate_chat_introduction(
                 chat_obj.room.goals, 
                 template_type=template_type, 
@@ -470,6 +473,8 @@ def create_chat(room_id: int) -> Any:
                 room_id=chat_obj.room.id,
                 chat_id=chat_obj.id  # Pass chat_id for context loading
             )
+            
+            current_app.logger.info(f"✅ Introduction generated successfully, length: {len(introduction)} chars")
 
             # Add the AI introduction as the first message
             intro_message = Message(
