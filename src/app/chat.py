@@ -528,7 +528,11 @@ def edit_chat(chat_id: int) -> Any:
 def get_new_messages(chat_id: int) -> Any:
     """Return messages newer than a given message id for incremental polling."""
     try:
-        chat_obj = Chat.query.get_or_404(chat_id)
+        chat_obj = Chat.query.get(chat_id)
+        if not chat_obj:
+            current_app.logger.warning(f"Chat {chat_id} not found for message polling (may be deleted)")
+            return jsonify({"success": False, "error": "Chat not found"}), 404
+            
         after_id = request.args.get("after_id", type=int)
 
         q = Message.query.options(joinedload(Message.user)).filter_by(chat_id=chat_obj.id)
