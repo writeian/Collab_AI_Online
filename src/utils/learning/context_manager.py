@@ -15,6 +15,37 @@ from src.app import db
 logger = logging.getLogger(__name__)
 
 
+def ensure_chat_notes_table_exists() -> bool:
+    """Ensure the chat_notes table exists, create it if missing."""
+    try:
+        from src.models import ChatNotes
+        # Try to query the table to see if it exists
+        ChatNotes.query.first()
+        logger.debug("chat_notes table exists")
+        return True
+    except Exception as e:
+        logger.warning(f"chat_notes table may not exist: {e}")
+        try:
+            # Try to create the table directly
+            db.engine.execute("""
+                CREATE TABLE IF NOT EXISTS chat_notes (
+                    id SERIAL PRIMARY KEY,
+                    chat_id INTEGER NOT NULL UNIQUE REFERENCES chat(id),
+                    room_id INTEGER NOT NULL REFERENCES room(id),
+                    notes_content TEXT NOT NULL,
+                    generated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    message_count INTEGER NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS ix_chat_notes_room_id ON chat_notes(room_id);
+                CREATE INDEX IF NOT EXISTS ix_chat_notes_generated_at ON chat_notes(generated_at);
+            """)
+            logger.info("✅ Created chat_notes table directly")
+            return True
+        except Exception as create_error:
+            logger.error(f"❌ Failed to create chat_notes table: {create_error}")
+            return False
+
+
 def auto_generate_notes_if_needed(chat_id: int) -> bool:
     """
     Automatically generate or update notes for a chat if:
@@ -27,6 +58,11 @@ def auto_generate_notes_if_needed(chat_id: int) -> bool:
     Returns True if notes were generated/updated, False otherwise.
     """
     try:
+        # Ensure table exists before proceeding
+        if not ensure_chat_notes_table_exists():
+            logger.error("Cannot proceed without chat_notes table")
+            return False
+            
         from src.models import Chat, Message
         
         # Get current message count
