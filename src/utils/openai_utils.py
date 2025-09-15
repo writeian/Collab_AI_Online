@@ -847,17 +847,47 @@ def get_next_learning_step(chat: Any, target_mode: Optional[str] = None) -> str:
 def generate_chat_introduction(room_goals: str, template_type: str = None, learning_step: str = "step1", room_id: int = None, chat_id: int = None) -> str:
     """Generate smart chat introduction with contextual goals and starting tasks."""
     
+    print(f"=== INTRODUCTION: template_type={template_type}, learning_step={learning_step}, room_id={room_id}, chat_id={chat_id} ===")
+    
+    # Get learning context first
+    learning_context = None
+    if room_id and chat_id:
+        try:
+            from src.utils.learning.context_manager import get_learning_context_for_room
+            learning_context = get_learning_context_for_room(room_id, exclude_chat_id=chat_id)
+            if learning_context:
+                print(f"=== FOUND LEARNING CONTEXT: {len(learning_context)} chars ===")
+            else:
+                print(f"=== NO LEARNING CONTEXT found for room {room_id} ===")
+        except Exception as e:
+            print(f"=== ERROR getting learning context: {e} ===")
+    
     # If we have template information, use the smart welcome system
     if template_type and learning_step:
         try:
             from .smart_welcome import generate_smart_chat_introduction
-            return generate_smart_chat_introduction(room_goals, template_type, learning_step, room_id, chat_id)
-        except ImportError:
-            # Fallback to original method if smart welcome module not available
-            pass
+            result = generate_smart_chat_introduction(room_goals, template_type, learning_step, room_id, chat_id)
+            print(f"=== SMART WELCOME SUCCESS: {len(result)} chars ===")
+            return result
+        except Exception as e:
+            print(f"=== SMART WELCOME FAILED: {e} ===")
+            # Continue to fallback
     
-    # Fallback to original method for backward compatibility
+    # Enhanced fallback with learning context
+    print(f"=== USING FALLBACK METHOD ===")
+    
+    if learning_context:
+        context_preview = learning_context[:300] + "..." if len(learning_context) > 300 else learning_context
+        enhanced_welcome = f"""Welcome! Building on your previous discussion:
+
+{context_preview}
+
+Let's continue with your learning goals. What would you like to work on today?"""
+        print(f"=== FALLBACK WITH CONTEXT: {len(enhanced_welcome)} chars ===")
+        return enhanced_welcome
+    
     if not room_goals:
+        print(f"=== FALLBACK: NO ROOM GOALS ===")
         return "Welcome! I'm here to help you with your learning. Let's work together to achieve your objectives.\n\nWhat would you like to work on today?"
     
     # Split goals by newlines and clean them up
