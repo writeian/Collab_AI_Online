@@ -903,11 +903,13 @@ def generate_chat_introduction(room_goals: str, template_type: str = None, learn
                     formatted_goals.append(f"• {goal}")
                 
                 if formatted_goals:
-                    room_goals_section = f"""\n\n🎯 Your Learning Goals:\n{chr(10).join(formatted_goals)}"""
+                    goals_text = '\n'.join(formatted_goals)
+                    room_goals_section = f"\n\n🎯 Your Learning Goals:\n{goals_text}"
+                    print(f"=== ROOM GOALS SECTION: {room_goals_section} ===")
         
-        enhanced_welcome = f"""Welcome! Building on your previous discussion:\n\n{context_preview}{room_goals_section}\n\nWhat aspect would you like to explore next?"""
+        enhanced_welcome = f"Welcome! Building on your previous discussion:\n\n{context_preview}{room_goals_section}\n\nWhat aspect would you like to explore next?"
         print(f"=== ENHANCED FALLBACK WITH GOALS: {len(enhanced_welcome)} chars ===")
-        print(f"=== ENHANCED CONTENT: {enhanced_welcome[:200]}... ===")
+        print(f"=== FULL ENHANCED CONTENT: {enhanced_welcome} ===")
         return enhanced_welcome
     
     if not room_goals:
