@@ -375,9 +375,15 @@ def generate_smart_chat_introduction(room_goals: str, template_type: str, learni
         try:
             from .openai_utils import get_mode_system_prompt
             mode_context = get_mode_system_prompt(learning_step, room_id, None)  # Get base mode prompt
-            current_app.logger.info(f"✅ Retrieved mode context for {learning_step}")
+            try:
+                current_app.logger.info(f"✅ Retrieved mode context for {learning_step}")
+            except Exception:
+                pass  # Logging failed, continue
         except Exception as e:
-            current_app.logger.warning(f"Failed to get mode context: {e}")
+            try:
+                current_app.logger.warning(f"Failed to get mode context: {e}")
+            except Exception:
+                pass  # Logging failed, continue
     
     # 3. PRIORITY 3: Get learning context from previous chats
     learning_context = None
@@ -386,11 +392,20 @@ def generate_smart_chat_introduction(room_goals: str, template_type: str, learni
             from src.utils.learning.context_manager import get_learning_context_for_room
             learning_context = get_learning_context_for_room(room_id, exclude_chat_id=chat_id)
             if learning_context:
-                current_app.logger.info(f"✅ Retrieved learning context, length: {len(learning_context)} chars")
+                try:
+                    current_app.logger.info(f"✅ Retrieved learning context, length: {len(learning_context)} chars")
+                except Exception:
+                    pass
             else:
-                current_app.logger.info(f"🔍 No previous learning context found for room {room_id}")
+                try:
+                    current_app.logger.info(f"🔍 No previous learning context found for room {room_id}")
+                except Exception:
+                    pass
         except Exception as e:
-            current_app.logger.warning(f"Failed to get learning context: {e}")
+            try:
+                current_app.logger.warning(f"Failed to get learning context: {e}")
+            except Exception:
+                pass
     
     # 4. PRIORITY 4: Generate context-aware goals and tasks
     relevant_goals = select_context_aware_goals(template_type, learning_step, all_goals, learning_context)
