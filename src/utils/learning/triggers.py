@@ -49,19 +49,43 @@ def trigger_auto_note_generation(message: Any) -> None:
 
 def trigger_context_refresh_for_room(room_id: int) -> None:
     """
-    Trigger a context refresh for all active chats in a room.
+    Generate missing notes for all chats in a room that need them.
     
-    This can be called when new notes are generated to potentially
-    update context for any ongoing conversations in the room.
+    This scans all chats in the room and generates notes for any chat
+    that has reached 5+ message milestones but doesn't have notes yet.
     
     Args:
         room_id: The room ID to refresh context for
     """
     try:
-        from .context_manager import get_completion_stats_for_room
+        from src.models import Chat, Message
+        from .context_manager import auto_generate_notes_if_needed
         
+        # Get all chats in this room
+        room_chats = Chat.query.filter_by(room_id=room_id).all()
+        
+        notes_generated = 0
+        for chat in room_chats:
+            # Get message count for this chat
+            message_count = Message.query.filter_by(chat_id=chat.id).count()
+            
+            if message_count >= 5:
+                # Generate notes for all missing milestones
+                for milestone in range(5, message_count + 1, 5):
+                    try:
+                        # Temporarily set message count to milestone for generation
+                        if auto_generate_notes_for_milestone(chat.id, milestone):
+                            notes_generated += 1
+                            logger.info(f"📝 Generated notes for chat {chat.id} at {milestone} messages")
+                    except Exception as e:
+                        logger.error(f"Failed to generate notes for chat {chat.id} at {milestone}: {e}")
+        
+        logger.info(f"🎓 Generated {notes_generated} note versions for room {room_id}")
+        
+        # Get final stats
+        from .context_manager import get_completion_stats_for_room
         stats = get_completion_stats_for_room(room_id)
-        logger.info(f"🔄 Room {room_id} context stats: {stats['total_completed']} completed chats, "
+        logger.info(f"🔄 Room {room_id} final stats: {stats['total_completed']} completed chats, "
                    f"{len(stats['modes_covered'])} modes covered")
                    
     except Exception as e:
@@ -103,4 +127,63 @@ def should_generate_notes(chat_id: int) -> bool:
         
     except Exception as e:
         logger.error(f"Error checking if notes should be generated for chat {chat_id}: {e}")
+        return False
+
+
+def auto_generate_notes_for_milestone(chat_id: int, target_message_count: int) -> bool:
+    """
+    Generate notes for a specific milestone, even if the chat has more messages.
+    
+    This is used when backfilling notes for existing chats.
+    """
+    try:
+        from src.models import Chat, Message, ChatNotes
+        
+        # Check if notes already exist for this milestone
+        existing = ChatNotes.query.filter_by(
+            chat_id=chat_id,
+            message_count=target_message_count
+        ).first()
+        
+        if existing:
+            logger.debug(f"Notes already exist for chat {chat_id} at {target_message_count} messages")
+            return False
+            
+        # Get chat and first N messages for this milestone
+        chat = Chat.query.get(chat_id)
+        if not chat:
+            logger.error(f"Chat {chat_id} not found")
+            return False
+            
+        messages = Message.query.filter_by(chat_id=chat_id)\
+                                .order_by(Message.timestamp)\
+                                .limit(target_message_count)\
+                                .all()
+        
+        if len(messages) < target_message_count:
+            logger.debug(f"Chat {chat_id} doesn't have {target_message_count} messages yet")
+            return False
+            
+        # Generate notes using existing document generation logic
+        try:
+            from src.app.documents import generate_document_content
+            notes_content = generate_document_content(messages, chat, "notes")
+            
+            # Store the notes
+            from .context_manager import store_chat_notes
+            success = store_chat_notes(chat_id, chat.room_id, notes_content, target_message_count)
+            
+            if success:
+                logger.info(f"✅ Generated milestone notes for chat {chat_id} at {target_message_count} messages")
+                return True
+            else:
+                logger.error(f"❌ Failed to store milestone notes for chat {chat_id}")
+                return False
+                
+        except Exception as gen_error:
+            logger.error(f"Note generation failed for chat {chat_id} at {target_message_count}: {gen_error}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Error generating milestone notes for chat {chat_id} at {target_message_count}: {e}")
         return False
