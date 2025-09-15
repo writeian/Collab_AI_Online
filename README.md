@@ -1,9 +1,13 @@
 # AI Collab Online
 
-Collaborative, rubric‑aware, AI‑assisted writing spaces for teams and educators.
+**Intelligent collaborative learning platform with adaptive AI assistance and cross-chat learning progression.**
+
+A modern educational platform that combines structured learning environments, AI-powered assistance, and intelligent context management to create personalized learning experiences that build upon previous discussions.
 
 [![GitHub](https://img.shields.io/badge/GitHub-Open%20Source-green?style=for-the-badge)](https://github.com/writeian/Collab_AI_Online)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.8%2B-blue?style=for-the-badge)](https://python.org)
+[![Flask](https://img.shields.io/badge/Flask-3.1.1-red?style=for-the-badge)](https://flask.palletsprojects.com/)
 
 ## 🌐 Live
 
@@ -47,7 +51,13 @@ python run.py
 
 ## 🎯 What It Does
 
-AI Collab Online is a **collaborative writing platform** that helps teams and educators create better content together using AI assistance.
+AI Collab Online is an **intelligent learning platform** that creates adaptive, contextual learning experiences through AI-powered assistance and cross-chat learning progression.
+
+### 🧠 **Intelligent Learning Progression**
+- **Automatic note generation** from completed discussions (5+ message milestones)
+- **Cross-chat learning context** that builds on previous insights across multiple conversations
+- **AI-generated welcome messages** that integrate room goals, learning objectives, and previous discussion context
+- **Progressive learning paths** that remember and build upon entire learning journeys
 
 ### **For Educators:**
 - **Create learning environments** with pre-built templates (Study Groups, Academic Essays, Writing Workshops)
@@ -68,51 +78,94 @@ AI Collab Online is a **collaborative writing platform** that helps teams and ed
 - **Get instant feedback** on writing quality and structure
 
 ### **Key Benefits:**
-- 🚀 **Get started in minutes** with 7 pre-built templates
-- 🤖 **AI that understands context** - Responses adapt to your learning stage
-- 👥 **Built for collaboration** - Real-time messaging with threaded discussions
-- 📱 **Works everywhere** - Mobile-responsive design for any device
-- 🎯 **Structured learning** - 10-step progression from exploration to final polish
+- 🧠 **Intelligent Learning Progression** - AI remembers and builds on previous discussions across multiple chats
+- 📝 **Automatic Note Generation** - Creates contextual summaries at 5-message milestones for seamless learning continuity
+- 🎯 **Adaptive Welcome Messages** - AI-generated introductions that integrate room goals, learning objectives, and previous insights
+- 🚀 **Get started in minutes** with 7 pre-built learning templates
+- 🤖 **Context-aware AI** - Responses adapt to your learning stage and previous discussions
+- 👥 **Built for collaboration** - Real-time messaging with intelligent learning progression
+- 📱 **Works everywhere** - Mobile-responsive design with modern glass morphism UI
 
 ---
 
 ## ✨ Core Features
 
-### 🎯 Template / Unified Editor
-- **7 Pre-built templates** for different use cases (Study Group, Business Hub, Academic Essay, etc.)
-- **Unified create/edit page** (`/room/create/learning-steps`) with goals → proposal → refine → create
-- **Mobile-responsive design** with collapsible goal categories
+### 🧠 **Intelligent Learning Progression**
+- **Automatic Note Generation**: Creates contextual summaries at 5, 10, 15... message milestones
+- **Cross-Chat Learning Context**: New chats automatically reference insights from previous discussions
+- **AI-Generated Welcome Messages**: Contextual introductions that integrate room goals + learning objectives + previous work
+- **Progressive Learning Paths**: Flexible, non-linear progression that remembers entire learning journey
+- **Learning Context Management**: Dedicated module for note storage, retrieval, and context enhancement
 
-### 🤖 AI-Powered Collaboration
-- **Anthropic Claude integration** with contextual responses
-- **Learning step progression** (10 stages: Explore → Focus → Draft → Revise)
+### 📝 **Document Generation & Export**
+- **Chat-to-Document Export**: Transform discussions into structured notes, outlines, or raw transcripts
+- **Multiple Formats**: Export as .txt or .docx files
+- **Progressive Messaging**: Export options unlock based on conversation depth
+- **Sidebar Integration**: Convenient dropdown interface for document generation
+
+### 🎯 **Template System & Room Management**
+- **7 Pre-built templates** for different learning contexts (Study Group, Learning Lab, Academic Essay, etc.)
+- **Custom room creation** with user-defined goals and flexible learning progression
+- **Unified create/edit interface** with goals → proposal → refine → create workflow
+- **Mobile-responsive design** with modern glass morphism UI
+
+### 🤖 **AI-Powered Collaboration**
+- **Anthropic Claude integration** with contextual, learning-aware responses
+- **Learning step progression** with mode-specific AI guidance
 - **AI response toggle** with persistent per-chat preferences
-- **Google Docs integration** for document analysis
+- **Google Docs integration** for document analysis and import
 
-### 📊 Admin & Reports
-- **Comprehensive analytics** for student progress tracking
-- **Users report**: `/admin/users` and CSV export `/admin/users.csv`
-- **Pending invite repair** (admin‑only) to clear legacy invitations
-- **System instructions management** for custom AI prompts
+### 📊 **Analytics & Administration**
+- **Learning progression tracking** with automatic note generation analytics
+- **Comprehensive user analytics** with CSV export capabilities
+- **System instructions management** for custom AI prompts and learning modes
 - **Member management** with role-based permissions
+- **Achievement system** with gamification elements
 
-### 💬 Chat Experience
-- Focus mode toggle in chat to maximize writing space
-- Rubric-aware "Assess Progress" with structured recommendations
-- Per-room chat cap (default 25; configurable via `ROOM_MAX_CHATS`)
-- **Modular Flask blueprint architecture** with 85% type coverage
-- **SQLAlchemy 2.0** with Alembic migrations
+### 💬 **Enhanced Chat Experience**
+- **Focus mode toggle** to maximize learning space
+- **Rubric-aware progress assessment** with structured recommendations
+- **Glass morphism UI** with enhanced transparency and modern design
+- **Modular component architecture** with 70% template size reduction
+- **External JavaScript files** with data attribute integration
+- **Auto-dismiss flash messages** with close buttons
+- **Mobile-optimized sidebar** with responsive design
+
+### 🏧 **Architecture & Performance**
+- **Modular Flask blueprint architecture** with comprehensive type coverage
+- **SQLAlchemy 2.0** with Alembic migrations and manual fallbacks
+- **Template modularization** with reusable components
+- **External asset management** with cache-busting
 - **Production-ready** with Railway and Digital Ocean deployment
-- **Comprehensive testing** with pytest and mypy
+- **Comprehensive error handling** and graceful fallbacks
 
 ---
 
-## 🆕 Notable Updates
-- Single, unified create/edit flow for rooms (legacy create page removed)
-- Anthropic 529 handling: retry + goal‑aware fallback (template inference, then Academic Essay as last resort)
-- ENV‑based admin allowlist: `ADMIN_EMAILS`
-- Email via SendGrid (Single Sender or Domain Auth)
-- Refinement v2: AI-constrained learning-steps refinement with history & revert; provider failover; UI progress banner
+## 🆕 **Recent Major Updates**
+
+### 🧠 **Learning Progression System (v2.0)**
+- **Automatic note generation** at 5-message milestones with iterative refinement
+- **Cross-chat learning context** that builds comprehensive learning history
+- **AI-generated welcome messages** integrating room goals + learning objectives + previous insights
+- **Flexible learning paths** supporting non-linear, skippable, and reversible progression
+
+### 📝 **Document Generation & Export**
+- **Chat-to-document transformation** with notes, outlines, and raw export options
+- **Progressive unlock system** based on conversation depth
+- **Multiple format support** (.txt, .docx) with professional formatting
+- **Sidebar integration** with intuitive dropdown interface
+
+### 🎨 **UI/UX Modernization**
+- **70% template size reduction** through JavaScript extraction and component modularization
+- **Learning Green color scheme** with industry-standard design tokens
+- **Glass morphism chat input** with enhanced transparency (65% opacity)
+- **Auto-dismiss flash messages** with close buttons and smooth animations
+
+### 🏧 **Architecture Improvements**
+- **Modular template components** preventing corruption and improving maintainability
+- **External JavaScript files** with data attribute integration
+- **Enhanced error handling** with comprehensive fallback systems
+- **Database migration fallbacks** for robust deployment reliability
 
 ---
 
@@ -131,11 +184,14 @@ AI Collab Online is a **collaborative writing platform** that helps teams and ed
 - **Mobile-optimized** with progressive enhancement
 
 ### AI Services
-- **Anthropic Claude API** for intelligent responses
-- **Contextual learning modes** based on educational stages
+- **Anthropic Claude API** for intelligent, context-aware responses
+- **Learning progression AI** that generates notes and contextual welcome messages
+- **Cross-chat context integration** that maintains learning continuity
+- **Adaptive learning modes** based on educational stages and previous discussions
 - **Error handling** with graceful fallbacks
   - Provider failover via `AI_FAILOVER_ORDER` (e.g., `anthropic,openai,templates`)
-  - Model overrides: `ANTHROPIC_MODEL` (e.g., `claude-3-5-sonnet-20241022` / `claude-3-5-haiku-20241022`), `OPENAI_MODEL` (e.g., `gpt-4o-mini`)
+  - Model overrides: `ANTHROPIC_MODEL` (e.g., `claude-3-5-sonnet-20241022`), `OPENAI_MODEL` (e.g., `gpt-4o-mini`)
+- **Document generation AI** for creating structured notes and outlines from conversations
 
 ### Deployment
 - **Railway** with automatic deployments
@@ -385,19 +441,34 @@ Collab_AI_Online/
 ├── src/                          # Main application source
 │   ├── app/                      # Flask blueprints
 │   │   ├── room/                # Room routes (create/edit flow, services, utils)
-│   │   ├── chat.py              # Chat functionality
+│   │   ├── chat.py              # Chat functionality with learning progression
+│   │   ├── documents.py         # Document generation and export
 │   │   ├── auth.py              # Authentication
 │   │   ├── admin.py             # Admin dashboard & reports
 │   │   ├── analytics.py         # Analytics endpoints
 │   │   ├── achievements.py      # Gamification
 │   │   └── access_control.py    # Permission & guards
 │   ├── models/                   # Database models
+│   │   ├── learning.py          # Learning progression models (ChatNotes)
+│   │   ├── chat.py              # Chat and Message models
+│   │   └── room.py              # Room and membership models
 │   ├── utils/                    # Utility functions
+│   │   ├── learning/            # Learning progression utilities
+│   │   │   ├── context_manager.py   # Note generation and retrieval
+│   │   │   └── triggers.py          # Auto-generation triggers
+│   │   ├── openai_utils.py      # AI integration and welcome generation
+│   │   └── progression.py       # Learning progression logic
 │   └── config/                   # Configuration
 ├── templates/                    # HTML templates
-│   └── room/                     # Unified learning steps create/edit
+│   ├── components/              # Modular template components
+│   │   └── chat/                # Chat-specific components
+│   └── room/                     # Room templates and wizards
+├── static/                       # CSS, JavaScript, images
+│   ├── css/                     # Modular CSS with design tokens
+│   └── js/                      # External JavaScript files
 ├── tests/                        # Test suite
 ├── migrations/                   # Database migrations
+├── docs/                         # Documentation and lessons learned
 └── requirements.txt              # Python dependencies
 ```
 
