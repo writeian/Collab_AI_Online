@@ -27,8 +27,7 @@ def upgrade():
         sa.Column('message_count', sa.Integer(), nullable=False),
         sa.ForeignKeyConstraint(['chat_id'], ['chat.id'], ),
         sa.ForeignKeyConstraint(['room_id'], ['room.id'], ),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('chat_id')
+        sa.PrimaryKeyConstraint('id')
     )
     
     # Create indexes for better performance

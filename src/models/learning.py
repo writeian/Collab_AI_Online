@@ -19,7 +19,7 @@ class ChatNotes(db.Model):
     __tablename__ = 'chat_notes'
     
     id = db.Column(db.Integer, primary_key=True)
-    chat_id = db.Column(db.Integer, db.ForeignKey('chat.id'), nullable=False, unique=True)
+    chat_id = db.Column(db.Integer, db.ForeignKey('chat.id'), nullable=False)
     room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
     notes_content = db.Column(db.Text, nullable=False)
     generated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
@@ -30,4 +30,4 @@ class ChatNotes(db.Model):
     room = db.relationship('Room', backref='chat_notes')
     
     def __repr__(self):
-        return f'<ChatNotes chat_id={self.chat_id} room_id={self.room_id}>'
+        return f'<ChatNotes chat_id={self.chat_id} room_id={self.room_id} msgs={self.message_count}>'

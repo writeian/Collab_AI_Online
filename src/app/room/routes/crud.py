@@ -481,6 +481,13 @@ def create_chat(room_id: int) -> Any:
             )
             db.session.add(fallback_intro)
             db.session.commit()
+            
+        # Generate notes for any previous completed chats in this room
+        try:
+            from src.utils.learning.triggers import trigger_context_refresh_for_room
+            trigger_context_refresh_for_room(room_id)
+        except Exception as e:
+            current_app.logger.error(f"Error generating context for new chat: {e}")
 
         # If Google Doc URL provided, import the content
         if google_doc_url:

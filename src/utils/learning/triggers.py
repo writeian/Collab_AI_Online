@@ -73,8 +73,8 @@ def should_generate_notes(chat_id: int) -> bool:
     Check if a chat should have notes generated.
     
     Returns True if:
-    - Chat has 5+ messages
-    - Notes don't already exist
+    - Chat has reached a 5-message milestone (5, 10, 15, 20...)
+    - Notes don't already exist for this exact message count
     
     Args:
         chat_id: The chat to check
@@ -86,13 +86,20 @@ def should_generate_notes(chat_id: int) -> bool:
         from src.models import Message
         from .context_manager import has_stored_notes
         
-        # Check if notes already exist
-        if has_stored_notes(chat_id):
+        # Get current message count
+        message_count = Message.query.filter_by(chat_id=chat_id).count()
+        
+        # Check if we're at a 5-message milestone
+        if message_count < 5 or message_count % 5 != 0:
             return False
             
-        # Check message count
-        message_count = Message.query.filter_by(chat_id=chat_id).count()
-        return message_count >= 5
+        # Check if notes already exist for this exact message count
+        if has_stored_notes(chat_id, message_count):
+            logger.debug(f"Notes already exist for chat {chat_id} at {message_count} messages")
+            return False
+            
+        logger.info(f"📝 Chat {chat_id} reached {message_count}-message milestone, generating notes")
+        return True
         
     except Exception as e:
         logger.error(f"Error checking if notes should be generated for chat {chat_id}: {e}")

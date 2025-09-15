@@ -1,0 +1,388 @@
+{% extends "base.html" %}
+
+{% block title %}Chat - {{ chat.title }}{% endblock %}
+{% block extra_css %}
+<style>
+  /* Minimal Focus Mode: hides chrome to maximize chat space */
+  body.focus-mode > header, body.focus-mode header { display: none !important; }
+  body.focus-mode .navigation-breadcrumb { display: none !important; }
+  body.focus-mode .chat-sidebar { display: none !important; }
+  body.focus-mode .system-instructions { display: none !important; }
+  body.focus-mode .chat-header { padding-top: 6px; padding-bottom: 6px; }
+  /* Strengthen focus mode to reclaim full viewport */
+  body.focus-mode > footer, body.focus-mode footer { display: none !important; }
+  body.focus-mode main { padding: 0 !important; margin: 0 !important; }
+  body.focus-mode, body.focus-mode html { height: 100%; }
+  body.focus-mode .chat-layout, body.focus-mode .chat-container, body.focus-mode .chat-main { height: 100vh !important; }
+  /* Ensure input is visible in focus mode on desktop */
+  body.focus-mode .chat-input-container { position: fixed !important; left: 0; right: 0; bottom: 0; z-index: 10000; display: block !important; }
+  /* Padding for #chat-messages in focus mode is handled dynamically via JS */
+
+  /* Force identical semi-floating input bar in non-focus mode as well */
+  .chat-input-container {
+    position: fixed !important;
+    left: 16px !important;
+    right: 16px !important;
+    bottom: 16px !important;
+    background: hsl(var(--card) / 0.65) !important;
+    border-top: 1px solid hsl(var(--border)) !important;
+    backdrop-filter: blur(10px) !important;
+    box-shadow: 0 -1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+    padding: 1rem !important;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom)) !important;
+    border-radius: 0.65rem !important;
+    z-index: 10000 !important;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Navigation Breadcrumb -->
+<div class="navigation-breadcrumb px-4 pt-4">
+  <a href="{{ url_for('room.room_crud.index') }}" class="breadcrumb-link">
+    <i data-lucide="home" class="w-4 h-4"></i>
+    Home
+  </a>
+  <span class="breadcrumb-separator">/</span>
+  <a href="{{ url_for('room.room_crud.view_room', room_id=room.id) }}" class="breadcrumb-link">
+    <i data-lucide="users" class="w-4 h-4"></i>
+    {{ room.name }}
+  </a>
+  <span class="breadcrumb-separator">/</span>
+  <span class="breadcrumb-current">{{ chat.title }}</span>
+</div>
+
+<div class="chat-layout">
+    <div class="flex bg-background chat-container h-full">
+    <!-- Sidebar -->
+    <div class="w-80 chat-sidebar flex flex-col h-full max-h-full">
+        <!-- Header -->
+        <div class="p-4 border-b border-border">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="flex items-center gap-2">
+                    <i data-lucide="message-circle" class="w-5 h-5"></i>
+                    {{ room.name }}
+                </h2>
+                <a href="{{ url_for('room.room_crud.view_room', room_id=room.id) }}" 
+                   class="text-sm text-muted-foreground hover:text-foreground">
+                    Back to Room
+                </a>
+            </div>
+            
+            <!-- Chat Info -->
+            <div class="space-y-2">
+                <h3 class="font-medium">{{ chat.title }}</h3>
+                <p class="text-sm text-muted-foreground">
+                    Writing Mode: {{ chat.mode }}
+                </p>
+                {% if chat.google_doc_url %}
+                <p class="text-sm text-muted-foreground">
+                    📄 Google Doc Linked
+                </p>
+                {% endif %}
+                
+                <!-- System Instructions Dropdown -->
+                <details class="mt-4 system-instructions">
+                    <summary class="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground">
+                        🤖 AI Assistant Role
+                    </summary>
+                    <div class="mt-2 p-3 bg-muted rounded-md text-xs system-instructions">
+                        {% if chat.mode in modes %}
+                            {{ modes[chat.mode].prompt }}
+                        {% else %}
+                            <em>Mode: {{ chat.mode }}</em><br><br>
+                            You are a collaborative AI assistant helping with {{ chat.mode.lower() }}. 
+                            I'll guide you through the learning process by asking thoughtful questions 
+                            and helping you develop your skills step by step.
+                        {% endif %}
+                    </div>
+                </details>
+                
+                <!-- Learning Progress Assessment -->
+                <div class="mt-4 learning-progress-section">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-sm font-medium text-foreground">Learning Progress</h4>
+                        <button id="assess-progress-btn" 
+                                class="text-xs px-2 py-1 bg-primary/10 text-primary rounded hover:bg-primary/20 transition-colors"
+                                onclick="assessLearningProgress()">
+                            🔍 Assess Progress
+                        </button>
+                    </div>
+                    
+                    <!-- Progress Status Display -->
+                    <div id="progress-status" class="hidden">
+                        <div id="progress-content" class="p-3 rounded-md text-xs">
+                            <!-- Progress content will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <!-- Loading State -->
+                    <div id="progress-loading" class="hidden">
+                        <div class="p-3 rounded-md text-xs text-muted-foreground">
+                            <div class="flex items-center gap-2">
+                                <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
+                                Analyzing your progress...
+                            </div>
+        <!-- Document Generation Component -->
+        {% include "components/chat/document_generation.html" %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Room Members -->
+        <div class="overflow-y-auto p-4">
+            <h4 class="text-sm font-medium mb-3">Room Members</h4>
+            {% if room_members %}
+            <div class="member-list">
+                {% for member in room_members %}
+                {% set color_class = 'avatar-color-' ~ ((member.id % 6) + 1) %}
+                <div class="member-item">
+                    <div class="member-avatar {{ color_class }}">
+                        <span class="avatar-text">
+                            {% if ' ' in member.display_name %}
+                                {{ member.display_name.split(' ')[0][0] }}{{ member.display_name.split(' ')[1][0] }}
+                            {% else %}
+                                {{ member.display_name[:2] }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="member-info">
+                        <p class="member-name">{{ member.display_name }}</p>
+                    </div>
+                    <div class="member-actions">
+                        <a href="{{ url_for('auth.profile') }}" 
+                           class="member-action-btn primary" title="View Profile">
+                            👤
+                        </a>
+                        <button class="member-action-btn" title="Message (Coming Soon)" disabled>
+                            💬
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-sm text-muted-foreground">No members found.</p>
+            {% endif %}
+        </div>
+
+        <!-- Chat List (if multiple chats) -->
+        <div class="flex-1 overflow-y-auto p-4">
+            <h4 class="text-sm font-medium mb-3">Other Chats</h4>
+            {% if other_chats %}
+            <div class="space-y-2">
+                {% for other_chat in other_chats %}
+                <a href="{{ url_for('chat.view_chat', chat_id=other_chat.id) }}" 
+                   class="block p-3 rounded-lg border border-border hover:bg-muted transition-colors">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1 min-w-0">
+                            <h5 class="font-medium text-sm truncate">{{ other_chat.title }}</h5>
+                            <p class="text-xs text-muted-foreground">{{ other_chat.mode|title }} Mode</p>
+                            <p class="text-xs text-muted-foreground">{{ other_chat.created_at.strftime('%b %d, %Y') }}</p>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span class="text-xs text-muted-foreground">{{ other_chat.messages|length }} messages</span>
+                            <i data-lucide="chevron-right" class="w-4 h-4 text-muted-foreground"></i>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-sm text-muted-foreground">No other chats in this room.</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Main Chat Area -->
+    <div class="flex-1 flex flex-col chat-main relative">
+        <!-- Chat Header -->
+        <div class="p-4 border-b border-border chat-header">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <!-- Mobile Sidebar Toggle (hidden on desktop) -->
+                    <button id="chat-sidebar-toggle" class="md:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" aria-label="Toggle sidebar">
+                        <i data-lucide="panel-left" class="w-5 h-5"></i>
+                    </button>
+                    <div>
+                        <h1 class="text-lg font-medium">{{ chat.title }}</h1>
+                        <p class="text-sm text-muted-foreground">
+                            {{ chat.created_at.strftime('%B %d, %Y') }}
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="focus-mode-toggle"
+                            class="text-muted-foreground hover:text-foreground transition-colors text-sm px-2 py-1 rounded-md hover:bg-muted"
+                            title="Toggle Focus Mode">Focus</button>
+                    <a href="{{ url_for('chat.edit_chat', chat_id=chat.id) }}" 
+                       class="text-muted-foreground hover:text-foreground transition-colors"
+                       title="Edit Chat Details">
+                        <i data-lucide="edit" class="w-4 h-4"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Messages Area -->
+        <div class="flex-1 overflow-y-auto px-4 py-6 space-y-4" id="chat-messages" data-last-id="{{ messages[-1].id if messages else 0 }}">
+            {# Suggestion banner passed from view #}
+            {% if suggestion %}
+            {% set s = suggestion %}
+            <div class="rounded-md border border-border bg-card px-4 py-3" role="note" aria-live="polite">
+                <div class="text-sm">
+                    You’re making strong progress. Consider moving to the next step:
+                    <a href="{{ s.link }}" class="text-primary hover:text-primary/80 font-semibold">{{ s.next_label }}</a>
+                    <span class="text-muted-foreground">(confidence {{ '%.0f' % (s.confidence * 100) }}%)</span>
+                </div>
+            </div>
+            {% endif %}
+            {% for message in messages %}
+            <div class="flex {% if message.role == 'user' %}justify-end{% else %}justify-start{% endif %}" data-message-id="{{ message.id }}">
+                <div class="message-bubble {% if message.role == 'user' %}user{% else %}assistant{% endif %}">
+                    {% if message.role == 'assistant' %}
+                    <div class="flex items-start gap-3">
+                        <div class="ai-avatar">
+                            AI
+                        </div>
+                        <div class="flex-1">
+                            <div class="message-content">
+                                <p>{{ message.content|markdown|safe }}</p>
+                                <p class="message-timestamp">
+                                    <time class="msg-time" data-ts="{{ (message.timestamp.timestamp())|int }}"></time>
+                                    {% if user %}
+                                    <button type="button" class="text-xs text-muted-foreground hover:text-foreground ml-2" data-toggle-comment data-dialogue="{{ loop.index }}">
+                                        💬 Add Comment
+                                    </button>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="flex items-start gap-3">
+                        <div class="flex-1">
+                            <div class="message-content text-right">
+                                <p>{{ message.content|markdown|safe }}</p>
+                                <p class="message-timestamp">
+                                    <time class="msg-time" data-ts="{{ (message.timestamp.timestamp())|int }}"></time>
+                                    {% if user %}
+                                    <button type="button" class="text-xs text-muted-foreground hover:text-foreground ml-2" data-toggle-comment data-dialogue="{{ loop.index }}">
+                                        💬 Add Comment
+                                    </button>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        {% if message.user %}
+                            {% set color_class = 'avatar-color-' ~ ((message.user.id % 6) + 1) %}
+                            <div class="user-avatar {{ color_class }}">
+                                <span class="avatar-text">
+                                    {% if ' ' in message.user.display_name %}
+                                        {{ message.user.display_name.split(' ')[0][0] }}{{ message.user.display_name.split(' ')[1][0] }}
+                                    {% else %}
+                                        {{ message.user.display_name[:2] }}
+                                    {% endif %}
+                                </span>
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Comments for this message -->
+                    {% set message_comments = comments|selectattr('dialogue_number', 'equalto', loop.index)|list %}
+                    {% if message_comments %}
+                    <div class="comment-section">
+                        {% for comment in message_comments %}
+                        <div class="comment-item">
+                            <div class="flex items-center justify-between">
+                                <p class="font-medium">{{ comment.user.display_name }}</p>
+                                {% if user and (comment.user_id == user.id or chat.created_by == user.id) %}
+                                <form method="POST" action="{{ url_for('chat.delete_comment', chat_id=chat.id, comment_id=comment.id) }}"
+                                      class="inline">
+                                    <button type="submit" class="text-red-600 hover:text-red-800 text-sm">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                            <p class="mt-1">{{ comment.content }}</p>
+                            <p class="text-xs text-muted-foreground mt-1">{{ comment.timestamp.strftime('%I:%M %p') }}</p>
+                            
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Add Comment Form -->
+                    {% if user %}
+                    <form method="POST" action="{{ url_for('chat.add_comment', chat_id=chat.id) }}" 
+                          class="comment-form" id="comment-form-{{ loop.index }}" style="display: none;">
+                        <input type="hidden" name="dialogue_number" value="{{ loop.index }}">
+                        <textarea name="comment_content" required 
+                                  class="comment-textarea w-full"
+                                  rows="2" placeholder="Add your comment here..."></textarea>
+                        <div class="flex gap-1 mt-1">
+                            <button type="submit" class="px-2 py-1 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90">
+                                Add
+                            </button>
+                            <button type="button" class="px-2 py-1 text-xs bg-muted text-muted-foreground rounded hover:bg-muted/80" data-toggle-comment data-dialogue="{{ loop.index }}">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Scroll to Bottom Button (hidden by default) -->
+        <button id="scroll-to-bottom" 
+                class="scroll-to-bottom"
+                onclick="scrollToBottom()"
+                title="Scroll to bottom">
+            <i data-lucide="arrow-down" class="w-5 h-5"></i>
+        </button>
+
+        <!-- Message Input -->
+        <div class="p-4 border-t border-border chat-input-container">
+        <form method="POST" action="{{ url_for('chat.view_chat', chat_id=chat.id) }}" class="flex flex-col gap-3" id="message-form">
+            <!-- AI Response Toggle -->
+            <div class="flex items-center gap-2 mb-3">
+                <input type="checkbox" 
+                       id="ai-response-toggle" 
+                       name="ai_response" 
+                       value="1" 
+                       checked
+                       class="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2">
+                <label for="ai-response-toggle" class="text-sm font-medium text-foreground">
+                    🤖 AI Response
+                </label>
+            </div>
+            
+            <div class="flex gap-3 items-end">
+            <textarea name="content"
+                      placeholder="Type your message..."
+                      class="chat-input chat-textarea flex-1"
+                      required
+                      id="message-input"
+                      rows="1"
+                      autocomplete="off"></textarea>
+            <button type="submit" 
+                    class="send-button"
+                    id="send-button">
+                <i data-lucide="send" class="w-4 h-4" id="send-icon"></i>
+                <i data-lucide="loader-2" class="w-4 h-4 animate-spin hidden" id="loading-icon"></i>
+            </button>
+            </div>
+        </form>
+    </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/chat-view.js') }}"></script>{% endblock %}
+
