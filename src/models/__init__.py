@@ -18,6 +18,7 @@ from .google_auth import GoogleAuth
 from .custom_prompt import CustomPrompt
 from .rubric import RubricCriterion, RubricLevel, RoomRubric
 from .refinement import RoomRefinementHistory
+from .learning import ChatNotes
 
 __all__ = [
     "User",
@@ -38,4 +39,5 @@ __all__ = [
     "RubricLevel",
     "RoomRubric",
     "RoomRefinementHistory",
+    "ChatNotes",
 ]

@@ -413,16 +413,17 @@ def get_mode_system_prompt(mode: str, room_id: Optional[int] = None, chat_id: Op
         else:
             base_prompt = "You are an expert instructor helping students with their learning goals. Ask thoughtful questions and provide guidance without doing the work for them."
 
-    # Try to enhance with discussion context if chat_id provided
-    if chat_id:
+    # Try to enhance with learning context from completed chats
+    if chat_id and room_id:
         try:
             from src.models import Message, Chat
+            from src.utils.learning.context_manager import get_learning_context_for_room
             
-            # Check message count - need 5+ for summary
-            message_count = Message.query.filter_by(chat_id=chat_id).count()
+            # Get current chat message count
+            current_message_count = Message.query.filter_by(chat_id=chat_id).count()
             
-            if message_count >= 5:
-                # Get chat and messages for summary generation
+            # If current chat has 5+ messages, use its own context (existing behavior)
+            if current_message_count >= 5:
                 chat_obj = Chat.query.get(chat_id)
                 if chat_obj:
                     messages = Message.query.filter_by(chat_id=chat_id).order_by(Message.timestamp).all()
@@ -431,7 +432,7 @@ def get_mode_system_prompt(mode: str, room_id: Optional[int] = None, chat_id: Op
                     from src.app.documents import generate_document_content
                     summary_notes = generate_document_content(messages, chat_obj, "notes")
                     
-                    # Enhance prompt with context
+                    # Enhance prompt with current chat context
                     enhanced_prompt = f"""{base_prompt}
 
 CONTEXT FROM YOUR RECENT DISCUSSION:
@@ -440,9 +441,24 @@ CONTEXT FROM YOUR RECENT DISCUSSION:
 Building on these insights from your previous exploration, let's now focus on this next step in your learning journey.
 """
                     return enhanced_prompt
+            
+            # If current chat has few messages, try to get context from other completed chats in room
+            elif current_message_count < 5:
+                learning_context = get_learning_context_for_room(room_id, exclude_chat_id=chat_id)
+                
+                if learning_context:
+                    # Enhance prompt with cumulative learning context
+                    enhanced_prompt = f"""{base_prompt}
+
+LEARNING CONTEXT FROM YOUR PREVIOUS DISCUSSIONS:
+{learning_context}
+
+Building on all these insights from your learning journey, let's continue with this next step.
+"""
+                    return enhanced_prompt
                     
         except Exception as e:
-            # Summary generation failed - continue with base prompt
+            # Context enhancement failed - continue with base prompt
             pass
     
     # Return standard prompt if no enhancement possible
