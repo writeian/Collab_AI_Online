@@ -348,26 +348,120 @@ Just let me know how you'd like to begin!"""
 
 def generate_smart_chat_introduction(room_goals: str, template_type: str, learning_step: str, room_id: Optional[int] = None, chat_id: Optional[int] = None) -> str:
     """
-    Generate a smart welcome message with 3 specific goals and a contextual starting task.
+    Generate a smart welcome message with prioritized context:
+    1. Room goals (foundational objectives)
+    2. Learning mode goals (specific step objectives)
+    3. Previous discussion context (notes from completed chats)
+    4. Tailored starting task (building on previous insights)
     
     Args:
         room_goals: String containing all room goals
         template_type: The template type
         learning_step: The current learning step
         room_id: Optional room ID for system prompt generation
+        chat_id: Optional chat ID for learning context
         
     Returns:
-        Smart welcome message
+        Contextually enhanced welcome message
     """
+    from flask import current_app
     
-    # Parse all goals
+    # 1. PRIORITY 1: Parse room goals (foundational)
     all_goals = parse_room_goals(room_goals)
     
-    # Select 3 step-specific goals
-    relevant_goals = select_step_specific_goals(template_type, learning_step, all_goals)
+    # 2. PRIORITY 2: Get mode-specific goals and prompts
+    mode_context = None
+    if room_id:
+        try:
+            from .openai_utils import get_mode_system_prompt
+            mode_context = get_mode_system_prompt(learning_step, room_id, None)  # Get base mode prompt
+            current_app.logger.info(f"✅ Retrieved mode context for {learning_step}")
+        except Exception as e:
+            current_app.logger.warning(f"Failed to get mode context: {e}")
     
-    # Generate specific starting task
-    starting_task = generate_step_specific_task(template_type, learning_step, room_id)
+    # 3. PRIORITY 3: Get learning context from previous chats
+    learning_context = None
+    if room_id and chat_id:
+        try:
+            from src.utils.learning.context_manager import get_learning_context_for_room
+            learning_context = get_learning_context_for_room(room_id, exclude_chat_id=chat_id)
+            if learning_context:
+                current_app.logger.info(f"✅ Retrieved learning context, length: {len(learning_context)} chars")
+            else:
+                current_app.logger.info(f"🔍 No previous learning context found for room {room_id}")
+        except Exception as e:
+            current_app.logger.warning(f"Failed to get learning context: {e}")
     
-    # Format the message
-    return format_smart_welcome_message(template_type, learning_step, relevant_goals, starting_task)
+    # 4. PRIORITY 4: Generate context-aware goals and tasks
+    relevant_goals = select_context_aware_goals(template_type, learning_step, all_goals, learning_context)
+    starting_task = generate_context_aware_task(template_type, learning_step, room_id, learning_context, mode_context)
+    
+    # Format the enhanced message
+    return format_contextual_welcome_message(template_type, learning_step, relevant_goals, starting_task, learning_context)
+
+
+def select_context_aware_goals(template_type: str, learning_step: str, all_goals: Dict[str, List[str]], learning_context: Optional[str] = None) -> List[str]:
+    """Select 3 goals enhanced by learning context from previous chats."""
+    # Start with step-specific goals
+    base_goals = select_step_specific_goals(template_type, learning_step, all_goals)
+    
+    # If no learning context, return base goals
+    if not learning_context:
+        return base_goals
+    
+    return base_goals  # For now, return base goals (can enhance later)
+
+
+def generate_context_aware_task(template_type: str, learning_step: str, room_id: Optional[int] = None, learning_context: Optional[str] = None, mode_context: Optional[str] = None) -> Dict[str, str]:
+    """Generate starting task that builds on previous insights."""
+    # Get base task
+    base_task = generate_step_specific_task(template_type, learning_step, room_id)
+    
+    # If no learning context, return base task
+    if not learning_context:
+        return base_task
+    
+    # Enhance task description to reference previous discussion
+    enhanced_description = base_task["description"]
+    if "platform" in learning_context.lower() and "collaboration" in learning_context.lower():
+        enhanced_description += f" Building on your previous exploration of collaborative learning platforms and technical implementation approaches, let's now focus on applying these insights to {base_task['focus']}."
+    
+    return {
+        "name": base_task["name"],
+        "description": enhanced_description,
+        "focus": base_task["focus"],
+        "prompt": base_task.get("prompt", "")
+    }
+
+
+def format_contextual_welcome_message(template_type: str, learning_step: str, relevant_goals: List[str], starting_task: Dict[str, str], learning_context: Optional[str] = None) -> str:
+    """Format welcome message with learning context integration."""
+    
+    # Start with base welcome message
+    base_message = format_smart_welcome_message(template_type, learning_step, relevant_goals, starting_task)
+    
+    # If learning context exists, add context section
+    if learning_context:
+        # Extract key insights for context preview
+        context_preview = ""
+        if len(learning_context) > 200:
+            # Get first meaningful sentence
+            sentences = learning_context.split('.')
+            for sentence in sentences[:2]:
+                if len(sentence.strip()) > 20:
+                    context_preview = sentence.strip() + "."
+                    break
+        else:
+            context_preview = learning_context[:200] + "..." if len(learning_context) > 200 else learning_context
+        
+        # Insert context section before the "Ready to start?" part
+        context_section = f"""
+🧠 **Building on Your Previous Discussion:**
+{context_preview}
+
+"""
+        
+        # Insert context before "Ready to start?"
+        base_message = base_message.replace("**Ready to start?**", f"{context_section}**Ready to start?**")
+    
+    return base_message
