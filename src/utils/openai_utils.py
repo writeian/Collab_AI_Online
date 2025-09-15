@@ -862,15 +862,21 @@ def generate_chat_introduction(room_goals: str, template_type: str = None, learn
         except Exception as e:
             print(f"=== ERROR getting learning context: {e} ===")
     
-    # If we have template information, use the smart welcome system
+    # If we have template information, use the AI-generated smart welcome system
     if template_type and learning_step:
         try:
-            from .smart_welcome import generate_smart_chat_introduction
-            result = generate_smart_chat_introduction(room_goals, template_type, learning_step, room_id, chat_id)
-            print(f"=== SMART WELCOME SUCCESS: {len(result)} chars ===")
+            result = generate_ai_smart_welcome(
+                room_goals=room_goals,
+                template_type=template_type, 
+                learning_step=learning_step,
+                room_id=room_id,
+                chat_id=chat_id,
+                learning_context=learning_context
+            )
+            print(f"=== AI SMART WELCOME SUCCESS: {len(result)} chars ===")
             return result
         except Exception as e:
-            print(f"=== SMART WELCOME FAILED: {e} ===")
+            print(f"=== AI SMART WELCOME FAILED: {e} ===")
             # Continue to fallback
     
     # Enhanced fallback with learning context
@@ -976,3 +982,156 @@ def get_available_templates() -> Dict[str, Dict[str, str]]:
         }
         for template_id, template_data in BASE_TEMPLATES.items()
     }
+
+
+def generate_ai_smart_welcome(room_goals: str, template_type: str, learning_step: str, room_id: int, chat_id: int, learning_context: str = None) -> str:
+    """
+    Generate an AI-powered smart welcome message that integrates:
+    1. Room goals (foundational objectives)
+    2. Learning mode goals (specific step objectives) 
+    3. Previous discussion context (notes from completed chats)
+    4. Actionable guidance tailored to build on previous insights
+    """
+    
+    # Get mode-specific information
+    mode_info = None
+    if room_id:
+        try:
+            from src.models import CustomPrompt
+            custom_prompt = CustomPrompt.query.filter_by(
+                room_id=room_id, mode_key=learning_step
+            ).first()
+            if custom_prompt:
+                mode_info = {
+                    "label": custom_prompt.label,
+                    "prompt": custom_prompt.prompt
+                }
+        except Exception as e:
+            print(f"Error getting mode info: {e}")
+    
+    # Fallback to base modes if no custom prompt
+    if not mode_info and learning_step in BASE_MODES:
+        mode_info = {
+            "label": BASE_MODES[learning_step].label,
+            "prompt": BASE_MODES[learning_step].prompt
+        }
+    
+    # Template type mapping
+    template_names = {
+        "academic-essay": "research academic essay",
+        "study-group": "study group collaboration", 
+        "business-hub": "business development",
+        "creative-studio": "creative project",
+        "writing-workshop": "writing workshop",
+        "learning-lab": "hands-on learning",
+        "community-space": "community building"
+    }
+    template_name = template_names.get(template_type, "learning project")
+    
+    # Build AI instruction (avoiding f-string with quotes)
+    context_text = learning_context if learning_context else "This is the student's first chat in this room."
+    mode_label = mode_info['label'] if mode_info else learning_step
+    mode_objective = mode_info['prompt'][:200] if mode_info else 'General learning guidance'
+    
+    ai_instruction = f"""You are an expert instructional designer creating a personalized learning welcome message.
+
+CONTEXT:
+- Room Goals: "{room_goals}"
+- Current Learning Mode: "{mode_label}"
+- Template Type: "{template_name.title()}" (hands-on skill development)
+- Mode Objective: "{mode_objective}"
+
+PREVIOUS LEARNING CONTEXT:
+{context_text}
+
+TASK:
+Create a welcome message that:
+1. Acknowledges their previous exploration and insights (if any)
+2. Connects previous discoveries to current step objectives
+3. Provides 3 specific, measurable learning goals for this step
+4. Offers a concrete starting task that builds on their previous work
+5. Maintains clear progress tracking for assessment
+
+FORMAT REQUIREMENTS:
+- Start with contextual greeting referencing previous work
+- Include "🎯 Step X Learning Goals:" section with 3 bullet points
+- Include "🚀 Your Starting Task:" section with specific task
+- Include "Ready to start?" call-to-action
+- Include "Alternative options:" for different learning approaches
+- Keep professional but encouraging tone
+- Reference specific insights from previous discussion when applicable
+
+Generate a welcome message that makes the student feel their previous work is valued while clearly guiding them toward step objectives."""
+
+    # Call AI to generate the welcome message
+    try:
+        ai_welcome, _ = call_anthropic_api(
+            [{"role": "user", "content": ai_instruction}],
+            system_prompt="You are an expert instructional designer. Create structured, encouraging learning welcome messages.",
+            max_tokens=800
+        )
+        
+        print(f"=== AI GENERATED WELCOME: {len(ai_welcome)} chars ===")
+        return ai_welcome
+        
+    except Exception as e:
+        print(f"=== AI WELCOME GENERATION FAILED: {e} ===")
+        # Fallback to enhanced template
+        return generate_enhanced_template_welcome(room_goals, template_type, learning_step, learning_context, mode_info)
+
+
+def generate_enhanced_template_welcome(room_goals: str, template_type: str, learning_step: str, learning_context: str = None, mode_info: dict = None) -> str:
+    """Generate structured welcome using templates enhanced with learning context."""
+    
+    template_names = {
+        "learning-lab": "hands-on learning",
+        "academic-essay": "research academic essay",
+        "study-group": "study group collaboration"
+    }
+    template_name = template_names.get(template_type, "learning project")
+    
+    # Parse room goals into bullet points
+    goals = [goal.strip() for goal in room_goals.split('\n') if goal.strip()]
+    formatted_goals = []
+    for i, goal in enumerate(goals[:3]):  # Take first 3 goals
+        if goal.startswith('To '):
+            goal = goal[3:]
+        goal = goal[0].upper() + goal[1:] if goal else goal
+        if not goal.endswith('.'):
+            goal += '.'
+        formatted_goals.append(f"• {goal}")
+    
+    goals_text = '\n'.join(formatted_goals)
+    
+    # Build welcome message
+    welcome = f"""Welcome! I'm here to help you with your {template_name}. Let's focus on these key goals for this step:
+
+🎯 {learning_step.replace('step', 'Step ').title()} Learning Goals:
+{goals_text}"""
+    
+    # Add learning context if available
+    if learning_context:
+        context_preview = learning_context[:300] + "..." if len(learning_context) > 300 else learning_context
+        welcome += f"""
+
+🧠 Building on Your Previous Discussion:
+{context_preview}"""
+    
+    # Add starting task
+    mode_label = mode_info['label'] if mode_info else f"Step {learning_step[-1]} Development"
+    welcome += f"""
+
+🚀 Your Starting Task:
+{mode_label}
+Let's begin by building on your previous insights and focusing on the specific objectives for this learning step.
+
+Ready to start? Just say "Begin {mode_label.lower()}" or tell me about your {template_name}!
+
+Alternative options:
+• 📚 Tell me about your {template_name} progress first
+• 🎯 Work on a different goal
+• 📋 View all learning goals ({len(goals)} total available)
+
+Just let me know how you'd like to begin!"""
+    
+    return welcome
