@@ -57,6 +57,30 @@ def run_production_migrations(app):
             with app.app_context():
                 db.create_all()
                 print("✓ Basic tables ensured")
+                
+                # CRITICAL: Manually create chat_notes table (migration system broken)
+                try:
+                    from src.models import ChatNotes
+                    ChatNotes.query.first()  # Test if table exists
+                    print("✓ chat_notes table exists")
+                except Exception:
+                    print("⚠️ chat_notes table missing, creating manually...")
+                    try:
+                        db.engine.execute("""
+                            CREATE TABLE IF NOT EXISTS chat_notes (
+                                id SERIAL PRIMARY KEY,
+                                chat_id INTEGER NOT NULL UNIQUE REFERENCES chat(id),
+                                room_id INTEGER NOT NULL REFERENCES room(id),
+                                notes_content TEXT NOT NULL,
+                                generated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                message_count INTEGER NOT NULL
+                            );
+                            CREATE INDEX IF NOT EXISTS ix_chat_notes_room_id ON chat_notes(room_id);
+                            CREATE INDEX IF NOT EXISTS ix_chat_notes_generated_at ON chat_notes(generated_at);
+                        """)
+                        print("✓ chat_notes table created manually")
+                    except Exception as create_error:
+                        print(f"❌ Failed to create chat_notes table: {create_error}")
         except Exception as e:
             print(f"Table creation warning: {e}")
             print("Continuing with app startup...")
