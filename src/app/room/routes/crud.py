@@ -448,7 +448,16 @@ def create_chat(room_id: int) -> Any:
         db.session.add(chat_obj)
         db.session.commit()
 
-        # Generate and add AI introduction message
+        # FIRST: Generate notes for any previous completed chats in this room
+        # This must happen BEFORE the AI introduction so context is available
+        try:
+            from src.utils.learning.triggers import trigger_context_refresh_for_room
+            trigger_context_refresh_for_room(room_id)
+            current_app.logger.info(f"✅ Generated/updated notes for existing chats in room {room_id}")
+        except Exception as e:
+            current_app.logger.error(f"Error generating context for new chat: {e}")
+
+        # THEN: Generate and add AI introduction message with learning context
         try:
             # Infer template type from room characteristics
             template_type = infer_template_type_from_room(chat_obj.room)
@@ -458,7 +467,8 @@ def create_chat(room_id: int) -> Any:
                 chat_obj.room.goals, 
                 template_type=template_type, 
                 learning_step=learning_step, 
-                room_id=chat_obj.room.id
+                room_id=chat_obj.room.id,
+                chat_id=chat_obj.id  # Pass chat_id for context loading
             )
 
             # Add the AI introduction as the first message
@@ -481,13 +491,6 @@ def create_chat(room_id: int) -> Any:
             )
             db.session.add(fallback_intro)
             db.session.commit()
-            
-        # Generate notes for any previous completed chats in this room
-        try:
-            from src.utils.learning.triggers import trigger_context_refresh_for_room
-            trigger_context_refresh_for_room(room_id)
-        except Exception as e:
-            current_app.logger.error(f"Error generating context for new chat: {e}")
 
         # If Google Doc URL provided, import the content
         if google_doc_url:

@@ -844,14 +844,14 @@ def get_next_learning_step(chat: Any, target_mode: Optional[str] = None) -> str:
     return "Focus on integrating evidence and strengthening your argument structure."
 
 
-def generate_chat_introduction(room_goals: str, template_type: str = None, learning_step: str = "step1", room_id: int = None) -> str:
+def generate_chat_introduction(room_goals: str, template_type: str = None, learning_step: str = "step1", room_id: int = None, chat_id: int = None) -> str:
     """Generate smart chat introduction with contextual goals and starting tasks."""
     
     # If we have template information, use the smart welcome system
     if template_type and learning_step:
         try:
             from .smart_welcome import generate_smart_chat_introduction
-            return generate_smart_chat_introduction(room_goals, template_type, learning_step, room_id)
+            return generate_smart_chat_introduction(room_goals, template_type, learning_step, room_id, chat_id)
         except ImportError:
             # Fallback to original method if smart welcome module not available
             pass

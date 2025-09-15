@@ -208,12 +208,15 @@ def generate_step_specific_task(template_type: str, learning_step: str, room_id:
         "focus": "learning assessment and planning"
     }))
     
-    # Get system prompt for this step (if room_id provided)
+    # Get system prompt for this step with learning context (if room_id and chat_id provided)
     system_prompt = ""
     if room_id:
         try:
-            system_prompt = get_mode_system_prompt(learning_step, room_id, None)
-        except Exception:
+            # Pass chat_id to enable learning context loading
+            system_prompt = get_mode_system_prompt(learning_step, room_id, chat_id)
+            current_app.logger.info(f"🧠 Smart welcome using enhanced system prompt with learning context")
+        except Exception as e:
+            current_app.logger.warning(f"Failed to get enhanced system prompt: {e}")
             # Fallback to generic prompt
             system_prompt = f"You are an AI assistant helping with {task_def['focus']}. Focus on {task_def['description']}"
     
@@ -343,7 +346,7 @@ Just let me know how you'd like to begin!"""
     return welcome_message
 
 
-def generate_smart_chat_introduction(room_goals: str, template_type: str, learning_step: str, room_id: Optional[int] = None) -> str:
+def generate_smart_chat_introduction(room_goals: str, template_type: str, learning_step: str, room_id: Optional[int] = None, chat_id: Optional[int] = None) -> str:
     """
     Generate a smart welcome message with 3 specific goals and a contextual starting task.
     
