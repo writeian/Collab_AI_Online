@@ -1673,9 +1673,11 @@
 /* Touch-optimized scrolling for chat messages */
 #chat-messages {
     -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
+    /* Disable smooth scroll on mobile - can interfere with manual scrolling */
+    scroll-behavior: auto;
     overscroll-behavior: contain;
-    scroll-snap-type: y proximity;
+    /* Disable scroll snap on mobile - can interfere with free scrolling */
+    scroll-snap-type: none;
     position: relative;
     /* Ensure the message scroller can grow enough to clear sticky/flow input */
     min-height: 200px;
@@ -1683,9 +1685,10 @@
     padding-bottom: var(--chat-input-h, 0px); /* CSS fallback if JS fails */
 }
 
-/* Message bubbles with scroll snap */
+/* Message bubbles - disable scroll snap for mobile */
 .message-bubble {
-    scroll-snap-align: start;
+    /* Disable scroll snap - can interfere with mobile scrolling */
+    scroll-snap-align: none;
 }
 
 /* Momentum scrolling improvements */
