@@ -402,12 +402,15 @@ def room_chats(room_id: int) -> Any:
 @csrf.exempt
 def create_chat(room_id: int) -> Any:
     """Create a new chat within a room."""
+    # ABSOLUTE FIRST LINE DEBUG - before ANY imports or logic
+    print(f"\n\n=== CRUD ROUTE DEFINITELY HIT: room_id={room_id} ===")
+    
     # CRITICAL DEBUG: Log that this route is being hit
     try:
         from flask import current_app
         current_app.logger.error(f"🚨 CRUD ROUTE HIT: create_chat room_id={room_id}, method={request.method}")
-    except Exception:
-        print(f"CRUD ROUTE HIT: create_chat room_id={room_id}")
+    except Exception as e:
+        print(f"CRUD ROUTE HIT: create_chat room_id={room_id}, logger error: {e}")
     
     from src.models import Chat, Message
     from src.app.access_control import can_create_chats_in_room
