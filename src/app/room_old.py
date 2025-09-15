@@ -783,6 +783,12 @@ def remove_member(room_id: int, user_id: int) -> Any:
 @require_login
 def create_chat(room_id: int) -> Any:
     """Create a new chat within a room."""
+    # CRITICAL DEBUG: Log that OLD route is being hit
+    try:
+        from flask import current_app
+        current_app.logger.error(f"🚨 OLD ROUTE HIT: room_old.create_chat room_id={room_id}, method={request.method}")
+    except Exception:
+        print(f"OLD ROUTE HIT: room_old.create_chat room_id={room_id}")
     room_obj = Room.query.get_or_404(room_id)
     user = get_current_user()
 
