@@ -70,15 +70,13 @@ def trigger_context_refresh_for_room(room_id: int) -> None:
             message_count = Message.query.filter_by(chat_id=chat.id).count()
             
             if message_count >= 5:
-                # Generate notes for all missing milestones
-                for milestone in range(5, message_count + 1, 5):
-                    try:
-                        # Temporarily set message count to milestone for generation
-                        if auto_generate_notes_for_milestone(chat.id, milestone):
-                            notes_generated += 1
-                            logger.info(f"📝 Generated notes for chat {chat.id} at {milestone} messages")
-                    except Exception as e:
-                        logger.error(f"Failed to generate notes for chat {chat.id} at {milestone}: {e}")
+                # Generate/update notes for this chat if needed
+                try:
+                    if auto_generate_notes_if_needed(chat.id):
+                        notes_generated += 1
+                        logger.info(f"📝 Generated/updated notes for chat {chat.id} with {message_count} messages")
+                except Exception as e:
+                    logger.error(f"Failed to generate notes for chat {chat.id}: {e}")
         
         logger.info(f"🎓 Generated {notes_generated} note versions for room {room_id}")
         
@@ -94,21 +92,20 @@ def trigger_context_refresh_for_room(room_id: int) -> None:
 
 def should_generate_notes(chat_id: int) -> bool:
     """
-    Check if a chat should have notes generated.
+    Check if a chat should have notes generated/updated.
     
     Returns True if:
     - Chat has reached a 5-message milestone (5, 10, 15, 20...)
-    - Notes don't already exist for this exact message count
+    - Notes need to be created or updated for this milestone
     
     Args:
         chat_id: The chat to check
         
     Returns:
-        True if notes should be generated, False otherwise
+        True if notes should be generated/updated, False otherwise
     """
     try:
-        from src.models import Message
-        from .context_manager import has_stored_notes
+        from src.models import Message, ChatNotes
         
         # Get current message count
         message_count = Message.query.filter_by(chat_id=chat_id).count()
@@ -117,73 +114,21 @@ def should_generate_notes(chat_id: int) -> bool:
         if message_count < 5 or message_count % 5 != 0:
             return False
             
-        # Check if notes already exist for this exact message count
-        if has_stored_notes(chat_id, message_count):
-            logger.debug(f"Notes already exist for chat {chat_id} at {message_count} messages")
+        # Check if notes need updating (don't exist or are outdated)
+        existing_notes = ChatNotes.query.filter_by(chat_id=chat_id).first()
+        
+        if not existing_notes:
+            logger.info(f"📝 Chat {chat_id} reached {message_count}-message milestone, creating initial notes")
+            return True
+        elif existing_notes.message_count < message_count:
+            logger.info(f"🔄 Chat {chat_id} reached {message_count}-message milestone, updating notes (was {existing_notes.message_count})")
+            return True
+        else:
+            logger.debug(f"Notes already up-to-date for chat {chat_id} at {message_count} messages")
             return False
-            
-        logger.info(f"📝 Chat {chat_id} reached {message_count}-message milestone, generating notes")
-        return True
         
     except Exception as e:
         logger.error(f"Error checking if notes should be generated for chat {chat_id}: {e}")
         return False
 
 
-def auto_generate_notes_for_milestone(chat_id: int, target_message_count: int) -> bool:
-    """
-    Generate notes for a specific milestone, even if the chat has more messages.
-    
-    This is used when backfilling notes for existing chats.
-    """
-    try:
-        from src.models import Chat, Message, ChatNotes
-        
-        # Check if notes already exist for this milestone
-        existing = ChatNotes.query.filter_by(
-            chat_id=chat_id,
-            message_count=target_message_count
-        ).first()
-        
-        if existing:
-            logger.debug(f"Notes already exist for chat {chat_id} at {target_message_count} messages")
-            return False
-            
-        # Get chat and first N messages for this milestone
-        chat = Chat.query.get(chat_id)
-        if not chat:
-            logger.error(f"Chat {chat_id} not found")
-            return False
-            
-        messages = Message.query.filter_by(chat_id=chat_id)\
-                                .order_by(Message.timestamp)\
-                                .limit(target_message_count)\
-                                .all()
-        
-        if len(messages) < target_message_count:
-            logger.debug(f"Chat {chat_id} doesn't have {target_message_count} messages yet")
-            return False
-            
-        # Generate notes using existing document generation logic
-        try:
-            from src.app.documents import generate_document_content
-            notes_content = generate_document_content(messages, chat, "notes")
-            
-            # Store the notes
-            from .context_manager import store_chat_notes
-            success = store_chat_notes(chat_id, chat.room_id, notes_content, target_message_count)
-            
-            if success:
-                logger.info(f"✅ Generated milestone notes for chat {chat_id} at {target_message_count} messages")
-                return True
-            else:
-                logger.error(f"❌ Failed to store milestone notes for chat {chat_id}")
-                return False
-                
-        except Exception as gen_error:
-            logger.error(f"Note generation failed for chat {chat_id} at {target_message_count}: {gen_error}")
-            return False
-            
-    except Exception as e:
-        logger.error(f"Error generating milestone notes for chat {chat_id} at {target_message_count}: {e}")
-        return False

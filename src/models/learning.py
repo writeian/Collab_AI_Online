@@ -19,7 +19,7 @@ class ChatNotes(db.Model):
     __tablename__ = 'chat_notes'
     
     id = db.Column(db.Integer, primary_key=True)
-    chat_id = db.Column(db.Integer, db.ForeignKey('chat.id'), nullable=False)
+    chat_id = db.Column(db.Integer, db.ForeignKey('chat.id'), nullable=False, unique=True)
     room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
     notes_content = db.Column(db.Text, nullable=False)
     generated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)

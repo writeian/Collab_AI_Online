@@ -17,11 +17,14 @@ logger = logging.getLogger(__name__)
 
 def auto_generate_notes_if_needed(chat_id: int) -> bool:
     """
-    Automatically generate and store notes for a chat if:
+    Automatically generate or update notes for a chat if:
     1. Chat has reached a 5-message milestone (5, 10, 15, 20...)
-    2. Notes don't already exist for this exact message count
+    2. This milestone is newer than the last generated notes
     
-    Returns True if notes were generated, False otherwise.
+    Notes are iteratively refined - each milestone updates the same note record
+    with a more comprehensive understanding of the entire conversation.
+    
+    Returns True if notes were generated/updated, False otherwise.
     """
     try:
         from src.models import Chat, Message
@@ -34,23 +37,23 @@ def auto_generate_notes_if_needed(chat_id: int) -> bool:
             logger.debug(f"Chat {chat_id} has {message_count} messages, not at 5-message milestone")
             return False
             
-        # Check if notes already exist for this message count
+        # Check if notes already exist and if they're up to date
         from src.models import ChatNotes
         
-        logger.info(f"🔍 Checking for existing notes: chat_id={chat_id}, message_count={message_count}")
+        logger.info(f"🔍 Checking notes status: chat_id={chat_id}, message_count={message_count}")
         
         try:
-            existing_notes = ChatNotes.query.filter_by(
-                chat_id=chat_id, 
-                message_count=message_count
-            ).first()
+            existing_notes = ChatNotes.query.filter_by(chat_id=chat_id).first()
         except Exception as db_error:
             logger.error(f"❌ Database error checking notes (table may not exist): {db_error}")
             return False
         
-        if existing_notes:
-            logger.debug(f"Notes already exist for chat {chat_id} at {message_count} messages")
+        # If notes exist and are up-to-date, skip generation
+        if existing_notes and existing_notes.message_count >= message_count:
+            logger.debug(f"Notes already up-to-date for chat {chat_id} (stored: {existing_notes.message_count}, current: {message_count})")
             return False
+            
+        logger.info(f"📝 Generating/updating iterative notes for chat {chat_id} at {message_count} messages")
             
         # Get chat and messages
         chat = Chat.query.get(chat_id)
@@ -95,16 +98,26 @@ def store_chat_notes(chat_id: int, room_id: int, notes_content: str, message_cou
     try:
         from src.models import ChatNotes
         
-        # Always create new notes record for each milestone (versioned notes)
-        chat_notes = ChatNotes(
-            chat_id=chat_id,
-            room_id=room_id,
-            notes_content=notes_content,
-            message_count=message_count
-        )
-        db.session.add(chat_notes)
+        # Update existing notes or create new ones (iterative refinement)
+        from src.models import ChatNotes
+        existing = ChatNotes.query.filter_by(chat_id=chat_id).first()
         
-        logger.info(f"📝 Created notes version for chat {chat_id} at {message_count} messages")
+        if existing:
+            # Update existing notes with refined understanding
+            existing.notes_content = notes_content
+            existing.message_count = message_count
+            existing.generated_at = datetime.utcnow()
+            logger.info(f"🔄 Updated iterative notes for chat {chat_id} (was {existing.message_count} msgs, now {message_count} msgs)")
+        else:
+            # Create new notes record
+            chat_notes = ChatNotes(
+                chat_id=chat_id,
+                room_id=room_id,
+                notes_content=notes_content,
+                message_count=message_count
+            )
+            db.session.add(chat_notes)
+            logger.info(f"📝 Created initial notes for chat {chat_id} at {message_count} messages")
         
         db.session.commit()
         return True
@@ -115,43 +128,22 @@ def store_chat_notes(chat_id: int, room_id: int, notes_content: str, message_cou
         return False
 
 
-def has_stored_notes(chat_id: int, message_count: Optional[int] = None) -> bool:
-    """Check if notes already exist for a chat at a specific message count."""
+def has_stored_notes(chat_id: int) -> bool:
+    """Check if notes exist for a chat (simplified for iterative approach)."""
     try:
         from src.models import ChatNotes
-        
-        if message_count:
-            # Check for notes at specific message count
-            return ChatNotes.query.filter_by(
-                chat_id=chat_id, 
-                message_count=message_count
-            ).first() is not None
-        else:
-            # Check if any notes exist for this chat
-            return ChatNotes.query.filter_by(chat_id=chat_id).first() is not None
+        return ChatNotes.query.filter_by(chat_id=chat_id).first() is not None
             
     except Exception as e:
         logger.error(f"Error checking for existing notes for chat {chat_id}: {e}")
         return False
 
 
-def get_chat_notes(chat_id: int, message_count: Optional[int] = None) -> Optional[str]:
-    """Get stored notes for a specific chat, optionally at a specific message count."""
+def get_chat_notes(chat_id: int) -> Optional[str]:
+    """Get stored notes for a chat (simplified for iterative approach)."""
     try:
         from src.models import ChatNotes
-        
-        if message_count:
-            # Get notes for specific message count
-            notes = ChatNotes.query.filter_by(
-                chat_id=chat_id, 
-                message_count=message_count
-            ).first()
-        else:
-            # Get latest notes for this chat
-            notes = ChatNotes.query.filter_by(chat_id=chat_id)\
-                                   .order_by(ChatNotes.message_count.desc())\
-                                   .first()
-                                   
+        notes = ChatNotes.query.filter_by(chat_id=chat_id).first()
         return notes.notes_content if notes else None
         
     except Exception as e:
@@ -176,20 +168,10 @@ def get_learning_context_for_room(room_id: int, exclude_chat_id: Optional[int] =
     try:
         from src.models import ChatNotes
         
-        # Get latest notes for each chat in this room
-        # Use subquery to get the most recent notes per chat
-        from sqlalchemy import func
+        # Get notes for all chats in this room (one note record per chat)
+        from src.models import ChatNotes
         
-        subquery = db.session.query(
-            ChatNotes.chat_id,
-            func.max(ChatNotes.message_count).label('max_messages')
-        ).filter_by(room_id=room_id).group_by(ChatNotes.chat_id).subquery()
-        
-        query = db.session.query(ChatNotes).join(
-            subquery, 
-            (ChatNotes.chat_id == subquery.c.chat_id) & 
-            (ChatNotes.message_count == subquery.c.max_messages)
-        ).filter_by(room_id=room_id)
+        query = ChatNotes.query.filter_by(room_id=room_id)
         
         if exclude_chat_id:
             query = query.filter(ChatNotes.chat_id != exclude_chat_id)
