@@ -458,13 +458,18 @@ def create_chat(room_id: int) -> Any:
         db.session.add(chat_obj)
         db.session.commit()
 
+        print(f"\n=== STEP 1: About to generate notes for room {room_id} ===")
+        
         # FIRST: Generate notes for any previous completed chats in this room
         # This must happen BEFORE the AI introduction so context is available
         try:
             from src.utils.learning.triggers import trigger_context_refresh_for_room
+            print(f"=== STEP 2: Imported trigger_context_refresh_for_room ===")
             trigger_context_refresh_for_room(room_id)
+            print(f"=== STEP 3: Completed trigger_context_refresh_for_room ===")
             current_app.logger.info(f"✅ Generated/updated notes for existing chats in room {room_id}")
         except Exception as e:
+            print(f"=== ERROR in note generation: {e} ===")
             current_app.logger.error(f"Error generating context for new chat: {e}")
 
         # THEN: Generate and add AI introduction message with learning context
