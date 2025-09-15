@@ -885,13 +885,28 @@ def generate_chat_introduction(room_goals: str, template_type: str = None, learn
     
     if learning_context:
         context_preview = learning_context[:300] + "..." if len(learning_context) > 300 else learning_context
-        enhanced_welcome = f"""Welcome! Building on your previous discussion:
-
-{context_preview}
-
-Let's continue with your learning goals. What would you like to work on today?"""
-        print(f"=== FALLBACK WITH CONTEXT: {len(enhanced_welcome)} chars ===")
-        print(f"=== FALLBACK CONTENT: {enhanced_welcome[:200]}... ===")
+        
+        # STEP 1 ENHANCEMENT: Add room goals to the working fallback
+        room_goals_section = ""
+        if room_goals and room_goals.strip():
+            # Format room goals as bullet points
+            goals = [goal.strip() for goal in room_goals.split('\n') if goal.strip()]
+            if goals:
+                formatted_goals = []
+                for goal in goals[:3]:  # Take first 3 goals
+                    if goal.startswith('To '):
+                        goal = goal[3:]
+                    goal = goal[0].upper() + goal[1:] if goal else goal
+                    if not goal.endswith('.'):
+                        goal += '.'
+                    formatted_goals.append(f"• {goal}")
+                
+                if formatted_goals:
+                    room_goals_section = f"""\n\n🎯 Your Learning Goals:\n{chr(10).join(formatted_goals)}"""
+        
+        enhanced_welcome = f"""Welcome! Building on your previous discussion:\n\n{context_preview}{room_goals_section}\n\nWhat aspect would you like to explore next?"""
+        print(f"=== ENHANCED FALLBACK WITH GOALS: {len(enhanced_welcome)} chars ===")
+        print(f"=== ENHANCED CONTENT: {enhanced_welcome[:200]}... ===")
         return enhanced_welcome
     
     if not room_goals:
