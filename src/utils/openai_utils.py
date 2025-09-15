@@ -874,6 +874,7 @@ def generate_chat_introduction(room_goals: str, template_type: str = None, learn
                 learning_context=learning_context
             )
             print(f"=== AI SMART WELCOME SUCCESS: {len(result)} chars ===")
+            print(f"=== RETURNING AI RESULT: {result[:300]}... ===")
             return result
         except Exception as e:
             print(f"=== AI SMART WELCOME FAILED: {e} ===")
@@ -890,6 +891,7 @@ def generate_chat_introduction(room_goals: str, template_type: str = None, learn
 
 Let's continue with your learning goals. What would you like to work on today?"""
         print(f"=== FALLBACK WITH CONTEXT: {len(enhanced_welcome)} chars ===")
+        print(f"=== FALLBACK CONTENT: {enhanced_welcome[:200]}... ===")
         return enhanced_welcome
     
     if not room_goals:
@@ -1072,6 +1074,9 @@ Generate a welcome message that makes the student feel their previous work is va
         )
         
         print(f"=== AI GENERATED WELCOME: {len(ai_welcome)} chars ===")
+        print(f"=== AI WELCOME CONTENT: {ai_welcome[:500]}... ===")
+        print(f"=== ROOM GOALS USED: {room_goals[:200]}... ===")
+        print(f"=== MODE INFO: {mode_info} ===")
         return ai_welcome
         
     except Exception as e:
