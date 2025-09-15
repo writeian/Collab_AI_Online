@@ -862,8 +862,8 @@ def generate_chat_introduction(room_goals: str, template_type: str = None, learn
         except Exception as e:
             print(f"=== ERROR getting learning context: {e} ===")
     
-    # If we have template information, use the AI-generated smart welcome system
-    if template_type and learning_step:
+    # Use AI-generated smart welcome system (works with or without template_type)
+    if learning_step:  # Only need learning_step, template_type can be None
         try:
             result = generate_ai_smart_welcome(
                 room_goals=room_goals,
@@ -1064,7 +1064,7 @@ def generate_ai_smart_welcome(room_goals: str, template_type: str, learning_step
             "prompt": BASE_MODES[learning_step].prompt
         }
     
-    # Template type mapping
+    # Template type mapping (handle None gracefully)
     template_names = {
         "academic-essay": "research academic essay",
         "study-group": "study group collaboration", 
@@ -1074,42 +1074,35 @@ def generate_ai_smart_welcome(room_goals: str, template_type: str, learning_step
         "learning-lab": "hands-on learning",
         "community-space": "community building"
     }
-    template_name = template_names.get(template_type, "learning project")
+    template_name = template_names.get(template_type, "learning project") if template_type else "learning project"
     
     # Build AI instruction (avoiding f-string with quotes)
     context_text = learning_context if learning_context else "This is the student's first chat in this room."
     mode_label = mode_info['label'] if mode_info else learning_step
     mode_objective = mode_info['prompt'][:200] if mode_info else 'General learning guidance'
     
-    ai_instruction = f"""You are an expert instructional designer creating a personalized learning welcome message.
+    # Create clean, conversational AI instruction
+    ai_instruction = f"""Create a welcoming, structured learning message that integrates:
 
-CONTEXT:
-- Room Goals: "{room_goals}"
-- Current Learning Mode: "{mode_label}"
-- Template Type: "{template_name.title()}" (hands-on skill development)
-- Mode Objective: "{mode_objective}"
+ROOM GOALS: {room_goals}
+CURRENT STEP: {mode_label}
+STEP OBJECTIVE: {mode_objective}
 
-PREVIOUS LEARNING CONTEXT:
-{context_text}
+PREVIOUS INSIGHTS: {context_text}
 
-TASK:
-Create a welcome message that:
-1. Acknowledges their previous exploration and insights (if any)
-2. Connects previous discoveries to current step objectives
-3. Provides 3 specific, measurable learning goals for this step
-4. Offers a concrete starting task that builds on their previous work
-5. Maintains clear progress tracking for assessment
+Create a message that:
+1. Welcomes the learner with reference to previous work (if any)
+2. Shows clear learning goals for this step
+3. Provides specific guidance that builds on previous insights
+4. Uses encouraging, professional tone
 
-FORMAT REQUIREMENTS:
-- Start with contextual greeting referencing previous work
-- Include "🎯 Step X Learning Goals:" section with 3 bullet points
-- Include "🚀 Your Starting Task:" section with specific task
-- Include "Ready to start?" call-to-action
-- Include "Alternative options:" for different learning approaches
-- Keep professional but encouraging tone
-- Reference specific insights from previous discussion when applicable
+Format as:
+- Conversational greeting
+- "🎯 Learning Goals:" with 2-3 clear objectives
+- "🚀 Your Next Step:" with specific guidance
+- "Ready to continue?" call-to-action
 
-Generate a welcome message that makes the student feel their previous work is valued while clearly guiding them toward step objectives."""
+Keep it clean, coherent, and encouraging. No technical metadata or truncated content."""
 
     # Call AI to generate the welcome message
     try:
