@@ -605,8 +605,17 @@
                 }, 500);
             }
             
-            // Add scroll event listener to show/hide scroll-to-bottom button
-            chatMessagesEl.addEventListener('scroll', updateScrollButton);
+            // Add scroll event listener with mobile user scroll tracking
+            chatMessagesEl.addEventListener('scroll', function(e) {
+                // Track user scroll activity for mobile
+                const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                if (isMobile) {
+                    window.lastUserScrollTime = Date.now();
+                }
+                
+                // Update scroll button visibility
+                updateScrollButton();
+            });
             
             // Initial check for scroll button visibility
             updateScrollButton();
@@ -724,22 +733,24 @@
                 setLastMessageId(data.last_id || getLastMessageId());
                 // Recompute padding now that input/messages may have shifted
                 try { applyBottomPadding(false); } catch (e) {}
-                // Mobile-aware auto-scroll for new message polling
+                // Mobile-aware auto-scroll with user scroll detection
                 const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                 
                 if (wasNearBottom && !wasNearTop) {
                     if (isMobile) {
-                        // Mobile: MUCH more conservative - only auto-scroll if user is at absolute bottom
-                        const isAtAbsoluteBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) < 10;
-                        if (isAtAbsoluteBottom) {
-                            clearTimeout(window.mobileScrollTimeout);
-                            window.mobileScrollTimeout = setTimeout(() => {
+                        // Mobile: Check if user has scrolled recently (don't interfere with active scrolling)
+                        const now = Date.now();
+                        const timeSinceLastScroll = now - (window.lastUserScrollTime || 0);
+                        
+                        // Only auto-scroll if user hasn't scrolled in the last 3 seconds
+                        if (timeSinceLastScroll > 3000) {
+                            const isAtAbsoluteBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) < 5;
+                            if (isAtAbsoluteBottom) {
                                 container.scrollTop = container.scrollHeight;
-                            }, 200);  // Longer delay
-                        } else {
-                            // User is reading up - don't auto-scroll, just show button
-                            updateScrollButton();
+                            }
                         }
+                        // Always show scroll button for manual control
+                        updateScrollButton();
                     } else {
                         // Desktop: Standard behavior
                         container.scrollTop = container.scrollHeight;
