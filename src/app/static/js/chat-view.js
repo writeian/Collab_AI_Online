@@ -5,16 +5,26 @@
         form.style.display = (current === 'none') ? 'block' : 'none';
     }
 
-    // Smart auto-scroll function
+    // Smart auto-scroll function with mobile optimization
     function smartScrollToBottom(chatMessages) {
         if (!chatMessages) return;
         
-        // Check if user is already near the bottom (within 100px)
-        const isNearBottom = (chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight) < 100;
+        const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        // More generous "near bottom" threshold for mobile (touch scrolling is less precise)
+        const threshold = isMobile ? 150 : 100;
+        const isNearBottom = (chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight) < threshold;
         
         if (isNearBottom) {
-            // User is near bottom, auto-scroll to show new messages
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            if (isMobile) {
+                // Mobile: Gentle scroll with slight delay to avoid conflicts
+                setTimeout(() => {
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }, 50);
+            } else {
+                // Desktop: Immediate scroll
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
         }
         // If user is scrolled up, don't auto-scroll - let them read in peace
     }
@@ -568,27 +578,32 @@
             console.log('Initial scrollTop:', chatMessagesEl.scrollTop);
             console.log('ScrollHeight:', chatMessagesEl.scrollHeight);
             
-            // Always scroll to bottom on page load to show latest messages
-            chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
-            console.log('After scroll - scrollTop:', chatMessagesEl.scrollTop);
+            // Mobile-friendly auto-scroll on page load
+            const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             
-            // Also scroll after a short delay to ensure all content is loaded
-            setTimeout(() => {
+            if (isMobile) {
+                // Mobile: Single, gentle scroll after content loads
+                console.log('Mobile device detected - using gentle scroll');
+                setTimeout(() => {
+                    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+                    console.log('Mobile scroll applied - scrollTop:', chatMessagesEl.scrollTop);
+                }, 300);  // Single scroll after 300ms
+            } else {
+                // Desktop: More aggressive scrolling for reliable positioning
+                console.log('Desktop device - using standard scroll');
                 chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
-                console.log('After 100ms scroll - scrollTop:', chatMessagesEl.scrollTop);
-            }, 100);
-            
-            // Scroll again after images and other content load
-            setTimeout(() => {
-                chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
-                console.log('After 500ms scroll - scrollTop:', chatMessagesEl.scrollTop);
-            }, 500);
-            
-            // One more scroll after everything should be loaded
-            setTimeout(() => {
-                chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
-                console.log('After 1000ms scroll - scrollTop:', chatMessagesEl.scrollTop);
-            }, 1000);
+                console.log('After scroll - scrollTop:', chatMessagesEl.scrollTop);
+                
+                setTimeout(() => {
+                    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+                    console.log('After 100ms scroll - scrollTop:', chatMessagesEl.scrollTop);
+                }, 100);
+                
+                setTimeout(() => {
+                    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+                    console.log('After 500ms scroll - scrollTop:', chatMessagesEl.scrollTop);
+                }, 500);
+            }
             
             // Add scroll event listener to show/hide scroll-to-bottom button
             chatMessagesEl.addEventListener('scroll', updateScrollButton);
@@ -709,9 +724,20 @@
                 setLastMessageId(data.last_id || getLastMessageId());
                 // Recompute padding now that input/messages may have shifted
                 try { applyBottomPadding(false); } catch (e) {}
-                // Only auto-scroll when user was already near bottom before update
+                // Mobile-aware auto-scroll for new message polling
+                const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                
                 if (wasNearBottom && !wasNearTop) {
-                    container.scrollTop = container.scrollHeight;
+                    if (isMobile) {
+                        // Mobile: Debounced scroll to avoid conflicts with user scrolling
+                        clearTimeout(window.mobileScrollTimeout);
+                        window.mobileScrollTimeout = setTimeout(() => {
+                            container.scrollTop = container.scrollHeight;
+                        }, 100);
+                    } else {
+                        // Desktop: Immediate scroll
+                        container.scrollTop = container.scrollHeight;
+                    }
                 } else {
                     // reveal scroll-to-bottom chip
                     updateScrollButton();
