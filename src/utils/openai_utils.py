@@ -881,7 +881,8 @@ def generate_chat_introduction(room_goals: str, template_type: str = None, learn
             # Continue to fallback
     
     # Enhanced fallback with learning context
-    print(f"=== USING FALLBACK METHOD ===")
+    print(f"=== USING FALLBACK METHOD ===" )
+    print(f"=== FALLBACK PARAMS: room_goals={room_goals[:100] if room_goals else 'None'}... learning_context={len(learning_context) if learning_context else 0} chars ===")
     
     if learning_context:
         context_preview = learning_context[:300] + "..." if len(learning_context) > 300 else learning_context
