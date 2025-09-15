@@ -36,10 +36,17 @@ def auto_generate_notes_if_needed(chat_id: int) -> bool:
             
         # Check if notes already exist for this message count
         from src.models import ChatNotes
-        existing_notes = ChatNotes.query.filter_by(
-            chat_id=chat_id, 
-            message_count=message_count
-        ).first()
+        
+        logger.info(f"🔍 Checking for existing notes: chat_id={chat_id}, message_count={message_count}")
+        
+        try:
+            existing_notes = ChatNotes.query.filter_by(
+                chat_id=chat_id, 
+                message_count=message_count
+            ).first()
+        except Exception as db_error:
+            logger.error(f"❌ Database error checking notes (table may not exist): {db_error}")
+            return False
         
         if existing_notes:
             logger.debug(f"Notes already exist for chat {chat_id} at {message_count} messages")
@@ -54,8 +61,15 @@ def auto_generate_notes_if_needed(chat_id: int) -> bool:
         messages = Message.query.filter_by(chat_id=chat_id).order_by(Message.timestamp).all()
         
         # Generate notes using existing document generation logic
-        from src.app.documents import generate_document_content
-        notes_content = generate_document_content(messages, chat, "notes")
+        logger.info(f"📝 Generating notes for chat {chat_id} with {len(messages)} messages")
+        
+        try:
+            from src.app.documents import generate_document_content
+            notes_content = generate_document_content(messages, chat, "notes")
+            logger.info(f"✅ Notes generated successfully, length: {len(notes_content)} chars")
+        except Exception as gen_error:
+            logger.error(f"❌ Note generation failed: {gen_error}")
+            return False
         
         # Store the notes
         success = store_chat_notes(chat_id, chat.room_id, notes_content, message_count)
