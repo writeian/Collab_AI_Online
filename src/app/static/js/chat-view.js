@@ -729,13 +729,19 @@
                 
                 if (wasNearBottom && !wasNearTop) {
                     if (isMobile) {
-                        // Mobile: Debounced scroll to avoid conflicts with user scrolling
-                        clearTimeout(window.mobileScrollTimeout);
-                        window.mobileScrollTimeout = setTimeout(() => {
-                            container.scrollTop = container.scrollHeight;
-                        }, 100);
+                        // Mobile: MUCH more conservative - only auto-scroll if user is at absolute bottom
+                        const isAtAbsoluteBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) < 10;
+                        if (isAtAbsoluteBottom) {
+                            clearTimeout(window.mobileScrollTimeout);
+                            window.mobileScrollTimeout = setTimeout(() => {
+                                container.scrollTop = container.scrollHeight;
+                            }, 200);  // Longer delay
+                        } else {
+                            // User is reading up - don't auto-scroll, just show button
+                            updateScrollButton();
+                        }
                     } else {
-                        // Desktop: Immediate scroll
+                        // Desktop: Standard behavior
                         container.scrollTop = container.scrollHeight;
                     }
                 } else {
