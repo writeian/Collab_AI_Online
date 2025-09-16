@@ -14,8 +14,8 @@
         
         const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
-        // More generous "near bottom" threshold for mobile (touch scrolling is less precise)
-        const threshold = isMobile ? 150 : 100;
+        // STRICT "near bottom" threshold for mobile to prevent scroll traps
+        const threshold = isMobile ? 20 : 100;  // Much stricter on mobile
         const isNearBottom = (chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight) < threshold;
         
         if (isNearBottom) {
