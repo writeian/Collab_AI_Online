@@ -117,6 +117,99 @@ def index() -> Any:
         flash("Failed to load rooms. Please try again.", "error")
         return render_template("error.html", error="Failed to load rooms"), 500
 
+
+@crud_bp.route("/enhanced")
+@require_login
+def enhanced_index() -> Any:
+    """Enhanced room dashboard with activity-based sorting."""
+    current_app.logger.info("🚀 Enhanced route hit: Activity-sorted room dashboard")
+    
+    try:
+        user = get_current_user()
+        current_app.logger.info(f"🚀 Enhanced user: {user.username if user else 'None'}")
+        
+        # Use the proven working RoomService
+        rooms_data = RoomService.get_user_rooms(user)
+        owned_rooms = rooms_data["owned"]
+        member_rooms = rooms_data["member"]
+        
+        # Simple activity-based sorting using existing data
+        all_rooms = []
+        
+        # Add owned rooms with owner flag
+        for room in owned_rooms:
+            all_rooms.append({
+                "room": room,
+                "is_owner": True,
+                "activity_score": get_simple_activity_score(room),
+                "unread_count": 0  # Simplified for now
+            })
+        
+        # Add member rooms
+        for room in member_rooms:
+            all_rooms.append({
+                "room": room,
+                "is_owner": False,
+                "activity_score": get_simple_activity_score(room),
+                "unread_count": 0  # Simplified for now
+            })
+        
+        # Sort by activity score (highest first)
+        all_rooms.sort(key=lambda x: -x["activity_score"])
+        
+        current_app.logger.info(f"🚀 Enhanced: Sorted {len(all_rooms)} rooms by activity")
+        
+        # Get invitation count
+        invitation_count = get_invitation_count(user)
+        
+        return render_template(
+            "room/index.html",  # Use existing working template
+            owned_rooms=owned_rooms,  # Keep original structure
+            member_rooms=member_rooms,
+            invitation_count=invitation_count,
+            user=user,
+            # Add enhanced data for future use
+            enhanced_rooms=all_rooms,
+            is_enhanced=True
+        )
+        
+    except Exception as e:
+        current_app.logger.error(f"Enhanced: Error in enhanced index: {e}")
+        import traceback
+        current_app.logger.error(f"Enhanced: Traceback: {traceback.format_exc()}")
+        flash("Enhanced dashboard failed. Redirecting to standard view.", "warning")
+        return redirect(url_for('room.room_crud.index'))
+
+
+def get_simple_activity_score(room: Room) -> int:
+    """Simple activity scoring using basic queries."""
+    try:
+        from datetime import datetime, timedelta
+        from src.models import Chat, Message
+        
+        # Count recent activity (last 7 days)
+        cutoff_date = datetime.utcnow() - timedelta(days=7)
+        
+        recent_chats = Chat.query.filter(
+            Chat.room_id == room.id,
+            Chat.created_at >= cutoff_date
+        ).count()
+        
+        recent_messages = Message.query.join(Chat).filter(
+            Chat.room_id == room.id,
+            Message.timestamp >= cutoff_date
+        ).count()
+        
+        # Simple scoring: chats worth 5 points, messages worth 1 point
+        activity_score = (recent_chats * 5) + recent_messages
+        
+        return activity_score
+        
+    except Exception as e:
+        current_app.logger.warning(f"Error calculating activity score for room {room.id}: {e}")
+        return 0
+
+
 @crud_bp.route("/create", methods=["GET", "POST"])
 @require_login
 @csrf.exempt
