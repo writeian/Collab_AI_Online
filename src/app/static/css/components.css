@@ -1685,21 +1685,13 @@
     padding-bottom: var(--chat-input-h, 0px); /* CSS fallback if JS fails */
 }
 
-/* Mobile-specific height fixes */
+/* Mobile-specific improvements (removed aggressive height constraints) */
 @media (max-width: 768px) {
     #chat-messages {
-        /* Force minimum height on mobile to ensure scrollable area */
-        min-height: 60vh;
+        /* Gentle minimum height - don't force full viewport */
+        min-height: 300px;
         /* Ensure flex grows properly on mobile */
-        flex: 1 1 0%;
-        /* Force height calculation */
-        height: 0;
-    }
-    
-    .chat-main {
-        /* Ensure chat main area takes full height on mobile */
-        min-height: 100vh;
-        height: 100vh;
+        flex: 1 1 auto;
     }
 }
 
