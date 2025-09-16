@@ -7,7 +7,7 @@ from flask import Blueprint, render_template, current_app
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 from src.app import db
-from src.models import Room, Chat, Message
+from src.models import Room, Chat, Message, User
 from src.app.access_control import get_current_user, require_login
 from src.app.room.services.room_service import RoomService
 
