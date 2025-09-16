@@ -575,6 +575,8 @@
         }
         
         console.log('Chat messages container found:', chatMessagesEl);
+        console.log('📱 CONTAINER DIMENSIONS: scrollHeight=' + chatMessagesEl.scrollHeight + ', clientHeight=' + chatMessagesEl.clientHeight + ', scrollTop=' + chatMessagesEl.scrollTop);
+        console.log('📱 VIEWPORT: window.innerHeight=' + window.innerHeight + ', window.innerWidth=' + window.innerWidth);
         
         if (chatMessagesEl) {
             console.log('Scrolling to bottom...');
