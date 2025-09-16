@@ -10,7 +10,7 @@ from src.app import csrf
 room = Blueprint("room", __name__)
 
 # Import route blueprints to ensure they're registered
-from .routes import crud, templates, invitations, api, refine
+from .routes import crud, templates, invitations, api, refine, beta
 
 # Register route blueprints
 room.register_blueprint(crud.crud_bp, url_prefix="")
@@ -18,6 +18,7 @@ room.register_blueprint(templates.templates_bp, url_prefix="/template")
 room.register_blueprint(invitations.invitations_bp, url_prefix="/<int:room_id>")
 room.register_blueprint(api.api_bp, url_prefix="/api")
 room.register_blueprint(refine.refine_bp, url_prefix="")
+room.register_blueprint(beta.beta_bp, url_prefix="/beta")
 
 # Learning steps management routes (backward-compat)
 @room.route('/<int:room_id>/update-learning-steps', methods=['POST', 'OPTIONS'])
