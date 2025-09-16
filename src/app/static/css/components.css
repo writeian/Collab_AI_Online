@@ -1685,6 +1685,24 @@
     padding-bottom: var(--chat-input-h, 0px); /* CSS fallback if JS fails */
 }
 
+/* Mobile-specific height fixes */
+@media (max-width: 768px) {
+    #chat-messages {
+        /* Force minimum height on mobile to ensure scrollable area */
+        min-height: 60vh;
+        /* Ensure flex grows properly on mobile */
+        flex: 1 1 0%;
+        /* Force height calculation */
+        height: 0;
+    }
+    
+    .chat-main {
+        /* Ensure chat main area takes full height on mobile */
+        min-height: 100vh;
+        height: 100vh;
+    }
+}
+
 /* Message bubbles - disable scroll snap for mobile */
 .message-bubble {
     /* Disable scroll snap - can interfere with mobile scrolling */

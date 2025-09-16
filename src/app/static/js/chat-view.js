@@ -744,21 +744,12 @@
                 
                 if (wasNearBottom && !wasNearTop) {
                     if (isMobile) {
-                        // Mobile: Check if user has scrolled recently (don't interfere with active scrolling)
-                        const now = Date.now();
-                        const timeSinceLastScroll = now - (window.lastUserScrollTime || 0);
-                        
-                        // Only auto-scroll if user hasn't scrolled in the last 3 seconds
-                        if (timeSinceLastScroll > 3000) {
-                            const isAtAbsoluteBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) < 5;
-                            if (isAtAbsoluteBottom) {
-                                container.scrollTop = container.scrollHeight;
-                            }
-                        }
-                        // Always show scroll button for manual control
+                        // Mobile: NEVER auto-scroll during polling - always use manual scroll button
+                        // This prevents the "scroll trap" behavior where users can't scroll up
+                        console.log('📱 Mobile polling - showing scroll button instead of auto-scroll');
                         updateScrollButton();
                     } else {
-                        // Desktop: Standard behavior
+                        // Desktop: Standard auto-scroll behavior
                         container.scrollTop = container.scrollHeight;
                     }
                 } else {
