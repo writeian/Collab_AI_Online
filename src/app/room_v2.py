@@ -15,34 +15,68 @@ from src.app.room.services.room_service import RoomService
 room_v2 = Blueprint("room_v2", __name__)
 
 
-def calculate_activity_score(room: Room) -> int:
+def get_room_statistics(room: Room) -> Dict[str, Any]:
     """
-    Step 1: Simple activity scoring for room sorting.
-    Counts recent chats and messages to determine activity level.
+    Step 2: Enhanced room statistics for detailed display.
+    Returns comprehensive room activity and member data.
     """
     try:
-        # Look at last 7 days
-        cutoff_date = datetime.utcnow() - timedelta(days=7)
+        from src.models import RoomMember
+        
+        # Look at last 7 days for recent activity
+        recent_cutoff = datetime.utcnow() - timedelta(days=7)
+        
+        # Count all-time activity
+        total_chats = Chat.query.filter_by(room_id=room.id).count()
+        total_messages = Message.query.join(Chat).filter(Chat.room_id == room.id).count()
         
         # Count recent activity
         recent_chats = Chat.query.filter(
             Chat.room_id == room.id,
-            Chat.created_at >= cutoff_date
+            Chat.created_at >= recent_cutoff
         ).count()
         
         recent_messages = Message.query.join(Chat).filter(
             Chat.room_id == room.id,
-            Message.timestamp >= cutoff_date
+            Message.timestamp >= recent_cutoff
         ).count()
         
-        # Simple scoring: chats = 10 points, messages = 1 point
-        score = (recent_chats * 10) + recent_messages
+        # Get member count
+        member_count = RoomMember.query.filter_by(room_id=room.id).count() + 1  # +1 for owner
         
-        return score
+        # Get last activity
+        last_message = Message.query.join(Chat).filter(
+            Chat.room_id == room.id
+        ).order_by(Message.timestamp.desc()).first()
+        
+        last_activity = last_message.timestamp if last_message else room.created_at
+        
+        # Calculate activity score
+        activity_score = (recent_chats * 10) + recent_messages
+        
+        return {
+            "total_chats": total_chats,
+            "total_messages": total_messages,
+            "recent_chats": recent_chats,
+            "recent_messages": recent_messages,
+            "member_count": member_count,
+            "last_activity": last_activity,
+            "activity_score": activity_score,
+            "has_recent_activity": activity_score > 0
+        }
         
     except Exception as e:
-        current_app.logger.warning(f"Activity score error for room {room.id}: {e}")
-        return 0
+        current_app.logger.warning(f"Statistics error for room {room.id}: {e}")
+        return {
+            "total_chats": 0,
+            "total_messages": 0,
+            "recent_chats": 0,
+            "recent_messages": 0,
+            "member_count": 1,
+            "last_activity": room.created_at,
+            "activity_score": 0,
+            "has_recent_activity": False
+        }
 
 
 @room_v2.route("/")
@@ -63,37 +97,37 @@ def index() -> Any:
         # Combine and score all rooms
         all_rooms = []
         
-        # Process owned rooms
+        # Process owned rooms with enhanced statistics
         for room in owned_rooms:
-            score = calculate_activity_score(room)
+            stats = get_room_statistics(room)
             all_rooms.append({
                 "room": room,
                 "is_owner": True,
-                "activity_score": score
+                "stats": stats
             })
         
-        # Process member rooms
+        # Process member rooms with enhanced statistics
         for room in member_rooms:
-            score = calculate_activity_score(room)
+            stats = get_room_statistics(room)
             all_rooms.append({
                 "room": room,
                 "is_owner": False,
-                "activity_score": score
+                "stats": stats
             })
         
         # Sort by activity (highest first)
-        all_rooms.sort(key=lambda x: -x["activity_score"])
+        all_rooms.sort(key=lambda x: -x["stats"]["activity_score"])
         
-        current_app.logger.info(f"🚀 V2: Sorted {len(all_rooms)} rooms by activity")
+        current_app.logger.info(f"🚀 V2 STEP 2: Sorted {len(all_rooms)} rooms with enhanced statistics")
         
         # Log top 3 for verification
         for i, room_data in enumerate(all_rooms[:3]):
             room = room_data["room"]
-            score = room_data["activity_score"]
-            current_app.logger.info(f"🚀 V2 #{i+1}: {room.name[:40]} (Score: {score})")
+            stats = room_data["stats"]
+            current_app.logger.info(f"🚀 V2 #{i+1}: {room.name[:30]} - {stats['total_chats']} chats, {stats['total_messages']} messages (Score: {stats['activity_score']})")
         
         return render_template(
-            "room_v2_step1.html",
+            "room_v2_step2.html",
             sorted_rooms=all_rooms,
             user=user,
             total_rooms=len(all_rooms)

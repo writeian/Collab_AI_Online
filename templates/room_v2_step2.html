@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}AI Collab - Enhanced Home (V2 Step 2){% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  
+  <!-- Step 2 Progress Banner -->
+  <div class="mb-6 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg p-4">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-medium">STEP 2</div>
+        <div>
+          <h4 class="font-medium text-blue-900">Activity Sorting + Enhanced Statistics</h4>
+          <p class="text-sm text-blue-700">{{ total_rooms }} rooms with chat counts, message counts, and activity indicators</p>
+        </div>
+      </div>
+      <a href="/room/" class="text-blue-600 hover:text-blue-800 text-sm font-medium">← Back to Original</a>
+    </div>
+  </div>
+
+  <!-- Welcome Section -->
+  <div class="mb-8">
+    <h2 class="text-3xl font-bold text-foreground mb-4">Welcome, {{ user.username }}!</h2>
+    <p class="text-lg text-muted-foreground mb-6">
+      Step 2: Activity sorting with enhanced statistics
+    </p>
+  </div>
+
+  <!-- Step 2: Enhanced Room List with Statistics -->
+  {% if sorted_rooms %}
+  <div class="mb-8">
+    <h3 class="text-xl font-semibold text-foreground mb-6">
+      My Learning Spaces
+      <span class="text-sm text-muted-foreground font-normal">(Sorted by Recent Activity)</span>
+    </h3>
+    
+    <div class="space-y-4">
+      {% for room_data in sorted_rooms %}
+      {% set room = room_data.room %}
+      {% set is_owner = room_data.is_owner %}
+      {% set stats = room_data.stats %}
+      
+      <div class="bg-card border border-border rounded-lg p-5 hover:shadow-md transition-shadow {% if stats.has_recent_activity %}ring-1 ring-green-200 bg-green-50/30{% endif %}">
+        <!-- Header Row -->
+        <div class="flex items-center justify-between mb-3">
+          <!-- Left: Room Info -->
+          <div class="flex items-center space-x-3">
+            <!-- Room Link -->
+            <h4 class="text-lg font-semibold">
+              <a href="{{ url_for('room.room_crud.view_room', room_id=room.id) }}" 
+                 class="text-primary hover:text-primary/80 transition-colors">
+                {{ room.name }}
+              </a>
+            </h4>
+            
+            <!-- Owner Badge -->
+            {% if is_owner %}
+              <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
+                👑 Owner
+              </span>
+            {% else %}
+              <span class="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full font-medium">
+                👤 Member
+              </span>
+            {% endif %}
+            
+            <!-- Activity Indicator -->
+            {% if stats.has_recent_activity %}
+              <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
+                🔥 Active (7 days)
+              </span>
+            {% endif %}
+          </div>
+          
+          <!-- Right: Activity Score -->
+          <div class="text-sm">
+            <span class="bg-emerald-100 text-emerald-800 text-xs px-3 py-1 rounded-full font-medium">
+              Score: {{ stats.activity_score }}
+            </span>
+          </div>
+        </div>
+        
+        <!-- Enhanced Statistics Row -->
+        <div class="flex items-center space-x-6 mb-3 text-sm text-muted-foreground">
+          <div class="flex items-center space-x-1">
+            <i data-lucide="message-circle" class="w-4 h-4 text-blue-500"></i>
+            <span><strong>{{ stats.total_chats }}</strong> chats</span>
+            {% if stats.recent_chats > 0 %}
+              <span class="text-green-600">(+{{ stats.recent_chats }} recent)</span>
+            {% endif %}
+          </div>
+          <div class="flex items-center space-x-1">
+            <i data-lucide="messages" class="w-4 h-4 text-purple-500"></i>
+            <span><strong>{{ stats.total_messages }}</strong> messages</span>
+            {% if stats.recent_messages > 0 %}
+              <span class="text-green-600">(+{{ stats.recent_messages }} recent)</span>
+            {% endif %}
+          </div>
+          <div class="flex items-center space-x-1">
+            <i data-lucide="users" class="w-4 h-4 text-indigo-500"></i>
+            <span><strong>{{ stats.member_count }}</strong> members</span>
+          </div>
+          <div class="flex items-center space-x-1">
+            <i data-lucide="clock" class="w-4 h-4 text-orange-500"></i>
+            <span>Last: {{ stats.last_activity.strftime('%m/%d/%y') }}</span>
+          </div>
+        </div>
+        
+        <!-- Description -->
+        {% if room.short_description %}
+        <p class="text-sm text-muted-foreground leading-relaxed mb-3">
+          {{ room.short_description[:180] }}{% if room.short_description|length > 180 %}...{% endif %}
+        </p>
+        {% endif %}
+        
+        <!-- Footer Info -->
+        <div class="flex items-center justify-between text-xs text-muted-foreground">
+          <div>
+            Created {{ room.created_at.strftime('%Y-%m-%d %H:%M') }}
+          </div>
+          {% if stats.activity_score > 0 %}
+          <div class="text-green-600">
+            Recent activity detected
+          </div>
+          {% else %}
+          <div>
+            No recent activity
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
