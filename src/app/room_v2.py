@@ -140,17 +140,18 @@ def index() -> Any:
         # Count rooms with unread messages
         rooms_with_unread = sum(1 for room_data in all_rooms if room_data["stats"]["has_unread"])
         
-        current_app.logger.info(f"🚀 V2 STEP 3: Sorted {len(all_rooms)} rooms with unread detection ({rooms_with_unread} with unread)")
+        current_app.logger.info(f"🚀 V2 STEP 4: Sorted {len(all_rooms)} rooms with collapsible details ({rooms_with_unread} with unread)")
         
         # Log top 3 for verification
         for i, room_data in enumerate(all_rooms[:3]):
             room = room_data["room"]
             stats = room_data["stats"]
             unread_info = f", {stats['unread_messages']} unread" if stats['has_unread'] else ""
-            current_app.logger.info(f"🚀 V2 #{i+1}: {room.name[:30]} - {stats['total_chats']} chats, {stats['total_messages']} messages{unread_info} (Score: {stats['activity_score']})")
+            goals_info = f", has goals" if room.goals else ", no goals"
+            current_app.logger.info(f"🚀 V2 #{i+1}: {room.name[:30]} - {stats['total_chats']} chats, {stats['total_messages']} messages{unread_info}{goals_info} (Score: {stats['activity_score']})")
         
         return render_template(
-            "room_v2_step3.html",
+            "room_v2_step4.html",
             sorted_rooms=all_rooms,
             user=user,
             total_rooms=len(all_rooms)
