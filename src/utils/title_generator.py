@@ -10,33 +10,22 @@ import re
 
 def generate_short_title(room_name: str, room_goals: Optional[str] = None) -> str:
     """
-    Generate a concise 1-5 word title for a room using AI.
-    Falls back to smart extraction if AI fails.
+    Generate a concise 2-4 word title for a room using AI.
+    Trust the AI to follow instructions - no complex fallbacks.
     """
     try:
-        # First try AI generation
+        # Use AI generation - trust it to follow the prompt
         ai_title = _generate_ai_title(room_name, room_goals)
-        if ai_title and _is_valid_short_title(ai_title):
-            current_app.logger.info(f"AI title generated: '{room_name}' → '{ai_title}'")
-            return ai_title
+        if ai_title and ai_title.strip():
+            current_app.logger.info(f"✅ AI title: '{room_name}' → '{ai_title}'")
+            return ai_title.strip()
             
     except Exception as e:
-        current_app.logger.warning(f"AI title generation failed: {e}")
+        current_app.logger.error(f"❌ AI title generation error: {e}")
     
-    # Fallback to smart extraction
-    try:
-        extracted_title = _extract_smart_title(room_name)
-        if extracted_title and _is_valid_short_title(extracted_title):
-            current_app.logger.info(f"Smart extraction: '{room_name}' → '{extracted_title}'")
-            return extracted_title
-            
-    except Exception as e:
-        current_app.logger.warning(f"Smart extraction failed: {e}")
-    
-    # Final fallback to truncated original
-    fallback_title = _truncate_title(room_name)
-    current_app.logger.info(f"Fallback title: '{room_name}' → '{fallback_title}'")
-    return fallback_title
+    # Simple fallback: just use the original name
+    current_app.logger.info(f"⚠️ Fallback: using original title '{room_name}'")
+    return room_name
 
 
 def _generate_ai_title(room_name: str, room_goals: Optional[str] = None) -> Optional[str]:
@@ -49,24 +38,25 @@ def _generate_ai_title(room_name: str, room_goals: Optional[str] = None) -> Opti
         if room_goals:
             context += f"\nRoom goals: {room_goals[:200]}"
         
-        prompt = f"""Create a concise, catchy title (1-5 words) for this learning room:
+        prompt = f"""Create a concise, catchy title (2-4 words) for this learning room:
 
 {context}
 
 Requirements:
-- 1-5 words maximum
+- 2-4 words maximum (never more than 4 words)
 - Clear and descriptive
-- Suitable for a learning/educational context
-- Remove unnecessary words like "To learn about"
-- Make it engaging and memorable
+- Capture the main subject and approach
+- Remove filler words like "to study", "to learn about", "using a"
+- Make it memorable and specific
 
 Examples:
+"to study string theory using a theological perspective" → "Theological String Theory"
 "To learn about succulent plants and how to grow them" → "Succulent Gardening"
 "To learn about the history of Japan" → "Japanese History"
 "Entrepreneurship Business Hub" → "Business Hub"
-"Science Study Group" → "Science Study"
+"to study artificial intelligence and machine learning" → "AI Machine Learning"
 
-Respond with ONLY the short title, nothing else."""
+Respond with ONLY the short title (2-4 words), nothing else."""
 
         response = call_anthropic_api(
             messages=[{"role": "user", "content": prompt}],
@@ -75,9 +65,9 @@ Respond with ONLY the short title, nothing else."""
         )
         
         if response and response.strip():
-            # Clean and validate the response
+            # Clean the response and trust the AI
             title = response.strip().strip('"\'')
-            return title if len(title.split()) <= 5 else None
+            return title
             
     except Exception as e:
         current_app.logger.warning(f"AI title generation error: {e}")
@@ -103,14 +93,27 @@ def _extract_smart_title(room_name: str) -> str:
             title = title[len(prefix):].strip()
             break
     
-    # Remove common words
-    words_to_remove = {"the", "and", "of", "in", "on", "at", "for", "with", "about"}
+    # Remove common words but keep important connecting words for context
+    words_to_remove = {"the", "and", "of", "in", "on", "at", "for", "with", "about", "a", "an", "how", "to", "them"}
     
     words = title.split()
     filtered_words = [word for word in words if word not in words_to_remove]
     
-    # Take first 3-4 meaningful words
-    key_words = filtered_words[:4] if len(filtered_words) > 3 else filtered_words
+    # Smart selection: prioritize key concepts, limit to 3 words max
+    if len(filtered_words) <= 3:
+        key_words = filtered_words
+    else:
+        # For longer phrases, intelligently select the most important words
+        # Look for academic subjects, methodologies, and key concepts
+        important_words = []
+        for word in filtered_words:
+            if len(important_words) >= 3:
+                break
+            # Prioritize substantial academic terms
+            if len(word) > 3 or word.lower() in ['ai', 'ml', 'ux', 'ui']:
+                important_words.append(word)
+        
+        key_words = important_words if important_words else filtered_words[:3]
     
     # Capitalize properly
     result = " ".join(word.capitalize() for word in key_words)
@@ -137,8 +140,13 @@ def _is_valid_short_title(title: str) -> bool:
 
 def get_display_title(room) -> str:
     """
-    Get the best title for display - generates short title on-the-fly.
-    No database changes needed - works with existing room structure.
+    Get the best title for display.
+    For existing rooms, use simple truncation to avoid over-processing.
     """
-    # Generate short title on-the-fly using smart extraction
-    return _extract_smart_title(room.name)
+    # For existing rooms, just use simple truncation
+    words = room.name.split()
+    if len(words) <= 4:
+        return room.name
+    
+    # Simple truncation for long titles
+    return " ".join(words[:4]) + "..."

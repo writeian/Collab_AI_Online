@@ -4,7 +4,7 @@ Handles HTTP requests for room operations.
 """
 
 from flask import Blueprint, render_template, request, jsonify, current_app, flash, redirect, url_for
-from typing import Any
+from typing import Any, Tuple, List
 from src.app import db
 from src.models import Room, User, Chat, RoomMember
 from ..services.room_service import RoomService
@@ -40,39 +40,38 @@ def legacy_generate_room_proposal() -> Any:
             data = {}
         goals_text = (data.get("goals") or "").strip()
 
-        # Generate smart short title based on goals
-        from src.utils.title_generator import generate_short_title
-        first_line = (goals_text.splitlines() or [""])[0].strip()
+        # Generate both title and modes in single AI call
+        suggested_title, modes_list = _generate_title_and_modes(goals_text)
         
-        if first_line:
-            # Use our smart title generation
-            suggested_title = generate_short_title(first_line, goals_text)
-        else:
+        if not suggested_title:
             suggested_title = "New Learning Room"
 
-        # Generate contextual modes directly from goals (no template) for better tailoring
-        try:
-            # Temporary room-like object
-            temp_room = type('obj', (object,), {
-                'id': 0,
-                'name': suggested_title or 'New Room',
-                'goals': goals_text,
-                'description': ''
-            })
-            modes_obj = generate_room_modes(temp_room)
-            if modes_obj:
+        # Use modes from the combined AI call, or fallback if needed
+        if not modes_list:
+            # Fallback to separate mode generation if combined call failed
+            try:
+                from src.utils.openai_utils import generate_room_modes, BASE_TEMPLATES
+                temp_room = type('obj', (object,), {
+                    'id': 0,
+                    'name': suggested_title or 'New Room',
+                    'goals': goals_text,
+                    'description': ''
+                })
+                modes_obj = generate_room_modes(temp_room)
+                if modes_obj:
+                    modes_list = [
+                        {"key": key, "label": mode.label, "prompt": mode.prompt}
+                        for key, mode in modes_obj.items()
+                    ]
+                else:
+                    modes_list = []
+            except Exception:
+                # Final fallback to base template
+                from src.utils.openai_utils import BASE_TEMPLATES
                 modes_list = [
                     {"key": key, "label": mode.label, "prompt": mode.prompt}
-                    for key, mode in modes_obj.items()
+                    for key, mode in (BASE_TEMPLATES.get("academic_essay", {}).get("modes", {}).items())
                 ]
-            else:
-                modes_list = []
-        except Exception:
-            # Fallback to base template if AI generation fails
-            modes_list = [
-                {"key": key, "label": mode.label, "prompt": mode.prompt}
-                for key, mode in (BASE_TEMPLATES.get("academic_essay", {}).get("modes", {}).items())
-            ]
 
         ai_message = (
             "I drafted a starter proposal based on your goals. You can refine the title, "
@@ -559,3 +558,56 @@ def create_chat(room_id: int) -> Any:
         user=user,
         invitation_count=get_invitation_count(user)
     )
+
+
+def _generate_title_and_modes(goals_text: str) -> Tuple[str, List]:
+    """
+    Generate both room title and learning modes in single AI call.
+    Uses simplified prompt approach as requested.
+    """
+    try:
+        from src.utils.openai_utils import call_anthropic_api
+        
+        prompt = f"""Based on these learning goals: "{goals_text}"
+
+Please provide:
+1. A clear and concise title for this learning room. It should be no longer than five words.
+2. 8-10 learning steps that follow a logical progression for achieving these goals.
+
+Return as JSON with this exact format:
+{{
+    "title": "Short Room Title",
+    "modes": [
+        {{
+            "key": "step1",
+            "label": "1. Step Name", 
+            "prompt": "Detailed prompt for this step"
+        }}
+    ]
+}}"""
+
+        response = call_anthropic_api(
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=2000,
+            temperature=0.3
+        )
+        
+        if response and response.strip():
+            import json
+            try:
+                data = json.loads(response.strip())
+                title = data.get("title", "").strip()
+                modes = data.get("modes", [])
+                
+                current_app.logger.info(f"✅ AI generated title: '{title}' and {len(modes)} modes")
+                return title, modes
+                
+            except json.JSONDecodeError as e:
+                current_app.logger.warning(f"AI response not valid JSON: {e}")
+                
+    except Exception as e:
+        current_app.logger.error(f"AI title+modes generation error: {e}")
+    
+    # Fallback
+    current_app.logger.info("⚠️ Using fallback title and modes")
+    return "", []
