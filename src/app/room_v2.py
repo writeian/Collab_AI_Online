@@ -156,7 +156,8 @@ def index() -> Any:
             "room_v2_step4.html",
             sorted_rooms=all_rooms,
             user=user,
-            total_rooms=len(all_rooms)
+            total_rooms=len(all_rooms),
+            get_display_title=get_display_title  # Make function available in template
         )
         
     except Exception as e:

@@ -40,9 +40,15 @@ def legacy_generate_room_proposal() -> Any:
             data = {}
         goals_text = (data.get("goals") or "").strip()
 
-        # Suggest a room title based on goals
+        # Generate smart short title based on goals
+        from src.utils.title_generator import generate_short_title
         first_line = (goals_text.splitlines() or [""])[0].strip()
-        suggested_title = first_line[:60] + ("…" if len(first_line) > 60 else "") if first_line else "New Learning Room"
+        
+        if first_line:
+            # Use our smart title generation
+            suggested_title = generate_short_title(first_line, goals_text)
+        else:
+            suggested_title = "New Learning Room"
 
         # Generate contextual modes directly from goals (no template) for better tailoring
         try:
