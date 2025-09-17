@@ -22,6 +22,7 @@ class Room(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
+    short_title = db.Column(db.String(50), nullable=True)  # AI-generated short title (1-5 words)
     description = db.Column(db.Text, nullable=True)
     short_description = db.Column(db.String(300), nullable=True)  # Short narrative description for room list
     goals = db.Column(db.Text, nullable=True)  # Learning goals for the room

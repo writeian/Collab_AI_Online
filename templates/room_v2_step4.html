@@ -56,11 +56,16 @@
         <div class="flex items-center justify-between mb-3">
           <!-- Left: Room Info -->
           <div class="flex items-center space-x-3">
-            <!-- Room Link -->
+            <!-- Room Link with Short Title -->
             <h4 class="text-lg font-semibold">
               <a href="{{ url_for('room.room_crud.view_room', room_id=room.id) }}" 
-                 class="text-primary hover:text-primary/80 transition-colors">
-                {{ room.name }}
+                 class="text-primary hover:text-primary/80 transition-colors"
+                 title="{{ room.name }}">
+                {% if room.short_title %}
+                  {{ room.short_title }}
+                {% else %}
+                  {{ room.name[:40] }}{% if room.name|length > 40 %}...{% endif %}
+                {% endif %}
               </a>
             </h4>
             

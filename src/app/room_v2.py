@@ -10,6 +10,7 @@ from src.app import db
 from src.models import Room, Chat, Message, User
 from src.app.access_control import get_current_user, require_login
 from src.app.room.services.room_service import RoomService
+from src.utils.title_generator import get_display_title
 
 # Create independent blueprint
 room_v2 = Blueprint("room_v2", __name__)
@@ -142,13 +143,14 @@ def index() -> Any:
         
         current_app.logger.info(f"🚀 V2 STEP 4: Sorted {len(all_rooms)} rooms with collapsible details ({rooms_with_unread} with unread)")
         
-        # Log top 3 for verification
+        # Log top 3 for verification with short titles
         for i, room_data in enumerate(all_rooms[:3]):
             room = room_data["room"]
             stats = room_data["stats"]
+            display_title = get_display_title(room)
             unread_info = f", {stats['unread_messages']} unread" if stats['has_unread'] else ""
             goals_info = f", has goals" if room.goals else ", no goals"
-            current_app.logger.info(f"🚀 V2 #{i+1}: {room.name[:30]} - {stats['total_chats']} chats, {stats['total_messages']} messages{unread_info}{goals_info} (Score: {stats['activity_score']})")
+            current_app.logger.info(f"🚀 V2 #{i+1}: '{display_title}' (was: {room.name[:20]}...) - {stats['total_chats']} chats, {stats['total_messages']} messages{unread_info}{goals_info} (Score: {stats['activity_score']})")
         
         return render_template(
             "room_v2_step4.html",
