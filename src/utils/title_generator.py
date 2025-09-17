@@ -137,9 +137,8 @@ def _is_valid_short_title(title: str) -> bool:
 
 def get_display_title(room) -> str:
     """
-    Get the best title for display - short_title if available, otherwise original name.
-    Safe for existing rooms without short_title.
+    Get the best title for display - generates short title on-the-fly.
+    No database changes needed - works with existing room structure.
     """
-    if hasattr(room, 'short_title') and room.short_title:
-        return room.short_title
-    return room.name
+    # Generate short title on-the-fly using smart extraction
+    return _extract_smart_title(room.name)
