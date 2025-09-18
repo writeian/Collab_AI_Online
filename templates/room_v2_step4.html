@@ -83,8 +83,20 @@
               </span>
             {% endif %}
             
-            <!-- Activity Indicator -->
-            {% if stats.has_recent_activity and not stats.has_unread %}
+            <!-- Activity Indicator with New Room Detection -->
+            {% if stats.is_very_new %}
+              <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full font-medium animate-pulse">
+                ✨ Just Created
+              </span>
+            {% elif stats.is_new %}
+              <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
+                🆕 New ({{ "%.0f"|format(stats.room_age_hours) }}h)
+              </span>
+            {% elif stats.is_recent %}
+              <span class="bg-cyan-100 text-cyan-800 text-xs px-2 py-1 rounded-full font-medium">
+                📅 Recent ({{ "%.0f"|format(stats.room_age_hours/24) }}d)
+              </span>
+            {% elif stats.has_recent_activity and not stats.has_unread %}
               <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
                 🔥 Active (7 days)
               </span>

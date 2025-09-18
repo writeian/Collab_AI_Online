@@ -65,12 +65,24 @@ def get_room_statistics(room: Room, user: User) -> Dict[str, Any]:
         
         last_activity = last_message.timestamp if last_message else room.created_at
         
-        # Calculate activity score
+        # Calculate base activity score
         activity_score = (recent_chats * 10) + recent_messages
         
-        # Enhanced sorting: unread messages get priority boost
+        # New room boost: Give newly created rooms a boost so they appear at top
+        room_age_hours = (datetime.utcnow() - room.created_at).total_seconds() / 3600
+        if room_age_hours <= 6:    # Very new (6 hours)
+            activity_score += 100
+            current_app.logger.info(f"Room {room.id} gets very new boost (+100): {room_age_hours:.1f}h old")
+        elif room_age_hours <= 24: # New (1 day)  
+            activity_score += 50
+            current_app.logger.info(f"Room {room.id} gets new boost (+50): {room_age_hours:.1f}h old")
+        elif room_age_hours <= 72: # Recent (3 days)
+            activity_score += 25
+            current_app.logger.info(f"Room {room.id} gets recent boost (+25): {room_age_hours:.1f}h old")
+        
+        # Enhanced sorting: unread messages get top priority boost
         if unread_messages > 0:
-            activity_score += 1000  # Boost unread rooms to top
+            activity_score += 1000  # Boost unread rooms to very top
         
         return {
             "total_chats": total_chats,
@@ -82,7 +94,11 @@ def get_room_statistics(room: Room, user: User) -> Dict[str, Any]:
             "member_count": member_count,
             "last_activity": last_activity,
             "activity_score": activity_score,
-            "has_recent_activity": activity_score > 0
+            "has_recent_activity": activity_score > 0,
+            "room_age_hours": room_age_hours,
+            "is_very_new": room_age_hours <= 6,
+            "is_new": room_age_hours <= 24,
+            "is_recent": room_age_hours <= 72
         }
         
     except Exception as e:
