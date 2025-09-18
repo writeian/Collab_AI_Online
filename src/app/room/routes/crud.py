@@ -53,16 +53,16 @@ def legacy_generate_room_proposal() -> Any:
         # AI title generation with working fallback
         first_line = (goals_text.splitlines() or [""])[0].strip()
         
-        # Try AI first
+        # Try AI first using the exact same pattern as working learning modes
         try:
             from src.utils.openai_utils import call_anthropic_api
             
             prompt = f"Create a clear and concise title for this learning room. It should be no longer than five words. Goals: {goals_text}"
             
-            ai_response = call_anthropic_api(
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=50,
-                temperature=0.3
+            # Use exact same call pattern as working learning modes (line 300 in openai_utils.py)
+            ai_response, _ = call_anthropic_api(
+                [{"role": "user", "content": prompt}],
+                max_tokens=50
             )
             
             if ai_response and ai_response.strip():
