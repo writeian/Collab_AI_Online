@@ -103,6 +103,7 @@ def load_template(template_type: str) -> Any:
 @csrf.exempt
 def post_generate_template_goals(template_type: str) -> Any:
     """Generate learning goals based on template wizard answers."""
+    current_app.logger.info(f"🔥 TEMPLATE ROUTE HIT: /{template_type}/generate-goals")
     try:
         current_app.logger.info(
             f"[templates.generate-goals] template_type={template_type} incoming request"
