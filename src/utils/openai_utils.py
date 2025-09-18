@@ -357,7 +357,7 @@ def generate_room_modes(room: Any, template_name: Optional[str] = None) -> Dict[
             for i in range(attempts):
                 try:
                     response, _ = call_openai_api([{"role": "user", "content": prompt}], max_tokens=1000)
-                    modes = _parse_modes_from_text(response)
+                    title, modes = _parse_enhanced_response(response)
                     if modes:
                         return modes
                 except Exception as e:
