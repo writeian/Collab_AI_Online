@@ -152,6 +152,7 @@ def refine_room_proposal_new():
     """Refine proposal during new-room flow (no room_id yet).
     Regenerates modes based on current title/description hints; returns updates for UI.
     """
+    current_app.logger.info("🔥 REFINE ROUTE HIT: /refine-room-proposal (REAL ROUTE)")
     try:
         from uuid import uuid4
         data = request.get_json(silent=True) or {}
@@ -159,6 +160,31 @@ def refine_room_proposal_new():
         current_modes = data.get("current_modes") or []
         title = (data.get("current_room_title") or "").strip()
         description = (data.get("current_room_description") or "").strip()
+        
+        # AI TITLE GENERATION (if no title provided)
+        if not title and description:
+            current_app.logger.info(f"🤖 GENERATING AI TITLE from description: '{description}'")
+            try:
+                from src.utils.openai_utils import call_anthropic_api
+                
+                prompt = f"Create a clear and concise title for this learning room. It should be no longer than five words. Goals: {description}"
+                
+                ai_response = call_anthropic_api(
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=50,
+                    temperature=0.3
+                )
+                
+                if ai_response and ai_response.strip():
+                    title = ai_response.strip()
+                    current_app.logger.info(f"✅ AI TITLE SUCCESS: '{title}'")
+                else:
+                    current_app.logger.warning("❌ AI returned empty title response")
+                    
+            except Exception as e:
+                current_app.logger.error(f"❌ AI TITLE ERROR: {e}")
+        
+        current_app.logger.info(f"🎯 FINAL TITLE: '{title}' (from AI or user input)")
 
         # Auth/trial guard: allow anonymous only when TRIAL_ENABLED; otherwise require login
         user = get_current_user()
