@@ -84,11 +84,15 @@ def new_learning_steps():
     room_id = request.args.get('room_id', type=int)
 
     if request.method == 'POST':
+        current_app.logger.info("🔥 REAL ROOM CREATION: /room/create/learning-steps POST")
         try:
             user = get_current_user()
+            current_app.logger.info(f"🔥 Creating room for user: {user.username}")
             # Create the room from submitted form/json
             creation_data = RoomCreationData.from_request(request)
+            current_app.logger.info(f"🔥 Room data: name='{creation_data.name}', goals='{creation_data.goals[:50]}...'")
             result = RoomService.create_room(creation_data, user)
+            current_app.logger.info(f"🔥 RoomService result: success={result.success}, room_id={result.room_id}")
             if not result.success or not result.room_id:
                 flash(result.error or 'Failed to create room', 'error')
                 return redirect(url_for('room.new_learning_steps'))
