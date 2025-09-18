@@ -24,7 +24,7 @@ room.register_blueprint(refine.refine_bp, url_prefix="")
 @csrf.exempt
 def update_learning_steps(room_id: int):
     from flask import request, jsonify, current_app
-    from src.models import CustomPrompt
+    from src.models import CustomPrompt, Room
     from src.app import db
     from src.app.access_control import get_current_user
     try:
@@ -33,6 +33,10 @@ def update_learning_steps(room_id: int):
             return jsonify({"success": True}), 200
         data = request.get_json(silent=True) or {}
         modes = data.get('modes') or data.get('refined_modes')
+        
+        # Also handle room name and description updates
+        room_name = data.get('name', '').strip()
+        room_description = data.get('description', '').strip()
         if isinstance(modes, str):
             import json as _json
             try:
@@ -41,6 +45,15 @@ def update_learning_steps(room_id: int):
                 modes = []
         if not isinstance(modes, list):
             return jsonify({"success": False, "error": "Invalid modes payload"}), 400
+        
+        # Update room fields if provided
+        room = Room.query.get(room_id)
+        if room:
+            if room_name:
+                room.name = room_name
+            if room_description:
+                room.description = room_description
+        
         # Replace existing prompts for this room
         CustomPrompt.query.filter_by(room_id=room_id).delete()
         user = get_current_user()
