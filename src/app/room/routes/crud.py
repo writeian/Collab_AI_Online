@@ -30,7 +30,8 @@ def legacy_generate_room_proposal() -> Any:
     Returns fields expected by the new UI (title/description/modes/conversation_id/ai_message),
     with safe fallbacks when AI mode generation is not used.
     """
-    current_app.logger.info("🔥 ROOM PROPOSAL ROUTE HIT: /generate-room-proposal")
+    current_app.logger.info("🔥 ROUTE HIT: /generate-room-proposal-v2")
+    
     try:
         from uuid import uuid4
         import json as _json
