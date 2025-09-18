@@ -36,8 +36,11 @@ def legacy_generate_room_proposal() -> Any:
         from uuid import uuid4
         import json as _json
         from src.utils.openai_utils import generate_room_modes, BASE_TEMPLATES
+        current_app.logger.info("🔥 IMPORTS SUCCESSFUL")
+        
         # Parse goals from JSON body
         data = request.get_json(silent=True)
+        current_app.logger.info(f"🔥 REQUEST DATA: {data}")
         if data is None:
             try:
                 data = _json.loads(request.data or b"{}")
