@@ -416,6 +416,8 @@
             // Get selected template from dropdown
             const selectedTemplate = templateSelect ? templateSelect.value : '';
             
+            console.log('🔥 CALLING: /room/generate-room-proposal-v2 with goals:', goals);
+            
             const response = await fetch('/room/generate-room-proposal-v2', {
               method: 'POST',
               headers: {
@@ -426,6 +428,8 @@
                 template: selectedTemplate
               })
             });
+            
+            console.log('🔥 RESPONSE STATUS:', response.status, response.statusText);
             
             const result = await response.json();
             
