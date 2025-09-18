@@ -250,15 +250,19 @@ def generate_room_modes(room: Any, template_name: Optional[str] = None) -> Dict[
             pass
         return BASE_TEMPLATES["academic_essay"]["modes"]
 
-    # Build common prompt for all providers
+    # Build common prompt for all providers (enhanced with title generation)
     prompt = f"""
     Based on these learning goals: "{room.goals}"
     
-    Generate 8-10 learning steps that follow a logical progression for achieving these goals.
+    Please provide:
+    1. A clear and concise title for this learning room (no longer than five words)
+    2. 8-10 learning steps that follow a logical progression for achieving these goals
+    
     Each step should be specific to the learning objectives, not generic academic writing steps.
     
     Return as JSON with this exact format:
     {{
+        "title": "Short Room Title",
         "modes": [
             {{
                 "key": "step1",
@@ -269,8 +273,40 @@ def generate_room_modes(room: Any, template_name: Optional[str] = None) -> Dict[
     }}
     """
 
-    # Helper: parse modes JSON from a text blob
-    def _parse_modes_from_text(text: str) -> Dict[str, ChatMode]:
+    # Helper: parse enhanced response with title and modes
+    def _parse_enhanced_response(text: str) -> tuple[Optional[str], Dict[str, ChatMode]]:
+        """Parse AI response containing both title and modes."""
+        import json as _json
+        import re as _re
+        
+        title = None
+        modes = {}
+        
+        try:
+            # Try to parse as JSON first
+            data = _json.loads(text.strip())
+            
+            # Extract title
+            title = data.get("title", "").strip()
+            
+            # Extract modes
+            modes_data = data.get("modes", [])
+            for mode_data in modes_data:
+                key = mode_data.get("key", "")
+                label = mode_data.get("label", "")
+                prompt = mode_data.get("prompt", "")
+                if key and label and prompt:
+                    modes[key] = ChatMode(label, prompt)
+                    
+            return title, modes
+            
+        except _json.JSONDecodeError:
+            # Fallback to original parsing for modes only
+            modes = _parse_modes_from_text_original(text)
+            return None, modes
+    
+    # Original helper for backward compatibility
+    def _parse_modes_from_text_original(text: str) -> Dict[str, ChatMode]:
         import json as _json
         import re as _re
         match = _re.search(r"\{[\s\S]*\}", text or "")
@@ -298,7 +334,13 @@ def generate_room_modes(room: Any, template_name: Optional[str] = None) -> Dict[
             for i in range(attempts):
                 try:
                     response, _ = call_anthropic_api([{"role": "user", "content": prompt}], max_tokens=1000)
-                    modes = _parse_modes_from_text(response)
+                    title, modes = _parse_enhanced_response(response)
+                    
+                    # Store title for room creation (temporary global variable)
+                    if title:
+                        current_app.logger.info(f"✅ AI generated title: '{title}' for room")
+                        # TODO: Return title properly once we update calling code
+                    
                     if modes:
                         return modes
                 except Exception as e:
