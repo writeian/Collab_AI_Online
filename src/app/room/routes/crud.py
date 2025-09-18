@@ -22,7 +22,7 @@ crud_bp = Blueprint('room_crud', __name__)
 def test_route():
     return "CRUD BLUEPRINT WORKING"
 
-@crud_bp.route("/generate-room-proposal", methods=["POST"], endpoint="legacy_generate_room_proposal")
+@crud_bp.route("/generate-room-proposal-v2", methods=["POST"], endpoint="legacy_generate_room_proposal")
 @require_login
 @csrf.exempt
 def legacy_generate_room_proposal() -> Any:
