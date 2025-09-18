@@ -105,10 +105,20 @@ def generate_room_short_description(template_type: str, room_name: str = "", gro
     base_description = template_info.get("short_description", "")
     
     if not base_description:
+        # Enhanced description for custom rooms
+        if template_key == "general" and goals:
+            # Extract subject from goals for personalized description
+            goals_preview = goals[:100].replace("To learn", "").replace("to study", "").replace("to learn about", "").strip()
+            if goals_preview:
+                return (
+                    f"A collaborative learning space focused on {goals_preview.lower()}. "
+                    f"Designed to help you achieve your learning goals through structured guidance and support."
+                )
+        
         # Fallback for unknown template types
         safe_label = str(template_key).replace('-', ' ')
         return (
-            f"A collaborative learning space for {safe_label}. Designed to help you "
+            f"A collaborative learning space for {safe_label} learning. Designed to help you "
             f"achieve your learning goals through structured guidance and support."
         )
     

@@ -136,7 +136,7 @@
         <!-- Always Visible Brief Description -->
         {% if room.short_description %}
         <p class="text-sm text-muted-foreground leading-relaxed mb-4">
-          {{ room.short_description[:120] }}{% if room.short_description|length > 120 %}...{% endif %}
+          {{ room.short_description[:200] }}{% if room.short_description|length > 200 %}...{% endif %}
         </p>
         {% endif %}
         
