@@ -107,11 +107,21 @@ def generate_room_short_description(template_type: str, room_name: str = "", gro
     if not base_description:
         # Enhanced description for custom rooms
         if template_key == "general" and goals:
-            # Extract subject from goals for personalized description
-            goals_preview = goals[:100].replace("To learn", "").replace("to study", "").replace("to learn about", "").strip()
-            if goals_preview:
+            # Clean up goals text for better description
+            goals_clean = goals.replace("To learn about", "").replace("To learn", "").replace("to study", "").replace("to learn about", "").replace("to learn", "").strip()
+            
+            # Remove common prefixes and clean up
+            if goals_clean.startswith("about"):
+                goals_clean = goals_clean[5:].strip()
+            
+            # Take first sentence or first 80 characters
+            first_sentence = goals_clean.split('.')[0].strip()
+            if len(first_sentence) > 80:
+                first_sentence = first_sentence[:80].strip()
+            
+            if first_sentence:
                 return (
-                    f"A collaborative learning space focused on {goals_preview.lower()}. "
+                    f"A collaborative learning space focused on {first_sentence.lower()}. "
                     f"Designed to help you achieve your learning goals through structured guidance and support."
                 )
         
