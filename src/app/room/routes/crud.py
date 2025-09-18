@@ -67,6 +67,9 @@ def legacy_generate_room_proposal() -> Any:
             
             if ai_response and ai_response.strip():
                 suggested_title = ai_response.strip()
+                # Auto-truncate if too long (prevent validation failures)
+                if len(suggested_title) > 125:
+                    suggested_title = suggested_title[:125].strip()
             else:
                 raise Exception("AI returned empty response")
                 

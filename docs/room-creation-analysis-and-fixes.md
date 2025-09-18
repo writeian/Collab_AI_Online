@@ -287,7 +287,56 @@ except Exception:
 
 ---
 
-**Status**: ✅ **RESOLVED** - Room title generation now works with AI + proven fallback
-**Next**: Clean up unused debugging code and implement remaining V2 dashboard features
+## 🎉 FINAL RESOLUTION (After 30+ Debugging Attempts)
 
-**The key lesson**: Always trace the actual working data flow, don't assume based on function names or obvious routes.** 🎯
+### What Finally Worked
+**Issue**: AI was returning explanatory text instead of just the title
+**Solution**: Ultra-directive prompt: "Create ONE clear and concise title... Respond with ONLY the title, nothing else"
+
+**Final Working Prompt:**
+```
+"Create ONE clear and concise title for this learning room. Respond with ONLY the title, nothing else. Maximum 5 words. Goals: {goals_text}"
+```
+
+### Critical Lessons from 30+ Debugging Attempts
+
+**1. AI Prompt Precision is Critical**
+- ❌ **"Create a title"** → AI gives helpful explanations and multiple options
+- ✅ **"Create ONE title... ONLY the title, nothing else"** → AI follows exactly
+- **Lesson**: AI needs extremely explicit instructions to avoid helpful elaboration
+
+**2. Validation Errors Can Hide Success**
+- ✅ **AI was working** but generating 200+ character responses
+- ❌ **Room validation rejected** long responses (100 char limit)
+- ❌ **Error looked like AI failure** but was actually validation failure
+- **Lesson**: Check validation limits when debugging API responses
+
+**3. Exception Handling Can Mask Root Causes**
+- ❌ **Silent failures** in try-catch blocks return fallback values
+- ❌ **200 responses with wrong data** harder to debug than error responses
+- ✅ **Console logging** revealed actual API responses
+- **Lesson**: Log actual API responses, not just success/failure
+
+**4. Browser DevTools > Server Logs**
+- ✅ **Console.log()** showed exact API responses immediately
+- ❌ **Server logging** often didn't appear in Railway logs
+- ✅ **Network tab** confirmed route calls and response codes
+- **Lesson**: Use browser debugging as primary method for API issues
+
+**5. Working Code Pattern Matching**
+- ✅ **Using exact same call pattern** as working learning modes finally worked
+- ❌ **Slight variations** in API call format caused failures
+- **Lesson**: When AI works elsewhere, copy the exact working pattern
+
+### Room Name Validation Issue Discovered & Fixed
+- **Original limit**: 100 characters (too restrictive for AI responses)
+- **AI responses**: Often 120-200 characters when being helpful
+- **Solution implemented**: Increased limit to 125 chars + auto-truncation in route
+- **Result**: Room creation no longer fails due to long AI responses
+
+---
+
+**Status**: ✅ **FULLY RESOLVED** - AI title generation working with proper prompt
+**Next**: Fix validation limits and clean up debugging code
+
+**Key lesson**: AI prompt engineering requires extreme precision - "helpful" AI responses can break validation systems.** 🎯

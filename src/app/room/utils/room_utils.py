@@ -91,8 +91,8 @@ def validate_room_name(name: str) -> Tuple[bool, Optional[str]]:
     """Validate room name with detailed error messages."""
     if not name:
         return False, "Room name is required"
-    if len(name) > 100:
-        return False, "Room name must be 100 characters or less"
+    if len(name) > 125:
+        return False, "Room name must be 125 characters or less"
     if len(name.strip()) == 0:
         return False, "Room name cannot be empty"
     return True, None
