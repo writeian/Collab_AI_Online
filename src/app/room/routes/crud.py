@@ -57,7 +57,7 @@ def legacy_generate_room_proposal() -> Any:
         try:
             from src.utils.openai_utils import call_anthropic_api
             
-            prompt = f"Create a clear and concise title for this learning room. It should be no longer than five words. Goals: {goals_text}"
+            prompt = f"Create ONE clear and concise title for this learning room. Respond with ONLY the title, nothing else. Maximum 5 words. Goals: {goals_text}"
             
             # Use exact same call pattern as working learning modes (line 300 in openai_utils.py)
             ai_response, _ = call_anthropic_api(
