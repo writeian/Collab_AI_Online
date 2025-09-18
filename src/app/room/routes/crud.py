@@ -11,6 +11,7 @@ from ..services.room_service import RoomService
 from ..types import RoomCreationData, RoomUpdateData
 from ..utils.room_utils import get_invitation_count
 from src.app.access_control import get_current_user, require_login, require_room_access
+from src.utils.title_generator import get_display_title
 from src.utils.openai_utils import get_modes_for_room, get_available_templates
 from src.app import csrf
 
@@ -186,7 +187,8 @@ def view_room(room_id: int) -> Any:
             chats=chats,
             members=members,
             user=user,
-            invitation_count=get_invitation_count(user)
+            invitation_count=get_invitation_count(user),
+            get_display_title=get_display_title  # Add smart title function
         )
     except Exception as e:
         current_app.logger.error(f"Error viewing room {room_id}: {e}")
@@ -565,6 +567,8 @@ def _generate_title_and_modes(goals_text: str) -> Tuple[str, List]:
     Generate both room title and learning modes in single AI call.
     Uses simplified prompt approach as requested.
     """
+    current_app.logger.info(f"🤖 AI Title Generation: Starting with goals: '{goals_text}'")
+    
     try:
         from src.utils.openai_utils import call_anthropic_api
         
@@ -586,28 +590,36 @@ Return as JSON with this exact format:
     ]
 }}"""
 
+        current_app.logger.info(f"🤖 AI Title: Calling Anthropic API...")
+        
         response = call_anthropic_api(
             messages=[{"role": "user", "content": prompt}],
             max_tokens=2000,
             temperature=0.3
         )
         
+        current_app.logger.info(f"🤖 AI Title: Response received: {len(response) if response else 0} chars")
+        
         if response and response.strip():
             import json
             try:
+                current_app.logger.info(f"🤖 AI Title: Parsing JSON response...")
                 data = json.loads(response.strip())
                 title = data.get("title", "").strip()
                 modes = data.get("modes", [])
                 
-                current_app.logger.info(f"✅ AI generated title: '{title}' and {len(modes)} modes")
+                current_app.logger.info(f"✅ AI SUCCESS: Generated title: '{title}' and {len(modes)} modes")
                 return title, modes
                 
             except json.JSONDecodeError as e:
-                current_app.logger.warning(f"AI response not valid JSON: {e}")
+                current_app.logger.error(f"❌ AI JSON Parse Error: {e}")
+                current_app.logger.error(f"❌ Raw AI Response: {response[:500]}")
                 
     except Exception as e:
-        current_app.logger.error(f"AI title+modes generation error: {e}")
+        current_app.logger.error(f"❌ AI Call Exception: {e}")
+        import traceback
+        current_app.logger.error(f"❌ Traceback: {traceback.format_exc()}")
     
     # Fallback
-    current_app.logger.info("⚠️ Using fallback title and modes")
+    current_app.logger.warning("⚠️ AI FAILED: Using fallback title 'New Learning Room'")
     return "", []
