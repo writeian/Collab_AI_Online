@@ -134,9 +134,10 @@
         </div>
         
         <!-- Always Visible Brief Description -->
-        {% if room.short_description %}
+        {% set display_description = room.description or room.short_description %}
+        {% if display_description %}
         <p class="text-sm text-muted-foreground leading-relaxed mb-4">
-          {{ room.short_description[:200] }}{% if room.short_description|length > 200 %}...{% endif %}
+          {{ display_description[:200] }}{% if display_description|length > 200 %}...{% endif %}
         </p>
         {% endif %}
         
