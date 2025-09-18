@@ -18,6 +18,10 @@ from src.app import csrf
 crud_bp = Blueprint('room_crud', __name__)
 
 
+@crud_bp.route("/test-route")
+def test_route():
+    return "CRUD BLUEPRINT WORKING"
+
 @crud_bp.route("/generate-room-proposal", methods=["POST"], endpoint="legacy_generate_room_proposal")
 @require_login
 @csrf.exempt
