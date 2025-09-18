@@ -50,29 +50,15 @@ def legacy_generate_room_proposal() -> Any:
             data = {}
         goals_text = (data.get("goals") or "").strip()
 
-        # Simple AI title generation
-        current_app.logger.info(f"🔥 GENERATING TITLE for goals: '{goals_text}'")
-        
-        try:
-            from src.utils.openai_utils import call_anthropic_api
-            
-            prompt = f"Create a clear and concise title for this learning room. It should be no longer than five words. Goals: {goals_text}"
-            
-            ai_response = call_anthropic_api(
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=50,
-                temperature=0.3
-            )
-            
-            if ai_response and ai_response.strip():
-                suggested_title = ai_response.strip()
-                current_app.logger.info(f"✅ AI TITLE SUCCESS: '{suggested_title}'")
-            else:
-                suggested_title = "New Learning Room"
-                current_app.logger.warning("❌ AI returned empty response")
-                
-        except Exception as e:
-            current_app.logger.error(f"❌ AI TITLE ERROR: {e}")
+        # Simple fallback title generation (no AI for now)
+        first_line = (goals_text.splitlines() or [""])[0].strip()
+        if first_line:
+            # Extract key words from goals
+            words = first_line.lower().replace("to learn about", "").replace("to study", "").replace("to learn", "").strip().split()
+            # Take first 3-4 meaningful words
+            key_words = [w.capitalize() for w in words[:4] if len(w) > 2]
+            suggested_title = " ".join(key_words) if key_words else "New Learning Room"
+        else:
             suggested_title = "New Learning Room"
         
         # Generate modes separately (keep existing working logic)
