@@ -432,6 +432,7 @@
             console.log('🔥 RESPONSE STATUS:', response.status, response.statusText);
             
             const result = await response.json();
+            console.log('🔥 RESPONSE DATA:', result);
             
             if (result.success) {
               // Populate the proposal
