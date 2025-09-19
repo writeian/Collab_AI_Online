@@ -27,8 +27,8 @@ def get_room_statistics(room: Room, user: User) -> Dict[str, Any]:
         # Look at last 7 days for recent activity
         recent_cutoff = datetime.utcnow() - timedelta(days=7)
         
-        # Look at last 24 hours for unread messages
-        unread_cutoff = datetime.utcnow() - timedelta(hours=24)
+        # Look at last 48 hours for unread messages
+        unread_cutoff = datetime.utcnow() - timedelta(hours=48)
         
         # Count all-time activity
         total_chats = Chat.query.filter_by(room_id=room.id).count()
