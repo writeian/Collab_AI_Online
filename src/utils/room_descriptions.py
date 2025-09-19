@@ -105,43 +105,16 @@ def generate_room_short_description(template_type: str, room_name: str = "", gro
     base_description = template_info.get("short_description", "")
     
     if not base_description:
-        # Enhanced description for custom rooms
-        if template_key == "general" and goals:
-            # Use AI to generate a clean subject description
-            try:
-                from src.utils.openai_utils import call_anthropic_api
-                
-                prompt = f"Based on these learning goals, create a short subject description (5-10 words) that captures the main topic. Goals: {goals}"
-                
-                ai_response, _ = call_anthropic_api(
-                    [{"role": "user", "content": prompt}],
-                    max_tokens=30
-                )
-                
-                if ai_response and ai_response.strip():
-                    clean_subject = ai_response.strip().lower()
-                    return (
-                        f"A collaborative learning space focused on {clean_subject}. "
-                        f"Designed to help you achieve your learning goals through structured guidance and support."
-                    )
-            except Exception:
-                pass
+        # Enhanced description for custom rooms - use AI-generated title
+        if template_key == "general" and room_name:
+            # Use the AI-generated room title (much cleaner than raw goals)
+            # Convert title to description subject
+            title_lower = room_name.lower()
             
-            # Fallback: Clean up goals text manually
-            goals_clean = goals.replace("To learn about", "").replace("To learn", "").replace("to study", "").replace("to learn about", "").replace("to learn", "").strip()
-            
-            # Remove common prefixes and clean up
-            if goals_clean.startswith("about"):
-                goals_clean = goals_clean[5:].strip()
-            
-            # Take first sentence or first 80 characters
-            first_sentence = goals_clean.split('.')[0].strip()
-            if len(first_sentence) > 80:
-                first_sentence = first_sentence[:80].strip()
-            
-            if first_sentence:
+            # Clean up the title for description use
+            if title_lower and len(title_lower) > 3:
                 return (
-                    f"A collaborative learning space focused on {first_sentence.lower()}. "
+                    f"A collaborative learning space focused on {title_lower}. "
                     f"Designed to help you achieve your learning goals through structured guidance and support."
                 )
         
