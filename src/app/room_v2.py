@@ -169,7 +169,7 @@ def index() -> Any:
             current_app.logger.info(f"🚀 V2 #{i+1}: '{display_title}' (was: {room.name[:20]}...) - {stats['total_chats']} chats, {stats['total_messages']} messages{unread_info}{goals_info} (Score: {stats['activity_score']})")
         
         return render_template(
-            "room_v2_step4.html",
+            "room_v2_step5_clean.html",
             sorted_rooms=all_rooms,
             user=user,
             total_rooms=len(all_rooms),

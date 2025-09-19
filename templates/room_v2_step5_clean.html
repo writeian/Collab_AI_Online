@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% block title %}AI Collab - Enhanced Home (V2 Clean){% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  
+  <!-- Clean Progress Banner -->
+  <div class="mb-6 bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-lg p-4">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="bg-emerald-500 text-white px-3 py-1 rounded-full text-sm font-medium">STEP 5</div>
+        <div>
+          <h4 class="font-medium text-emerald-900">Ultra-Clean Education Design</h4>
+          <p class="text-sm text-emerald-700">{{ total_rooms }} learning spaces • Minimal, scannable interface</p>
+        </div>
+      </div>
+      <a href="/room/" class="text-emerald-600 hover:text-emerald-800 text-sm font-medium">← Back to Original</a>
+    </div>
+  </div>
+
+  <!-- Welcome Section -->
+  <div class="mb-8">
+    <h2 class="text-3xl font-bold text-foreground mb-4">Welcome, {{ user.username }}!</h2>
+    <p class="text-lg text-muted-foreground mb-6">
+      Your learning spaces, designed for focus and clarity
+    </p>
+  </div>
+
+  <!-- Ultra-Clean Room List -->
+  {% if sorted_rooms %}
+  <div class="mb-8">
+    <div class="flex items-center justify-between mb-6">
+      <h3 class="text-xl font-semibold text-foreground">
+        My Learning Spaces
+      </h3>
+      
+      <!-- Minimal Unread Summary -->
+      {% set rooms_with_unread = sorted_rooms | selectattr('stats.has_unread') | list %}
+      {% if rooms_with_unread|length > 0 %}
+      <div class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">
+        {{ rooms_with_unread|length }} urgent
+      </div>
+      {% endif %}
+    </div>
+    
+    <div class="space-y-3">
+      {% for room_data in sorted_rooms %}
+      {% set room = room_data.room %}
+      {% set is_owner = room_data.is_owner %}
+      {% set stats = room_data.stats %}
+      {% set display_description = room.description or room.short_description %}
+      
+      <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 
+                  {% if stats.has_unread %}ring-2 ring-red-200 bg-red-50/30{% endif %}">
+        
+        <!-- Header: Title + Unread Badge Only -->
+        <div class="flex items-center justify-between mb-3">
+          <h4 class="text-lg font-semibold text-blue-600 hover:text-blue-800 transition-colors">
+            <a href="{{ url_for('room.room_crud.view_room', room_id=room.id) }}" 
+               class="block">
+              {{ get_display_title(room) }}
+            </a>
+          </h4>
+          
+          <!-- Only Show Unread Badge (Most Important) -->
+          {% if stats.has_unread %}
+            <span class="bg-red-500 text-white text-xs px-3 py-1 rounded-full font-medium animate-pulse">
+              🔔 {{ stats.unread_messages }}
+            </span>
+          {% endif %}
+        </div>
+        
+        <!-- Description (Clean, Readable) -->
+        {% if display_description %}
+        <p class="text-sm text-gray-600 leading-relaxed mb-4">
+          {{ display_description[:180] }}{% if display_description|length > 180 %}...{% endif %}
+        </p>
+        {% endif %}
+        
+        <!-- Minimal Expand Button -->
+        <div class="flex items-center justify-between">
+          <button 
+            onclick="toggleRoomDetails({{ room.id }})"
+            class="text-blue-500 text-sm font-medium hover:text-blue-700 transition-colors flex items-center gap-1"
+            aria-expanded="false"
+            aria-controls="room-details-{{ room.id }}">
+            <span>Details</span>
+            <i data-lucide="chevron-down" class="w-4 h-4 transition-transform" id="chevron-{{ room.id }}"></i>
+          </button>
+          
+          <!-- Subtle Activity Hint (No Numbers) -->
+          {% if stats.has_unread %}
+            <span class="text-red-600 text-xs">New activity</span>
+          {% elif stats.is_very_new %}
+            <span class="text-purple-600 text-xs">Just created</span>
+          {% elif stats.is_new %}
+            <span class="text-blue-600 text-xs">Recently created</span>
+          {% elif stats.has_recent_activity %}
+            <span class="text-green-600 text-xs">Active</span>
+          {% else %}
+            <span class="text-gray-400 text-xs">Quiet</span>
+          {% endif %}
+        </div>
+        
+        <!-- Comprehensive Collapsible Details -->
+        <div id="room-details-{{ room.id }}" class="hidden mt-4 pt-4 border-t border-gray-100 space-y-4 text-sm">
+          
+          <!-- Quick Stats Section -->
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div class="font-medium text-blue-900 mb-2 flex items-center gap-2">
+              <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+              📊 Activity Overview
+            </div>
+            <div class="text-blue-800 space-y-1">
+              <div class="flex items-center justify-between">
+                <span>💬 Chats:</span>
+                <span><strong>{{ stats.total_chats }}</strong>{% if stats.recent_chats > 0 %} (+{{ stats.recent_chats }} recent){% endif %}</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span>💭 Messages:</span>
+                <span><strong>{{ stats.total_messages }}</strong>{% if stats.recent_messages > 0 %} (+{{ stats.recent_messages }} recent){% endif %}</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span>👥 Members:</span>
+                <span><strong>{{ stats.member_count }}</strong></span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span>🕐 Last activity:</span>
+                <span>{{ stats.last_activity.strftime('%m/%d/%y %H:%M') }}</span>
+              </div>
+              {% if stats.has_unread %}
+              <div class="flex items-center justify-between text-red-700 font-medium">
+                <span>🔔 Unread:</span>
+                <span>{{ stats.unread_messages }} messages (24h)</span>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          
+          <!-- Room Goals Section -->
+          {% if room.goals %}
+          <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+            <div class="font-medium text-green-900 mb-2 flex items-center gap-2">
+              <i data-lucide="target" class="w-4 h-4"></i>
+              🎯 Learning Goals
+            </div>
+            <div class="text-green-800 text-sm leading-relaxed whitespace-pre-line">
+              {{ room.goals }}
+            </div>
+          </div>
+          {% endif %}
+          
+          <!-- Room Management Section -->
+          <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+            <div class="font-medium text-gray-900 mb-2 flex items-center gap-2">
+              <i data-lucide="settings" class="w-4 h-4"></i>
+              ⚙️ Room Management
+            </div>
+            <div class="text-gray-800 space-y-1">
+              <div class="flex items-center justify-between">
+                <span>👑 Role:</span>
+                <span>{{ "Owner" if is_owner else "Member" }}</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span>📅 Created:</span>
+                <span>{{ room.created_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
+              </div>
+              {% if room.group_size %}
+              <div class="flex items-center justify-between">
+                <span>👥 Group size:</span>
+                <span>{{ room.group_size.title() }}</span>
+              </div>
+              {% endif %}
+              <div class="flex items-center justify-between">
+                <span>📈 Activity score:</span>
+                <span>{{ stats.activity_score }} points</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span>🏷️ Room ID:</span>
+                <span>{{ room.id }}</span>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    
+    <!-- Clean Summary -->
+    <div class="mt-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+      <h4 class="font-medium text-emerald-900 mb-2">Step 5 Complete ✅</h4>
+      <p class="text-sm text-emerald-700">
+        Ultra-clean education design implemented! Minimal visual noise, maximum focus on what matters.
+        All detailed information available in expandable sections.
+      </p>
+    </div>
+  </div>
+  
+  {% else %}
+  <!-- Clean Empty State -->
+  <div class="text-center py-16">
+    <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-6">
+      <i data-lucide="graduation-cap" class="w-8 h-8 text-blue-600"></i>
+    </div>
+    <h3 class="text-xl font-semibold text-foreground mb-3">Ready to Learn?</h3>
+    <p class="text-muted-foreground mb-8 max-w-md mx-auto">
+      Create your first learning space and start your educational journey with AI-guided collaboration.
+    </p>
+    <a href="{{ url_for('room.room_crud.create_room') }}" 
+       class="inline-flex items-center px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 shadow-lg">
+      <i data-lucide="plus" class="w-5 h-5 mr-2"></i>
+      Create Learning Space
+    </a>
+  </div>
+  {% endif %}
+  
+</div>
+
+<script>
+function toggleRoomDetails(roomId) {
+    const details = document.getElementById(`room-details-${roomId}`);
+    const chevron = document.getElementById(`chevron-${roomId}`);
+    const button = chevron.closest('button');
+    
+    if (details.classList.contains('hidden')) {
+        // Expand
+        details.classList.remove('hidden');
+        chevron.style.transform = 'rotate(180deg)';
+        button.setAttribute('aria-expanded', 'true');
+        
+        // Smooth scroll to show expanded content
+        setTimeout(() => {
+            details.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 100);
+    } else {
+        // Collapse
+        details.classList.add('hidden');
+        chevron.style.transform = 'rotate(0deg)';
+        button.setAttribute('aria-expanded', 'false');
+    }
+}
+</script>
+
+{% endblock %}
