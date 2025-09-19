@@ -52,28 +52,53 @@
       <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 
                   {% if stats.has_unread %}ring-2 ring-red-200 bg-red-50/30{% endif %}">
         
-        <!-- Header: Title + Unread Badge Only -->
+        <!-- Header: Title + Activity Indicators -->
         <div class="flex items-center justify-between mb-3">
-          <h4 class="text-lg font-semibold text-blue-600 hover:text-blue-800 transition-colors">
-            <a href="{{ url_for('room.room_crud.view_room', room_id=room.id) }}" 
-               class="block">
-              {{ get_display_title(room) }}
-            </a>
-          </h4>
+          <div class="flex items-center gap-3">
+            <!-- Blinking Red Dot for New Activity -->
+            {% if stats.has_unread %}
+              <div class="w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
+            {% elif stats.recent_chats > 0 or stats.recent_messages > 0 %}
+              <div class="w-3 h-3 bg-orange-400 rounded-full animate-pulse"></div>
+            {% endif %}
+            
+            <h4 class="text-lg font-semibold text-blue-600 hover:text-blue-800 transition-colors">
+              <a href="{{ url_for('room.room_crud.view_room', room_id=room.id) }}" 
+                 class="block">
+                {{ get_display_title(room) }}
+              </a>
+            </h4>
+          </div>
           
-          <!-- Only Show Unread Badge (Most Important) -->
+          <!-- Unread Badge -->
           {% if stats.has_unread %}
-            <span class="bg-red-500 text-white text-xs px-3 py-1 rounded-full font-medium animate-pulse">
-              🔔 {{ stats.unread_messages }}
+            <span class="bg-red-500 text-white text-xs px-3 py-1 rounded-full font-medium">
+              {{ stats.unread_messages }} new
             </span>
           {% endif %}
         </div>
         
-        <!-- Description (Clean, Readable) -->
+        <!-- Description (Expandable) -->
         {% if display_description %}
-        <p class="text-sm text-gray-600 leading-relaxed mb-4">
-          {{ display_description[:180] }}{% if display_description|length > 180 %}...{% endif %}
-        </p>
+        <div class="mb-4">
+          <p id="desc-short-{{ room.id }}" class="text-sm text-gray-600 leading-relaxed">
+            {{ display_description[:180] }}{% if display_description|length > 180 %}...{% endif %}
+            {% if display_description|length > 180 %}
+              <button onclick="toggleDescription({{ room.id }})" class="text-blue-500 hover:text-blue-700 ml-1 font-medium">
+                more
+              </button>
+            {% endif %}
+          </p>
+          
+          {% if display_description|length > 180 %}
+          <p id="desc-full-{{ room.id }}" class="text-sm text-gray-600 leading-relaxed hidden">
+            {{ display_description }}
+            <button onclick="toggleDescription({{ room.id }})" class="text-blue-500 hover:text-blue-700 ml-1 font-medium">
+              less
+            </button>
+          </p>
+          {% endif %}
+        </div>
         {% endif %}
         
         <!-- Minimal Expand Button -->
@@ -237,6 +262,21 @@ function toggleRoomDetails(roomId) {
         details.classList.add('hidden');
         chevron.style.transform = 'rotate(0deg)';
         button.setAttribute('aria-expanded', 'false');
+    }
+}
+
+function toggleDescription(roomId) {
+    const shortDesc = document.getElementById(`desc-short-${roomId}`);
+    const fullDesc = document.getElementById(`desc-full-${roomId}`);
+    
+    if (shortDesc.classList.contains('hidden')) {
+        // Show short, hide full
+        shortDesc.classList.remove('hidden');
+        fullDesc.classList.add('hidden');
+    } else {
+        // Show full, hide short
+        shortDesc.classList.add('hidden');
+        fullDesc.classList.remove('hidden');
     }
 }
 </script>
