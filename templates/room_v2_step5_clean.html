@@ -3,19 +3,6 @@
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
   
-  <!-- Clean Progress Banner -->
-  <div class="mb-6 bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-lg p-4">
-    <div class="flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="bg-emerald-500 text-white px-3 py-1 rounded-full text-sm font-medium">STEP 5</div>
-        <div>
-          <h4 class="font-medium text-emerald-900">Ultra-Clean Education Design</h4>
-          <p class="text-sm text-emerald-700">{{ total_rooms }} learning spaces • Minimal, scannable interface</p>
-        </div>
-      </div>
-      <a href="/room/" class="text-emerald-600 hover:text-emerald-800 text-sm font-medium">← Back to Original</a>
-    </div>
-  </div>
 
   <!-- Welcome Section with Action Buttons -->
   <div class="mb-8">
@@ -149,7 +136,8 @@
       {% set stats = room_data.stats %}
       {% set display_description = room.description or room.short_description %}
       
-      <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 
+      <div class="bg-white border border-gray-200 rounded-lg p-4 transition-all duration-200 cursor-pointer
+                  hover:bg-gradient-to-r hover:from-amber-50 hover:to-yellow-50 hover:border-amber-200 hover:shadow-lg hover:-translate-y-1
                   {% if stats.has_unread %}ring-2 ring-red-200 bg-red-50/30{% endif %}">
         
         <!-- Header: Title + Activity Indicators -->
