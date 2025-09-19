@@ -107,7 +107,27 @@ def generate_room_short_description(template_type: str, room_name: str = "", gro
     if not base_description:
         # Enhanced description for custom rooms
         if template_key == "general" and goals:
-            # Clean up goals text for better description
+            # Use AI to generate a clean subject description
+            try:
+                from src.utils.openai_utils import call_anthropic_api
+                
+                prompt = f"Based on these learning goals, create a short subject description (5-10 words) that captures the main topic. Goals: {goals}"
+                
+                ai_response, _ = call_anthropic_api(
+                    [{"role": "user", "content": prompt}],
+                    max_tokens=30
+                )
+                
+                if ai_response and ai_response.strip():
+                    clean_subject = ai_response.strip().lower()
+                    return (
+                        f"A collaborative learning space focused on {clean_subject}. "
+                        f"Designed to help you achieve your learning goals through structured guidance and support."
+                    )
+            except Exception:
+                pass
+            
+            # Fallback: Clean up goals text manually
             goals_clean = goals.replace("To learn about", "").replace("To learn", "").replace("to study", "").replace("to learn about", "").replace("to learn", "").strip()
             
             # Remove common prefixes and clean up

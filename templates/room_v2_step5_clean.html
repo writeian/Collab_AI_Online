@@ -65,7 +65,7 @@
             <h4 class="text-lg font-semibold text-blue-600 hover:text-blue-800 transition-colors">
               <a href="{{ url_for('room.room_crud.view_room', room_id=room.id) }}" 
                  class="block">
-                {{ get_display_title(room) }}
+                {{ room.name }}
               </a>
             </h4>
           </div>
@@ -78,27 +78,11 @@
           {% endif %}
         </div>
         
-        <!-- Description (Expandable) -->
+        <!-- Description (Full, Clean) -->
         {% if display_description %}
-        <div class="mb-4">
-          <p id="desc-short-{{ room.id }}" class="text-sm text-gray-600 leading-relaxed">
-            {{ display_description[:180] }}{% if display_description|length > 180 %}...{% endif %}
-            {% if display_description|length > 180 %}
-              <button onclick="toggleDescription({{ room.id }})" class="text-blue-500 hover:text-blue-700 ml-1 font-medium">
-                more
-              </button>
-            {% endif %}
-          </p>
-          
-          {% if display_description|length > 180 %}
-          <p id="desc-full-{{ room.id }}" class="text-sm text-gray-600 leading-relaxed hidden">
-            {{ display_description }}
-            <button onclick="toggleDescription({{ room.id }})" class="text-blue-500 hover:text-blue-700 ml-1 font-medium">
-              less
-            </button>
-          </p>
-          {% endif %}
-        </div>
+        <p class="text-sm text-gray-600 leading-relaxed mb-4">
+          {{ display_description }}
+        </p>
         {% endif %}
         
         <!-- Minimal Expand Button -->
@@ -195,14 +179,6 @@
                 <span>{{ room.group_size.title() }}</span>
               </div>
               {% endif %}
-              <div class="flex items-center justify-between">
-                <span>📈 Activity score:</span>
-                <span>{{ stats.activity_score }} points</span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span>🏷️ Room ID:</span>
-                <span>{{ room.id }}</span>
-              </div>
             </div>
           </div>
           
