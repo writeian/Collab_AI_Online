@@ -184,15 +184,11 @@
             <i data-lucide="chevron-down" class="w-4 h-4 transition-transform" id="chevron-{{ room.id }}"></i>
           </button>
           
-          <!-- Subtle Activity Hint (No Numbers) -->
+          <!-- Activity-Focused Status (Option A) -->
           {% if stats.has_unread %}
-            <span class="text-red-600 text-xs">New activity</span>
-          {% elif stats.is_very_new %}
-            <span class="text-purple-600 text-xs">Just created</span>
-          {% elif stats.is_new %}
-            <span class="text-blue-600 text-xs">Recently created</span>
-          {% elif stats.has_recent_activity %}
-            <span class="text-green-600 text-xs">Active</span>
+            <span class="text-red-600 text-xs font-medium">New messages!</span>
+          {% elif stats.recent_chats > 0 or stats.recent_messages > 0 %}
+            <span class="text-orange-600 text-xs">Active</span>
           {% else %}
             <span class="text-gray-400 text-xs">Quiet</span>
           {% endif %}
