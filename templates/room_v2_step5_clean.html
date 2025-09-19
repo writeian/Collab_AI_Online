@@ -142,7 +142,7 @@
       {% endif %}
     </div>
     
-    <div class="space-y-3">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {% for room_data in sorted_rooms %}
       {% set room = room_data.room %}
       {% set is_owner = room_data.is_owner %}
