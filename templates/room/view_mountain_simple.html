@@ -195,10 +195,11 @@
                 {% if step_chats %}Continue Climb{% else %}Start Ascent{% endif %}
               </a>
             {% else %}
-              <div class="inline-flex items-center px-4 py-2 bg-gray-100 text-slate-600 text-sm font-medium rounded-lg">
-                <i data-lucide="lock" class="w-4 h-4 mr-2"></i>
-                Complete previous steps
-              </div>
+              <a href="/room/{{ room.id }}/chat/create?mode={{ mode_key }}" 
+                 class="inline-flex items-center px-4 py-2 bg-amber-100 text-amber-700 text-sm font-medium rounded-lg hover:bg-amber-200 transition-colors">
+                <i data-lucide="fast-forward" class="w-4 h-4 mr-2"></i>
+                Skip Ahead
+              </a>
             {% endif %}
             
             <!-- Avatar Group showing who worked on this step -->
@@ -433,30 +434,33 @@ document.addEventListener('click', (e) => {
   left: 50%;
   top: 2rem;
   bottom: 2rem;
-  width: 2px;
+  width: 4px;
   background: repeating-linear-gradient(
     to bottom,
-    #cbd5e1 0px,
-    #cbd5e1 8px,
-    transparent 8px,
-    transparent 16px
+    #64748b 0px,      /* Slate-500 - more visible */
+    #64748b 12px,     /* Longer dashes */
+    transparent 12px,
+    transparent 20px  /* Longer gaps */
   );
   transform: translateX(-50%);
+  border-radius: 2px;
+  box-shadow: 0 0 8px rgba(100, 116, 139, 0.2);
   z-index: 0;
 }
 
-/* On desktop, position the path line to connect the alternating markers */
+/* On desktop, make the path even more prominent */
 @media (min-width: 768px) {
   .learning-path::before {
-    left: 50%;
+    width: 6px;
     background: repeating-linear-gradient(
       to bottom,
-      #94a3b8 0px,
-      #94a3b8 6px,
-      transparent 6px,
-      transparent 12px
+      #475569 0px,      /* Slate-600 - darker and more visible */
+      #475569 15px,     /* Even longer dashes */
+      transparent 15px,
+      transparent 25px  /* Bigger gaps for pathway effect */
     );
-    opacity: 0.4;
+    box-shadow: 0 0 12px rgba(71, 85, 105, 0.3);
+    border-radius: 3px;
   }
 }
 
