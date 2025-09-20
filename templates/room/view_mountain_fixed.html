@@ -1,0 +1,478 @@
+{% extends "base.html" %}
+{% block title %}{{ room.name }} - Learning Journey{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  
+  <!-- Navigation Breadcrumb -->
+  <div class="flex items-center gap-2 mb-6">
+    <a href="/room/" class="text-blue-600 hover:text-blue-800 transition-colors text-sm">
+      <i data-lucide="home" class="w-4 h-4 inline mr-1"></i>
+      Home
+    </a>
+    <span class="text-gray-400">/</span>
+    <span class="text-gray-600 text-sm">{{ room.name }}</span>
+    <span class="ml-auto">
+      <a href="/room/{{ room.id }}" class="text-blue-600 hover:text-blue-800 text-sm">← Back to Standard View</a>
+    </span>
+  </div>
+
+  <!-- Hero Section -->
+  <div class="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 rounded-xl p-6 mb-8 border border-blue-200">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ room.name }}</h1>
+        <p class="text-gray-600 leading-relaxed">{{ room.description or room.short_description }}</p>
+      </div>
+      <div class="text-right">
+        <div class="text-4xl mb-2">🏔️</div>
+        <div class="text-sm text-gray-500">Learning Summit</div>
+      </div>
+    </div>
+    
+    <!-- Primary Actions -->
+    <div class="flex gap-3 mt-6">
+      <a href="/room/{{ room.id }}/chat/create" 
+         class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 shadow-lg">
+        <i data-lucide="plus" class="w-5 h-5 mr-2"></i>
+        Start New Chat
+      </a>
+      {% set next_step = (chats|map(attribute='mode')|list|unique|list|length + 1) if modes else 1 %}
+      <a href="#step-{{ next_step }}" 
+         class="inline-flex items-center px-6 py-3 bg-white border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
+        <i data-lucide="map" class="w-5 h-5 mr-2"></i>
+        Go to Next Step
+      </a>
+    </div>
+  </div>
+
+  <!-- Mountain Learning Journey -->
+  <div id="learning-journey" class="mountain-container bg-gradient-to-b from-sky-100 via-blue-50 to-green-50 rounded-xl p-8 relative overflow-hidden">
+    
+    <!-- Mountain Backdrop -->
+    <div class="absolute top-4 right-6 text-6xl opacity-10 text-slate-600">🏔️</div>
+    <div class="absolute top-8 left-8 text-2xl opacity-20 text-slate-500">☁️</div>
+    <div class="absolute bottom-10 right-12 text-3xl opacity-15 text-green-600">🌲</div>
+    
+    <!-- Journey Header with Progress -->
+    <div class="text-center mb-8">
+      <h2 class="text-2xl font-bold text-gray-800 mb-2">🎯 Your Learning Journey</h2>
+      <p class="text-gray-600">Climb the mountain of knowledge, one step at a time</p>
+      
+      <!-- Real Progress Bar -->
+      {% set completed_steps = chats|map(attribute='mode')|list|unique|list|length %}
+      {% set total_steps = modes|length if modes else 8 %}
+      {% set progress_percent = (completed_steps / total_steps * 100) if total_steps > 0 else 0 %}
+      
+      <div class="mt-4 max-w-md mx-auto">
+        <div class="flex justify-between text-sm text-gray-600 mb-1">
+          <span>Progress</span>
+          <span>{{ completed_steps }}/{{ total_steps }} steps</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+          <div class="bg-gradient-to-r from-green-400 to-blue-500 h-2 rounded-full transition-all duration-500" 
+               style="width: {{ progress_percent }}%"
+               role="progressbar" 
+               aria-valuenow="{{ completed_steps }}" 
+               aria-valuemin="0" 
+               aria-valuemax="{{ total_steps }}"
+               aria-label="Learning progress: {{ completed_steps }} of {{ total_steps }} steps completed"></div>
+        </div>
+        <div class="text-xs text-gray-500 mt-1 text-center">
+          {{ "%.0f"|format(progress_percent) }}% complete
+        </div>
+      </div>
+    </div>
+
+    <!-- Learning Steps -->
+    <div class="max-w-5xl mx-auto space-y-8">
+      
+      {% for mode_key, mode in modes.items() %}
+      {% set step_number = loop.index %}
+      {% set is_completed = chats|selectattr('mode', 'equalto', mode_key)|list|length > 0 %}
+      {% set step_chats = chats|selectattr('mode', 'equalto', mode_key)|list %}
+      {% set is_current = not is_completed and (completed_steps + 1) == step_number %}
+      
+      <!-- Step Container -->
+      <div id="step-{{ step_number }}" class="scroll-mt-8">
+        
+        <!-- Desktop: 3-Column Grid -->
+        <div class="hidden md:grid grid-cols-12 gap-6 items-start">
+          {% if loop.index % 2 == 1 %}
+            <!-- Left side: Marker + Content + Spacer -->
+            <div class="col-span-2 flex justify-center pt-4">
+              <div class="step-marker">
+                {% if is_completed %}
+                  <div class="w-14 h-14 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-lg shadow-lg border-4 border-white">
+                    ✅
+                  </div>
+                  <div class="text-center text-xs font-medium text-green-600 mt-2">Summit!</div>
+                {% elif is_current %}
+                  <div class="w-14 h-14 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-lg shadow-lg border-4 border-white animate-pulse">
+                    {{ step_number }}
+                  </div>
+                  <div class="text-center text-xs font-medium text-blue-600 mt-2">You are here!</div>
+                {% else %}
+                  <div class="w-14 h-14 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center font-bold text-lg shadow-lg border-4 border-white">
+                    {{ step_number }}
+                  </div>
+                  <div class="text-center text-xs font-medium text-gray-500 mt-2">Checkpoint</div>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div class="col-span-8">
+              <!-- Content Card -->
+              <div class="step-content bg-white rounded-xl shadow-md border border-gray-200 p-6
+                          {% if is_completed %}ring-2 ring-green-200 bg-green-50/30{% elif is_current %}ring-2 ring-blue-200 bg-blue-50/30{% endif %}">
+          {% else %}
+            <!-- Right side: Spacer + Content + Marker -->
+            <div class="col-span-2"></div>
+            
+            <div class="col-span-8">
+              <!-- Content Card -->
+              <div class="step-content bg-white rounded-xl shadow-md border border-gray-200 p-6
+                          {% if is_completed %}ring-2 ring-green-200 bg-green-50/30{% elif is_current %}ring-2 ring-blue-200 bg-blue-50/30{% endif %}">
+            </div>
+            
+            <div class="col-span-2 flex justify-center pt-4">
+              <div class="step-marker">
+                {% if is_completed %}
+                  <div class="w-14 h-14 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-lg shadow-lg border-4 border-white">
+                    ✅
+                  </div>
+                  <div class="text-center text-xs font-medium text-green-600 mt-2">Summit!</div>
+                {% elif is_current %}
+                  <div class="w-14 h-14 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-lg shadow-lg border-4 border-white animate-pulse">
+                    {{ step_number }}
+                  </div>
+                  <div class="text-center text-xs font-medium text-blue-600 mt-2">You are here!</div>
+                {% else %}
+                  <div class="w-14 h-14 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center font-bold text-lg shadow-lg border-4 border-white">
+                    {{ step_number }}
+                  </div>
+                  <div class="text-center text-xs font-medium text-gray-500 mt-2">Checkpoint</div>
+                {% endif %}
+              </div>
+            </div>
+          {% endif %}
+          
+          <!-- Step Content -->
+          <div class="step-content-inner">
+            <!-- Clean Step Title (no double numbering) -->
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-bold text-gray-800">
+                {% if mode.label.startswith(step_number|string + '.') %}
+                  {{ mode.label[2:].strip() }}
+                {% else %}
+                  {{ mode.label }}
+                {% endif %}
+              </h3>
+              
+              <!-- Status Badge -->
+              {% if is_completed %}
+                <span class="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full font-medium">
+                  ✅ Completed
+                </span>
+              {% elif is_current %}
+                <span class="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-medium animate-pulse">
+                  🔵 Current
+                </span>
+              {% else %}
+                <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full font-medium">
+                  ⏳ Upcoming
+                </span>
+              {% endif %}
+            </div>
+            
+            <!-- Truncated Description with Read More -->
+            <div class="mb-4">
+              <p id="desc-short-{{ step_number }}" class="text-gray-600 text-sm leading-relaxed">
+                {{ mode.prompt[:150] }}{% if mode.prompt|length > 150 %}...
+                <button onclick="toggleStepDescription({{ step_number }})" class="text-blue-600 hover:text-blue-800 ml-1 font-medium">
+                  Read more
+                </button>
+                {% endif %}
+              </p>
+              
+              {% if mode.prompt|length > 150 %}
+              <p id="desc-full-{{ step_number }}" class="text-gray-600 text-sm leading-relaxed hidden">
+                {{ mode.prompt }}
+                <button onclick="toggleStepDescription({{ step_number }})" class="text-blue-600 hover:text-blue-800 ml-1 font-medium">
+                  Show less
+                </button>
+              </p>
+              {% endif %}
+            </div>
+            
+            <!-- Step Progress -->
+            {% if step_chats %}
+              <div class="bg-gray-50 rounded-lg p-3 mb-4">
+                <div class="text-xs font-medium text-gray-700 mb-2">Your Progress:</div>
+                {% for chat in step_chats %}
+                  <div class="flex items-center justify-between text-sm">
+                    <a href="/chat/{{ chat.id }}" class="text-blue-600 hover:text-blue-800">{{ chat.title }}</a>
+                    <span class="text-gray-500 text-xs">{{ chat.created_at.strftime('%m/%d') }}</span>
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+            
+            <!-- Action Button -->
+            {% if is_completed %}
+              <a href="/chat/{{ step_chats[0].id if step_chats else '#' }}" 
+                 class="inline-flex items-center px-4 py-2 bg-green-100 text-green-700 text-sm font-medium rounded-lg hover:bg-green-200 transition-colors">
+                <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i>
+                Review Progress
+              </a>
+            {% elif is_current %}
+              <a href="/room/{{ room.id }}/chat/create?mode={{ mode_key }}" 
+                 class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 shadow-lg">
+                <i data-lucide="arrow-up-right" class="w-4 h-4 mr-2"></i>
+                {% if step_chats %}Continue Climb{% else %}Start Ascent{% endif %}
+              </a>
+            {% else %}
+              <div class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-500 text-sm font-medium rounded-lg">
+                <i data-lucide="lock" class="w-4 h-4 mr-2"></i>
+                Complete previous steps
+              </div>
+            {% endif %}
+            
+          </div>
+          </div>
+        </div>
+        
+        <!-- Mobile: Simple Stacked Layout -->
+        <div class="md:hidden">
+          <div class="flex flex-col items-center text-center mb-4">
+            <!-- Mobile Marker -->
+            {% if is_completed %}
+              <div class="w-16 h-16 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-xl shadow-lg border-4 border-white mb-2">
+                ✅
+              </div>
+              <div class="text-xs font-medium text-green-600">Step {{ step_number }} Complete!</div>
+            {% elif is_current %}
+              <div class="w-16 h-16 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xl shadow-lg border-4 border-white mb-2 animate-pulse">
+                {{ step_number }}
+              </div>
+              <div class="text-xs font-medium text-blue-600">You are here!</div>
+            {% else %}
+              <div class="w-16 h-16 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center font-bold text-xl shadow-lg border-4 border-white mb-2">
+                {{ step_number }}
+              </div>
+              <div class="text-xs font-medium text-gray-500">Step {{ step_number }}</div>
+            {% endif %}
+          </div>
+          
+          <!-- Mobile Content Card -->
+          <div class="bg-white rounded-xl shadow-md border border-gray-200 p-6
+                      {% if is_completed %}ring-2 ring-green-200 bg-green-50/30{% elif is_current %}ring-2 ring-blue-200 bg-blue-50/30{% endif %}">
+            
+            <!-- Mobile Step Content (same as desktop) -->
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-bold text-gray-800">
+                {% if mode.label.startswith(step_number|string + '.') %}
+                  {{ mode.label[2:].strip() }}
+                {% else %}
+                  {{ mode.label }}
+                {% endif %}
+              </h3>
+              
+              <!-- Status Badge -->
+              {% if is_completed %}
+                <span class="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full font-medium">
+                  ✅ Completed
+                </span>
+              {% elif is_current %}
+                <span class="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-medium animate-pulse">
+                  🔵 Current
+                </span>
+              {% else %}
+                <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full font-medium">
+                  ⏳ Upcoming
+                </span>
+              {% endif %}
+            </div>
+            
+            <!-- Description -->
+            <div class="mb-4">
+              <p id="mobile-desc-short-{{ step_number }}" class="text-gray-600 text-sm leading-relaxed">
+                {{ mode.prompt[:150] }}{% if mode.prompt|length > 150 %}...
+                <button onclick="toggleMobileDescription({{ step_number }})" class="text-blue-600 hover:text-blue-800 ml-1 font-medium">
+                  Read more
+                </button>
+                {% endif %}
+              </p>
+              
+              {% if mode.prompt|length > 150 %}
+              <p id="mobile-desc-full-{{ step_number }}" class="text-gray-600 text-sm leading-relaxed hidden">
+                {{ mode.prompt }}
+                <button onclick="toggleMobileDescription({{ step_number }})" class="text-blue-600 hover:text-blue-800 ml-1 font-medium">
+                  Show less
+                </button>
+              </p>
+              {% endif %}
+            </div>
+            
+            <!-- Mobile Action Button -->
+            <div class="text-center">
+              {% if is_completed %}
+                <a href="/chat/{{ step_chats[0].id if step_chats else '#' }}" 
+                   class="inline-flex items-center px-6 py-3 bg-green-100 text-green-700 font-medium rounded-lg hover:bg-green-200 transition-colors">
+                  <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i>
+                  Review Progress
+                </a>
+              {% elif is_current %}
+                <a href="/room/{{ room.id }}/chat/create?mode={{ mode_key }}" 
+                   class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 shadow-lg">
+                  <i data-lucide="arrow-up-right" class="w-4 h-4 mr-2"></i>
+                  {% if step_chats %}Continue Climb{% else %}Start Ascent{% endif %}
+                </a>
+              {% else %}
+                <div class="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-500 font-medium rounded-lg">
+                  <i data-lucide="lock" class="w-4 h-4 mr-2"></i>
+                  Complete previous steps
+                </div>
+              {% endif %}
+            </div>
+            
+          </div>
+        </div>
+        
+      </div>
+      {% endfor %}
+      
+    </div>
+  </div>
+
+  <!-- Climbing Team Section -->
+  <div class="mt-8 bg-white rounded-xl shadow-md border border-gray-200 p-6">
+    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+      <i data-lucide="users" class="w-5 h-5 text-blue-600"></i>
+      🧗‍♀️ Climbing Team
+    </h3>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {% for member in members %}
+      <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white flex items-center justify-center font-bold">
+          {{ member.username[:2].upper() }}
+        </div>
+        <div>
+          <div class="font-medium text-gray-800">{{ member.username }}</div>
+          <div class="text-xs text-gray-500">
+            {% if member.id == room.owner_id %}🏔️ Expedition Leader{% else %}🧗 Climber{% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+<script>
+function toggleStepDescription(stepNumber) {
+  const shortDesc = document.getElementById(`desc-short-${stepNumber}`);
+  const fullDesc = document.getElementById(`desc-full-${stepNumber}`);
+  
+  if (shortDesc.classList.contains('hidden')) {
+    shortDesc.classList.remove('hidden');
+    fullDesc.classList.add('hidden');
+  } else {
+    shortDesc.classList.add('hidden');
+    fullDesc.classList.remove('hidden');
+  }
+}
+
+function toggleMobileDescription(stepNumber) {
+  const shortDesc = document.getElementById(`mobile-desc-short-${stepNumber}`);
+  const fullDesc = document.getElementById(`mobile-desc-full-${stepNumber}`);
+  
+  if (shortDesc.classList.contains('hidden')) {
+    shortDesc.classList.remove('hidden');
+    fullDesc.classList.add('hidden');
+  } else {
+    shortDesc.classList.add('hidden');
+    fullDesc.classList.remove('hidden');
+  }
+}
+
+// Initialize with deep linking and animations
+document.addEventListener('DOMContentLoaded', function() {
+  // Handle deep linking to specific steps
+  const hash = window.location.hash;
+  if (hash && hash.startsWith('#step-')) {
+    const stepElement = document.querySelector(hash);
+    if (stepElement) {
+      // Highlight the targeted step
+      stepElement.classList.add('ring-4', 'ring-blue-300', 'ring-opacity-50');
+      
+      // Smooth scroll to the step
+      setTimeout(() => {
+        stepElement.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }, 500);
+      
+      // Remove highlight after animation
+      setTimeout(() => {
+        stepElement.classList.remove('ring-4', 'ring-blue-300', 'ring-opacity-50');
+      }, 3000);
+    }
+  }
+  
+  // Add entrance animations
+  const stepCards = document.querySelectorAll('[id^="step-"]');
+  stepCards.forEach((card, index) => {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(20px)';
+    setTimeout(() => {
+      card.style.transition = 'all 0.6s ease';
+      card.style.opacity = '1';
+      card.style.transform = 'translateY(0)';
+    }, index * 150);
+  });
+});
+</script>
+
+<style>
+/* Mountain Learning Journey Styles */
+.mountain-container {
+  background: linear-gradient(135deg, 
+    #e0f2fe 0%,     /* Sky blue at top */
+    #f0f9ff 30%,    /* Light blue */
+    #f8fafc 60%,    /* White clouds */
+    #f1f5f9 100%    /* Mountain base */
+  );
+  box-shadow: inset 0 0 100px rgba(59, 130, 246, 0.1);
+}
+
+/* Remove the duplicate central line - using single path approach */
+
+/* Step card hover effects */
+.step-content:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+/* Climbing team member hover */
+.flex:hover .w-10 {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+  .mountain-container {
+    padding: 1rem;
+  }
+  
+  .step-marker {
+    margin-bottom: 1rem;
+  }
+}
+</style>
+
+{% endblock %}

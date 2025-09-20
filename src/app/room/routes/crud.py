@@ -212,7 +212,7 @@ def view_room_mountain(room_id: int) -> Any:
             modes = {}
 
         return render_template(
-            "room/view_mountain.html",
+            "room/view_mountain_fixed.html",
             room=room,
             room_data=room_data,
             chats=chats,
