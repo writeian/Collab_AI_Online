@@ -36,8 +36,7 @@
         <i data-lucide="plus" class="w-5 h-5 mr-2"></i>
         Start New Chat
       </a>
-      {% set next_step = (chats|map(attribute='mode')|list|unique|list|length + 1) if modes else 1 %}
-      <a href="#step-{{ next_step }}" 
+      <a href="#" id="goto-next"
          class="inline-flex items-center px-6 py-3 bg-white border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
         <i data-lucide="map" class="w-5 h-5 mr-2"></i>
         Go to Next Step
@@ -46,149 +45,151 @@
   </div>
 
   <!-- Mountain Learning Journey -->
-  <div id="learning-journey" class="mountain-container bg-gradient-to-b from-sky-100 via-blue-50 to-green-50 rounded-xl p-8 relative overflow-hidden">
+  <div id="learning-journey" class="mountain-container bg-gradient-to-b from-sky-50 via-blue-25 to-green-25 rounded-xl p-8 relative overflow-hidden">
     
-    <!-- Mountain Backdrop -->
-    <div class="absolute top-4 right-6 text-6xl opacity-10 text-slate-600">🏔️</div>
-    <div class="absolute top-8 left-8 text-2xl opacity-20 text-slate-500">☁️</div>
-    <div class="absolute bottom-10 right-12 text-3xl opacity-15 text-green-600">🌲</div>
+    <!-- Subtle Mountain Backdrop -->
+    <div class="absolute top-4 right-6 text-4xl opacity-5 text-slate-400">🏔️</div>
+    <div class="absolute top-8 left-8 text-xl opacity-10 text-slate-400">☁️</div>
+    <div class="absolute bottom-10 right-12 text-2xl opacity-8 text-green-400">🌲</div>
     
-    <!-- Journey Header with Progress -->
+    <!-- Journey Header with Dynamic Progress -->
     <div class="text-center mb-8">
       <h2 class="text-2xl font-bold text-gray-800 mb-2">🎯 Your Learning Journey</h2>
       <p class="text-gray-600">Climb the mountain of knowledge, one step at a time</p>
       
-      <!-- Real Progress Bar -->
-      {% set completed_steps = chats|map(attribute='mode')|list|unique|list|length %}
-      {% set total_steps = modes|length if modes else 8 %}
-      {% set progress_percent = (completed_steps / total_steps * 100) if total_steps > 0 else 0 %}
-      
-      <div class="mt-4 max-w-md mx-auto">
+      <!-- Dynamic Progress Bar -->
+      <div id="progress-rail" class="mt-4 max-w-md mx-auto" aria-live="polite">
         <div class="flex justify-between text-sm text-gray-600 mb-1">
           <span>Progress</span>
-          <span>{{ completed_steps }}/{{ total_steps }} steps</span>
+          <span class="num">Computing...</span>
         </div>
         <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
           <div class="bg-gradient-to-r from-green-400 to-blue-500 h-2 rounded-full transition-all duration-500" 
-               style="width: {{ progress_percent }}%"
+               style="width: 0%"
                role="progressbar" 
-               aria-valuenow="{{ completed_steps }}" 
+               aria-valuenow="0" 
                aria-valuemin="0" 
-               aria-valuemax="{{ total_steps }}"
-               aria-label="Learning progress: {{ completed_steps }} of {{ total_steps }} steps completed"></div>
+               aria-valuemax="100"
+               aria-label="Learning progress"></div>
         </div>
-        <div class="text-xs text-gray-500 mt-1 text-center">
-          {{ "%.0f"|format(progress_percent) }}% complete
+        <div class="text-xs text-gray-500 mt-1 text-center percent">
+          0% complete
         </div>
       </div>
     </div>
 
-    <!-- Learning Steps -->
+    <!-- Learning Steps with Stable Grid -->
     <div class="max-w-5xl mx-auto space-y-8">
       
       {% for mode_key, mode in modes.items() %}
       {% set step_number = loop.index %}
       {% set is_completed = chats|selectattr('mode', 'equalto', mode_key)|list|length > 0 %}
       {% set step_chats = chats|selectattr('mode', 'equalto', mode_key)|list %}
-      {% set is_current = not is_completed and (completed_steps + 1) == step_number %}
+      {% set completed_count = chats|map(attribute='mode')|list|unique|list|length %}
+      {% set is_current = not is_completed and step_number == (completed_count + 1) %}
       
       <!-- Step Container -->
       <div id="step-{{ step_number }}" class="scroll-mt-8">
         
-        <!-- Desktop: 3-Column Grid -->
+        <!-- Desktop: Stable 3-Column Grid -->
         <div class="hidden md:grid grid-cols-12 gap-6 items-start">
+          
           {% if loop.index % 2 == 1 %}
             <!-- Left side: Marker + Content + Spacer -->
             <div class="col-span-2 flex justify-center pt-4">
-              <div class="step-marker">
+              <div class="step-marker text-center">
                 {% if is_completed %}
                   <div class="w-14 h-14 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-lg shadow-lg border-4 border-white">
                     ✅
                   </div>
-                  <div class="text-center text-xs font-medium text-green-600 mt-2">Summit!</div>
+                  <div class="text-xs font-medium text-green-600 mt-2">Summit!</div>
                 {% elif is_current %}
                   <div class="w-14 h-14 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-lg shadow-lg border-4 border-white animate-pulse">
                     {{ step_number }}
                   </div>
-                  <div class="text-center text-xs font-medium text-blue-600 mt-2">You are here!</div>
+                  <div class="text-xs font-medium text-blue-600 mt-2">You are here!</div>
                 {% else %}
-                  <div class="w-14 h-14 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center font-bold text-lg shadow-lg border-4 border-white">
+                  <div class="w-14 h-14 rounded-full bg-slate-300 text-slate-700 flex items-center justify-center font-bold text-lg shadow-lg border-4 border-white">
                     {{ step_number }}
                   </div>
-                  <div class="text-center text-xs font-medium text-gray-500 mt-2">Checkpoint</div>
+                  <div class="text-xs font-medium text-slate-600 mt-2">Checkpoint</div>
                 {% endif %}
               </div>
             </div>
             
             <div class="col-span-8">
-              <!-- Content Card -->
-              <div class="step-content bg-white rounded-xl shadow-md border border-gray-200 p-6
+              <div class="step-content bg-white rounded-xl shadow-md border border-gray-200 p-6 will-change-transform
                           {% if is_completed %}ring-2 ring-green-200 bg-green-50/30{% elif is_current %}ring-2 ring-blue-200 bg-blue-50/30{% endif %}">
           {% else %}
             <!-- Right side: Spacer + Content + Marker -->
             <div class="col-span-2"></div>
             
             <div class="col-span-8">
-              <!-- Content Card -->
-              <div class="step-content bg-white rounded-xl shadow-md border border-gray-200 p-6
+              <div class="step-content bg-white rounded-xl shadow-md border border-gray-200 p-6 will-change-transform
                           {% if is_completed %}ring-2 ring-green-200 bg-green-50/30{% elif is_current %}ring-2 ring-blue-200 bg-blue-50/30{% endif %}">
             </div>
             
             <div class="col-span-2 flex justify-center pt-4">
-              <div class="step-marker">
+              <div class="step-marker text-center">
                 {% if is_completed %}
                   <div class="w-14 h-14 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-lg shadow-lg border-4 border-white">
                     ✅
                   </div>
-                  <div class="text-center text-xs font-medium text-green-600 mt-2">Summit!</div>
+                  <div class="text-xs font-medium text-green-600 mt-2">Summit!</div>
                 {% elif is_current %}
                   <div class="w-14 h-14 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-lg shadow-lg border-4 border-white animate-pulse">
                     {{ step_number }}
                   </div>
-                  <div class="text-center text-xs font-medium text-blue-600 mt-2">You are here!</div>
+                  <div class="text-xs font-medium text-blue-600 mt-2">You are here!</div>
                 {% else %}
-                  <div class="w-14 h-14 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center font-bold text-lg shadow-lg border-4 border-white">
+                  <div class="w-14 h-14 rounded-full bg-slate-300 text-slate-700 flex items-center justify-center font-bold text-lg shadow-lg border-4 border-white">
                     {{ step_number }}
                   </div>
-                  <div class="text-center text-xs font-medium text-gray-500 mt-2">Checkpoint</div>
+                  <div class="text-xs font-medium text-slate-600 mt-2">Checkpoint</div>
                 {% endif %}
               </div>
             </div>
           {% endif %}
           
-          <!-- Step Content -->
+          <!-- Step Content (consistent for both sides) -->
           <div class="step-content-inner">
-            <!-- Clean Step Title (no double numbering) -->
+            
+            <!-- Clean Step Title -->
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-lg font-bold text-gray-800">
-                {% if mode.label.startswith(step_number|string + '.') %}
-                  {{ mode.label[2:].strip() }}
-                {% else %}
-                  {{ mode.label }}
+                {% set clean_title = mode.label %}
+                {% if clean_title.startswith(step_number|string + '.') %}
+                  {% set clean_title = clean_title[2:].strip() %}
+                {% elif clean_title.startswith('.') %}
+                  {% set clean_title = clean_title[1:].strip() %}
                 {% endif %}
+                {{ clean_title }}
               </h3>
               
-              <!-- Status Badge -->
+              <!-- Accessible Status Badge -->
               {% if is_completed %}
-                <span class="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full font-medium">
-                  ✅ Completed
+                <span class="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full font-medium" data-status="done">
+                  <span class="sr-only">Status:</span> Completed
                 </span>
               {% elif is_current %}
-                <span class="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-medium animate-pulse">
-                  🔵 Current
+                <span class="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-medium" data-status="current">
+                  <span class="sr-only">Status:</span> Current
                 </span>
               {% else %}
-                <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full font-medium">
-                  ⏳ Upcoming
+                <span class="bg-gray-100 text-slate-700 text-xs px-3 py-1 rounded-full font-medium" data-status="upcoming">
+                  <span class="sr-only">Status:</span> Upcoming
                 </span>
               {% endif %}
             </div>
             
-            <!-- Truncated Description with Read More -->
+            <!-- Accessible Description with Read More -->
             <div class="mb-4">
               <p id="desc-short-{{ step_number }}" class="text-gray-600 text-sm leading-relaxed">
                 {{ mode.prompt[:150] }}{% if mode.prompt|length > 150 %}...
-                <button onclick="toggleStepDescription({{ step_number }})" class="text-blue-600 hover:text-blue-800 ml-1 font-medium">
+                <button type="button" class="desc-toggle text-blue-600 hover:text-blue-800 ml-1 font-medium" 
+                        data-target="{{ step_number }}" 
+                        aria-expanded="false" 
+                        aria-controls="desc-full-{{ step_number }}">
                   Read more
                 </button>
                 {% endif %}
@@ -197,7 +198,10 @@
               {% if mode.prompt|length > 150 %}
               <p id="desc-full-{{ step_number }}" class="text-gray-600 text-sm leading-relaxed hidden">
                 {{ mode.prompt }}
-                <button onclick="toggleStepDescription({{ step_number }})" class="text-blue-600 hover:text-blue-800 ml-1 font-medium">
+                <button type="button" class="desc-toggle text-blue-600 hover:text-blue-800 ml-1 font-medium" 
+                        data-target="{{ step_number }}" 
+                        aria-expanded="true" 
+                        aria-controls="desc-short-{{ step_number }}">
                   Show less
                 </button>
               </p>
@@ -231,7 +235,7 @@
                 {% if step_chats %}Continue Climb{% else %}Start Ascent{% endif %}
               </a>
             {% else %}
-              <div class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-500 text-sm font-medium rounded-lg">
+              <div class="inline-flex items-center px-4 py-2 bg-gray-100 text-slate-600 text-sm font-medium rounded-lg">
                 <i data-lucide="lock" class="w-4 h-4 mr-2"></i>
                 Complete previous steps
               </div>
@@ -244,7 +248,6 @@
         <!-- Mobile: Simple Stacked Layout -->
         <div class="md:hidden">
           <div class="flex flex-col items-center text-center mb-4">
-            <!-- Mobile Marker -->
             {% if is_completed %}
               <div class="w-16 h-16 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-xl shadow-lg border-4 border-white mb-2">
                 ✅
@@ -256,48 +259,53 @@
               </div>
               <div class="text-xs font-medium text-blue-600">You are here!</div>
             {% else %}
-              <div class="w-16 h-16 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center font-bold text-xl shadow-lg border-4 border-white mb-2">
+              <div class="w-16 h-16 rounded-full bg-slate-300 text-slate-700 flex items-center justify-center font-bold text-xl shadow-lg border-4 border-white mb-2">
                 {{ step_number }}
               </div>
-              <div class="text-xs font-medium text-gray-500">Step {{ step_number }}</div>
+              <div class="text-xs font-medium text-slate-600">Step {{ step_number }}</div>
             {% endif %}
           </div>
           
           <!-- Mobile Content Card -->
-          <div class="bg-white rounded-xl shadow-md border border-gray-200 p-6
+          <div class="bg-white rounded-xl shadow-md border border-gray-200 p-6 will-change-transform
                       {% if is_completed %}ring-2 ring-green-200 bg-green-50/30{% elif is_current %}ring-2 ring-blue-200 bg-blue-50/30{% endif %}">
             
-            <!-- Mobile Step Content (same as desktop) -->
+            <!-- Mobile Step Content -->
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-lg font-bold text-gray-800">
-                {% if mode.label.startswith(step_number|string + '.') %}
-                  {{ mode.label[2:].strip() }}
-                {% else %}
-                  {{ mode.label }}
+                {% set clean_title = mode.label %}
+                {% if clean_title.startswith(step_number|string + '.') %}
+                  {% set clean_title = clean_title[2:].strip() %}
+                {% elif clean_title.startswith('.') %}
+                  {% set clean_title = clean_title[1:].strip() %}
                 {% endif %}
+                {{ clean_title }}
               </h3>
               
-              <!-- Status Badge -->
+              <!-- Mobile Status Badge -->
               {% if is_completed %}
-                <span class="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full font-medium">
-                  ✅ Completed
+                <span class="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full font-medium" data-status="done">
+                  <span class="sr-only">Status:</span> Completed
                 </span>
               {% elif is_current %}
-                <span class="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-medium animate-pulse">
-                  🔵 Current
+                <span class="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-medium" data-status="current">
+                  <span class="sr-only">Status:</span> Current
                 </span>
               {% else %}
-                <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full font-medium">
-                  ⏳ Upcoming
+                <span class="bg-gray-100 text-slate-700 text-xs px-3 py-1 rounded-full font-medium" data-status="upcoming">
+                  <span class="sr-only">Status:</span> Upcoming
                 </span>
               {% endif %}
             </div>
             
-            <!-- Description -->
+            <!-- Mobile Description -->
             <div class="mb-4">
               <p id="mobile-desc-short-{{ step_number }}" class="text-gray-600 text-sm leading-relaxed">
                 {{ mode.prompt[:150] }}{% if mode.prompt|length > 150 %}...
-                <button onclick="toggleMobileDescription({{ step_number }})" class="text-blue-600 hover:text-blue-800 ml-1 font-medium">
+                <button type="button" class="desc-toggle text-blue-600 hover:text-blue-800 ml-1 font-medium" 
+                        data-target="mobile-{{ step_number }}" 
+                        aria-expanded="false" 
+                        aria-controls="mobile-desc-full-{{ step_number }}">
                   Read more
                 </button>
                 {% endif %}
@@ -306,7 +314,10 @@
               {% if mode.prompt|length > 150 %}
               <p id="mobile-desc-full-{{ step_number }}" class="text-gray-600 text-sm leading-relaxed hidden">
                 {{ mode.prompt }}
-                <button onclick="toggleMobileDescription({{ step_number }})" class="text-blue-600 hover:text-blue-800 ml-1 font-medium">
+                <button type="button" class="desc-toggle text-blue-600 hover:text-blue-800 ml-1 font-medium" 
+                        data-target="mobile-{{ step_number }}" 
+                        aria-expanded="true" 
+                        aria-controls="mobile-desc-short-{{ step_number }}">
                   Show less
                 </button>
               </p>
@@ -328,7 +339,7 @@
                   {% if step_chats %}Continue Climb{% else %}Start Ascent{% endif %}
                 </a>
               {% else %}
-                <div class="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-500 font-medium rounded-lg">
+                <div class="inline-flex items-center px-6 py-3 bg-gray-100 text-slate-600 font-medium rounded-lg">
                   <i data-lucide="lock" class="w-4 h-4 mr-2"></i>
                   Complete previous steps
                 </div>
@@ -371,68 +382,95 @@
 </div>
 
 <script>
-function toggleStepDescription(stepNumber) {
-  const shortDesc = document.getElementById(`desc-short-${stepNumber}`);
-  const fullDesc = document.getElementById(`desc-full-${stepNumber}`);
-  
-  if (shortDesc.classList.contains('hidden')) {
-    shortDesc.classList.remove('hidden');
-    fullDesc.classList.add('hidden');
-  } else {
-    shortDesc.classList.add('hidden');
-    fullDesc.classList.remove('hidden');
-  }
-}
-
-function toggleMobileDescription(stepNumber) {
-  const shortDesc = document.getElementById(`mobile-desc-short-${stepNumber}`);
-  const fullDesc = document.getElementById(`mobile-desc-full-${stepNumber}`);
-  
-  if (shortDesc.classList.contains('hidden')) {
-    shortDesc.classList.remove('hidden');
-    fullDesc.classList.add('hidden');
-  } else {
-    shortDesc.classList.add('hidden');
-    fullDesc.classList.remove('hidden');
-  }
-}
-
-// Initialize with deep linking and animations
+// Smart "Go to Next Step" functionality
 document.addEventListener('DOMContentLoaded', function() {
+  // Compute real progress from status badges
+  const steps = [...document.querySelectorAll('[id^="step-"]')];
+  const done = steps.filter(s => s.querySelector('[data-status="done"]')).length;
+  const total = steps.length;
+  const pct = Math.round((done/total)*100);
+  
+  // Update progress bar
+  const bar = document.querySelector('#progress-rail .bg-gradient-to-r');
+  const nums = document.querySelector('#progress-rail .num');
+  const percent = document.querySelector('#progress-rail .percent');
+  
+  if (bar) bar.style.width = `${pct}%`;
+  if (nums) nums.textContent = `${done}/${total} steps`;
+  if (percent) percent.textContent = `${pct}% complete`;
+  
+  // Update progress bar ARIA attributes
+  if (bar) {
+    bar.setAttribute('aria-valuenow', done);
+    bar.setAttribute('aria-valuemax', total);
+    bar.setAttribute('aria-label', `Learning progress: ${done} of ${total} steps completed`);
+  }
+  
+  // Smart "Go to Next Step" button
+  const gotoNext = document.getElementById('goto-next');
+  if (gotoNext) {
+    gotoNext.addEventListener('click', (e) => {
+      e.preventDefault();
+      const currentIdx = steps.findIndex(s => s.querySelector('[data-status="current"]'));
+      const nextStep = steps[currentIdx + 1] || steps[currentIdx] || steps[0];
+      if (nextStep) {
+        nextStep.scrollIntoView({behavior:'smooth', block:'start'});
+        history.replaceState(null,'',`#${nextStep.id}`);
+      }
+    });
+  }
+  
   // Handle deep linking to specific steps
   const hash = window.location.hash;
   if (hash && hash.startsWith('#step-')) {
     const stepElement = document.querySelector(hash);
     if (stepElement) {
-      // Highlight the targeted step
       stepElement.classList.add('ring-4', 'ring-blue-300', 'ring-opacity-50');
-      
-      // Smooth scroll to the step
       setTimeout(() => {
-        stepElement.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center' 
-        });
+        stepElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 500);
-      
-      // Remove highlight after animation
       setTimeout(() => {
         stepElement.classList.remove('ring-4', 'ring-blue-300', 'ring-opacity-50');
       }, 3000);
     }
   }
   
-  // Add entrance animations
-  const stepCards = document.querySelectorAll('[id^="step-"]');
-  stepCards.forEach((card, index) => {
-    card.style.opacity = '0';
-    card.style.transform = 'translateY(20px)';
-    setTimeout(() => {
-      card.style.transition = 'all 0.6s ease';
-      card.style.opacity = '1';
-      card.style.transform = 'translateY(0)';
-    }, index * 150);
-  });
+  // Entrance animations (respect reduced motion)
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  
+  if (!prefersReducedMotion) {
+    const stepCards = document.querySelectorAll('[id^="step-"]');
+    stepCards.forEach((card, index) => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(20px)';
+      setTimeout(() => {
+        card.style.transition = 'all 0.6s ease';
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+      }, index * 150);
+    });
+  }
+});
+
+// Unified description toggle with event delegation
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.desc-toggle');
+  if (!btn) return;
+  
+  const target = btn.dataset.target;
+  const short = document.getElementById(`desc-short-${target}`) || document.getElementById(`mobile-desc-short-${target}`);
+  const full = document.getElementById(`desc-full-${target}`) || document.getElementById(`mobile-desc-full-${target}`);
+  const expanded = btn.getAttribute('aria-expanded') === 'true';
+  
+  // Update ARIA attributes
+  btn.setAttribute('aria-expanded', String(!expanded));
+  
+  // Toggle visibility
+  if (short && full) {
+    short.classList.toggle('hidden', !expanded);
+    full.classList.toggle('hidden', expanded);
+    btn.textContent = expanded ? 'Read more' : 'Show less';
+  }
 });
 </script>
 
@@ -440,17 +478,18 @@ document.addEventListener('DOMContentLoaded', function() {
 /* Mountain Learning Journey Styles */
 .mountain-container {
   background: linear-gradient(135deg, 
-    #e0f2fe 0%,     /* Sky blue at top */
-    #f0f9ff 30%,    /* Light blue */
-    #f8fafc 60%,    /* White clouds */
-    #f1f5f9 100%    /* Mountain base */
+    #f8fafc 0%,     /* Very light gray-blue at top */
+    #f1f5f9 50%,    /* Light blue-gray */
+    #f8fafc 100%    /* White at base */
   );
-  box-shadow: inset 0 0 100px rgba(59, 130, 246, 0.1);
+  box-shadow: inset 0 0 50px rgba(59, 130, 246, 0.05);
 }
 
-/* Remove the duplicate central line - using single path approach */
+/* Step card hover effects with stability */
+.step-content {
+  will-change: transform;
+}
 
-/* Step card hover effects */
 .step-content:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
@@ -463,6 +502,19 @@ document.addEventListener('DOMContentLoaded', function() {
   transition: transform 0.2s ease;
 }
 
+/* Screen reader only text */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* Mobile-specific styles */
 @media (max-width: 768px) {
   .mountain-container {
@@ -471,6 +523,30 @@ document.addEventListener('DOMContentLoaded', function() {
   
   .step-marker {
     margin-bottom: 1rem;
+  }
+}
+
+/* Accessibility: Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  [id^="step-"] { 
+    transition: none !important; 
+    animation: none !important; 
+  }
+  
+  .animate-pulse {
+    animation: none !important;
+  }
+  
+  .transition-all,
+  .transition-colors,
+  .transition-transform {
+    transition: none !important;
+  }
+  
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 </style>
