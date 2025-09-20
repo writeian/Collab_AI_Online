@@ -112,8 +112,8 @@
         </div>
         
         <!-- Content Card -->
-        <div class="step-content bg-white rounded-xl shadow-md border border-gray-200 p-6 will-change-transform
-                    {% if is_completed %}ring-2 ring-green-200 bg-green-50/30{% elif is_current %}ring-2 ring-blue-200 bg-blue-50/30{% endif %}">
+        <div class="step-content bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/50 p-6 will-change-transform
+                    {% if is_completed %}ring-2 ring-green-200/60 bg-green-50/20{% elif is_current %}ring-2 ring-blue-200/60 bg-blue-50/20{% endif %}">
           
           <!-- Clean Step Title (remove double numbering and leading dots) -->
           <div class="flex items-center justify-between mb-4">
@@ -552,7 +552,9 @@ document.addEventListener('click', (e) => {
 
 .step-content:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  bg-white/90;
+  backdrop-blur-md;
   transition: all 0.3s ease;
 }
 
