@@ -141,23 +141,57 @@ def legacy_generate_room_proposal() -> Any:
 @crud_bp.route("/")
 @require_login
 def index() -> Any:
-    """Display room index page."""
+    """Display enhanced room dashboard (V2 is now primary)."""
     try:
         user = get_current_user()
+        
+        # Use V2 enhanced room statistics and sorting
+        from ..room_v2 import get_room_statistics
+        
+        # Get rooms using proven RoomService
         rooms_data = RoomService.get_user_rooms(user)
+        owned_rooms = rooms_data["owned"]
+        member_rooms = rooms_data["member"]
+        
+        # Combine and enhance all rooms with V2 statistics
+        all_rooms = []
+        
+        # Process owned rooms with enhanced statistics
+        for room in owned_rooms:
+            stats = get_room_statistics(room, user)
+            all_rooms.append({
+                "room": room,
+                "is_owner": True,
+                "stats": stats
+            })
+        
+        # Process member rooms with enhanced statistics
+        for room in member_rooms:
+            stats = get_room_statistics(room, user)
+            all_rooms.append({
+                "room": room,
+                "is_owner": False,
+                "stats": stats
+            })
+        
+        # Sort by activity (highest first) - V2 enhanced sorting
+        all_rooms.sort(key=lambda x: -x["stats"]["activity_score"])
         
         # Get invitation count
         invitation_count = get_invitation_count(user)
         
+        current_app.logger.info(f"🚀 PRIMARY HOME: Enhanced V2 dashboard with {len(all_rooms)} rooms")
+        
         return render_template(
-            "room/index.html",
-            owned_rooms=rooms_data["owned"],
-            member_rooms=rooms_data["member"],
+            "room_v2_step5_fixed.html",
+            sorted_rooms=all_rooms,
+            user=user,
+            total_rooms=len(all_rooms),
             invitation_count=invitation_count,
-            user=user
+            get_display_title=get_display_title
         )
     except Exception as e:
-        current_app.logger.error(f"Error in room index: {e}")
+        current_app.logger.error(f"Error in enhanced room index: {e}")
         flash("Failed to load rooms. Please try again.", "error")
         return render_template("error.html", error="Failed to load rooms"), 500
 
