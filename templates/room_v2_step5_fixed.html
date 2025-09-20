@@ -193,31 +193,31 @@
                     class="w-full flex items-center justify-between p-3 bg-blue-50 hover:bg-blue-100 transition-colors">
               <div class="flex items-center gap-2 font-medium text-blue-900">
                 <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
-                📊 Activity Overview
+                Activity Overview
               </div>
               <i data-lucide="chevron-down" class="w-4 h-4 transition-transform" id="activity-chevron-{{ room.id }}"></i>
             </button>
             <div id="activity-{{ room.id }}" class="hidden p-3 border-t border-blue-200">
               <div class="text-blue-800 space-y-1">
                 <div class="flex items-center justify-between">
-                  <span>💬 Chats:</span>
+                  <span>Chats:</span>
                   <span><strong>{{ stats.total_chats }}</strong>{% if stats.recent_chats > 0 %} (+{{ stats.recent_chats }} recent){% endif %}</span>
                 </div>
                 <div class="flex items-center justify-between">
-                  <span>💭 Messages:</span>
+                  <span>Messages:</span>
                   <span><strong>{{ stats.total_messages }}</strong>{% if stats.recent_messages > 0 %} (+{{ stats.recent_messages }} recent){% endif %}</span>
                 </div>
                 <div class="flex items-center justify-between">
-                  <span>👥 Members:</span>
+                  <span>Members:</span>
                   <span><strong>{{ stats.member_count }}</strong></span>
                 </div>
                 <div class="flex items-center justify-between">
-                  <span>🕐 Last activity:</span>
+                  <span>Last activity:</span>
                   <span>{{ stats.last_activity.strftime('%m/%d/%y %H:%M') }}</span>
                 </div>
                 {% if stats.has_unread %}
                 <div class="flex items-center justify-between text-red-700 font-medium">
-                  <span>🔔 Unread:</span>
+                  <span>Unread:</span>
                   <span>{{ stats.unread_messages }} messages (48h)</span>
                 </div>
                 {% endif %}
@@ -232,7 +232,7 @@
                     class="w-full flex items-center justify-between p-3 bg-green-50 hover:bg-green-100 transition-colors">
               <div class="flex items-center gap-2 font-medium text-green-900">
                 <i data-lucide="target" class="w-4 h-4"></i>
-                🎯 Learning Goals
+                Learning Goals
               </div>
               <i data-lucide="chevron-down" class="w-4 h-4 transition-transform" id="goals-chevron-{{ room.id }}"></i>
             </button>
@@ -250,7 +250,7 @@
                     class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition-colors">
               <div class="flex items-center gap-2 font-medium text-gray-900">
                 <i data-lucide="settings" class="w-4 h-4"></i>
-                ⚙️ Room Management
+                Room Management
               </div>
               <i data-lucide="chevron-down" class="w-4 h-4 transition-transform" id="management-chevron-{{ room.id }}"></i>
             </button>
@@ -258,17 +258,17 @@
               <div class="text-gray-800 space-y-3">
                 <!-- Room Info -->
                 <div class="space-y-1">
-                  <div class="flex items-center justify-between">
-                    <span>👑 Role:</span>
+                  <div class="flex items-start">
+                    <span class="w-20 text-gray-600">Role:</span>
                     <span>{{ "Owner" if is_owner else "Member" }}</span>
                   </div>
-                  <div class="flex items-center justify-between">
-                    <span>📅 Created:</span>
+                  <div class="flex items-start">
+                    <span class="w-20 text-gray-600">Created:</span>
                     <span>{{ room.created_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
                   </div>
                   {% if room.group_size %}
-                  <div class="flex items-center justify-between">
-                    <span>👥 Group size:</span>
+                  <div class="flex items-start">
+                    <span class="w-20 text-gray-600">Group size:</span>
                     <span>{{ room.group_size.title() }}</span>
                   </div>
                   {% endif %}
