@@ -103,15 +103,9 @@
           {% endif %}
         </div>
         
-        <!-- Marker Status (Mobile Only) -->
-        <div class="text-center mb-4 md:hidden">
-          {% if is_completed %}
-            <div class="text-xs font-medium text-green-600">Step {{ step_number }} Complete!</div>
-          {% elif is_current %}
-            <div class="text-xs font-medium text-blue-600">You are here!</div>
-          {% else %}
-            <div class="text-xs font-medium text-slate-600">Step {{ step_number }}</div>
-          {% endif %}
+        <!-- Mobile Label (Only for Current Step) -->
+        <div class="step-mobile-label text-center mb-4 md:hidden hidden">
+          <div class="text-xs font-medium text-blue-600">You are here!</div>
         </div>
         
         <!-- Content Card -->
@@ -324,6 +318,25 @@ document.addEventListener('DOMContentLoaded', function() {
       }, 3000);
     }
   }
+  
+  // Mobile label management - only show for current step
+  document.querySelectorAll('[id^="step-"]').forEach(step => {
+    const isCurrent = !!step.querySelector('[data-status="current"]');
+    const label = step.querySelector('.step-mobile-label');
+    if (!label) return;
+    
+    if (isCurrent) {
+      label.classList.remove('hidden');
+      label.querySelector('div').textContent = 'You are here!';
+      // Optional: add gentle pulse to current marker
+      const marker = step.querySelector('.w-14.h-14.rounded-full');
+      if (marker && !marker.classList.contains('animate-pulse')) {
+        marker.classList.add('animate-pulse');
+      }
+    } else {
+      label.classList.add('hidden');
+    }
+  });
   
   // Entrance animations (respect reduced motion)
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
