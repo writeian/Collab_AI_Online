@@ -151,7 +151,11 @@
             <!-- Step Header -->
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-lg font-bold text-gray-800">
-                {{ mode.label|regex_replace(r'^\d+\.\s*', '') }}
+                {% set clean_label = mode.label %}
+                {% if clean_label.startswith(step_number|string + '.') %}
+                  {% set clean_label = clean_label[2:].strip() %}
+                {% endif %}
+                {{ clean_label }}
               </h3>
               
               <!-- Step Status Badge -->
