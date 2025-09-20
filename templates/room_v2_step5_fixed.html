@@ -151,7 +151,7 @@
               <div class="w-3 h-3 bg-orange-400 rounded-full animate-pulse"></div>
             {% endif %}
             
-            <h4 class="text-lg font-semibold text-blue-600 hover:text-blue-800 transition-colors">
+            <h4 class="text-xl font-bold text-blue-600 hover:text-blue-800 transition-colors tracking-tight">
               <a href="{{ url_for('room.room_crud.view_room', room_id=room.id) }}" class="block">
                 {{ room.name }}
               </a>
@@ -168,7 +168,7 @@
         
         <!-- Description -->
         {% if display_description %}
-        <p class="text-sm text-gray-600 leading-relaxed mb-4">
+        <p class="text-base text-gray-700 leading-relaxed mb-4">
           {{ display_description }}
         </p>
         {% endif %}
@@ -176,11 +176,11 @@
         <!-- Activity Status -->
         <div class="flex justify-end mb-4">
           {% if stats.has_unread %}
-            <span class="text-red-600 text-xs font-medium">New messages!</span>
+            <span class="text-red-600 text-sm font-medium px-3 py-1.5 bg-red-50 rounded-full">New messages!</span>
           {% elif stats.recent_chats > 0 or stats.recent_messages > 0 %}
-            <span class="text-orange-600 text-xs">Active</span>
+            <span class="text-orange-600 text-sm font-medium px-3 py-1.5 bg-orange-50 rounded-full">Active</span>
           {% else %}
-            <span class="text-gray-400 text-xs">Quiet</span>
+            <span class="text-gray-400 text-sm px-3 py-1.5 bg-gray-50 rounded-full">Quiet</span>
           {% endif %}
         </div>
         
@@ -191,34 +191,34 @@
           <div class="border border-blue-200 rounded-lg">
             <button onclick="toggleSection({{ room.id }}, 'activity')" 
                     class="w-full flex items-center justify-between p-3 bg-blue-50 hover:bg-blue-100 transition-colors">
-              <div class="flex items-center gap-2 font-medium text-blue-900">
+              <div class="flex items-center gap-2 text-sm font-semibold text-blue-900 uppercase tracking-wide">
                 <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
                 Activity Overview
               </div>
               <i data-lucide="chevron-down" class="w-4 h-4 transition-transform" id="activity-chevron-{{ room.id }}"></i>
             </button>
             <div id="activity-{{ room.id }}" class="hidden p-3 border-t border-blue-200">
-              <div class="text-blue-800 space-y-1">
+              <div class="text-blue-800 space-y-2">
                 <div class="flex items-center justify-between">
-                  <span>Chats:</span>
-                  <span><strong>{{ stats.total_chats }}</strong>{% if stats.recent_chats > 0 %} (+{{ stats.recent_chats }} recent){% endif %}</span>
+                  <span class="text-sm text-blue-700">Chats:</span>
+                  <span class="text-sm font-semibold tabular-nums">{{ stats.total_chats }}{% if stats.recent_chats > 0 %}<span class="text-green-600 font-normal"> (+{{ stats.recent_chats }})</span>{% endif %}</span>
                 </div>
                 <div class="flex items-center justify-between">
-                  <span>Messages:</span>
-                  <span><strong>{{ stats.total_messages }}</strong>{% if stats.recent_messages > 0 %} (+{{ stats.recent_messages }} recent){% endif %}</span>
+                  <span class="text-sm text-blue-700">Messages:</span>
+                  <span class="text-sm font-semibold tabular-nums">{{ stats.total_messages }}{% if stats.recent_messages > 0 %}<span class="text-green-600 font-normal"> (+{{ stats.recent_messages }})</span>{% endif %}</span>
                 </div>
                 <div class="flex items-center justify-between">
-                  <span>Members:</span>
-                  <span><strong>{{ stats.member_count }}</strong></span>
+                  <span class="text-sm text-blue-700">Members:</span>
+                  <span class="text-sm font-semibold tabular-nums">{{ stats.member_count }}</span>
                 </div>
                 <div class="flex items-center justify-between">
-                  <span>Last activity:</span>
-                  <span>{{ stats.last_activity.strftime('%m/%d/%y %H:%M') }}</span>
+                  <span class="text-sm text-blue-700">Last activity:</span>
+                  <span class="text-sm font-mono">{{ stats.last_activity.strftime('%m/%d/%y %H:%M') }}</span>
                 </div>
                 {% if stats.has_unread %}
-                <div class="flex items-center justify-between text-red-700 font-medium">
-                  <span>Unread:</span>
-                  <span>{{ stats.unread_messages }} messages (48h)</span>
+                <div class="flex items-center justify-between text-red-700 font-medium bg-red-50 px-2 py-1 rounded">
+                  <span class="text-sm">Unread:</span>
+                  <span class="text-sm font-semibold">{{ stats.unread_messages }} messages (48h)</span>
                 </div>
                 {% endif %}
               </div>
@@ -230,7 +230,7 @@
           <div class="border border-green-200 rounded-lg">
             <button onclick="toggleSection({{ room.id }}, 'goals')" 
                     class="w-full flex items-center justify-between p-3 bg-green-50 hover:bg-green-100 transition-colors">
-              <div class="flex items-center gap-2 font-medium text-green-900">
+              <div class="flex items-center gap-2 text-sm font-semibold text-green-900 uppercase tracking-wide">
                 <i data-lucide="target" class="w-4 h-4"></i>
                 Learning Goals
               </div>
@@ -248,7 +248,7 @@
           <div class="border border-gray-200 rounded-lg">
             <button onclick="toggleSection({{ room.id }}, 'management')" 
                     class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition-colors">
-              <div class="flex items-center gap-2 font-medium text-gray-900">
+              <div class="flex items-center gap-2 text-sm font-semibold text-gray-900 uppercase tracking-wide">
                 <i data-lucide="settings" class="w-4 h-4"></i>
                 Room Management
               </div>
