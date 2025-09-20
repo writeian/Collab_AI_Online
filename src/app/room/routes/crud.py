@@ -176,6 +176,56 @@ def create_room() -> Any:
         flash("An unexpected error occurred. Please try again.", "error")
         return redirect(url_for("room.room_crud.create_room"))
 
+@crud_bp.route("/<int:room_id>/mountain")
+@require_room_access
+def view_room_mountain(room_id: int) -> Any:
+    """Mountain learning journey view (parallel implementation)."""
+    try:
+        user = get_current_user()
+        room = RoomService.get_room_by_id(room_id, user)
+        if not room:
+            flash("Room not found or you don't have access to it.", "error")
+            return redirect(url_for('room.room_crud.index'))
+
+        # Get room data
+        room_data = RoomService.get_room_display_data(room, user)
+        
+        # Get chats for this room
+        chats = Chat.query.filter_by(room_id=room_id).order_by(Chat.created_at.desc()).all()
+        
+        # Get members
+        members = [room.owner]  # Start with owner
+        room_members = RoomMember.query.filter_by(room_id=room_id).all()
+        for rm in room_members:
+            if rm.user not in members:
+                members.append(rm.user)
+        
+        # Get learning modes
+        from src.utils.openai_utils import get_modes_for_room
+        try:
+            modes_obj = get_modes_for_room(room)
+            modes = {}
+            if hasattr(modes_obj, 'items'):
+                for k, v in modes_obj.items():
+                    modes[k] = v
+        except Exception:
+            modes = {}
+
+        return render_template(
+            "room/view_mountain.html",
+            room=room,
+            room_data=room_data,
+            chats=chats,
+            members=members,
+            modes=modes,
+            user=user
+        )
+        
+    except Exception as e:
+        current_app.logger.error(f"Error in mountain room view {room_id}: {e}")
+        flash("Failed to load mountain view. Please try again.", "error")
+        return redirect(url_for('room.room_crud.view_room', room_id=room_id))
+
 @crud_bp.route("/<int:room_id>")
 @require_room_access
 def view_room(room_id: int) -> Any:
