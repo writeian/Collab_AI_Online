@@ -47,6 +47,9 @@
   <!-- Mountain Learning Journey -->
   <div id="learning-journey" class="mountain-container bg-gradient-to-b from-slate-50 to-slate-100 rounded-xl p-8 relative overflow-hidden">
     
+    <!-- Scenic trail (sits behind cards & markers) -->
+    <svg id="journey-map" class="absolute inset-0 pointer-events-none" aria-hidden="true"></svg>
+    
     <!-- Subtle Mountain Backdrop -->
     <div class="absolute top-4 right-6 text-4xl opacity-5 text-slate-400">🏔️</div>
     <div class="absolute top-8 left-8 text-xl opacity-8 text-slate-400">☁️</div>
@@ -389,6 +392,122 @@ document.addEventListener('DOMContentLoaded', function() {
       }, index * 150);
     });
   }
+  
+  // Draw curvy SVG trail
+  const container = document.getElementById('learning-journey');
+  const svg = document.getElementById('journey-map');
+  const steps = [...document.querySelectorAll('[id^="step-"]')];
+  if (!container || !svg || steps.length === 0) return;
+
+  function pathD(points, tension = 0.35) {
+    // Smooth cubic bezier through points
+    if (points.length < 2) return '';
+    let d = `M ${points[0].x} ${points[0].y}`;
+    for (let i = 0; i < points.length - 1; i++) {
+      const p0 = points[i === 0 ? 0 : i - 1];
+      const p1 = points[i];
+      const p2 = points[i + 1];
+      const p3 = points[i + 2] || p2;
+      const cp1x = p1.x + (p2.x - p0.x) * tension;
+      const cp1y = p1.y + (p2.y - p0.y) * tension;
+      const cp2x = p2.x - (p3.x - p1.x) * tension;
+      const cp2y = p2.y - (p3.y - p1.y) * tension;
+      d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+    }
+    return d;
+  }
+
+  function drawTrail() {
+    // Size SVG
+    const rect = container.getBoundingClientRect();
+    svg.setAttribute('viewBox', `0 0 ${rect.width} ${rect.height}`);
+    svg.setAttribute('width', rect.width);
+    svg.setAttribute('height', rect.height);
+
+    // Build left/right alternating anchor points (near each marker bubble)
+    const points = steps.map((step, i) => {
+      const marker = step.querySelector('.w-14.h-14.rounded-full');
+      const m = marker ? marker.getBoundingClientRect() : step.getBoundingClientRect();
+      // Convert to svg coords
+      const containerRect = container.getBoundingClientRect();
+      const xInPage = m.left + m.width / 2;
+      const yInPage = m.top + m.height / 2;
+
+      // Alternate left/right of center for a snaking path
+      const centerX = rect.width / 2;
+      const offset = Math.min(160, rect.width * 0.18); // responsive sway
+      const x = centerX + (i % 2 === 0 ? -offset : offset);
+      const y = yInPage - containerRect.top;
+
+      return { x, y };
+    });
+
+    // Clear
+    svg.innerHTML = '';
+
+    // Base "dirt" path (textured stroke)
+    const base = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    base.setAttribute('d', pathD(points));
+    base.setAttribute('fill', 'none');
+    base.setAttribute('stroke', 'rgba(100,116,139,0.25)'); // slate-ish
+    base.setAttribute('stroke-width', '10');
+    base.setAttribute('stroke-linecap', 'round');
+    base.setAttribute('filter', 'url(#softShadow)');
+    svg.appendChild(base);
+
+    // Top "track" with dashed pattern
+    const track = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    track.setAttribute('d', base.getAttribute('d'));
+    track.setAttribute('fill', 'none');
+    track.setAttribute('stroke', 'rgba(71,85,105,0.6)'); // darker slate
+    track.setAttribute('stroke-width', '4');
+    track.setAttribute('stroke-linecap', 'round');
+    track.setAttribute('stroke-dasharray', '14 10');
+    svg.appendChild(track);
+
+    // Progress stroke (from green to blue)
+    const done = steps.filter(s => s.querySelector('[data-status="done"]')).length;
+    const currentIdx = steps.findIndex(s => s.querySelector('[data-status="current"]'));
+    const progressCount = done + (currentIdx >= 0 ? 0.5 : 0); // half step for current
+    const pct = Math.max(0, Math.min(1, progressCount / steps.length));
+
+    const progress = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    progress.setAttribute('d', base.getAttribute('d'));
+    progress.setAttribute('fill', 'none');
+    progress.setAttribute('stroke', 'url(#trailGradient)');
+    progress.setAttribute('stroke-width', '6');
+    progress.setAttribute('stroke-linecap', 'round');
+
+    // Stroke length trick for partial fill
+    const tmp = progress.getTotalLength ? progress : track; // Safari fallback
+    const totalLen = (tmp.getTotalLength && tmp.getTotalLength()) || 2000;
+    progress.setAttribute('stroke-dasharray', `${totalLen * pct} ${totalLen}`);
+    svg.appendChild(progress);
+
+    // Defs for glow + gradient
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    defs.innerHTML = `
+      <linearGradient id="trailGradient" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#34d399"/>  <!-- green-400 -->
+        <stop offset="100%" stop-color="#3b82f6"/> <!-- blue-500 -->
+      </linearGradient>
+      <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="blur"/>
+        <feOffset dx="0" dy="4" result="offsetBlur"/>
+        <feMerge>
+          <feMergeNode in="offsetBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    `;
+    svg.prepend(defs);
+  }
+
+  drawTrail();
+  window.addEventListener('resize', () => { requestAnimationFrame(drawTrail); });
+  // If content height changes (expands/collapses "read more"), redraw:
+  const ro = new ResizeObserver(() => drawTrail());
+  ro.observe(document.querySelector('.learning-path'));
 });
 
 // Unified description toggle with event delegation
@@ -423,49 +542,8 @@ document.addEventListener('click', (e) => {
   box-shadow: inset 0 0 50px rgba(59, 130, 246, 0.03);
 }
 
-/* Path Connector - Vertical dotted line linking all markers */
+/* Learning path container */
 .learning-path {
-  position: relative;
-}
-
-.learning-path::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 2rem;
-  bottom: 2rem;
-  width: 4px;
-  background: repeating-linear-gradient(
-    to bottom,
-    #64748b 0px,      /* Slate-500 - more visible */
-    #64748b 12px,     /* Longer dashes */
-    transparent 12px,
-    transparent 20px  /* Longer gaps */
-  );
-  transform: translateX(-50%);
-  border-radius: 2px;
-  box-shadow: 0 0 8px rgba(100, 116, 139, 0.2);
-  z-index: 0;
-}
-
-/* On desktop, make the path even more prominent */
-@media (min-width: 768px) {
-  .learning-path::before {
-    width: 6px;
-    background: repeating-linear-gradient(
-      to bottom,
-      #475569 0px,      /* Slate-600 - darker and more visible */
-      #475569 15px,     /* Even longer dashes */
-      transparent 15px,
-      transparent 25px  /* Bigger gaps for pathway effect */
-    );
-    box-shadow: 0 0 12px rgba(71, 85, 105, 0.3);
-    border-radius: 3px;
-  }
-}
-
-/* Ensure markers appear above the path line */
-.learning-path > div {
   position: relative;
   z-index: 1;
 }
