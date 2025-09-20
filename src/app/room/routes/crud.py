@@ -192,8 +192,26 @@ def index() -> Any:
         )
     except Exception as e:
         current_app.logger.error(f"Error in enhanced room index: {e}")
-        flash("Failed to load rooms. Please try again.", "error")
-        return render_template("error.html", error="Failed to load rooms"), 500
+        import traceback
+        current_app.logger.error(f"Enhanced route traceback: {traceback.format_exc()}")
+        
+        # Fallback to original simple logic if V2 fails
+        try:
+            current_app.logger.info("🔄 FALLBACK: Using original room logic")
+            rooms_data = RoomService.get_user_rooms(user)
+            invitation_count = get_invitation_count(user)
+            
+            return render_template(
+                "room/index.html",
+                owned_rooms=rooms_data["owned"],
+                member_rooms=rooms_data["member"],
+                invitation_count=invitation_count,
+                user=user
+            )
+        except Exception as fallback_error:
+            current_app.logger.error(f"Fallback also failed: {fallback_error}")
+            flash("Failed to load rooms. Please try again.", "error")
+            return render_template("error.html", error="Failed to load rooms"), 500
 
 @crud_bp.route("/create", methods=["GET", "POST"])
 @require_login
