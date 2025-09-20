@@ -78,8 +78,8 @@
       </div>
     </div>
 
-    <!-- Learning Steps with Simple Layout -->
-    <div class="max-w-4xl mx-auto space-y-8">
+    <!-- Learning Steps with Path Connector -->
+    <div class="max-w-4xl mx-auto space-y-8 learning-path">
       
       {% for mode_key, mode in modes.items() %}
       {% set step_number = loop.index %}
@@ -372,6 +372,50 @@ document.addEventListener('click', (e) => {
     #f1f5f9 100%    /* Light blue-gray at base */
   );
   box-shadow: inset 0 0 50px rgba(59, 130, 246, 0.03);
+}
+
+/* Path Connector - Vertical dotted line linking all markers */
+.learning-path {
+  position: relative;
+}
+
+.learning-path::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 2rem;
+  bottom: 2rem;
+  width: 2px;
+  background: repeating-linear-gradient(
+    to bottom,
+    #cbd5e1 0px,
+    #cbd5e1 8px,
+    transparent 8px,
+    transparent 16px
+  );
+  transform: translateX(-50%);
+  z-index: 0;
+}
+
+/* On desktop, position the path line to connect the alternating markers */
+@media (min-width: 768px) {
+  .learning-path::before {
+    left: 50%;
+    background: repeating-linear-gradient(
+      to bottom,
+      #94a3b8 0px,
+      #94a3b8 6px,
+      transparent 6px,
+      transparent 12px
+    );
+    opacity: 0.4;
+  }
+}
+
+/* Ensure markers appear above the path line */
+.learning-path > div {
+  position: relative;
+  z-index: 1;
 }
 
 /* Step card hover effects with stability */
