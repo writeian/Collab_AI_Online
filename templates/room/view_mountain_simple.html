@@ -185,25 +185,59 @@
             </div>
           {% endif %}
           
-          <!-- Action Button -->
-          {% if is_completed %}
-            <a href="/chat/{{ step_chats[0].id if step_chats else '#' }}" 
-               class="inline-flex items-center px-4 py-2 bg-green-100 text-green-700 text-sm font-medium rounded-lg hover:bg-green-200 transition-colors">
-              <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i>
-              Review Progress
-            </a>
-          {% elif is_current %}
-            <a href="/room/{{ room.id }}/chat/create?mode={{ mode_key }}" 
-               class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 shadow-lg">
-              <i data-lucide="arrow-up-right" class="w-4 h-4 mr-2"></i>
-              {% if step_chats %}Continue Climb{% else %}Start Ascent{% endif %}
-            </a>
-          {% else %}
-            <div class="inline-flex items-center px-4 py-2 bg-gray-100 text-slate-600 text-sm font-medium rounded-lg">
-              <i data-lucide="lock" class="w-4 h-4 mr-2"></i>
-              Complete previous steps
-            </div>
-          {% endif %}
+          <!-- Action Button with Avatar Group -->
+          <div class="flex items-center justify-between">
+            <!-- Action Button -->
+            {% if is_completed %}
+              <a href="/chat/{{ step_chats[0].id if step_chats else '#' }}" 
+                 class="inline-flex items-center px-4 py-2 bg-green-100 text-green-700 text-sm font-medium rounded-lg hover:bg-green-200 transition-colors">
+                <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i>
+                Review Progress
+              </a>
+            {% elif is_current %}
+              <a href="/room/{{ room.id }}/chat/create?mode={{ mode_key }}" 
+                 class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 shadow-lg">
+                <i data-lucide="arrow-up-right" class="w-4 h-4 mr-2"></i>
+                {% if step_chats %}Continue Climb{% else %}Start Ascent{% endif %}
+              </a>
+            {% else %}
+              <div class="inline-flex items-center px-4 py-2 bg-gray-100 text-slate-600 text-sm font-medium rounded-lg">
+                <i data-lucide="lock" class="w-4 h-4 mr-2"></i>
+                Complete previous steps
+              </div>
+            {% endif %}
+            
+            <!-- Avatar Group showing who worked on this step -->
+            {% if step_chats %}
+              {% set step_participants = step_chats|map(attribute='user')|list|unique %}
+              <div class="flex -space-x-2" title="Participants in this step">
+                {% for participant in step_participants[:3] %}
+                  <div class="w-8 h-8 rounded-full bg-gradient-to-br 
+                             {% if loop.index == 1 %}from-blue-500 to-purple-600
+                             {% elif loop.index == 2 %}from-green-500 to-teal-600
+                             {% else %}from-orange-500 to-red-600{% endif %}
+                             text-white text-xs flex items-center justify-center font-bold border-2 border-white"
+                       title="{{ participant.username }}">
+                    {{ participant.username[:2].upper() }}
+                  </div>
+                {% endfor %}
+                
+                {% if step_participants|length > 3 %}
+                  <div class="w-8 h-8 rounded-full bg-gray-300 text-gray-700 text-xs flex items-center justify-center font-bold border-2 border-white"
+                       title="{{ step_participants|length - 3 }} more participants">
+                    +{{ step_participants|length - 3 }}
+                  </div>
+                {% endif %}
+              </div>
+            {% else %}
+              <!-- Empty state for no participants -->
+              <div class="flex -space-x-2 opacity-50" title="No one has worked on this step yet">
+                <div class="w-8 h-8 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center">
+                  <i data-lucide="user-plus" class="w-3 h-3 text-gray-400"></i>
+                </div>
+              </div>
+            {% endif %}
+          </div>
           
         </div>
       </div>
