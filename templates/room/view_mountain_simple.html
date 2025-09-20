@@ -242,10 +242,21 @@
 
   <!-- Climbing Team Section -->
   <div class="mt-8 bg-white rounded-xl shadow-md border border-gray-200 p-6">
-    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-      <i data-lucide="users" class="w-5 h-5 text-blue-600"></i>
-      🧗‍♀️ Climbing Team
-    </h3>
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+        <i data-lucide="users" class="w-5 h-5 text-blue-600"></i>
+        🧗‍♀️ Climbing Team
+      </h3>
+      
+      <!-- Invite Button (Only for Owners) -->
+      {% if user.id == room.owner_id %}
+        <a href="/room/{{ room.id }}/invite" 
+           class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+          <i data-lucide="user-plus" class="w-4 h-4 mr-2"></i>
+          Invite Climbers
+        </a>
+      {% endif %}
+    </div>
     
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {% for member in members %}
@@ -261,6 +272,30 @@
         </div>
       </div>
       {% endfor %}
+      
+      <!-- Add Climber Placeholder (Only for Owners) -->
+      {% if user.id == room.owner_id %}
+      <a href="/room/{{ room.id }}/invite" 
+         class="flex items-center gap-3 p-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors group">
+        <div class="w-10 h-10 rounded-full bg-gray-100 border-2 border-gray-300 flex items-center justify-center group-hover:border-blue-400 group-hover:bg-blue-100 transition-colors">
+          <i data-lucide="user-plus" class="w-5 h-5 text-gray-400 group-hover:text-blue-600"></i>
+        </div>
+        <div>
+          <div class="font-medium text-gray-600 group-hover:text-blue-700">Invite Climber</div>
+          <div class="text-xs text-gray-400 group-hover:text-blue-500">Add team member</div>
+        </div>
+      </a>
+      {% endif %}
+    </div>
+    
+    <!-- Team Stats -->
+    <div class="mt-4 pt-4 border-t border-gray-100">
+      <div class="flex items-center justify-between text-sm text-gray-600">
+        <span>{{ members|length }} climbers on this expedition</span>
+        {% if user.id == room.owner_id %}
+          <span class="text-xs text-gray-500">As expedition leader, you can invite more climbers</span>
+        {% endif %}
+      </div>
     </div>
   </div>
 
