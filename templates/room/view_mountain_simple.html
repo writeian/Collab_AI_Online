@@ -182,7 +182,7 @@
               <div class="text-xs font-medium text-gray-700 mb-2">Your Progress:</div>
               {% for chat in step_chats %}
                 <div class="flex items-center justify-between text-sm">
-                  <a href="/chat/{{ chat.id }}" class="text-blue-600 hover:text-blue-800">{{ chat.title }}</a>
+                  <a href="/chat/{{ chat.id }}" class="text-blue-600 hover:text-blue-800">{{ chat.title or chat.name }}</a>
                   <span class="text-gray-500 text-xs">{{ chat.created_at.strftime('%m/%d') }}</span>
                 </div>
               {% endfor %}
@@ -214,7 +214,7 @@
             
             <!-- Avatar Group showing who worked on this step -->
             {% if step_chats %}
-              {% set step_participants = step_chats|map(attribute='user')|list|unique %}
+              {% set step_participants = step_chats|map(attribute='creator')|list|unique %}
               <div class="flex -space-x-2" title="Participants in this step">
                 {% for participant in step_participants[:3] %}
                   <div class="w-8 h-8 rounded-full bg-gradient-to-br 
