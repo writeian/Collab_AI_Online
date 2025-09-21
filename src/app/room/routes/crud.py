@@ -229,7 +229,7 @@ def view_room_mountain(room_id: int) -> Any:
 @crud_bp.route("/<int:room_id>")
 @require_room_access
 def view_room(room_id: int) -> Any:
-    """View a specific room (overview)."""
+    """View a specific room (overview) - SAFE MOUNTAIN VIEW WITH FALLBACK."""
     try:
         user = get_current_user()
         room = RoomService.get_room_by_id(room_id, user)
@@ -238,7 +238,7 @@ def view_room(room_id: int) -> Any:
             flash("Room not found or you don't have access to it.", "error")
             return redirect(url_for('room.room_crud.index'))
         
-        # Get room data
+        # Get room data (same for both templates)
         chats = RoomService.get_room_chats(room, user)
         members = RoomService.get_room_members(room, user)
         room_data = RoomService.get_room_display_data(room, user)
@@ -250,19 +250,49 @@ def view_room(room_id: int) -> Any:
             if hasattr(modes_obj, 'items'):
                 for k, v in modes_obj.items():
                     modes[k] = v
-        except Exception:
+        except Exception as e:
+            current_app.logger.warning(f"Failed to load modes for room {room_id}: {e}")
             modes = {}
 
-        return render_template(
-            "room/view.html",  # ROLLBACK TO STABLE VERSION
-            room=room,
-            room_data=room_data,
-            chats=chats,
-            members=members,
-            user=user,
-            invitation_count=get_invitation_count(user),
-            get_display_title=get_display_title
-        )
+        # TRY MOUNTAIN VIEW WITH SAFE FALLBACK
+        try:
+            current_app.logger.info(f"🏔️ MOUNTAIN VIEW: Attempting render for room {room_id}")
+            
+            # Validate template data
+            if not chats:
+                current_app.logger.warning(f"No chats found for room {room_id}")
+            if not members:
+                current_app.logger.warning(f"No members found for room {room_id}")
+            if not modes:
+                current_app.logger.warning(f"No modes found for room {room_id}")
+                
+            return render_template(
+                "room/view_mountain_simple.html",  # MOUNTAIN VIEW
+                room=room,
+                room_data=room_data,
+                chats=chats,
+                members=members,
+                modes=modes,  # Mountain template needs this
+                user=user
+                # NOTE: Mountain template doesn't need invitation_count or get_display_title
+            )
+            
+        except Exception as mountain_error:
+            # FALLBACK TO STANDARD VIEW ON ANY ERROR
+            current_app.logger.error(f"🚨 MOUNTAIN VIEW FAILED for room {room_id}: {mountain_error}")
+            current_app.logger.info(f"🔄 FALLBACK: Using standard view for room {room_id}")
+            
+            return render_template(
+                "room/view.html",  # FALLBACK TO STABLE VERSION
+                room=room,
+                room_data=room_data,
+                chats=chats,
+                members=members,
+                user=user,
+                invitation_count=get_invitation_count(user),
+                get_display_title=get_display_title
+            )
+            
     except Exception as e:
         current_app.logger.error(f"Error viewing room {room_id}: {e}")
         flash("Failed to load room. Please try again.", "error")
