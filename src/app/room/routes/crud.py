@@ -253,13 +253,19 @@ def view_room(room_id: int) -> Any:
         except Exception:
             modes = {}
 
+        # Add missing variables for mountain view
+        from src.app.access_control import is_admin as is_admin_user
+        is_admin = is_admin_user()
+        
         return render_template(
-            "room/view.html",  # ROLLBACK TO STABLE VERSION
+            "room/view_mountain_simple.html",  # MOUNTAIN VIEW WITH PROPER DATA
             room=room,
             room_data=room_data,
             chats=chats,
             members=members,
+            modes=modes,  # Learning modes for mountain view
             user=user,
+            is_admin=is_admin,  # Admin check for templates
             invitation_count=get_invitation_count(user),
             get_display_title=get_display_title
         )
