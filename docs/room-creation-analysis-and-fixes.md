@@ -445,8 +445,55 @@ except Exception:
 
 ---
 
-**Status**: ✅ **FULLY RESOLVED + MAJOR SYSTEM UPGRADE COMPLETE**
+## 🏔️ **Mountain Learning Journey Implementation (September 2025)**
 
-**Key lesson**: Sometimes debugging one issue reveals opportunities for transformational improvements. The title generation fix became a catalyst for reimagining the entire user experience.
+### **Major System Enhancement: Visual Learning Progression**
 
-**V2 Dashboard is now the primary home page, delivering a significantly enhanced learning platform experience that rivals professional education platforms.** 🎓
+**Challenge**: Implement a beautiful, engaging visual interface for learning progression that works across all room types and data structures.
+
+**Implementation Strategy:**
+- **Parallel development**: Created mountain view alongside existing room view
+- **Comprehensive debugging**: Systematic route tracing and data structure analysis
+- **Bulletproof deployment**: Fallback mechanisms to prevent site downtime
+
+### **Critical Technical Discoveries**
+
+**🔍 Jinja Template Generator Issues:**
+- **Problem**: Template used generator subscripts (`step_chats[0]`, `participants[:3]`) causing `'generator' object is not subscriptable` errors
+- **Root Cause**: Jinja `selectattr()` and `map()` filters return generators, not lists
+- **Solution**: Use `|first` filter and loop conditions instead of subscript notation
+- **Impact**: Rooms with existing chats failed while empty rooms worked
+
+**🛣️ Route Debugging Methodology:**
+- **Global request logging**: Track all Flask requests with `@app.before_request`
+- **Step-by-step execution tracing**: Print statements at every route execution point
+- **Access control debugging**: Verify decorator execution and permission checks
+- **Template rendering isolation**: Separate data gathering from template rendering errors
+
+**🎯 Data Structure Analysis:**
+- **Room 77** (worked): 0 chats, 2 members → No generator subscripts triggered
+- **Room 79** (failed): 1 chat, 1 member → Generator subscripts caused template crashes
+- **Solution**: Template must handle both empty and populated data gracefully
+
+### **Production Deployment Insights**
+
+**🚀 WSGI Configuration:**
+- Railway uses `railway.toml` startCommand, not `Procfile`
+- `src/wsgi.py` is the actual entry point, not root `wsgi.py`
+- Print statements are more reliable than logger calls for debugging
+
+**🔧 Template Robustness Requirements:**
+- All Jinja filters must return concrete types, not generators
+- Templates must handle empty collections gracefully
+- Generator slicing (`[:3]`) must be replaced with loop conditions
+- Attribute access (`chat.user` vs `chat.creator`) must match model structure
+
+---
+
+**Status**: ✅ **MOUNTAIN VIEW DEPLOYED SUCCESSFULLY FOR ALL ROOMS**
+
+**Final Impact**: The mountain learning journey is now the default room experience, providing an engaging visual interface that works consistently across all room types and data structures. The debugging process revealed critical insights about Jinja template robustness and Flask routing that will prevent similar issues in future development.
+
+**Key lesson**: Complex visual features require systematic debugging of data structure compatibility. Template generators and subscript notation are common sources of silent failures that only manifest with specific data patterns.
+
+**Mountain Learning Journey delivers a professional, engaging learning experience that transforms how users interact with collaborative learning spaces.** 🏔️

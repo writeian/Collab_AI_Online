@@ -53,6 +53,12 @@ python run.py
 
 AI Collab Online is an **intelligent learning platform** that creates adaptive, contextual learning experiences through AI-powered assistance and cross-chat learning progression.
 
+### 🏔️ **Mountain Learning Journey**
+- **Visual learning progression** with beautiful mountain climbing interface and curvy SVG trails
+- **Step-by-step navigation** with markers, progress tracking, and deep linking to specific learning stages
+- **Social learning indicators** showing team member participation with avatar groups and activity badges
+- **Responsive design** with mobile-friendly collapsible details and accessibility features
+
 ### 🧠 **Intelligent Learning Progression**
 - **Automatic note generation** from completed discussions (5+ message milestones)
 - **Cross-chat learning context** that builds on previous insights across multiple conversations
@@ -142,6 +148,14 @@ AI Collab Online is an **intelligent learning platform** that creates adaptive, 
 ---
 
 ## 🆕 **Recent Major Updates**
+
+### 🏔️ **Mountain Learning Journey (v3.0)** - *September 2025*
+- **Visual learning progression** with beautiful mountain climbing interface as the default room experience
+- **Curvy SVG trail system** connecting learning steps with dynamic progress visualization
+- **Social learning features** with avatar groups, participant tracking, and activity indicators
+- **Responsive design** with mobile-friendly collapsible details and accessibility features
+- **Deep linking support** to specific learning steps with auto-expand functionality
+- **Room statistics integration** with collapsible team stats and progress metrics
 
 ### 🧠 **Learning Progression System (v2.0)**
 - **Automatic note generation** at 5-message milestones with iterative refinement
