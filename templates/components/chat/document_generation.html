@@ -17,12 +17,12 @@
             <div>
                 <div class="text-xs font-medium text-foreground mb-1">📄 Export Chat History</div>
                 <div class="flex gap-1">
-                    <button onclick="exportDocument('raw', 'txt', {{ chat.id }})" 
+                    <button onclick="exportDocument(this, 'raw', 'txt', {{ chat.id }})" 
                             class="flex-1 p-1 text-xs rounded border border-border hover:bg-accent transition-colors flex items-center justify-center gap-1"
                             title="Export as .txt">
                         📄 .txt
                     </button>
-                    <button onclick="exportDocument('raw', 'docx', {{ chat.id }})" 
+                    <button onclick="exportDocument(this, 'raw', 'docx', {{ chat.id }})" 
                             class="flex-1 p-1 text-xs rounded border border-border hover:bg-accent transition-colors flex items-center justify-center gap-1"
                             title="Export as .docx">
                         📝 .docx
@@ -35,12 +35,12 @@
                 <div class="text-xs font-medium text-foreground mb-1">📝 Create Notes</div>
                 {% if messages|length >= 5 %}
                 <div class="flex gap-1">
-                    <button onclick="exportDocument('notes', 'txt', {{ chat.id }})" 
+                    <button onclick="exportDocument(this, 'notes', 'txt', {{ chat.id }})" 
                             class="flex-1 p-1 text-xs rounded border border-border hover:bg-accent transition-colors flex items-center justify-center gap-1"
                             title="Notes as .txt">
                         📄 .txt
                     </button>
-                    <button onclick="exportDocument('notes', 'docx', {{ chat.id }})" 
+                    <button onclick="exportDocument(this, 'notes', 'docx', {{ chat.id }})" 
                             class="flex-1 p-1 text-xs rounded border border-border hover:bg-accent transition-colors flex items-center justify-center gap-1"
                             title="Notes as .docx">
                         📝 .docx
@@ -58,12 +58,12 @@
                 <div class="text-xs font-medium text-foreground mb-1">📋 Create Outline</div>
                 {% if messages|length >= 10 %}
                 <div class="flex gap-1">
-                    <button onclick="exportDocument('outline', 'txt', {{ chat.id }})" 
+                    <button onclick="exportDocument(this, 'outline', 'txt', {{ chat.id }})" 
                             class="flex-1 p-1 text-xs rounded border border-border hover:bg-accent transition-colors flex items-center justify-center gap-1"
                             title="Outline as .txt">
                         📄 .txt
                     </button>
-                    <button onclick="exportDocument('outline', 'docx', {{ chat.id }})" 
+                    <button onclick="exportDocument(this, 'outline', 'docx', {{ chat.id }})" 
                             class="flex-1 p-1 text-xs rounded border border-border hover:bg-accent transition-colors flex items-center justify-center gap-1"
                             title="Outline as .docx">
                         📝 .docx
@@ -81,21 +81,15 @@
 
 <script>
 function toggleDocumentDropdown() {
-    const dropdown = document.getElementById('document-dropdown');
-    const arrow = document.querySelector('.dropdown-arrow');
+    const container = document.getElementById('document-dropdown').parentElement;
+    const dropdown = container.querySelector('#document-dropdown');
+    const arrow = container.querySelector('.dropdown-arrow');
     
     dropdown.classList.toggle('hidden');
-    
-    // Rotate arrow
-    if (dropdown.classList.contains('hidden')) {
-        arrow.style.transform = 'rotate(0deg)';
-    } else {
-        arrow.style.transform = 'rotate(180deg)';
-    }
+    arrow.style.transform = dropdown.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
 }
 
-function exportDocument(docType, format, chatId) {
-    const button = event.target;
+function exportDocument(button, docType, format, chatId) {
     const originalContent = button.innerHTML;
     
     // Show spinner
