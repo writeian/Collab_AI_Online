@@ -278,7 +278,7 @@ def regenerate_room_modes() -> Any:
 @require_login
 def room_detail(room_id: int) -> Any:
     """LEGACY ROUTE - Redirect to new room view."""
-    current_app.logger.info(f"🔄 LEGACY REDIRECT: Dashboard room route redirecting {room_id} to new room view")
+    current_app.logger.error(f"🚨🚨🚨 LEGACY ROUTE HIT: Dashboard room route intercepting room {room_id} - REDIRECTING TO NEW ROUTE 🚨🚨🚨")
     return redirect(url_for('room.room_crud.view_room', room_id=room_id))
 
     # Check if user has access to this room
