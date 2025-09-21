@@ -231,23 +231,12 @@ def view_room(room_id: int) -> Any:
 
         # TRY MOUNTAIN VIEW WITH COMPREHENSIVE DEBUGGING
         try:
-            current_app.logger.info(f"🏔️ MOUNTAIN VIEW: Attempting render for room {room_id}")
-            current_app.logger.info(f"🏔️ DEBUG - Room: {room.name if room else 'None'}")
-            current_app.logger.info(f"🏔️ DEBUG - Chats: {len(chats) if chats else 0}")
-            current_app.logger.info(f"🏔️ DEBUG - Members: {len(members) if members else 0}")
-            current_app.logger.info(f"🏔️ DEBUG - Modes: {modes}")
-            current_app.logger.info(f"🏔️ DEBUG - Modes type: {type(modes)}")
-            current_app.logger.info(f"🏔️ DEBUG - Modes keys: {list(modes.keys()) if isinstance(modes, dict) else 'Not a dict'}")
+            print(f"🏔️ STEP 8: Attempting mountain view render for room {room_id}")
+            print(f"🏔️ STEP 8a: Template data ready - Room: {room.name}")
+            print(f"🏔️ STEP 8b: Chats: {len(chats)}, Members: {len(members)}, Modes: {len(modes)}")
+            print(f"🏔️ STEP 8c: About to call render_template...")
             
-            # Validate critical data
-            if not modes:
-                current_app.logger.warning(f"🏔️ WARNING: Room {room_id} has no modes - using empty dict")
-                modes = {}
-            elif not isinstance(modes, dict):
-                current_app.logger.error(f"🏔️ ERROR: Room {room_id} modes is not dict: {type(modes)}")
-                modes = {}
-                
-            return render_template(
+            result = render_template(
                 "room/view_mountain_simple.html",
                 room=room,
                 room_data=room_data,
@@ -257,8 +246,13 @@ def view_room(room_id: int) -> Any:
                 user=user
             )
             
+            print(f"🏔️ STEP 8d: Mountain template rendered successfully for room {room_id}")
+            return result
+            
         except Exception as mountain_error:
             # FALLBACK TO STANDARD VIEW
+            print(f"🚨 STEP 8 ERROR: Mountain view failed for room {room_id}: {mountain_error}")
+            print(f"🔄 STEP 9: Falling back to standard view for room {room_id}")
             current_app.logger.error(f"🚨 MOUNTAIN VIEW FAILED for room {room_id}: {mountain_error}")
             current_app.logger.info(f"🔄 FALLBACK: Using standard view for room {room_id}")
             
