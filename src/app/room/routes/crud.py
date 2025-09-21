@@ -211,18 +211,49 @@ def view_room(room_id: int) -> Any:
             current_app.logger.warning(f"Failed to load modes for room {room_id}: {e}")
             modes = {}
 
-        # MOUNTAIN VIEW IS NOW THE DEFAULT FOR ALL ROOMS
-        current_app.logger.info(f"🏔️ MOUNTAIN VIEW: Rendering room {room_id}")
-        
-        return render_template(
-            "room/view_mountain_simple.html",  # MOUNTAIN VIEW FOR ALL ROOMS
-            room=room,
-            room_data=room_data,
-            chats=chats,
-            members=members,
-            modes=modes,
-            user=user
-        )
+        # TRY MOUNTAIN VIEW WITH COMPREHENSIVE DEBUGGING
+        try:
+            current_app.logger.info(f"🏔️ MOUNTAIN VIEW: Attempting render for room {room_id}")
+            current_app.logger.info(f"🏔️ DEBUG - Room: {room.name if room else 'None'}")
+            current_app.logger.info(f"🏔️ DEBUG - Chats: {len(chats) if chats else 0}")
+            current_app.logger.info(f"🏔️ DEBUG - Members: {len(members) if members else 0}")
+            current_app.logger.info(f"🏔️ DEBUG - Modes: {modes}")
+            current_app.logger.info(f"🏔️ DEBUG - Modes type: {type(modes)}")
+            current_app.logger.info(f"🏔️ DEBUG - Modes keys: {list(modes.keys()) if isinstance(modes, dict) else 'Not a dict'}")
+            
+            # Validate critical data
+            if not modes:
+                current_app.logger.warning(f"🏔️ WARNING: Room {room_id} has no modes - using empty dict")
+                modes = {}
+            elif not isinstance(modes, dict):
+                current_app.logger.error(f"🏔️ ERROR: Room {room_id} modes is not dict: {type(modes)}")
+                modes = {}
+                
+            return render_template(
+                "room/view_mountain_simple.html",
+                room=room,
+                room_data=room_data,
+                chats=chats,
+                members=members,
+                modes=modes,
+                user=user
+            )
+            
+        except Exception as mountain_error:
+            # FALLBACK TO STANDARD VIEW
+            current_app.logger.error(f"🚨 MOUNTAIN VIEW FAILED for room {room_id}: {mountain_error}")
+            current_app.logger.info(f"🔄 FALLBACK: Using standard view for room {room_id}")
+            
+            return render_template(
+                "room/view.html",
+                room=room,
+                room_data=room_data,
+                chats=chats,
+                members=members,
+                user=user,
+                invitation_count=get_invitation_count(user),
+                get_display_title=get_display_title
+            )
             
     except Exception as e:
         current_app.logger.error(f"Error viewing room {room_id}: {e}")
