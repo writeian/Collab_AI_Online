@@ -378,9 +378,10 @@
         </div>
         
         {% if chats %}
+        {% set latest_chat = chats|first %}
         <div class="flex justify-between">
           <span class="text-gray-600">Last Activity:</span>
-          <span class="font-medium">{{ chats[0].created_at.strftime('%m/%d/%y %H:%M') }}</span>
+          <span class="font-medium">{{ latest_chat.created_at.strftime('%m/%d/%y %H:%M') if latest_chat else 'N/A' }}</span>
         </div>
         {% endif %}
         
