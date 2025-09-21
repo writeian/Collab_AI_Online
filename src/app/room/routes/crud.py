@@ -243,25 +243,26 @@ def view_room(room_id: int) -> Any:
         members = RoomService.get_room_members(room, user)
         room_data = RoomService.get_room_display_data(room, user)
         
-        # Prepare existing modes for learning steps view
-        existing_modes = []
+        # Get learning modes for mountain view
+        modes = {}
         try:
             modes_obj = get_modes_for_room(room)
             if hasattr(modes_obj, 'items'):
                 for k, v in modes_obj.items():
-                    existing_modes.append({"key": k, "label": v.label, "prompt": v.prompt})
+                    modes[k] = v
         except Exception:
-            existing_modes = []
+            modes = {}
 
         return render_template(
-            "room/view.html",
+            "room/view_mountain_simple.html",  # MOUNTAIN VIEW IS NOW DEFAULT
             room=room,
             room_data=room_data,
             chats=chats,
             members=members,
+            modes=modes,
             user=user,
             invitation_count=get_invitation_count(user),
-            get_display_title=get_display_title  # Add smart title function
+            get_display_title=get_display_title
         )
     except Exception as e:
         current_app.logger.error(f"Error viewing room {room_id}: {e}")
