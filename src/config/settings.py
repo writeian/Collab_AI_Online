@@ -195,7 +195,7 @@ class ProductionConfig(Config):
         if not app.debug and not app.testing:
             # File logging
             if not os.path.exists("logs"):
-                os.mkdir("logs")
+                os.makedirs("logs", exist_ok=True)
             file_handler = RotatingFileHandler(
                 "logs/ai_collab.log", maxBytes=10240, backupCount=10
             )
