@@ -193,7 +193,8 @@
           <div class="flex items-center justify-between">
             <!-- Action Button -->
             {% if is_completed %}
-              <a href="/chat/{{ step_chats[0].id if step_chats else '#' }}" 
+              {% set first_chat = step_chats|first %}
+              <a href="/chat/{{ first_chat.id if first_chat else '#' }}" 
                  class="inline-flex items-center px-4 py-2 bg-green-100 text-green-700 text-sm font-medium rounded-lg hover:bg-green-200 transition-colors">
                 <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i>
                 Review Progress
