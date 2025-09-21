@@ -7,52 +7,30 @@ document.addEventListener('DOMContentLoaded', function() {
     const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
     const mobileMenuPanel = document.getElementById('mobile-menu-panel');
 
-    // Enhanced mobile menu functions with a11y
+    // Enhanced mobile menu functions with a11y (simplified, robust implementation)
     function openMobileMenu() {
         if (!mobileMenuOverlay || !mobileMenuPanel) return;
         
-        // Show overlay and panel
         mobileMenuOverlay.classList.remove('hidden');
-        setTimeout(() => {
-            mobileMenuPanel.classList.remove('translate-x-full');
-        }, 10);
-        
-        // A11y: Set ARIA attributes
-        if (mobileMenuButton) mobileMenuButton.setAttribute('aria-expanded', 'true');
-        if (mobileMenuPanel) mobileMenuPanel.setAttribute('aria-hidden', 'false');
-        
-        // Focus management: Focus first focusable element in panel
-        const firstFocusable = mobileMenuPanel.querySelector('a, button, [tabindex]:not([tabindex="-1"])');
-        if (firstFocusable) {
-            firstFocusable.focus();
-        }
-        
-        // Trap focus within panel
-        setupFocusTrap(mobileMenuPanel);
-        
+        setTimeout(() => mobileMenuPanel.classList.remove('translate-x-full'), 10);
+        mobileMenuButton?.setAttribute('aria-expanded', 'true');
         document.body.style.overflow = 'hidden';
+        
+        // Focus first focusable element
+        const firstFocusable = mobileMenuPanel.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        firstFocusable?.focus();
     }
 
     function closeMobileMenu() {
         if (!mobileMenuOverlay || !mobileMenuPanel) return;
         
-        // Hide panel with animation
         mobileMenuPanel.classList.add('translate-x-full');
-        
-        // A11y: Set ARIA attributes
-        if (mobileMenuButton) mobileMenuButton.setAttribute('aria-expanded', 'false');
-        if (mobileMenuPanel) mobileMenuPanel.setAttribute('aria-hidden', 'true');
-        
         setTimeout(() => {
             mobileMenuOverlay.classList.add('hidden');
             document.body.style.overflow = '';
-            
-            // Return focus to menu button
-            if (mobileMenuButton) mobileMenuButton.focus();
+            mobileMenuButton?.setAttribute('aria-expanded', 'false');
+            mobileMenuButton?.focus();
         }, 300);
-        
-        // Remove focus trap
-        removeFocusTrap();
     }
 
     // Focus trap implementation
@@ -206,3 +184,30 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// Time formatting for message timestamps
+function formatTimes() {
+    document.querySelectorAll('time.msg-time[data-ts]').forEach(t => {
+        const ts = Number(t.dataset.ts) * 1000;
+        if (!Number.isNaN(ts)) {
+            t.textContent = new Date(ts).toLocaleString();
+        }
+    });
+}
+
+// Lucide icon refresh after dynamic content changes
+function refreshLucideIcons(container = document) {
+    if (window.lucide && typeof lucide.createIcons === 'function') {
+        lucide.createIcons({ nameAttr: 'data-lucide' });
+    }
+}
+
+// Initialize time formatting
+document.addEventListener('DOMContentLoaded', formatTimes);
+
+// Export utilities for other scripts
+window.chatUtils = {
+    formatTimes,
+    refreshLucideIcons,
+    announceToScreenReader
+};

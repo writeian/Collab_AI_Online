@@ -1,10 +1,10 @@
 /* Chat Page Improvements - Reduced !important usage */
 
-/* Mobile viewport units for better mobile browser support */
+/* Better viewport height for mobile browsers */
 body.focus-mode .chat-layout,
 body.focus-mode .chat-container,
 body.focus-mode .chat-main { 
-    height: 100dvh; /* Better mobile browser support */
+    height: 100dvh; /* Dynamic viewport height - accounts for mobile browser chrome */
 }
 
 /* Focus mode input positioning - reduced specificity */

@@ -90,58 +90,38 @@ function toggleDocumentDropdown() {
 }
 
 function exportDocument(button, docType, format, chatId) {
-    const originalContent = button.innerHTML;
-    
-    // Show spinner
+    const original = button.innerHTML;
     button.innerHTML = '⏳';
     button.disabled = true;
-    
-    // Create form and submit
+
     const form = document.createElement('form');
     form.method = 'POST';
-    
-    if (docType === 'raw') {
-        form.action = `/documents/chat/${chatId}/export-raw`;
-    } else {
-        form.action = `/documents/chat/${chatId}/generate`;
-        
-        // Add doc_type for notes/outline
-        const docTypeInput = document.createElement('input');
-        docTypeInput.type = 'hidden';
-        docTypeInput.name = 'doc_type';
-        docTypeInput.value = docType;
-        form.appendChild(docTypeInput);
+    form.action = (docType === 'raw')
+        ? `/documents/chat/${chatId}/export-raw`
+        : `/documents/chat/${chatId}/generate`;
+
+    if (docType !== 'raw') {
+        const dt = document.createElement('input');
+        dt.type = 'hidden'; dt.name = 'doc_type'; dt.value = docType;
+        form.appendChild(dt);
     }
-    
-    // Add format
-    const formatInput = document.createElement('input');
-    formatInput.type = 'hidden';
-    formatInput.name = 'format';
-    formatInput.value = format;
-    form.appendChild(formatInput);
-    
-    // Add CSRF token (get from cookie that Flask sets)
-    const csrfToken = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('csrf_token='))
-        ?.split('=')[1];
-    
-    if (csrfToken) {
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = 'csrf_token';
-        csrfInput.value = csrfToken;
-        form.appendChild(csrfInput);
+
+    const fmt = document.createElement('input');
+    fmt.type = 'hidden'; fmt.name = 'format'; fmt.value = format;
+    form.appendChild(fmt);
+
+    const token = document.cookie.split('; ').find(r => r.startsWith('csrf_token='))?.split('=')[1];
+    if (token) {
+        const csrf = document.createElement('input');
+        csrf.type = 'hidden'; csrf.name = 'csrf_token'; csrf.value = token;
+        form.appendChild(csrf);
     }
-    
+
     document.body.appendChild(form);
     form.submit();
-    document.body.removeChild(form);
-    
-    // Reset button after a delay
-    setTimeout(() => {
-        button.innerHTML = originalContent;
-        button.disabled = false;
-    }, 2000);
+
+    // If the server responds with a file download, the page may not reload.
+    // Do a conservative reset after a short delay.
+    setTimeout(() => { button.innerHTML = original; button.disabled = false; }, 2000);
 }
 </script>
