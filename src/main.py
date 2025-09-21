@@ -102,10 +102,20 @@ def log_all_requests():
 
 @app.after_request  
 def log_after_request(response):
-    from flask import request, current_app
+    from flask import request, current_app, g
     if '/room/' in request.path:
-        current_app.logger.error(f"🏁 RESPONSE: {request.path} → {response.status_code} 🏁")
+        # Try to get the endpoint that handled this request
+        endpoint = getattr(g, 'matched_endpoint', 'unknown')
+        current_app.logger.error(f"🏁 RESPONSE: {request.path} → {response.status_code} (endpoint: {endpoint}) 🏁")
     return response
+
+# Add endpoint logging
+@app.url_value_preprocessor
+def log_endpoint(endpoint, values):
+    from flask import current_app, request, g
+    g.matched_endpoint = endpoint
+    if '/room/' in request.path:
+        current_app.logger.error(f"🎯 ENDPOINT MATCHED: {request.path} → {endpoint} 🎯")
 
 print("🚀 REQUEST LOGGING CONFIGURED 🚀")
 
