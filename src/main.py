@@ -89,6 +89,13 @@ def run_production_migrations(app):
 # Create the Flask application
 app = create_app()
 
+# Add logging to ALL requests to track what's happening
+@app.before_request
+def log_all_requests():
+    from flask import request, current_app
+    if '/room/' in request.path:
+        current_app.logger.error(f"🌐🌐🌐 REQUEST: {request.method} {request.path} from {request.remote_addr} 🌐🌐🌐")
+
 # Automatically run Alembic migrations in production (e.g., on Railway)
 run_production_migrations(app)
 
