@@ -126,6 +126,13 @@ try:
 except Exception as e:
     print(f"🚨 LOGGER TEST FAILED: {e}")
 
+# List ALL registered routes to see what's handling room requests
+print("🗺️ LISTING ALL FLASK ROUTES:")
+for rule in app.url_map.iter_rules():
+    if 'room' in rule.rule.lower():
+        print(f"🗺️ ROUTE: {rule.rule} → {rule.endpoint} (methods: {rule.methods})")
+print("🗺️ END ROUTE LIST")
+
 # Automatically run Alembic migrations in production (e.g., on Railway)
 run_production_migrations(app)
 
