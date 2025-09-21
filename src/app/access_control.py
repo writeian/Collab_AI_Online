@@ -253,16 +253,21 @@ def require_room_access(f):
 
     @wraps(f)
     def decorated_function(room_id, *args, **kwargs):
+        from flask import current_app
+        current_app.logger.error(f"🔐🔐🔐 ROOM ACCESS CHECK: Checking access for room {room_id} 🔐🔐🔐")
+        
         user = get_current_user()
         
         # First check if user is logged in
         if not user:
+            current_app.logger.error(f"🔐 NO USER: Redirecting to login for room {room_id}")
             flash("Please log in to access this room.")
             return redirect(url_for("auth.login"))
         
         room = Room.query.get_or_404(room_id)
 
         if not can_access_room(user, room):
+            current_app.logger.error(f"🔐 NO ACCESS: User {user.username} denied access to room {room_id}")
             flash("You don't have access to this room.")
             return redirect(url_for("room.room_crud.index"))
 
@@ -276,6 +281,7 @@ def require_room_access(f):
             # Don't block access on failure to mark acceptance
             db.session.rollback()
 
+        current_app.logger.error(f"🔐 ACCESS GRANTED: User {user.username} accessing room {room_id} - CALLING FUNCTION")
         return f(room_id, *args, **kwargs)
 
     return decorated_function
