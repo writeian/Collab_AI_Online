@@ -18,8 +18,10 @@
     <!-- Your existing styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.4">
     
-    <!-- Chat input fixes for all pages -->
+    <!-- Chat improvements -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat-improvements.css') }}?v=1.0">
     <script src="{{ url_for('static', filename='js/chat-input-fixes.js') }}?v=1.0"></script>
+    <script src="{{ url_for('static', filename='js/chat-accessibility.js') }}?v=1.0"></script>
     {% block extra_css %}{% endblock %}
 </head>
 <body class="bg-background text-foreground min-h-screen flex flex-col">

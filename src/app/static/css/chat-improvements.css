@@ -1,0 +1,67 @@
+/* Chat Page Improvements - Reduced !important usage */
+
+/* Mobile viewport units for better mobile browser support */
+body.focus-mode .chat-layout,
+body.focus-mode .chat-container,
+body.focus-mode .chat-main { 
+    height: 100dvh; /* Better mobile browser support */
+}
+
+/* Focus mode input positioning - reduced specificity */
+body.focus-mode .chat-input-container { 
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    display: block;
+}
+
+/* Semi-floating input bar - cleaner approach */
+.chat-input-container {
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    background: hsl(var(--card) / 0.65);
+    backdrop-filter: blur(8px);
+    border-radius: 0.75rem;
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    z-index: 50;
+}
+
+/* Screen reader only class */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Focus visible styles for better keyboard navigation */
+.chat-input-container button:focus-visible,
+.chat-input-container textarea:focus-visible {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 768px) {
+    .chat-input-container {
+        left: 0.5rem;
+        right: 0.5rem;
+        bottom: 0.5rem;
+    }
+    
+    /* Ensure mobile browser chrome doesn't interfere */
+    body.focus-mode {
+        height: 100dvh;
+        overflow: hidden;
+    }
+}
