@@ -100,6 +100,13 @@ def log_all_requests():
     if '/room/' in request.path:
         current_app.logger.error(f"🎯 ROOM REQUEST DETECTED: {request.path} 🎯")
 
+@app.after_request  
+def log_after_request(response):
+    from flask import request, current_app
+    if '/room/' in request.path:
+        current_app.logger.error(f"🏁 RESPONSE: {request.path} → {response.status_code} 🏁")
+    return response
+
 print("🚀 REQUEST LOGGING CONFIGURED 🚀")
 
 # Test that our logging works
