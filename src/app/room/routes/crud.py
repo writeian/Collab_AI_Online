@@ -254,12 +254,11 @@ def view_room(room_id: int) -> Any:
             modes = {}
 
         return render_template(
-            "room/view_mountain_simple.html",  # MOUNTAIN VIEW IS NOW DEFAULT
+            "room/view.html",  # ROLLBACK TO STABLE VERSION
             room=room,
             room_data=room_data,
             chats=chats,
             members=members,
-            modes=modes,
             user=user,
             invitation_count=get_invitation_count(user),
             get_display_title=get_display_title
