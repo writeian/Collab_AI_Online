@@ -264,7 +264,16 @@ def require_room_access(f):
             flash("Please log in to access this room.")
             return redirect(url_for("auth.login"))
         
-        room = Room.query.get_or_404(room_id)
+        current_app.logger.error(f"🔍 LOOKING UP ROOM: {room_id}")
+        room = Room.query.get(room_id)  # Don't 404 yet, let's see what we get
+        current_app.logger.error(f"🔍 ROOM LOOKUP RESULT: {room.name if room else 'None'} (ID: {room.id if room else 'None'})")
+        
+        if not room:
+            current_app.logger.error(f"🔍 ROOM {room_id} NOT FOUND - RETURNING 404")
+            from flask import abort
+            abort(404)
+        
+        # Continue with the original room object
 
         if not can_access_room(user, room):
             current_app.logger.error(f"🔐 NO ACCESS: User {user.username} denied access to room {room_id}")
