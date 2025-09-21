@@ -127,20 +127,33 @@
               {{ clean_title }}
             </h3>
             
-            <!-- Accessible Status Badge -->
-            {% if is_completed %}
-              <span class="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full font-medium" data-status="done">
-                <span class="sr-only">Status:</span> Completed
-              </span>
-            {% elif is_current %}
-              <span class="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-medium" data-status="current">
-                <span class="sr-only">Status:</span> Current
-              </span>
-            {% else %}
-              <span class="bg-gray-100 text-slate-700 text-xs px-3 py-1 rounded-full font-medium" data-status="upcoming">
-                <span class="sr-only">Status:</span> Upcoming
-              </span>
-            {% endif %}
+            <!-- Status Badge with New Message Indicator -->
+            <div class="flex items-center gap-2">
+              <!-- New Messages Indicator for this step -->
+              {% if step_chats %}
+                {% set recent_messages = step_chats|map(attribute='messages')|sum %}
+                {% if recent_messages > 0 %}
+                  <span class="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-medium animate-pulse">
+                    {{ recent_messages }} new
+                  </span>
+                {% endif %}
+              {% endif %}
+              
+              <!-- Main Status Badge -->
+              {% if is_completed %}
+                <span class="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full font-medium" data-status="done">
+                  <span class="sr-only">Status:</span> Completed
+                </span>
+              {% elif is_current %}
+                <span class="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-medium" data-status="current">
+                  <span class="sr-only">Status:</span> Current
+                </span>
+              {% else %}
+                <span class="bg-gray-100 text-slate-700 text-xs px-3 py-1 rounded-full font-medium" data-status="upcoming">
+                  <span class="sr-only">Status:</span> Upcoming
+                </span>
+              {% endif %}
+            </div>
           </div>
           
           <!-- Accessible Description with Read More -->
@@ -299,6 +312,84 @@
         {% if user.id == room.owner_id %}
           <span class="text-xs text-gray-500">As expedition leader, you can invite more climbers</span>
         {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Room Statistics Section -->
+  <div class="mt-8 bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/50 p-6">
+    <button onclick="toggleRoomStats()" 
+            class="w-full flex items-center justify-between text-left hover:bg-white/50 transition-colors rounded-lg p-2 -m-2">
+      <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+        <i data-lucide="bar-chart-3" class="w-5 h-5 text-blue-600"></i>
+        📊 Room Statistics
+      </h3>
+      <i data-lucide="chevron-down" class="w-5 h-5 transition-transform" id="stats-chevron"></i>
+    </button>
+    
+    <div id="room-stats-content" class="hidden mt-4 pt-4 border-t border-gray-200/50">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        <!-- Total Chats -->
+        <div class="text-center p-3 bg-blue-50/50 rounded-lg">
+          <div class="text-2xl font-bold text-blue-600">{{ chats|length }}</div>
+          <div class="text-sm text-blue-700">Total Chats</div>
+        </div>
+        
+        <!-- Total Messages -->
+        <div class="text-center p-3 bg-green-50/50 rounded-lg">
+          <div class="text-2xl font-bold text-green-600">
+            {% set total_messages = chats|sum(attribute='messages')|length if chats else 0 %}
+            {{ total_messages }}
+          </div>
+          <div class="text-sm text-green-700">Messages</div>
+        </div>
+        
+        <!-- Team Size -->
+        <div class="text-center p-3 bg-purple-50/50 rounded-lg">
+          <div class="text-2xl font-bold text-purple-600">{{ members|length }}</div>
+          <div class="text-sm text-purple-700">Team Members</div>
+        </div>
+        
+        <!-- Room Age -->
+        <div class="text-center p-3 bg-amber-50/50 rounded-lg">
+          <div class="text-2xl font-bold text-amber-600">
+            {% set days_old = ((moment.utcnow() - room.created_at).days) if room.created_at else 0 %}
+            {{ days_old }}
+          </div>
+          <div class="text-sm text-amber-700">Days Active</div>
+        </div>
+      </div>
+      
+      <!-- Detailed Stats -->
+      <div class="space-y-3 text-sm">
+        <div class="flex justify-between">
+          <span class="text-gray-600">Created:</span>
+          <span class="font-medium">{{ room.created_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
+        </div>
+        
+        {% if room.group_size %}
+        <div class="flex justify-between">
+          <span class="text-gray-600">Group Size:</span>
+          <span class="font-medium">{{ room.group_size.title() }}</span>
+        </div>
+        {% endif %}
+        
+        <div class="flex justify-between">
+          <span class="text-gray-600">Learning Steps:</span>
+          <span class="font-medium">{{ modes|length if modes else 0 }} total</span>
+        </div>
+        
+        {% if chats %}
+        <div class="flex justify-between">
+          <span class="text-gray-600">Last Activity:</span>
+          <span class="font-medium">{{ chats[0].created_at.strftime('%m/%d/%y %H:%M') }}</span>
+        </div>
+        {% endif %}
+        
+        <div class="flex justify-between">
+          <span class="text-gray-600">Room ID:</span>
+          <span class="font-mono text-xs text-gray-500">{{ room.id }}</span>
+        </div>
       </div>
     </div>
   </div>
@@ -502,6 +593,20 @@ document.addEventListener('DOMContentLoaded', function() {
     if (lp) ro.observe(lp);
   }
 });
+
+// Room stats toggle
+function toggleRoomStats() {
+  const content = document.getElementById('room-stats-content');
+  const chevron = document.getElementById('stats-chevron');
+  
+  if (content.classList.contains('hidden')) {
+    content.classList.remove('hidden');
+    chevron.style.transform = 'rotate(180deg)';
+  } else {
+    content.classList.add('hidden');
+    chevron.style.transform = 'rotate(0deg)';
+  }
+}
 
 // Unified description toggle with event delegation
 document.addEventListener('click', (e) => {
