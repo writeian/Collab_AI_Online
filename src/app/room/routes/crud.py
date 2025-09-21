@@ -190,17 +190,24 @@ def view_room(room_id: int) -> Any:
     print(f"🎯🎯🎯 NEW ROOM ROUTE HIT: Processing room {room_id} 🎯🎯🎯")
     current_app.logger.error(f"🎯🎯🎯 NEW ROOM ROUTE HIT: Processing room {room_id} 🎯🎯🎯")
     try:
+        print(f"🔍 STEP 1: Getting current user for room {room_id}")
         user = get_current_user()
+        print(f"🔍 STEP 2: Getting room by ID {room_id} for user {user.username if user else 'None'}")
         room = RoomService.get_room_by_id(room_id, user)
+        print(f"🔍 STEP 3: Room lookup result: {room.name if room else 'None'}")
         
         if not room:
             flash("Room not found or you don't have access to it.", "error")
             return redirect(url_for('room.room_crud.index'))
         
         # Get room data (same for both templates)
+        print(f"🔍 STEP 4: Getting room chats for {room_id}")
         chats = RoomService.get_room_chats(room, user)
+        print(f"🔍 STEP 5: Getting room members for {room_id}")
         members = RoomService.get_room_members(room, user)
+        print(f"🔍 STEP 6: Getting room display data for {room_id}")
         room_data = RoomService.get_room_display_data(room, user)
+        print(f"🔍 DATA CHECK: Room {room_id} has {len(chats) if chats else 0} chats, {len(members) if members else 0} members")
         
         # Get learning modes for mountain view
         modes = {}
