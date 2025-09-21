@@ -567,6 +567,7 @@ def get_ai_response(
     model: Optional[str] = None,  # Ignored for now, using default based on available API
     temperature: float = 0.7,  # Ignored for Anthropic
     max_tokens: int = 300,
+    extra_system: Optional[str] = None,
 ) -> Tuple[str, bool]:
     """Return the assistant's reply text and truncation status for a given Chat row."""
     # Check for API key first
@@ -578,7 +579,12 @@ def get_ai_response(
         )
 
     # Get mode-specific system prompt with discussion context
-    system_prompt = get_mode_system_prompt(chat.mode, chat.room_id, chat.id)
+    base_system_prompt = get_mode_system_prompt(chat.mode, chat.room_id, chat.id)
+    
+    # Add extra system instructions if provided (for critique tool)
+    system_prompt = base_system_prompt
+    if extra_system:
+        system_prompt = f"{base_system_prompt}\n\nADDITIONAL STYLE: {extra_system}"
 
     # Import here to avoid circular imports
     from src.models import Message
