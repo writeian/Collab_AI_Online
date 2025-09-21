@@ -210,13 +210,22 @@ def view_room(room_id: int) -> Any:
         print(f"🔍 DATA CHECK: Room {room_id} has {len(chats) if chats else 0} chats, {len(members) if members else 0} members")
         
         # Get learning modes for mountain view
+        print(f"🔍 STEP 7: Getting learning modes for room {room_id}")
         modes = {}
         try:
+            print(f"🔍 STEP 7a: Calling get_modes_for_room({room.name})")
             modes_obj = get_modes_for_room(room)
+            print(f"🔍 STEP 7b: Modes object type: {type(modes_obj)}")
+            print(f"🔍 STEP 7c: Modes object: {modes_obj}")
             if hasattr(modes_obj, 'items'):
+                print(f"🔍 STEP 7d: Converting modes to dict")
                 for k, v in modes_obj.items():
                     modes[k] = v
+                print(f"🔍 STEP 7e: Final modes dict: {modes}")
+            else:
+                print(f"🔍 STEP 7f: Modes object has no items() method")
         except Exception as e:
+            print(f"🔍 STEP 7 ERROR: Failed to load modes for room {room_id}: {e}")
             current_app.logger.warning(f"Failed to load modes for room {room_id}: {e}")
             modes = {}
 
