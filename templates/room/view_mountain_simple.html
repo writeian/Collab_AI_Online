@@ -215,9 +215,10 @@
             
             <!-- Avatar Group showing who worked on this step -->
             {% if step_chats %}
-              {% set step_participants = step_chats|map(attribute='creator')|list|unique %}
+              {% set step_participants = step_chats|map(attribute='creator')|list|unique|list %}
               <div class="flex -space-x-2" title="Participants in this step">
-                {% for participant in step_participants[:3] %}
+                {% for participant in step_participants %}
+                {% if loop.index <= 3 %}
                   <div class="w-8 h-8 rounded-full bg-gradient-to-br 
                              {% if loop.index == 1 %}from-blue-500 to-purple-600
                              {% elif loop.index == 2 %}from-green-500 to-teal-600
@@ -226,6 +227,7 @@
                        title="{{ participant.username }}">
                     {{ participant.username[:2].upper() }}
                   </div>
+                {% endif %}
                 {% endfor %}
                 
                 {% if step_participants|length > 3 %}
