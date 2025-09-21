@@ -187,6 +187,7 @@ def view_room_mountain(room_id: int) -> Any:
 @require_room_access
 def view_room(room_id: int) -> Any:
     """View a specific room (overview) - SAFE MOUNTAIN VIEW WITH FALLBACK."""
+    print(f"🎯🎯🎯 NEW ROOM ROUTE HIT: Processing room {room_id} 🎯🎯🎯")
     current_app.logger.error(f"🎯🎯🎯 NEW ROOM ROUTE HIT: Processing room {room_id} 🎯🎯🎯")
     try:
         user = get_current_user()

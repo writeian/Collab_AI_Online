@@ -254,6 +254,7 @@ def require_room_access(f):
     @wraps(f)
     def decorated_function(room_id, *args, **kwargs):
         from flask import current_app
+        print(f"🔐🔐🔐 ROOM ACCESS CHECK: Checking access for room {room_id} 🔐🔐🔐")
         current_app.logger.error(f"🔐🔐🔐 ROOM ACCESS CHECK: Checking access for room {room_id} 🔐🔐🔐")
         
         user = get_current_user()
