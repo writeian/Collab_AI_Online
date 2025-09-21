@@ -16,7 +16,9 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Import the application
+print("🔥🔥🔥 SRC/WSGI.PY BEING USED - THIS SHOULD NOT HAPPEN 🔥🔥🔥")
 from main import app
+print("🔥🔥🔥 SRC/WSGI.PY LOADED MAIN.PY 🔥🔥🔥")
 
 if __name__ == "__main__":
     app.run()

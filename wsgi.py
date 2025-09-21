@@ -17,9 +17,11 @@ print(f"PORT: {os.getenv('PORT', 'not set')}")
 try:
     import sys
     import os
+    print("🚀🚀🚀 ROOT WSGI.PY BEING USED - LOADING SRC/MAIN.PY 🚀🚀🚀")
     # Add src directory to Python path
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
     from main import app
+    print("🚀🚀🚀 ROOT WSGI.PY SUCCESSFULLY LOADED SRC/MAIN.PY 🚀🚀🚀")
     
     print("Creating Flask application...")
     # The Flask application is already created in main.py
