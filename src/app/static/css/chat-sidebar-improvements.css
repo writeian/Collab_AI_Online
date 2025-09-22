@@ -1,33 +1,70 @@
-/* Chat Sidebar Improvements - Clean Styling */
+/* Chat Sidebar Improvements - Plain CSS (no @apply) */
 
 /* Section labels */
 .section-label { 
-    @apply text-[11px] uppercase tracking-wider text-muted-foreground mb-2; 
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 0.5rem;
 }
 
 /* Card styling */
 .card { 
-    @apply rounded-lg border border-border bg-card/50 p-3; 
+    border-radius: 0.5rem;
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--card) / 0.5);
+    padding: 0.75rem;
 }
 
 /* List items */
 .list-item { 
-    @apply flex items-center gap-2 p-2 rounded-lg border border-border hover:bg-muted transition-colors; 
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid hsl(var(--border));
+    transition: background-color 0.2s;
+}
+
+.list-item:hover {
+    background: hsl(var(--muted));
 }
 
 .list-item .sub { 
-    @apply text-xs text-muted-foreground; 
+    font-size: 0.75rem;
+    color: hsl(var(--muted-foreground));
 }
 
 /* Icon buttons */
 .icon-btn { 
-    @apply text-sm px-2 py-1 rounded hover:bg-muted; 
+    font-size: 0.875rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
+.icon-btn:hover {
+    background: hsl(var(--muted));
 }
 
 /* Accessible accordion styling */
 .ui-accordion > .ui-accordion-summary { 
-    @apply flex items-center gap-2 px-2 py-2 rounded cursor-pointer text-sm text-muted-foreground hover:text-foreground hover:bg-muted; 
-    list-style: none; 
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: hsl(var(--muted-foreground));
+    list-style: none;
+    transition: all 0.2s;
+}
+
+.ui-accordion > .ui-accordion-summary:hover {
+    color: hsl(var(--foreground));
+    background: hsl(var(--muted));
 }
 
 .ui-accordion > .ui-accordion-summary::-webkit-details-marker { 
@@ -35,11 +72,13 @@
 }
 
 .ui-accordion > .ui-accordion-body { 
-    @apply mt-2 px-2; 
+    margin-top: 0.5rem;
+    padding: 0 0.5rem;
 }
 
 .ui-accordion[open] > .ui-accordion-summary { 
-    @apply text-foreground bg-muted; 
+    color: hsl(var(--foreground));
+    background: hsl(var(--muted));
 }
 
 /* Tone critique specific styling */
