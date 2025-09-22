@@ -2,9 +2,15 @@
 // Adds "Continue" links to AI messages for expansion/completion
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Only run on chat pages
-    if (!/^\/chat\/\d+/.test(location.pathname)) return;
+    console.log('🔗 Continue messages script loaded');
     
+    // Only run on chat pages
+    if (!/^\/chat\/\d+/.test(location.pathname)) {
+        console.log('🔗 Not a chat page, skipping');
+        return;
+    }
+    
+    console.log('🔗 On chat page, adding continue links');
     addContinueLinks();
     
     // Re-add continue links when new messages are added dynamically
@@ -14,15 +20,21 @@ document.addEventListener('DOMContentLoaded', function() {
 function addContinueLinks() {
     // Find all AI assistant messages using actual DOM structure
     const aiMessages = document.querySelectorAll('.message-bubble.assistant');
+    console.log(`🔗 Found ${aiMessages.length} AI messages`);
     
-    aiMessages.forEach(messageElement => {
+    aiMessages.forEach((messageElement, index) => {
+        console.log(`🔗 Processing AI message ${index + 1}`);
         // Skip if already has continue link
         if (messageElement.querySelector('.continue-link')) return;
         
         // Get message ID from parent container
         const messageContainer = messageElement.closest('[data-message-id]');
         const messageId = messageContainer?.dataset.messageId;
-        if (!messageId) return;
+        console.log(`🔗 Message ${index + 1} ID: ${messageId}`);
+        if (!messageId) {
+            console.log(`🔗 No message ID found for message ${index + 1}`);
+            return;
+        }
         
         // Create continue link
         const continueLink = document.createElement('a');
