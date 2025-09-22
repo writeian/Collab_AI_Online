@@ -22,12 +22,17 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chat-improvements.css') }}?v=1.0">
     <script src="{{ url_for('static', filename='js/chat-input-fixes.js') }}?v=1.0"></script>
     <script src="{{ url_for('static', filename='js/chat-accessibility.js') }}?v=1.0"></script>
+    <script src="{{ url_for('static', filename='js/restore-document-generation.js') }}?v=1.0"></script>
     
-    <!-- Inject critique component on chat pages -->
+    <!-- Inject critique component on room 81 chat pages only -->
     <script>
     document.addEventListener('DOMContentLoaded', async () => {
       // only on /chat/* pages
       if (!/^\/chat\/\d+/.test(location.pathname)) return;
+
+      // Check if this chat belongs to room 81 (test room only)
+      const isRoom81 = await checkIfRoom81();
+      if (!isRoom81) return;
 
       // find the existing "AI Assistant Role" <details> by class instead of :contains()
       const details = document.querySelector('.chat-sidebar details.system-instructions');
@@ -50,6 +55,21 @@
         console.warn('tone control: failed to load component:', e);
       }
     });
+
+    async function checkIfRoom81() {
+      try {
+        // Look for room 81 indicators in the page
+        const backToRoomLink = document.querySelector('a[href*="/room/81"]');
+        if (backToRoomLink) return true;
+        
+        // Check page content for room 81 references
+        const pageText = document.body.textContent;
+        return pageText.includes('/room/81') || pageText.includes('room_id=81');
+      } catch (error) {
+        console.warn('Could not determine if room 81:', error);
+        return false;
+      }
+    }
     </script>
     
     {% block extra_css %}{% endblock %}
