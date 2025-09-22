@@ -30,8 +30,21 @@
       if (!/^\/chat\/\d+/.test(location.pathname)) return;
       if (!(await checkIfRoom81())) return;
 
-      const mount = document.getElementById('tone-critique-mount');
-      if (!mount) return;
+      // Create mount point if it doesn't exist
+      let mount = document.getElementById('tone-critique-mount');
+      if (!mount) {
+        const details = document.querySelector('.chat-sidebar details.system-instructions');
+        if (details) {
+          mount = document.createElement('div');
+          mount.id = 'tone-critique-mount';
+          details.insertAdjacentElement('afterend', mount);
+        }
+      }
+      
+      if (!mount) {
+        console.warn('tone control: could not create mount point');
+        return;
+      }
 
       try {
         const res = await fetch('/static/components/chat/tone_critique_control.html', { credentials: 'same-origin' });
