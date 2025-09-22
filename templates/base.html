@@ -22,6 +22,29 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chat-improvements.css') }}?v=1.0">
     <script src="{{ url_for('static', filename='js/chat-input-fixes.js') }}?v=1.0"></script>
     <script src="{{ url_for('static', filename='js/chat-accessibility.js') }}?v=1.0"></script>
+    
+    <!-- Inject critique component on chat pages -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.location.pathname.includes('/chat/')) {
+            fetch('{{ url_for("static", filename="") }}../components/chat/tone_critique_control.html')
+                .then(r => r.text())
+                .then(html => {
+                    const aiRole = document.querySelector('summary:contains("🤖 AI Assistant Role")');
+                    if (aiRole) {
+                        const details = aiRole.closest('details');
+                        if (details) {
+                            const div = document.createElement('div');
+                            div.innerHTML = html;
+                            details.parentNode.insertBefore(div, details.nextSibling);
+                        }
+                    }
+                })
+                .catch(e => console.warn('Could not load critique component:', e));
+        }
+    });
+    </script>
+    
     {% block extra_css %}{% endblock %}
 </head>
 <body class="bg-background text-foreground min-h-screen flex flex-col">
