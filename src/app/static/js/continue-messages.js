@@ -12,15 +12,16 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function addContinueLinks() {
-    // Find all AI assistant messages
-    const aiMessages = document.querySelectorAll('.message-bubble[data-role="assistant"], .message[data-role="assistant"], .ai-message, [class*="assistant"]');
+    // Find all AI assistant messages using actual DOM structure
+    const aiMessages = document.querySelectorAll('.message-bubble.assistant');
     
     aiMessages.forEach(messageElement => {
         // Skip if already has continue link
         if (messageElement.querySelector('.continue-link')) return;
         
-        // Try to get message ID from various possible locations
-        const messageId = getMessageId(messageElement);
+        // Get message ID from parent container
+        const messageContainer = messageElement.closest('[data-message-id]');
+        const messageId = messageContainer?.dataset.messageId;
         if (!messageId) return;
         
         // Create continue link
@@ -35,14 +36,17 @@ function addContinueLinks() {
             continueMessage(messageId);
         });
         
-        // Find the best place to insert the link
-        const messageContent = messageElement.querySelector('.message-content, .content, p') || messageElement;
-        
-        // Add the link after the message content
-        if (messageContent.nextSibling) {
-            messageContent.parentNode.insertBefore(continueLink, messageContent.nextSibling);
+        // Find the message timestamp area to insert after
+        const timestamp = messageElement.querySelector('.message-timestamp');
+        if (timestamp) {
+            // Add continue link after the timestamp
+            timestamp.appendChild(continueLink);
         } else {
-            messageContent.parentNode.appendChild(continueLink);
+            // Fallback: add to message content area
+            const messageContent = messageElement.querySelector('.message-content');
+            if (messageContent) {
+                messageContent.appendChild(continueLink);
+            }
         }
     });
     
