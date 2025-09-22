@@ -27,42 +27,25 @@
     <!-- Inject critique component on room 81 chat pages only -->
     <script>
     document.addEventListener('DOMContentLoaded', async () => {
-      // only on /chat/* pages
       if (!/^\/chat\/\d+/.test(location.pathname)) return;
+      if (!(await checkIfRoom81())) return;
 
-      // Check if this chat belongs to room 81 (test room only)
-      const isRoom81 = await checkIfRoom81();
-      if (!isRoom81) return;
-
-      // find the existing "AI Assistant Role" <details> by class instead of :contains()
-      const details = document.querySelector('.chat-sidebar details.system-instructions');
-      if (!details) {
-        console.warn('tone control: system-instructions <details> not found');
-        return;
-      }
+      const mount = document.getElementById('tone-critique-mount');
+      if (!mount) return;
 
       try {
-        // serve the component from static tree
-        const res = await fetch('{{ url_for("static", filename="components/chat/tone_critique_control.html") }}', { credentials: 'same-origin' });
+        const res = await fetch('/static/components/chat/tone_critique_control.html', { credentials: 'same-origin' });
         if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-
         const html = await res.text();
-        details.insertAdjacentHTML('afterend', html);
-
-        // render any newly added lucide icons
-        if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
-      } catch (e) {
-        console.warn('tone control: failed to load component:', e);
-      }
+        mount.innerHTML = html;
+        if (window.lucide?.createIcons) lucide.createIcons();
+      } catch (e) { console.warn('tone control: failed to load component:', e); }
     });
 
     async function checkIfRoom81() {
       try {
-        // Look for room 81 indicators in the page
         const backToRoomLink = document.querySelector('a[href*="/room/81"]');
         if (backToRoomLink) return true;
-        
-        // Check page content for room 81 references
         const pageText = document.body.textContent;
         return pageText.includes('/room/81') || pageText.includes('room_id=81');
       } catch (error) {
