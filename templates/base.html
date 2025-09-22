@@ -25,11 +25,11 @@
     <script src="{{ url_for('static', filename='js/chat-accessibility.js') }}?v=1.0"></script>
     <script src="{{ url_for('static', filename='js/restore-document-generation.js') }}?v=1.0"></script>
     
-    <!-- Inject critique component on room 81 chat pages only -->
+    <!-- Inject critique component on all chat pages -->
     <script>
     document.addEventListener('DOMContentLoaded', async () => {
       if (!/^\/chat\/\d+/.test(location.pathname)) return;
-      if (!(await checkIfRoom81())) return;
+      // Critique tool now available for all rooms
 
       // Create mount point if it doesn't exist
       let mount = document.getElementById('tone-critique-mount');
@@ -59,17 +59,7 @@
       } catch (e) { console.warn('tone control: failed to load component:', e); }
     });
 
-    async function checkIfRoom81() {
-      try {
-        const backToRoomLink = document.querySelector('a[href*="/room/81"]');
-        if (backToRoomLink) return true;
-        const pageText = document.body.textContent;
-        return pageText.includes('/room/81') || pageText.includes('room_id=81');
-      } catch (error) {
-        console.warn('Could not determine if room 81:', error);
-        return false;
-      }
-    }
+    // Room 81 check function removed - critique tool now available for all rooms
 
     function initToneCritiqueControl() {
       const slider = document.getElementById('critique-slider');

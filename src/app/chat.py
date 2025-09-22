@@ -155,13 +155,13 @@ def view_chat(chat_id: int) -> Any:
                 if ai_response_enabled:
                     # ask GPT‑4o and store assistant reply
                     try:
-                        # Check for room 81 critique instructions
-                        room81_instructions = request.form.get("room81_critique_instructions", "")
+                        # Check for critique instructions (now available for all rooms)
+                        critique_instructions = request.form.get("room81_critique_instructions", "")
                         
-                        if room81_instructions and chat_obj.room_id == 81:
+                        if critique_instructions:
                             ai_content, is_truncated = get_ai_response(
                                 chat_obj, 
-                                extra_system=room81_instructions
+                                extra_system=critique_instructions
                             )
                         else:
                             ai_content, is_truncated = get_ai_response(chat_obj)
