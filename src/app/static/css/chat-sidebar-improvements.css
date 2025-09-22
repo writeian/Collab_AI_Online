@@ -1,0 +1,100 @@
+/* Chat Sidebar Improvements - Clean Styling */
+
+/* Section labels */
+.section-label { 
+    @apply text-[11px] uppercase tracking-wider text-muted-foreground mb-2; 
+}
+
+/* Card styling */
+.card { 
+    @apply rounded-lg border border-border bg-card/50 p-3; 
+}
+
+/* List items */
+.list-item { 
+    @apply flex items-center gap-2 p-2 rounded-lg border border-border hover:bg-muted transition-colors; 
+}
+
+.list-item .sub { 
+    @apply text-xs text-muted-foreground; 
+}
+
+/* Icon buttons */
+.icon-btn { 
+    @apply text-sm px-2 py-1 rounded hover:bg-muted; 
+}
+
+/* Accessible accordion styling */
+.ui-accordion > .ui-accordion-summary { 
+    @apply flex items-center gap-2 px-2 py-2 rounded cursor-pointer text-sm text-muted-foreground hover:text-foreground hover:bg-muted; 
+    list-style: none; 
+}
+
+.ui-accordion > .ui-accordion-summary::-webkit-details-marker { 
+    display: none; 
+}
+
+.ui-accordion > .ui-accordion-body { 
+    @apply mt-2 px-2; 
+}
+
+.ui-accordion[open] > .ui-accordion-summary { 
+    @apply text-foreground bg-muted; 
+}
+
+/* Tone critique specific styling */
+#tone-critique-mount {
+    margin-top: 1rem;
+}
+
+#tone-critique-mount details {
+    @apply ui-accordion;
+}
+
+#tone-critique-mount summary {
+    @apply ui-accordion-summary;
+}
+
+#tone-critique-mount .mt-3.p-3 {
+    @apply ui-accordion-body bg-muted/50;
+}
+
+/* Custom slider styling for critique tool */
+#critique-slider {
+    background: linear-gradient(to right, 
+        #22c55e 0%, 
+        #84cc16 25%, 
+        #eab308 50%, 
+        #f97316 75%, 
+        #ef4444 100%);
+    height: 8px;
+    border-radius: 4px;
+    appearance: none;
+    cursor: pointer;
+}
+
+#critique-slider::-webkit-slider-thumb {
+    appearance: none;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: white;
+    cursor: pointer;
+    border: 2px solid #3b82f6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#critique-slider::-moz-range-thumb {
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: white;
+    cursor: pointer;
+    border: 2px solid #3b82f6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Focus mode hiding */
+body.focus-mode .tone-critique { 
+    display: none !important; 
+}
