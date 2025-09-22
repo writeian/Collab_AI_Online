@@ -25,23 +25,30 @@
     
     <!-- Inject critique component on chat pages -->
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        if (window.location.pathname.includes('/chat/')) {
-            fetch('{{ url_for("static", filename="") }}../components/chat/tone_critique_control.html')
-                .then(r => r.text())
-                .then(html => {
-                    const aiRole = document.querySelector('summary:contains("🤖 AI Assistant Role")');
-                    if (aiRole) {
-                        const details = aiRole.closest('details');
-                        if (details) {
-                            const div = document.createElement('div');
-                            div.innerHTML = html;
-                            details.parentNode.insertBefore(div, details.nextSibling);
-                        }
-                    }
-                })
-                .catch(e => console.warn('Could not load critique component:', e));
-        }
+    document.addEventListener('DOMContentLoaded', async () => {
+      // only on /chat/* pages
+      if (!/^\/chat\/\d+/.test(location.pathname)) return;
+
+      // find the existing "AI Assistant Role" <details> by class instead of :contains()
+      const details = document.querySelector('.chat-sidebar details.system-instructions');
+      if (!details) {
+        console.warn('tone control: system-instructions <details> not found');
+        return;
+      }
+
+      try {
+        // serve the component from static tree
+        const res = await fetch('{{ url_for("static", filename="components/chat/tone_critique_control.html") }}', { credentials: 'same-origin' });
+        if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+
+        const html = await res.text();
+        details.insertAdjacentHTML('afterend', html);
+
+        // render any newly added lucide icons
+        if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
+      } catch (e) {
+        console.warn('tone control: failed to load component:', e);
+      }
     });
     </script>
     
