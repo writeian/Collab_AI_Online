@@ -178,7 +178,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Other emoji buttons
     document.querySelectorAll('button').forEach(button => {
         const text = button.textContent.trim();
-        if (!button.getAttribute('aria-label') && /^[\u{1F000}-\u{1F6FF}]/.test(text)) {
+        if (!button.getAttribute('aria-label') && /^[\u{1F300}-\u{1F5FF}]/u.test(text)) {
             // Button starts with emoji but has no aria-label
             button.setAttribute('aria-label', `Action: ${text}`);
         }

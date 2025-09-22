@@ -91,47 +91,7 @@ print("🚀 CREATING FLASK APP WITH DEBUG LOGGING 🚀")
 app = create_app()
 print("🚀 FLASK APP CREATED - ADDING REQUEST LOGGING 🚀")
 
-# Add logging to ALL requests to track what's happening
-@app.before_request
-def log_all_requests():
-    from flask import request, current_app
-    print(f"🌐🌐🌐 BEFORE_REQUEST: {request.method} {request.path} 🌐🌐🌐")
-    current_app.logger.error(f"🌐🌐🌐 REQUEST: {request.method} {request.path} from {request.remote_addr} 🌐🌐🌐")
-    if '/room/' in request.path:
-        current_app.logger.error(f"🎯 ROOM REQUEST DETECTED: {request.path} 🎯")
-
-@app.after_request  
-def log_after_request(response):
-    from flask import request, current_app, g
-    if '/room/' in request.path:
-        # Try to get the endpoint that handled this request
-        endpoint = getattr(g, 'matched_endpoint', 'unknown')
-        current_app.logger.error(f"🏁 RESPONSE: {request.path} → {response.status_code} (endpoint: {endpoint}) 🏁")
-    return response
-
-# Add endpoint logging
-@app.url_value_preprocessor
-def log_endpoint(endpoint, values):
-    from flask import current_app, request, g
-    g.matched_endpoint = endpoint
-    if '/room/' in request.path:
-        current_app.logger.error(f"🎯 ENDPOINT MATCHED: {request.path} → {endpoint} 🎯")
-
-print("🚀 REQUEST LOGGING CONFIGURED 🚀")
-
-# Test that our logging works
-try:
-    app.logger.error("🧪 TESTING APP LOGGER - THIS SHOULD APPEAR IN LOGS 🧪")
-    print("🧪 LOGGER TEST EXECUTED 🧪")
-except Exception as e:
-    print(f"🚨 LOGGER TEST FAILED: {e}")
-
-# List ALL registered routes to see what's handling room requests
-print("🗺️ LISTING ALL FLASK ROUTES:")
-for rule in app.url_map.iter_rules():
-    if 'room' in rule.rule.lower():
-        print(f"🗺️ ROUTE: {rule.rule} → {rule.endpoint} (methods: {rule.methods})")
-print("🗺️ END ROUTE LIST")
+# Clean startup - removed excessive debug logging
 
 # Automatically run Alembic migrations in production (e.g., on Railway)
 run_production_migrations(app)
