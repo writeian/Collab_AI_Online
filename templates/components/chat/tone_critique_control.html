@@ -1,0 +1,125 @@
+{# Tone & Critique Control Component #}
+<!-- Tone / Critique Control -->
+<details class="mt-4">
+  <summary class="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground">
+    🧭 Tone & Critique
+  </summary>
+  <div class="mt-3 p-3 bg-muted rounded-md text-xs space-y-3">
+    <div class="flex items-center justify-between">
+      <span class="font-medium">Style</span>
+      <span id="critique-label" class="text-muted-foreground">Balanced</span>
+    </div>
+
+    <!-- 5-step slider: 1 = Very Supportive … 5 = Very Critical -->
+    <input id="critique-slider"
+           type="range"
+           min="1" max="5" step="1"
+           value="3"
+           class="w-full"
+           aria-label="AI critique level slider">
+
+    <div class="flex justify-between text-[11px] text-muted-foreground">
+      <span>Supportive</span>
+      <span>Balanced</span>
+      <span>Critical</span>
+    </div>
+
+    <button id="critique-save"
+            class="w-full text-xs px-2 py-1 bg-primary/10 text-primary rounded hover:bg-primary/20 transition-colors">
+      Save
+    </button>
+
+    <p class="text-[11px] text-muted-foreground">
+      Tip: Adjust to influence how tough or gentle the AI's feedback is.
+    </p>
+  </div>
+</details>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const slider = document.getElementById('critique-slider');
+    const label = document.getElementById('critique-label');
+    const saveBtn = document.getElementById('critique-save');
+    
+    const levelNames = ['', 'Very Supportive', 'Supportive', 'Balanced', 'Critical', 'Very Critical'];
+    
+    if (slider && label) {
+        // Update label when slider changes
+        slider.addEventListener('input', function() {
+            const level = parseInt(this.value);
+            label.textContent = levelNames[level] || 'Balanced';
+        });
+        
+        // Save functionality
+        if (saveBtn) {
+            saveBtn.addEventListener('click', async function() {
+                const level = parseInt(slider.value);
+                const chatId = getChatId();
+                
+                this.textContent = 'Saving...';
+                this.disabled = true;
+                
+                try {
+                    // Store in sessionStorage for now
+                    sessionStorage.setItem(`chat_${chatId}_critique`, level);
+                    
+                    this.textContent = 'Saved!';
+                    setTimeout(() => {
+                        this.textContent = 'Save';
+                        this.disabled = false;
+                    }, 1000);
+                    
+                } catch (error) {
+                    console.error('Save failed:', error);
+                    this.textContent = 'Error';
+                    setTimeout(() => {
+                        this.textContent = 'Save';
+                        this.disabled = false;
+                    }, 2000);
+                }
+            });
+        }
+    }
+    
+    function getChatId() {
+        const match = window.location.pathname.match(/\/chat\/(\d+)/);
+        return match ? match[1] : '0';
+    }
+    
+    // Add critique level to message forms
+    const forms = document.querySelectorAll('form[method="POST"]');
+    forms.forEach(form => {
+        const contentField = form.querySelector('textarea[name="content"]');
+        if (contentField) {
+            form.addEventListener('submit', function() {
+                const chatId = getChatId();
+                const level = sessionStorage.getItem(`chat_${chatId}_critique`) || '3';
+                
+                // Add hidden field with critique instructions
+                const instructions = getCritiqueInstructions(parseInt(level));
+                
+                let hiddenInput = form.querySelector('#critique-instructions-input');
+                if (!hiddenInput) {
+                    hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'room81_critique_instructions';
+                    hiddenInput.id = 'critique-instructions-input';
+                    form.appendChild(hiddenInput);
+                }
+                hiddenInput.value = instructions;
+            });
+        }
+    });
+    
+    function getCritiqueInstructions(level) {
+        const instructions = {
+            1: "Be warmly supportive. Praise effort and provide at most two gentle suggestions. Focus on what's working well.",
+            2: "Be friendly and constructive. Balance praise with suggestions. Ask clarifying questions to understand intent.",
+            3: "Be neutral and concise. Give balanced pros and cons. Provide three actionable improvements with examples.",
+            4: "Be rigorous and analytical. Challenge assumptions and require evidence. Rank issues by impact.",
+            5: "Act as an exacting reviewer. Insist on evidence for claims. Provide pointed, actionable edits with no fluff."
+        };
+        return instructions[level] || instructions[3];
+    }
+});
+</script>
