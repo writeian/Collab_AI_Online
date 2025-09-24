@@ -49,9 +49,11 @@ function addContinueLinks() {
         });
         
         // Add continue link inline at the very end of the message text
-        const messageContent = messageElement.querySelector('.message-content p');
-        if (messageContent) {
-            // Create inline span instead of block element
+        const messageContentDiv = messageElement.querySelector('.message-content');
+        const messageTextParagraph = messageContentDiv?.querySelector('p:not(.message-timestamp)');
+        
+        if (messageTextParagraph) {
+            // Create inline span to add to the end of the actual message text
             const continueSpan = document.createElement('span');
             continueSpan.className = 'continue-link text-xs text-primary hover:underline ml-1';
             continueSpan.innerHTML = ' <i data-lucide="arrow-right" class="w-3 h-3 inline"></i>Continue';
@@ -62,9 +64,12 @@ function addContinueLinks() {
                 continueMessage(messageId);
             });
             
-            // Insert at the very end of the paragraph text
-            messageContent.appendChild(continueSpan);
+            // Insert at the very end of the message text paragraph (not timestamp paragraph)
+            messageTextParagraph.appendChild(continueSpan);
+            
+            console.log(`🔗 Added Continue link to message ${messageId} text paragraph`);
         } else {
+            console.log(`🔗 Could not find message text paragraph for message ${messageId}`);
             // Fallback: add to message content container
             const contentContainer = messageElement.querySelector('.message-content');
             if (contentContainer) {
