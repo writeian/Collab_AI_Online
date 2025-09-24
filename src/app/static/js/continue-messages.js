@@ -41,22 +41,11 @@ function addContinueLinks() {
         const messageTextParagraph = messageContentDiv?.querySelector('p:not(.message-timestamp)');
         
         if (messageTextParagraph) {
-            // Create inline span to add to the end of the actual message text
-            const continueSpan = document.createElement('span');
-            continueSpan.className = 'continue-link text-xs text-primary hover:underline ml-1';
-            continueSpan.innerHTML = ' <i data-lucide="arrow-right" class="w-3 h-3 inline"></i>Continue';
-            continueSpan.style.cursor = 'pointer';
-            continueSpan.title = 'Ask AI to complete or expand this response';
+            // Simple placeholder test - just add text to see positioning
+            const placeholder = document.createTextNode(' CONTINUE');
+            messageTextParagraph.appendChild(placeholder);
             
-            continueSpan.addEventListener('click', function(e) {
-                e.preventDefault();
-                continueMessage(messageId);
-            });
-            
-            // Insert at the very end of the message text paragraph
-            messageTextParagraph.appendChild(continueSpan);
-            
-            console.log(`🔗 Added Continue link to message ${messageId} text paragraph`);
+            console.log(`🔗 Added CONTINUE placeholder to message ${messageId} text paragraph`);
         } else {
             console.log(`🔗 Could not find message text paragraph for message ${messageId}`);
         }
