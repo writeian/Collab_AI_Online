@@ -48,13 +48,22 @@ function addContinueLinks() {
             continueMessage(messageId);
         });
         
-        // Add continue link at the end of the message content (inline)
+        // Add continue link inline at the very end of the message text
         const messageContent = messageElement.querySelector('.message-content p');
         if (messageContent) {
-            // Add as inline text at the end of the paragraph
-            continueLink.className = 'continue-link text-xs text-primary hover:underline ml-1 inline-flex items-center gap-1';
-            messageContent.appendChild(document.createTextNode(' '));
-            messageContent.appendChild(continueLink);
+            // Create inline span instead of block element
+            const continueSpan = document.createElement('span');
+            continueSpan.className = 'continue-link text-xs text-primary hover:underline ml-1';
+            continueSpan.innerHTML = ' <i data-lucide="arrow-right" class="w-3 h-3 inline"></i>Continue';
+            continueSpan.style.cursor = 'pointer';
+            
+            continueSpan.addEventListener('click', function(e) {
+                e.preventDefault();
+                continueMessage(messageId);
+            });
+            
+            // Insert at the very end of the paragraph text
+            messageContent.appendChild(continueSpan);
         } else {
             // Fallback: add to message content container
             const contentContainer = messageElement.querySelector('.message-content');
