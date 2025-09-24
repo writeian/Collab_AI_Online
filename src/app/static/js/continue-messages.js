@@ -1,153 +1,84 @@
-// Continue Messages Feature
-// Adds "Continue" links to AI messages for expansion/completion
+(function () {
+  // prevent duplicate init
+  if (window.__CONTINUE_INIT__) return;
+  window.__CONTINUE_INIT__ = 'v1.2';
 
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔗 Continue messages script loaded');
-    
-    // Only run on chat pages
-    if (!/^\/chat\/\d+/.test(location.pathname)) {
-        console.log('🔗 Not a chat page, skipping');
-        return;
-    }
-    
-    console.log('🔗 On chat page, adding continue links');
-    addContinueLinks();
-    
-    // Re-add continue links when new messages are added dynamically
-    observeNewMessages();
-});
+  function enhanceBubble(bubble) {
+    if (!bubble || bubble.dataset.continueEnhanced === '1') return;
 
-function addContinueLinks() {
-    // Find all AI assistant messages using actual DOM structure
-    const aiMessages = document.querySelectorAll('.message-bubble.assistant');
-    console.log(`🔗 Found ${aiMessages.length} AI messages`);
-    
-    aiMessages.forEach((messageElement, index) => {
-        console.log(`🔗 Processing AI message ${index + 1}`);
-        // Skip if already has continue link
-        if (messageElement.querySelector('.continue-link')) return;
-        
-        // Get message ID from parent container
-        const messageContainer = messageElement.closest('[data-message-id]');
-        const messageId = messageContainer?.dataset.messageId;
-        console.log(`🔗 Message ${index + 1} ID: ${messageId}`);
-        if (!messageId) {
-            console.log(`🔗 No message ID found for message ${index + 1}`);
-            return;
-        }
-        
-        // Find the actual message text paragraph (not the timestamp paragraph)
-        const messageContentDiv = messageElement.querySelector('.message-content');
-        const messageTextParagraph = messageContentDiv?.querySelector('p:not(.message-timestamp)');
-        
-        if (messageTextParagraph) {
-            // Simple placeholder test - just add text to see positioning
-            const placeholder = document.createTextNode(' CONTINUE');
-            messageTextParagraph.appendChild(placeholder);
-            
-            console.log(`🔗 Added CONTINUE placeholder to message ${messageId} text paragraph`);
-        } else {
-            console.log(`🔗 Could not find message text paragraph for message ${messageId}`);
-        }
+    const content = bubble.querySelector('.message-content');
+    if (!content) return;
+
+    // remove any old anchors injected elsewhere
+    content.querySelectorAll('a.continue-link, .continue-cta').forEach(el => el.remove());
+
+    const ts = content.querySelector('.message-timestamp');
+
+    // figure out the last non-timestamp block to make it feel "end of the message"
+    let lastTextEl = null;
+    Array.from(content.children).forEach(el => {
+      if (!el.classList.contains('message-timestamp')) lastTextEl = el;
     });
-    
-    // Refresh Lucide icons for the new arrow icons
-    if (window.lucide && typeof lucide.createIcons === 'function') {
-        lucide.createIcons();
-    }
-}
 
-function getMessageId(messageElement) {
-    // Try various ways to get message ID
-    return messageElement.dataset.messageId || 
-           messageElement.dataset.id ||
-           messageElement.id?.replace('message-', '') ||
-           messageElement.querySelector('[data-message-id]')?.dataset.messageId ||
-           extractIdFromClasses(messageElement);
-}
+    // create CTA (inline-friendly)
+    const a = document.createElement('button');
+    a.type = 'button';
+    a.className = 'continue-cta inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 ml-2 align-baseline';
+    a.setAttribute('aria-label', 'Continue this response');
+    a.innerHTML = `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg> Continue`;
 
-function extractIdFromClasses(element) {
-    // Look for ID in class names like "message-123" or "msg-123"
-    const classList = Array.from(element.classList);
-    for (const className of classList) {
-        const match = className.match(/(?:message|msg)-(\d+)/);
-        if (match) return match[1];
-    }
-    return null;
-}
-
-function continueMessage(messageId) {
-    const chatId = getChatIdFromUrl();
-    if (!chatId || !messageId) {
-        console.error('Cannot continue: missing chat ID or message ID');
-        return;
-    }
-    
-    // Show loading state
-    const continueLinks = document.querySelectorAll('.continue-link');
-    continueLinks.forEach(link => {
-        link.innerHTML = '<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i>Continuing...';
-        link.style.pointerEvents = 'none';
+    // action: submit the existing form with "continue"
+    a.addEventListener('click', () => {
+      const form = document.getElementById('message-form');
+      const input = document.getElementById('message-input');
+      if (!form || !input) return;
+      const old = input.value;
+      input.value = 'Complete or expand your last message';
+      if (typeof form.requestSubmit === 'function') form.requestSubmit(); else form.submit();
+      // restore whatever was typed
+      setTimeout(() => { input.value = old; }, 0);
     });
-    
-    // Create form to submit continue request
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = `/chat/${chatId}/continue/${messageId}`;
-    form.style.display = 'none';
-    
-    // Add CSRF token
-    const token = getCsrfToken();
-    if (token) {
-        const csrf = document.createElement('input');
-        csrf.type = 'hidden';
-        csrf.name = 'csrf_token';
-        csrf.value = token;
-        form.appendChild(csrf);
+
+    // preferred placement: at the very end of the AI text (inline in the last block if possible)
+    if (lastTextEl && lastTextEl.nodeName === 'P') {
+      lastTextEl.appendChild(document.createTextNode(' '));
+      lastTextEl.appendChild(a);
+    } else if (ts) {
+      // fallback: just before timestamp (always before it, never after)
+      content.insertBefore(a, ts);
+    } else {
+      content.appendChild(a);
     }
-    
-    document.body.appendChild(form);
-    form.submit();
-}
 
-function getChatIdFromUrl() {
-    const match = window.location.pathname.match(/\/chat\/(\d+)/);
-    return match ? match[1] : null;
-}
+    bubble.dataset.continueEnhanced = '1';
+  }
 
-function getCsrfToken() {
-    return document.cookie.split('; ').find(r => r.startsWith('csrf_token='))?.split('=')[1] || '';
-}
+  function enhanceAll() {
+    document.querySelectorAll('.message-bubble.assistant').forEach(enhanceBubble);
+  }
 
-function observeNewMessages() {
-    // Watch for new messages being added dynamically (e.g., via AJAX)
-    const observer = new MutationObserver(function(mutations) {
-        let hasNewMessages = false;
-        
-        mutations.forEach(mutation => {
-            mutation.addedNodes.forEach(node => {
-                if (node.nodeType === 1) { // Element node
-                    // Check if the added node is a message or contains messages
-                    if (node.matches && (node.matches('.message, .message-bubble, [data-role="assistant"]') ||
-                        node.querySelector('.message, .message-bubble, [data-role="assistant"]'))) {
-                        hasNewMessages = true;
-                    }
-                }
-            });
+  // initial pass
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', enhanceAll);
+  } else {
+    enhanceAll();
+  }
+
+  // observe future messages appended by polling
+  const messages = document.getElementById('chat-messages');
+  if (messages && !window.__CONTINUE_OBS__) {
+    window.__CONTINUE_OBS__ = new MutationObserver(muts => {
+      for (const m of muts) {
+        m.addedNodes.forEach(node => {
+          if (!(node instanceof HTMLElement)) return;
+          if (node.matches?.('.message-bubble.assistant')) enhanceBubble(node);
+          node.querySelectorAll?.('.message-bubble.assistant').forEach(enhanceBubble);
         });
-        
-        if (hasNewMessages) {
-            // Small delay to ensure DOM is stable
-            setTimeout(addContinueLinks, 100);
-        }
+      }
     });
-    
-    // Observe the chat messages container
-    const messagesContainer = document.querySelector('#chat-messages, .messages-container, .chat-container');
-    if (messagesContainer) {
-        observer.observe(messagesContainer, {
-            childList: true,
-            subtree: true
-        });
-    }
-}
+    window.__CONTINUE_OBS__.observe(messages, { childList: true, subtree: true });
+  }
+})();
+
+// Old functions removed - using new idempotent approach above

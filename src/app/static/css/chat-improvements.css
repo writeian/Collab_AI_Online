@@ -65,3 +65,16 @@ body.focus-mode .chat-input-container {
         overflow: hidden;
     }
 }
+
+/* Continue button styling */
+.continue-cta { 
+    background: transparent; 
+    border: 0; 
+    cursor: pointer; 
+    padding: 0; 
+}
+
+.continue-cta:focus { 
+    outline: 2px solid hsl(var(--primary)); 
+    outline-offset: 2px; 
+}
