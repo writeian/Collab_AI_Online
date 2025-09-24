@@ -78,3 +78,24 @@ body.focus-mode .chat-input-container {
     outline: 2px solid hsl(var(--primary)); 
     outline-offset: 2px; 
 }
+
+/* Make "Add Comment" obvious and readable */
+.message-timestamp [data-toggle-comment] {
+  color: hsl(var(--primary));                  /* high-contrast text */
+  background: hsl(var(--primary) / 0.08);      /* subtle chip bg */
+  border: 1px solid hsl(var(--primary) / 0.35);
+  padding: 0.125rem 0.5rem;                    /* 2px x 8px-ish */
+  border-radius: 9999px;                       /* pill */
+  font-weight: 600;
+  line-height: 1;                              
+}
+
+.message-timestamp [data-toggle-comment]:hover {
+  background: hsl(var(--primary) / 0.15);
+  border-color: hsl(var(--primary) / 0.5);
+}
+
+.message-timestamp [data-toggle-comment]:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
