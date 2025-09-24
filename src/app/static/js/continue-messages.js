@@ -48,16 +48,18 @@ function addContinueLinks() {
             continueMessage(messageId);
         });
         
-        // Find the message timestamp area to insert after
-        const timestamp = messageElement.querySelector('.message-timestamp');
-        if (timestamp) {
-            // Add continue link after the timestamp
-            timestamp.appendChild(continueLink);
+        // Add continue link at the end of the message content (inline)
+        const messageContent = messageElement.querySelector('.message-content p');
+        if (messageContent) {
+            // Add as inline text at the end of the paragraph
+            continueLink.className = 'continue-link text-xs text-primary hover:underline ml-1 inline-flex items-center gap-1';
+            messageContent.appendChild(document.createTextNode(' '));
+            messageContent.appendChild(continueLink);
         } else {
-            // Fallback: add to message content area
-            const messageContent = messageElement.querySelector('.message-content');
-            if (messageContent) {
-                messageContent.appendChild(continueLink);
+            // Fallback: add to message content container
+            const contentContainer = messageElement.querySelector('.message-content');
+            if (contentContainer) {
+                contentContainer.appendChild(continueLink);
             }
         }
     });
