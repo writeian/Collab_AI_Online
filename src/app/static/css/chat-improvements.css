@@ -79,23 +79,24 @@ body.focus-mode .chat-input-container {
     outline-offset: 2px; 
 }
 
-/* Make "Add Comment" obvious and readable */
-.message-timestamp [data-toggle-comment] {
-  color: hsl(var(--primary));                  /* high-contrast text */
-  background: hsl(var(--primary) / 0.08);      /* subtle chip bg */
-  border: 1px solid hsl(var(--primary) / 0.35);
-  padding: 0.125rem 0.5rem;                    /* 2px x 8px-ish */
-  border-radius: 9999px;                       /* pill */
-  font-weight: 600;
-  line-height: 1;                              
+/* Make "Add Comment" obvious and readable - higher specificity */
+.message-timestamp button[data-toggle-comment] {
+  color: hsl(var(--primary)) !important;                  /* high-contrast text */
+  background: hsl(var(--primary) / 0.08) !important;      /* subtle chip bg */
+  border: 1px solid hsl(var(--primary) / 0.35) !important;
+  padding: 0.125rem 0.5rem !important;                    /* 2px x 8px-ish */
+  border-radius: 9999px !important;                       /* pill */
+  font-weight: 600 !important;
+  line-height: 1 !important;                              
 }
 
-.message-timestamp [data-toggle-comment]:hover {
-  background: hsl(var(--primary) / 0.15);
-  border-color: hsl(var(--primary) / 0.5);
+.message-timestamp button[data-toggle-comment]:hover {
+  background: hsl(var(--primary) / 0.15) !important;
+  border-color: hsl(var(--primary) / 0.5) !important;
+  color: hsl(var(--primary)) !important;
 }
 
-.message-timestamp [data-toggle-comment]:focus-visible {
+.message-timestamp button[data-toggle-comment]:focus-visible {
   outline: 2px solid hsl(var(--primary));
   outline-offset: 2px;
 }
