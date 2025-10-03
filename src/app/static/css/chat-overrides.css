@@ -1,9 +1,9 @@
 /* Chat Overrides - Maximum Specificity to Override Tailwind */
 
-/* Add Comment buttons - match exact specificity of .text-muted-foreground */
-.message-bubble.user .message-timestamp > button.text-muted-foreground[data-toggle-comment] {
+/* Add Comment buttons - maximum specificity to override all Tailwind utilities */
+.message-bubble.user .message-timestamp > button.text-xs.text-muted-foreground.ml-2[data-toggle-comment] {
   color: #fff !important;
-  background: rgba(255,255,255,0.16) !important;
+  background-color: rgba(255,255,255,0.16) !important;
   border: 1px solid rgba(255,255,255,0.35) !important;
   padding: 2px 8px !important;
   border-radius: 9999px !important;
@@ -11,9 +11,9 @@
   line-height: 1 !important;
 }
 
-.message-bubble.assistant .message-timestamp > button.text-muted-foreground[data-toggle-comment] {
-  color: #ffffff !important;  /* Force white text on purple background */
-  background: rgba(255,255,255,0.2) !important;
+.message-bubble.assistant .message-timestamp > button.text-xs.text-muted-foreground.ml-2[data-toggle-comment] {
+  color: #ffffff !important;
+  background-color: rgba(255,255,255,0.2) !important;
   border: 1px solid rgba(255,255,255,0.4) !important;
   padding: 2px 8px !important;
   border-radius: 9999px !important;
@@ -21,14 +21,14 @@
   line-height: 1 !important;
 }
 
-/* Hover states */
-.message-timestamp > button.text-muted-foreground[data-toggle-comment]:hover {
+/* Hover states - maximum specificity */
+.message-timestamp > button.text-xs.text-muted-foreground.ml-2[data-toggle-comment]:hover {
   filter: brightness(1.1) !important;
   transform: scale(1.02) !important;
 }
 
-/* Focus states */
-.message-timestamp > button.text-muted-foreground[data-toggle-comment]:focus-visible {
+/* Focus states - maximum specificity */
+.message-timestamp > button.text-xs.text-muted-foreground.ml-2[data-toggle-comment]:focus-visible {
   outline: 2px solid #ffffff !important;
   outline-offset: 2px !important;
 }
