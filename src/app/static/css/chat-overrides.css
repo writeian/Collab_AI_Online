@@ -1,31 +1,34 @@
-/* Chat Overrides - Loaded Last for Maximum Specificity */
-/* Add Comment chip — shows well on both bubble colors */
+/* Chat Overrides - Maximum Specificity to Override Tailwind */
 
-.message-bubble.user .message-timestamp > button[data-toggle-comment] {
-  color: #fff;
-  background: rgba(255,255,255,0.16);
-  border: 1px solid rgba(255,255,255,0.35);
-  padding: 2px 8px;
-  border-radius: 9999px;
-  font-weight: 600;
-  line-height: 1;
+/* Add Comment buttons - must override text-muted-foreground */
+.message-bubble.user .message-timestamp > button.text-xs[data-toggle-comment] {
+  color: #fff !important;
+  background: rgba(255,255,255,0.16) !important;
+  border: 1px solid rgba(255,255,255,0.35) !important;
+  padding: 2px 8px !important;
+  border-radius: 9999px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
 }
 
-.message-bubble.assistant .message-timestamp > button[data-toggle-comment] {
-  color: hsl(var(--primary));
-  background: hsl(var(--primary) / 0.10);
-  border: 1px solid hsl(var(--primary) / 0.35);
-  padding: 2px 8px;
-  border-radius: 9999px;
-  font-weight: 600;
-  line-height: 1;
+.message-bubble.assistant .message-timestamp > button.text-xs[data-toggle-comment] {
+  color: #ffffff !important;  /* Force white text on purple background */
+  background: rgba(255,255,255,0.2) !important;
+  border: 1px solid rgba(255,255,255,0.4) !important;
+  padding: 2px 8px !important;
+  border-radius: 9999px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
 }
 
-.message-timestamp > button[data-toggle-comment]:hover {
-  filter: brightness(1.05);
+/* Hover states */
+.message-timestamp > button.text-xs[data-toggle-comment]:hover {
+  filter: brightness(1.1) !important;
+  transform: scale(1.02) !important;
 }
 
-.message-timestamp > button[data-toggle-comment]:focus-visible {
-  outline: 2px solid hsl(var(--primary));
-  outline-offset: 2px;
+/* Focus states */
+.message-timestamp > button.text-xs[data-toggle-comment]:focus-visible {
+  outline: 2px solid #ffffff !important;
+  outline-offset: 2px !important;
 }
