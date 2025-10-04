@@ -87,9 +87,17 @@
           
           // Force input type change with both methods
           const newType = isText ? 'password' : 'text';
+          console.log('👁️ About to change type to:', newType);
+          
           pwd.setAttribute('type', newType);
+          console.log('👁️ After setAttribute - type is:', pwd.type);
+          
           pwd.type = newType;
-          console.log('👁️ Changed type to:', pwd.type);
+          console.log('👁️ After property assignment - type is:', pwd.type);
+          
+          // Immediate verification
+          console.log('👁️ Immediate check - type is:', pwd.type);
+          console.log('👁️ Immediate check - getAttribute type:', pwd.getAttribute('type'));
           
           this.setAttribute('aria-label', isText ? 'Show password' : 'Hide password');
           
@@ -138,6 +146,11 @@
         // Add visual indicator that button is interactive
         toggle.style.border = '2px solid red';
         toggle.title = 'DEBUG: Click me to toggle password';
+        
+        // Check for other event listeners
+        console.log('👁️ Checking for interference...');
+        console.log('👁️ Password input listeners:', getEventListeners ? getEventListeners(pwd) : 'getEventListeners not available');
+        console.log('👁️ Toggle button listeners:', getEventListeners ? getEventListeners(toggle) : 'getEventListeners not available');
         
         console.log('👁️ Password toggle setup complete');
       } else {
