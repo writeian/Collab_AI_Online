@@ -1,0 +1,77 @@
+# ============================================
+# CHAT IMPROVEMENTS FEATURE FLAGS
+# ============================================
+# Copy these to your .env file or Railway variables
+# See docs/chat-improvements-implementation-plan.md for details
+#
+# DEFAULT: All flags are FALSE (safe, uses legacy code)
+# TESTING: Set to TRUE locally to test new features
+# PRODUCTION: Enable gradually via Railway variables
+#
+# Last Updated: October 4, 2025
+# ============================================
+
+# Phase 1: Consolidated Scroll Manager
+# Replaces 7+ scattered scroll handlers with single ScrollManager class
+# Benefits: Cleaner code, better mobile scroll, fewer race conditions
+# Risk: Low (gracefully falls back to legacy scroll)
+CHAT_NEW_SCROLL_MANAGER=false
+
+# Phase 2: Mobile Auto-Scroll Fix
+# Smart scroll detection instead of disabling auto-scroll on mobile
+# Benefits: Mobile users see new messages automatically when idle
+# Risk: Low (only affects mobile polling behavior)
+CHAT_FIX_MOBILE_SCROLL=false
+
+# Phase 3: Unified Input Padding Manager
+# Consolidates 3 different padding systems into one
+# Benefits: Fixes iOS keyboard issues, cleaner code
+# Risk: Low (padding logic is well-tested)
+CHAT_UNIFIED_PADDING=false
+
+# Phase 4: WebSocket Real-Time Messages
+# Replaces 5-second polling with WebSocket push
+# Benefits: Instant messages, lower server load, better battery life
+# Risk: Medium (requires Socket.IO, but has polling fallback)
+CHAT_WEBSOCKET_ENABLED=false
+
+# ============================================
+# TESTING COMBINATIONS
+# ============================================
+#
+# For local testing, try these combinations:
+#
+# Test Phase 1 only:
+#   CHAT_NEW_SCROLL_MANAGER=true
+#
+# Test Phase 1 + 2:
+#   CHAT_NEW_SCROLL_MANAGER=true
+#   CHAT_FIX_MOBILE_SCROLL=true
+#
+# Test Phase 1 + 2 + 3:
+#   CHAT_NEW_SCROLL_MANAGER=true
+#   CHAT_FIX_MOBILE_SCROLL=true
+#   CHAT_UNIFIED_PADDING=true
+#
+# Test all phases:
+#   CHAT_NEW_SCROLL_MANAGER=true
+#   CHAT_FIX_MOBILE_SCROLL=true
+#   CHAT_UNIFIED_PADDING=true
+#   CHAT_WEBSOCKET_ENABLED=true
+#
+# ============================================
+# RAILWAY DEPLOYMENT
+# ============================================
+#
+# Set variables in Railway:
+#   railway variables set CHAT_NEW_SCROLL_MANAGER=true
+#   railway variables set CHAT_FIX_MOBILE_SCROLL=true
+#   railway variables set CHAT_UNIFIED_PADDING=true
+#   railway variables set CHAT_WEBSOCKET_ENABLED=true
+#
+# Instant rollback:
+#   railway variables set CHAT_NEW_SCROLL_MANAGER=false
+#   (or delete the variable entirely)
+#
+# ============================================
+

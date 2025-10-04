@@ -1,3 +1,9 @@
+    // ============================================
+    // FEATURE FLAG: NEW SCROLL MANAGER (Phase 1)
+    // ============================================
+    // If new ScrollManager is active, skip legacy scroll functions
+    // Set by scroll-manager.js when CHAT_NEW_SCROLL_MANAGER=true
+    
     function toggleCommentForm(dialogueNumber) {
         const form = document.getElementById('comment-form-' + dialogueNumber);
         if (!form) return;
@@ -10,6 +16,8 @@
     
     // Smart auto-scroll function with mobile optimization
     function smartScrollToBottom(chatMessages) {
+        // Skip if new ScrollManager is active
+        if (window.__SKIP_LEGACY_SCROLL__) return;
         if (!chatMessages) return;
         
         const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -34,6 +42,12 @@
 
     // Scroll to bottom function
     function scrollToBottom() {
+        // Use new ScrollManager if active
+        if (window.__SKIP_LEGACY_SCROLL__ && window.chatScroll) {
+            window.chatScroll.scrollToBottom(false);
+            return;
+        }
+        
         const chatMessagesEl = document.getElementById('chat-messages');
         if (chatMessagesEl) {
             chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
@@ -42,6 +56,9 @@
 
     // Anchor-aware auto-scroll on load
     function autoScrollOnLoad() {
+        // Skip if new ScrollManager is active (it handles initial scroll)
+        if (window.__SKIP_LEGACY_SCROLL__) return;
+        
         const chatMessagesEl = document.getElementById('chat-messages');
         if (!chatMessagesEl) return;
 
@@ -72,6 +89,12 @@
 
     // Show/hide scroll to bottom button based on scroll position
     function updateScrollButton() {
+        // Use new ScrollManager if active
+        if (window.__SKIP_LEGACY_SCROLL__ && window.chatScroll) {
+            window.chatScroll.updateScrollButton();
+            return;
+        }
+        
         const chatMessagesEl = document.getElementById('chat-messages');
         const scrollButton = document.getElementById('scroll-to-bottom');
         
@@ -275,6 +298,13 @@
 
     // Initialize touch optimization when DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
+        // Check if new ScrollManager is active
+        const usingNewScrollManager = window.__SKIP_LEGACY_SCROLL__ && window.chatScroll;
+        
+        if (usingNewScrollManager) {
+            console.log('✨ Using new ScrollManager - skipping legacy scroll initialization');
+        }
+        
         // Delegate clicks for Add Comment toggles (avoids inline handlers in HTML lints)
         document.body.addEventListener('click', function(ev) {
             const btn = ev.target.closest('[data-toggle-comment]');
@@ -302,14 +332,16 @@
         // Initialize touch-optimized scrolling
         new ChatTouchOptimizer();
         
-        // Initialize existing scroll button functionality
-        const chatMessagesElement = document.getElementById('chat-messages');
-        if (chatMessagesElement) {
-            chatMessagesElement.addEventListener('scroll', updateScrollButton);
-            updateScrollButton(); // Initial check
-            
-            // Auto-scroll to bottom when page loads
-            autoScrollOnLoad();
+        // Initialize existing scroll button functionality (unless using new ScrollManager)
+        if (!usingNewScrollManager) {
+            const chatMessagesElement = document.getElementById('chat-messages');
+            if (chatMessagesElement) {
+                chatMessagesElement.addEventListener('scroll', updateScrollButton);
+                updateScrollButton(); // Initial check
+                
+                // Auto-scroll to bottom when page loads
+                autoScrollOnLoad();
+            }
         }
 
         // Ensure latest message isn't hidden by the translucent input bar
@@ -739,22 +771,29 @@
                 setLastMessageId(data.last_id || getLastMessageId());
                 // Recompute padding now that input/messages may have shifted
                 try { applyBottomPadding(false); } catch (e) {}
-                // Mobile-aware auto-scroll with user scroll detection
-                const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                 
-                if (wasNearBottom && !wasNearTop) {
-                    if (isMobile) {
-                        // Mobile: NEVER auto-scroll during polling - always use manual scroll button
-                        // This prevents the "scroll trap" behavior where users can't scroll up
-                        console.log('📱 Mobile polling - showing scroll button instead of auto-scroll');
-                        updateScrollButton();
-                    } else {
-                        // Desktop: Standard auto-scroll behavior
-                        container.scrollTop = container.scrollHeight;
-                    }
+                // Handle scroll for new messages
+                if (window.__SKIP_LEGACY_SCROLL__ && window.chatScroll) {
+                    // Use new ScrollManager (handles mobile/desktop logic)
+                    window.chatScroll.handleNewMessage();
                 } else {
-                    // reveal scroll-to-bottom chip
-                    updateScrollButton();
+                    // Legacy: Mobile-aware auto-scroll with user scroll detection
+                    const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                    
+                    if (wasNearBottom && !wasNearTop) {
+                        if (isMobile) {
+                            // Mobile: NEVER auto-scroll during polling - always use manual scroll button
+                            // This prevents the "scroll trap" behavior where users can't scroll up
+                            console.log('📱 Mobile polling - showing scroll button instead of auto-scroll');
+                            updateScrollButton();
+                        } else {
+                            // Desktop: Standard auto-scroll behavior
+                            container.scrollTop = container.scrollHeight;
+                        }
+                    } else {
+                        // reveal scroll-to-bottom chip
+                        updateScrollButton();
+                    }
                 }
                 backoff = POLL_INTERVAL_MS; // reset after success
             } catch (e) {

@@ -79,6 +79,12 @@ class Config:
 
     # Feature flags
     REFINE_V2_ENABLED = os.getenv("REFINE_V2_ENABLED", "false").lower() == "true"
+    
+    # Chat improvement feature flags (Phase 1-4)
+    CHAT_NEW_SCROLL_MANAGER = os.getenv("CHAT_NEW_SCROLL_MANAGER", "false").lower() == "true"
+    CHAT_FIX_MOBILE_SCROLL = os.getenv("CHAT_FIX_MOBILE_SCROLL", "false").lower() == "true"
+    CHAT_UNIFIED_PADDING = os.getenv("CHAT_UNIFIED_PADDING", "false").lower() == "true"
+    CHAT_WEBSOCKET_ENABLED = os.getenv("CHAT_WEBSOCKET_ENABLED", "false").lower() == "true"
 
     # Trial mode (scaffold)
     TRIAL_ENABLED = os.getenv("TRIAL_ENABLED", "false").lower() == "true"

@@ -384,6 +384,27 @@
     </div>
 </div>
 
+<!-- ============================================ -->
+<!-- FEATURE FLAGS - Phase 1: Scroll Manager      -->
+<!-- ============================================ -->
+<script>
+// Initialize feature flags from backend config
+window.CHAT_FEATURES = {
+    newScrollManager: {{ 'true' if config.get('CHAT_NEW_SCROLL_MANAGER') else 'false' }},
+    fixMobileScroll: {{ 'true' if config.get('CHAT_FIX_MOBILE_SCROLL') else 'false' }},
+    unifiedPadding: {{ 'true' if config.get('CHAT_UNIFIED_PADDING') else 'false' }},
+    websocketEnabled: {{ 'true' if config.get('CHAT_WEBSOCKET_ENABLED') else 'false' }}
+};
+
+console.log('💡 Chat Features:', window.CHAT_FEATURES);
+</script>
+
+<!-- Load new ScrollManager first (if enabled, sets up before legacy code) -->
+<script src="{{ url_for('static', filename='js/scroll-manager.js') }}?v=1.0"></script>
+
+<!-- ============================================ -->
+<!-- LEGACY CHAT SCRIPTS (Conditional Execution)  -->
+<!-- ============================================ -->
 <script>
     function toggleCommentForm(dialogueNumber) {
         const form = document.getElementById('comment-form-' + dialogueNumber);
