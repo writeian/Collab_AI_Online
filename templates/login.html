@@ -111,6 +111,19 @@
             
             console.log('👁️ Icon replaced with direct SVG');
           }
+          
+          // Check if changes persist after a delay
+          setTimeout(() => {
+            console.log('👁️ After 100ms - Type is now:', pwd.type);
+            const currentIcon = this.querySelector('svg, i');
+            console.log('👁️ After 100ms - Icon data-lucide:', currentIcon?.getAttribute('data-lucide') || 'no data-lucide');
+            console.log('👁️ After 100ms - Icon HTML:', currentIcon?.outerHTML?.substring(0, 100) + '...');
+          }, 100);
+          
+          setTimeout(() => {
+            console.log('👁️ After 500ms - Type is now:', pwd.type);
+            console.log('👁️ After 500ms - Input value visible?', pwd.value.length > 0 ? 'YES' : 'NO');
+          }, 500);
         });
         
         // Test button properties
