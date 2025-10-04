@@ -1,8 +1,8 @@
 /* Chat Overrides - Maximum Specificity to Override Tailwind */
 
-/* Add Comment buttons - maximum specificity to override all Tailwind utilities */
-.message-bubble.user .message-timestamp > button.text-xs.text-muted-foreground.ml-2[data-toggle-comment] {
-  color: #fff !important;
+/* Add Comment buttons - override CSS custom property for scoped white text */
+.message-bubble.user .message-timestamp > button[data-toggle-comment] {
+  --muted-fg-50: #ffffff !important;  /* Override custom property to white */
   background-color: rgba(255,255,255,0.16) !important;
   border: 1px solid rgba(255,255,255,0.35) !important;
   padding: 2px 8px !important;
@@ -11,8 +11,8 @@
   line-height: 1 !important;
 }
 
-.message-bubble.assistant .message-timestamp > button.text-xs.text-muted-foreground.ml-2[data-toggle-comment] {
-  color: #ffffff !important;
+.message-bubble.assistant .message-timestamp > button[data-toggle-comment] {
+  --muted-fg-50: #ffffff !important;  /* Override custom property to white */
   background-color: rgba(255,255,255,0.2) !important;
   border: 1px solid rgba(255,255,255,0.4) !important;
   padding: 2px 8px !important;
