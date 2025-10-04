@@ -62,8 +62,14 @@
   </div>
   {% block extra_js %}
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log('👁️ Login page loaded, setting up password toggle');
+    // Immediate execution approach - avoid DOMContentLoaded conflicts
+    function initPasswordToggle() {
+      if (window.__PASSWORD_TOGGLE_INIT__) {
+        console.log('👁️ Password toggle already initialized, skipping');
+        return;
+      }
+      window.__PASSWORD_TOGGLE_INIT__ = true;
+      console.log('👁️ Login page loaded, setting up password toggle (SINGLE INIT)');
       
       const toggle = document.getElementById('toggle-password');
       const pwd = document.getElementById('password');
@@ -168,7 +174,14 @@
           loadingIcon.classList.remove('hidden');
         });
       }
-    });
+    }
+    
+    // Try multiple initialization approaches
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initPasswordToggle);
+    } else {
+      initPasswordToggle();
+    }
   </script>
   {% endblock %}
 {% endblock %} 
