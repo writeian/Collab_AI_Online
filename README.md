@@ -157,6 +157,12 @@ AI Collab Online is an **intelligent learning platform** that creates adaptive, 
 - **Deep linking support** to specific learning steps with auto-expand functionality
 - **Room statistics integration** with collapsible team stats and progress metrics
 
+### 🎚️ **AI Critique Control System (v3.1)** - *September 2025*
+- **5-level feedback control** from Very Supportive to Very Critical
+- **Real-time AI tone adaptation** based on user preference
+- **Session-based storage** for personalized learning experiences
+- **Contextual prompt enhancement** without database complexity
+
 ### 🧠 **Learning Progression System (v2.0)**
 - **Automatic note generation** at 5-message milestones with iterative refinement
 - **Cross-chat learning context** that builds comprehensive learning history
@@ -168,6 +174,12 @@ AI Collab Online is an **intelligent learning platform** that creates adaptive, 
 - **Progressive unlock system** based on conversation depth
 - **Multiple format support** (.txt, .docx) with professional formatting
 - **Sidebar integration** with intuitive dropdown interface
+
+### 🔗 **Enhanced User Experience (v3.1)** - *September 2025*
+- **Continue message functionality** for expanding AI responses inline
+- **Improved button accessibility** with high-contrast design
+- **Password visibility toggle** with intuitive icon states
+- **Mobile-optimized interactions** with proper focus management
 
 ### 🎨 **UI/UX Modernization**
 - **70% template size reduction** through JavaScript extraction and component modularization
