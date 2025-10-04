@@ -74,8 +74,13 @@
       if (toggle && pwd) {
         console.log('👁️ Adding click listener to password toggle');
         
+        // Test if event listener is working
+        toggle.onclick = function() {
+          console.log('👁️ Password toggle clicked (onclick method)');
+        };
+        
         toggle.addEventListener('click', function() {
-          console.log('👁️ Password toggle clicked');
+          console.log('👁️ Password toggle clicked (addEventListener)');
           
           const isText = pwd.type === 'text';
           console.log('👁️ Current type:', pwd.type, 'isText:', isText);
@@ -107,6 +112,19 @@
             console.log('👁️ Icon replaced with direct SVG');
           }
         });
+        
+        // Test button properties
+        console.log('👁️ Button properties:', {
+          disabled: toggle.disabled,
+          style_pointerEvents: toggle.style.pointerEvents,
+          style_display: toggle.style.display,
+          offsetParent: !!toggle.offsetParent,
+          getBoundingClientRect: toggle.getBoundingClientRect()
+        });
+        
+        // Add visual indicator that button is interactive
+        toggle.style.border = '2px solid red';
+        toggle.title = 'DEBUG: Click me to toggle password';
         
         console.log('👁️ Password toggle setup complete');
       } else {
