@@ -63,17 +63,48 @@
   {% block extra_js %}
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+      console.log('👁️ Login page loaded, setting up password toggle');
+      
       const toggle = document.getElementById('toggle-password');
       const pwd = document.getElementById('password');
+      
+      console.log('👁️ Elements found:', { toggle: !!toggle, pwd: !!pwd });
+      console.log('👁️ Lucide available:', !!window.lucide);
+      
       if (toggle && pwd) {
+        console.log('👁️ Adding click listener to password toggle');
+        
         toggle.addEventListener('click', function() {
+          console.log('👁️ Password toggle clicked');
+          
           const isText = pwd.type === 'text';
+          console.log('👁️ Current type:', pwd.type, 'isText:', isText);
+          
           pwd.type = isText ? 'password' : 'text';
+          console.log('👁️ Changed type to:', pwd.type);
+          
           this.setAttribute('aria-label', isText ? 'Show password' : 'Hide password');
+          
           const icon = this.querySelector('i');
-          if (icon) icon.setAttribute('data-lucide', isText ? 'eye' : 'eye-off');
-          if (window.lucide) window.lucide.createIcons();
+          console.log('👁️ Icon found:', !!icon);
+          
+          if (icon) {
+            const newIcon = isText ? 'eye' : 'eye-off';
+            console.log('👁️ Changing icon to:', newIcon);
+            icon.setAttribute('data-lucide', newIcon);
+            
+            if (window.lucide) {
+              console.log('👁️ Calling lucide.createIcons()');
+              window.lucide.createIcons();
+            } else {
+              console.warn('👁️ Lucide not available');
+            }
+          }
         });
+        
+        console.log('👁️ Password toggle setup complete');
+      } else {
+        console.error('👁️ Password toggle setup failed - missing elements');
       }
 
       const form = document.querySelector('form[method="post"]');
