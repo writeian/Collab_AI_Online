@@ -80,7 +80,10 @@
           const isText = pwd.type === 'text';
           console.log('👁️ Current type:', pwd.type, 'isText:', isText);
           
-          pwd.type = isText ? 'password' : 'text';
+          // Force input type change with both methods
+          const newType = isText ? 'password' : 'text';
+          pwd.setAttribute('type', newType);
+          pwd.type = newType;
           console.log('👁️ Changed type to:', pwd.type);
           
           this.setAttribute('aria-label', isText ? 'Show password' : 'Hide password');
@@ -91,7 +94,9 @@
           if (icon) {
             const newIcon = isText ? 'eye' : 'eye-off';
             console.log('👁️ Changing icon to:', newIcon);
-            icon.setAttribute('data-lucide', newIcon);
+            
+            // Replace entire icon instead of just changing data-lucide
+            icon.outerHTML = `<i data-lucide="${newIcon}"></i>`;
             
             if (window.lucide) {
               console.log('👁️ Calling lucide.createIcons()');
