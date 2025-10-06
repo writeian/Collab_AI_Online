@@ -263,13 +263,9 @@
         }
         
         addMomentumScrolling() {
-            // Add CSS for smooth scrolling
-            this.chatMessages.style.cssText += `
-                -webkit-overflow-scrolling: touch;
-                scroll-behavior: smooth;
-                overscroll-behavior: contain;
-                scroll-snap-type: y proximity;
-            `;
+            // CSS now applied via stylesheet (safer than cssText manipulation)
+            // See template: #chat-messages gets these properties from CSS
+            // No inline style manipulation to avoid destroying other styles
         }
     }
 
