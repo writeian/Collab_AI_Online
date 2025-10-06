@@ -33,6 +33,28 @@
     border-radius: 0.75rem !important;
     z-index: 10000 !important;
   }
+
+  /* ============================================ */
+  /* SAFE HARDENING - No behavior change          */
+  /* ============================================ */
+  /* Prevent hidden overlays from eating taps */
+  .chat-sidebar { 
+    pointer-events: none; 
+  }
+  .chat-sidebar.open { 
+    pointer-events: auto; 
+  }
+
+  /* Ensure content never hides behind the footer */
+  :root { 
+    --chat-input-clearance: 104px; 
+  }
+  #chat-messages {
+    padding-bottom: calc(env(safe-area-inset-bottom, 16px) + var(--chat-input-clearance));
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+  }
 </style>
 {% endblock %}
 
