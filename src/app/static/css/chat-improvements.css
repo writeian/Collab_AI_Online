@@ -59,10 +59,22 @@ body.focus-mode .chat-input-container {
         bottom: 0.5rem;
     }
     
-    /* Ensure mobile browser chrome doesn't interfere */
+    /* Prevent background scroll without nuking iOS scrolling */
     body.focus-mode {
-        height: 100dvh;
-        overflow: hidden;
+        height: auto;              /* let the page breathe */
+        overflow: visible;         /* don't lock the entire document */
+    }
+    
+    /* The scrollable region only */
+    #chat-messages {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-y: contain;
+        touch-action: pan-y;
+    }
+    
+    /* If you need to contain background under focus mode, do it locally */
+    body.focus-mode #chat-messages {
+        overscroll-behavior-y: contain;
     }
 }
 
