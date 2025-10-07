@@ -532,8 +532,9 @@
 /* Scroll to Bottom Button */
 .scroll-to-bottom {
   position: fixed;
-  bottom: 9rem; /* Increased to clear the fixed input bar */
-  right: 1.5rem;
+  /* Safe-area aware placement */
+  right: 1rem;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 7rem);
   background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.9) 100%);
   color: hsl(var(--primary-foreground));
   border-radius: 50%;
@@ -543,10 +544,10 @@
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transition: all 0.3s ease;
+  transition: opacity 0.2s ease;
   opacity: 0;
   pointer-events: none;
-  z-index: 100;
+  z-index: 11000;  /* Above input bar (10000) and any stacking contexts */
 }
 
 .scroll-to-bottom.visible {

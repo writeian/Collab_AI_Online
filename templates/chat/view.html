@@ -663,6 +663,13 @@
     // Initialize touch optimization when DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
         // Delegate clicks for Add Comment toggles (avoids inline handlers in HTML lints)
+        // Hoist scroll button to body to escape stacking contexts
+        const btn = document.getElementById('scroll-to-bottom');
+        if (btn && btn.parentElement !== document.body) {
+            document.body.appendChild(btn);
+            console.log('✅ Scroll button hoisted to body (escapes stacking contexts)');
+        }
+        
         document.body.addEventListener('click', function(ev) {
             const btn = ev.target.closest('[data-toggle-comment]');
             if (btn) {
