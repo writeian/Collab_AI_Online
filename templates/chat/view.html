@@ -551,20 +551,15 @@
             this.currentY = e.touches[0].clientY;
             const deltaY = this.currentY - this.startY;
             
-            // Check if we're at the top and pulling down
-            if (this.chatMessages.scrollTop === 0 && deltaY > 0) {
-                this.isPulling = true;
-                this.pullDistance = Math.min(deltaY * 0.5, 80); // Limit pull distance
-                
-                // Show pull indicator
-                this.showPullIndicator();
-                e.preventDefault();
-            } else if (this.isPulling) {
-                // Continue pull gesture
-                this.pullDistance = Math.min(deltaY * 0.5, 80);
-                this.updatePullIndicator();
-                e.preventDefault();
+            // Pull-to-refresh REMOVED to fix iOS scroll lock
+            // The preventDefault() was blocking normal scroll when scrollTop === 0
+            // This caused users to be unable to scroll up until reaching bottom
+            
+            // Keep tracking for velocity but don't block scroll
+            if (this.isPulling) { 
+                this.isPulling = false; // cleanup
             }
+            // No preventDefault() - let iOS handle scroll naturally
         }
         
         handleTouchEnd(e) {
