@@ -434,26 +434,139 @@ def get_modes_for_room(room: Any) -> Dict[str, Any]:
         return BASE_TEMPLATES["academic_essay"]["modes"]
 
 
+# ============================================
+# ADAPTIVE ARCHETYPE PROMPTS
+# ============================================
+# Feature flag
+ENABLE_ARCHETYPE_PROMPTS = os.getenv("ENABLE_ARCHETYPE_PROMPTS", "true").lower() == "true"
+
+# Cognitive archetypes with guardrails and expression styles
+ARCHETYPES = {
+    "divergent": {
+        "guard": "CONSTRAINT: Ask 2-3 open-ended questions. Do not present conclusions.",
+        "style": "STYLE: Use conversational dialogue with examples. Avoid numbered lists."
+    },
+    "convergent": {
+        "guard": "CONSTRAINT: Help narrow scope to ONE specific focus.",
+        "style": "STYLE: Concise prose with clarifying questions. Prefer flowing text to bullets."
+    },
+    "analytical": {
+        "guard": "CONSTRAINT: Trace cause-effect relationships. Link evidence to claims.",
+        "style": "STYLE: Flowing analytical prose. Use bullets only for listing mechanisms."
+    },
+    "comparative": {
+        "guard": "CONSTRAINT: Contrast different cases or approaches. Avoid universal claims.",
+        "style": "STYLE: Narrative comparisons. Lists only for evaluation criteria."
+    },
+    "generative": {
+        "guard": "CONSTRAINT: Guide structure and approach, but let them create the content.",
+        "style": "STYLE: Mix strategic guidance with specific structural tips. Balance narrative and lists."
+    },
+    "technical": {
+        "guard": "CONSTRAINT: Be precise and procedural. Emphasize correct methods.",
+        "style": "STYLE: Numbered steps or parameters are appropriate for procedures."
+    },
+    "predictive": {
+        "guard": "CONSTRAINT: State assumptions clearly. Acknowledge uncertainty.",
+        "style": "STYLE: Analytical narrative. Lists for scenarios or key factors."
+    },
+    "metacognitive": {
+        "guard": "CONSTRAINT: Prompt reflection on learning process. Don't rewrite their work.",
+        "style": "STYLE: Coaching voice. End with one reflective question."
+    }
+}
+
+# Keywords for archetype inference (ordered by specificity)
+ARCHETYPE_KEYWORDS = [
+    ("technical", ["procedure", "protocol", "citation", "format", "algorithm", "implementation", "formula"]),
+    ("predictive", ["forecast", "predict future", "scenario plan", "anticipate", "project outcome"]),
+    ("comparative", ["compare", "contrast", "versus", "vs ", "differ", "distinction", "between"]),
+    ("generative", ["draft", "write", "create outline", "compose", "produce", "generate content"]),
+    ("divergent", ["explore", "brainstorm", "imagine", "discover", "possibilities", "map ideas"]),
+    ("analytical", ["analyze", "mechanism", "why", "cause", "trace", "examine", "investigate"]),
+    ("convergent", ["narrow", "focus", "refine", "define one", "specify", "clarify"]),
+    ("metacognitive", ["reflect", "revise", "evaluate own", "assess learning", "review progress", "critique"]),
+]
+
+def infer_archetype(step_title: str, ai_instruction: str, mode_key: str = "") -> str:
+    """
+    Infer cognitive archetype from step characteristics.
+    
+    Args:
+        step_title: The label/title of the learning step (e.g., "1. Explore topic")
+        ai_instruction: The AI prompt/instruction for this step
+        mode_key: The mode key (e.g., "explore", "step_3")
+    
+    Returns:
+        Archetype name (e.g., "divergent", "analytical")
+    """
+    # Combine all available text for matching
+    text = f"{step_title} {ai_instruction} {mode_key}".lower()
+    
+    # Check keywords in priority order (specific to general)
+    for archetype, keywords in ARCHETYPE_KEYWORDS:
+        if any(keyword in text for keyword in keywords):
+            return archetype
+    
+    # Safe default for unknown patterns
+    return "analytical"
+
+
 def get_mode_system_prompt(mode: str, room_id: Optional[int] = None, chat_id: Optional[int] = None) -> str:
-    """Get the system prompt for a mode, enhanced with discussion context if available."""
+    """Get the system prompt for a mode, enhanced with archetypes and discussion context."""
     # Import here to avoid circular imports
     from src.models import CustomPrompt
 
-    # Get base prompt (existing logic)
+    # Get base prompt and step metadata
     base_prompt = None
+    step_title = ""
+    template_name = None
+    
     if room_id:
         custom_prompt = CustomPrompt.query.filter_by(
             room_id=room_id, mode_key=mode
         ).first()
         if custom_prompt:
             base_prompt = custom_prompt.prompt
+            step_title = custom_prompt.label
+            # Try to get template type from room
+            try:
+                from src.models import Room
+                room = Room.query.get(room_id)
+                # Could infer template type if needed
+                # For now, treat non-BASE_MODES rooms as custom
+            except:
+                pass
 
     # Fallback to base modes if no custom prompt
     if not base_prompt:
         if mode in BASE_MODES:
             base_prompt = BASE_MODES[mode].prompt
+            step_title = BASE_MODES[mode].label
+            template_name = "academic_essay"  # Legacy template
         else:
             base_prompt = "You are an expert instructor helping students with their learning goals. Ask thoughtful questions and provide guidance without doing the work for them."
+    
+    # APPLY ARCHETYPE ENHANCEMENTS (NEW)
+    if ENABLE_ARCHETYPE_PROMPTS and template_name != "academic_essay":
+        archetype = infer_archetype(step_title, base_prompt, mode)
+        rules = ARCHETYPES.get(archetype)
+        
+        if rules:
+            base_prompt += f"\n\n{rules['guard']}\n{rules['style']}"
+            
+            # Add length guidance for narrative-friendly archetypes
+            if archetype in {"divergent", "analytical", "comparative", "metacognitive"}:
+                base_prompt += "\n\nSTYLE+: Favor cohesive paragraphs or short examples. Use lists only when they materially improve clarity."
+            
+            # General length guidance
+            base_prompt += "\n\nLENGTH: Target 150-200 words unless the question requires depth."
+            
+            # Log archetype for debugging (optional)
+            try:
+                logger.info(f"🎭 Archetype: {archetype} for mode={mode}, step={step_title[:50]}")
+            except:
+                pass
 
     # Try to enhance with learning context from completed chats
     if chat_id and room_id:
