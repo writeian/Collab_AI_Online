@@ -555,12 +555,16 @@ def get_mode_system_prompt(mode: str, room_id: Optional[int] = None, chat_id: Op
         if rules:
             base_prompt += f"\n\n{rules['guard']}\n{rules['style']}"
             
-            # Add length guidance for narrative-friendly archetypes
+            # Add style and length guidance for narrative-friendly archetypes
             if archetype in {"divergent", "analytical", "comparative", "metacognitive"}:
                 base_prompt += "\n\nSTYLE+: Favor cohesive paragraphs or short examples. Use lists only when they materially improve clarity."
+                base_prompt += "\n\nLENGTH: Keep replies under ~180 words unless asked."
+            else:
+                # Other archetypes get general length guidance
+                base_prompt += "\n\nLENGTH: Target 150-200 words unless the question requires depth."
             
-            # General length guidance
-            base_prompt += "\n\nLENGTH: Target 150-200 words unless the question requires depth."
+            # Version tag for tracking and rollback identification
+            base_prompt += "\n\n(Prompt:v2-archetypes)"
             
             # Log archetype for debugging (optional)
             try:
