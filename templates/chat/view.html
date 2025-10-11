@@ -38,13 +38,21 @@
   /* SAFE HARDENING - No behavior change          */
   /* ============================================ */
   /* Prevent hidden overlays from eating taps */
+  /* Sidebar interaction management */
+  /* Desktop: sidebar always visible and interactive */
   .chat-sidebar { 
-    pointer-events: none; 
+    pointer-events: auto;  /* Default: interactive */
   }
-  .chat-sidebar.open { 
-    pointer-events: auto; 
+  
+  /* Mobile: sidebar hidden by default, only interactive when .open */
+  @media (max-width: 768px) {
+    .chat-sidebar:not(.open) { 
+      pointer-events: none;  /* Hidden sidebar cannot capture touches */
+    }
+    .chat-sidebar.open { 
+      pointer-events: auto;  /* Open sidebar is interactive */
+    }
   }
-
   /* Ensure content never hides behind the footer */
   :root { 
     --chat-input-clearance: 104px; 
