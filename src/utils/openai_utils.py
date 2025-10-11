@@ -443,8 +443,8 @@ ENABLE_ARCHETYPE_PROMPTS = os.getenv("ENABLE_ARCHETYPE_PROMPTS", "true").lower()
 # Cognitive archetypes with guardrails and expression styles
 ARCHETYPES = {
     "divergent": {
-        "guard": "CONSTRAINT: Ask 2-3 open-ended questions. Do not present conclusions.",
-        "style": "STYLE: Use conversational dialogue with examples. Avoid numbered lists."
+        "guard": "CONSTRAINT: Ask 2-3 open-ended questions. Do not present conclusions or comprehensive answers.",
+        "style": "STYLE: Write conversationally as if speaking to a curious student. Use questions, examples, and analogies. Do NOT use numbered lists, bullet points, or structured sections. Keep it flowing and dialogic."
     },
     "convergent": {
         "guard": "CONSTRAINT: Help narrow scope to ONE specific focus.",
@@ -452,7 +452,7 @@ ARCHETYPES = {
     },
     "analytical": {
         "guard": "CONSTRAINT: Trace cause-effect relationships. Link evidence to claims.",
-        "style": "STYLE: Flowing analytical prose. Use bullets only for listing mechanisms."
+        "style": "STYLE: Write in flowing paragraphs that build on each other. Do NOT use numbered lists (1, 2, 3) or bullet points (•, -). If you must list items, integrate them into narrative prose with connective phrases like 'First...Additionally...Furthermore'."
     },
     "comparative": {
         "guard": "CONSTRAINT: Contrast different cases or approaches. Avoid universal claims.",
@@ -563,8 +563,8 @@ def get_mode_system_prompt(mode: str, room_id: Optional[int] = None, chat_id: Op
             
             # Add style and length guidance for narrative-friendly archetypes
             if archetype in {"divergent", "analytical", "comparative", "metacognitive"}:
-                base_prompt += "\n\nSTYLE+: Favor cohesive paragraphs or short examples. Use lists only when they materially improve clarity."
-                base_prompt += "\n\nLENGTH: Keep replies under ~180 words unless asked."
+                base_prompt += "\n\n⚠️ IMPORTANT: Write in flowing narrative prose. NO numbered lists (1,2,3). NO bullet points (•,-,*). Integrate ideas into cohesive paragraphs."
+                base_prompt += "\n\nLENGTH: Maximum 180 words. Be concise and focused."
             else:
                 # Other archetypes get general length guidance
                 base_prompt += "\n\nLENGTH: Target 150-200 words unless the question requires depth."
