@@ -552,6 +552,12 @@ def get_mode_system_prompt(mode: str, room_id: Optional[int] = None, chat_id: Op
         archetype = infer_archetype(step_title, base_prompt, mode)
         rules = ARCHETYPES.get(archetype)
         
+        # DEBUG: Always log archetype detection
+        try:
+            logger.info(f"🎭 ARCHETYPE SYSTEM ACTIVE: archetype={archetype}, mode={mode}, step_title='{step_title}', template={template_name}, flag={ENABLE_ARCHETYPE_PROMPTS}")
+        except:
+            print(f"🎭 ARCHETYPE: {archetype} for {mode}")
+        
         if rules:
             base_prompt += f"\n\n{rules['guard']}\n{rules['style']}"
             
@@ -568,9 +574,15 @@ def get_mode_system_prompt(mode: str, room_id: Optional[int] = None, chat_id: Op
             
             # Log archetype for debugging (optional)
             try:
-                logger.info(f"🎭 Archetype: {archetype} for mode={mode}, step={step_title[:50]}")
+                logger.info(f"✅ Applied archetype enhancements: {archetype}")
             except:
                 pass
+    else:
+        # Log why archetypes were NOT applied
+        try:
+            logger.info(f"⚪ Archetype system skipped: flag={ENABLE_ARCHETYPE_PROMPTS}, template={template_name}, mode={mode}")
+        except:
+            print(f"⚪ Archetypes skipped for {mode}")
 
     # Try to enhance with learning context from completed chats
     if chat_id and room_id:
