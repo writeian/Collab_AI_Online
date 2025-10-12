@@ -23,12 +23,7 @@ body.focus-mode .chat-input-container {
     left: 1rem;
     right: 1rem;
     bottom: 1rem;
-    background: hsl(var(--card) / 0.65);
-    backdrop-filter: blur(8px);
-    border-radius: 0.75rem;
-    border: 1px solid hsl(var(--border));
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-    z-index: 50;
+    z-index: 10000; /* stay above chat content */
 }
 
 /* Screen reader only class */
