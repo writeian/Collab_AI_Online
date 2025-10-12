@@ -4,6 +4,7 @@ Allows admins to reset user passwords via web interface.
 """
 
 from flask import Blueprint, request, jsonify, render_template_string
+from flask_wtf.csrf import generate_csrf
 from src.app import db
 from src.models import User
 from src.app.access_control import require_admin
@@ -38,6 +39,8 @@ RESET_FORM_HTML = """
     {% endif %}
     
     <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        
         <div class="form-group">
             <label for="email">User Email:</label>
             <input type="email" id="email" name="email" required 
@@ -80,7 +83,8 @@ def admin_reset_password():
                 message="Email and password are required",
                 message_type="error",
                 email=email,
-                suggested_password=secrets.token_urlsafe(12)
+                suggested_password=secrets.token_urlsafe(12),
+                csrf_token=generate_csrf
             )
         
         # Find user
@@ -92,7 +96,8 @@ def admin_reset_password():
                 message=f"❌ No user found with email: {email}",
                 message_type="error",
                 email=email,
-                suggested_password=secrets.token_urlsafe(12)
+                suggested_password=secrets.token_urlsafe(12),
+                csrf_token=generate_csrf
             )
         
         # Reset password
@@ -134,12 +139,14 @@ Let me know if you have any issues!
             RESET_FORM_HTML,
             message=user_message,
             message_type="success",
-            suggested_password=secrets.token_urlsafe(12)
+            suggested_password=secrets.token_urlsafe(12),
+            csrf_token=generate_csrf
         )
     
     # GET request - show form
     return render_template_string(
         RESET_FORM_HTML,
-        suggested_password=secrets.token_urlsafe(12)
+        suggested_password=secrets.token_urlsafe(12),
+        csrf_token=generate_csrf
     )
 
