@@ -387,30 +387,83 @@
 
 /* Modern Input Area */
 .chat-input-container {
-  /* Unified: fixed translucent bar at bottom across views; JS adds bottom padding to messages */
+  /* Liquid glass bar inspired by iOS 18 "glass" effect */
   position: fixed;
   left: 16px;
   right: 16px;
   bottom: 16px;
-  background: hsl(var(--card) / 0.92);
-  border-top: 1px solid hsl(var(--border));
-  backdrop-filter: blur(10px);
-  box-shadow: 0 -1px 3px 0 rgba(0, 0, 0, 0.05);
   padding: 1rem;
   padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+  border-radius: 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(255, 255, 255, 0.25) 42%,
+    rgba(255, 255, 255, 0.15) 100%
+  );
+  box-shadow:
+    0 18px 40px -25px rgba(0, 0, 0, 0.55),
+    0 1px 0 rgba(255, 255, 255, 0.45) inset,
+    0 0 0 1px rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  overflow: hidden;
+  isolation: isolate;
   z-index: 10000;
-  border-radius: 0.75rem;
+}
+
+.chat-input-container::before {
+  /* Subtle liquid highlight */
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  background: radial-gradient(
+      200% 120% at 15% 0%,
+      rgba(255, 255, 255, 0.65),
+      transparent 48%
+    ),
+    radial-gradient(
+      120% 200% at 90% 10%,
+      rgba(255, 255, 255, 0.35),
+      transparent 60%
+    );
+  opacity: 0.6;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.chat-input-container > * {
+  position: relative;
+  z-index: 1;
+}
+
+.dark .chat-input-container {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(
+    135deg,
+    rgba(24, 24, 27, 0.75) 0%,
+    rgba(14, 16, 33, 0.6) 45%,
+    rgba(56, 66, 94, 0.35) 100%
+  );
+  box-shadow:
+    0 24px 45px -28px rgba(0, 0, 0, 0.9),
+    0 1px 0 rgba(255, 255, 255, 0.12) inset,
+    0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 .chat-input {
-  background: #ffffff; /* Solid white background */
-  border: 1px solid hsl(var(--border));
-  border-radius: 1.25rem;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 1.35rem;
   padding: 0.5rem 0.875rem; /* tighter vertical rhythm */
   font-size: 0.9rem;
   line-height: 1.25; /* reduce internal line spacing */
   transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    0 0 20px rgba(255, 255, 255, 0.25) inset,
+    0 8px 18px -12px rgba(15, 23, 42, 0.4);
 }
 
 /* Multi-line behavior with visible resize grip */
@@ -434,9 +487,11 @@
 
 .chat-input:focus {
   outline: none;
-  border-color: hsl(var(--primary));
-  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
-  background: #ffffff; /* Ensure solid white on focus */
+  border-color: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow:
+    0 0 0 3px hsl(var(--primary) / 0.18),
+    0 0 24px rgba(255, 255, 255, 0.45) inset;
 }
 
 .send-button {
@@ -1072,8 +1127,8 @@
 }
 
 .dark .chat-input {
-  background: hsl(var(--background));
-  border-color: hsl(var(--border));
+  background: rgba(17, 24, 39, 0.72);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .dark .comment-item {
