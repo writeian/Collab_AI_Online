@@ -172,6 +172,7 @@ def create_app(config_name=None):
     from src.app.room import room
     from src.app.dashboard import dashboard
     from src.app.admin import admin
+    from src.app.admin_password_reset import admin_reset_bp
     from src.app.google_auth import google_auth
     from src.app.analytics import analytics
     from src.app.documents import documents
@@ -184,6 +185,7 @@ def create_app(config_name=None):
     app.register_blueprint(room, url_prefix="/room")
     app.register_blueprint(dashboard, url_prefix="/dashboard")
     app.register_blueprint(admin, url_prefix="")
+    app.register_blueprint(admin_reset_bp, url_prefix="")
     app.register_blueprint(google_auth, url_prefix="/auth/google")
     
     # V2 Enhanced Dashboard (Independent)
