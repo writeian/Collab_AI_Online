@@ -116,6 +116,7 @@ AI Collab Online is an **intelligent learning platform** that creates adaptive, 
 - **Mobile-responsive design** with modern glass morphism UI
 
 ### 🤖 **AI-Powered Collaboration**
+- **Adaptive archetype prompts** - Cognitive style matching (divergent, analytical, technical, etc.) for mode-appropriate AI expression
 - **Anthropic Claude integration** with contextual, learning-aware responses
 - **Learning step progression** with mode-specific AI guidance
 - **AI response toggle** with persistent per-chat preferences
@@ -131,7 +132,7 @@ AI Collab Online is an **intelligent learning platform** that creates adaptive, 
 ### 💬 **Enhanced Chat Experience**
 - **Focus mode toggle** to maximize learning space
 - **Rubric-aware progress assessment** with structured recommendations
-- **Glass morphism UI** with enhanced transparency and modern design
+- **Liquid glass UI** with iOS 18-inspired translucent effects and multi-layered shadows
 - **Modular component architecture** with 70% template size reduction
 - **External JavaScript files** with data attribute integration
 - **Auto-dismiss flash messages** with close buttons
@@ -184,7 +185,7 @@ AI Collab Online is an **intelligent learning platform** that creates adaptive, 
 ### 🎨 **UI/UX Modernization**
 - **70% template size reduction** through JavaScript extraction and component modularization
 - **Learning Green color scheme** with industry-standard design tokens
-- **Glass morphism chat input** with enhanced transparency (65% opacity)
+- **Liquid glass chat input** with iOS 18-inspired translucent gradients and blur effects
 - **Auto-dismiss flash messages** with close buttons and smooth animations
 
 ### 🏧 **Architecture Improvements**
@@ -257,6 +258,8 @@ Refinement & AI
 ```
 # Enable new refinement flow
 REFINE_V2_ENABLED=true
+# Adaptive AI expression with cognitive archetypes (default: true)
+ENABLE_ARCHETYPE_PROMPTS=true
 # Provider order and model overrides (optional)
 AI_FAILOVER_ORDER=anthropic,openai,templates
 ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
