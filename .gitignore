@@ -85,3 +85,6 @@ scripts/*.log
 # Cleanup logs
 *_cleanup_log.json
 *_fix_log.json
+
+# Case sensitivity protection (prevent Templates/ on case-sensitive systems)
+Templates/
