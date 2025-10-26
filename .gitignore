@@ -47,6 +47,8 @@ Thumbs.db
 
 # Logs
 *.log
+logs/
+app.log
 
 # Google Service Account
 service-account-key.json
@@ -55,9 +57,22 @@ service-account-key.json
 # Environment backups
 .env.backup
 .env.local 
+
 # Archive directories
 archive/
 phase2_backup_*/
+
+# Backup files
+*.backup
+*.backup-*
+*.bak
+*.bak[0-9]
+*.bak[0-9][0-9]
+
+# Debug files
+debug/
+code_with_lines.txt
+scroll_debug_bundle.txt
 
 # Test directories (keep structure but ignore temp files)
 tests/*.tmp
@@ -70,4 +85,3 @@ scripts/*.log
 # Cleanup logs
 *_cleanup_log.json
 *_fix_log.json
-# Templates/ - removed to fix git tracking issues
