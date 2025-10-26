@@ -87,4 +87,5 @@ scripts/*.log
 *_fix_log.json
 
 # Case sensitivity protection (prevent Templates/ on case-sensitive systems)
-Templates/
+# Use exact path to avoid matching templates/ on case-insensitive systems
+/Templates/
