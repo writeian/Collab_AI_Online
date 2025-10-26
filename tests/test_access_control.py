@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import Mock, patch
-from access_control import (
+from src.app.access_control import (
     can_access_chat,
     can_edit_chat,
     can_delete_chat,

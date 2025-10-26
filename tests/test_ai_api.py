@@ -3,9 +3,9 @@
 
 from dotenv import load_dotenv
 import os
-from openai_utils import get_ai_response, MODES
-from models import Chat, Message, db
-from app import create_app
+from src.utils.openai_utils import get_ai_response, MODES
+from src.models import Chat, Message
+from src.app import create_app, db
 
 load_dotenv()
 

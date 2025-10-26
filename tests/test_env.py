@@ -101,7 +101,7 @@ def main():
         print("⚠️  Google services are optional")
     
     print("\n🚀 Ready to run the application!")
-    print("   Run: python app.py")
+    print("   Run: python run.py")
 
 if __name__ == "__main__":
     main() 

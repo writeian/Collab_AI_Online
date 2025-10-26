@@ -51,8 +51,8 @@ GOOGLE_REDIRECT_URI=http://localhost:5000/auth/google/callback
     print(f"🔑 Generated SECRET_KEY: {secret_key}")
     print("\n📝 Next steps:")
     print("1. Edit the .env file to add your API keys")
-    print("2. Run: python test_env.py to verify configuration")
-    print("3. Run: python app.py to start the application")
+    print("2. Run: python tests/test_env.py to verify configuration")
+    print("3. Run: python run.py to start the application")
 
 def main():
     """Main function."""

@@ -11,8 +11,8 @@ Or run interactively without arguments.
 import sys
 import os
 
-# Ensure we can import from src
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Ensure we can import from src by adding project root to path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.app import create_app, db
 from src.models import User
