@@ -53,13 +53,13 @@ class TestAccessControl:
     
     def test_can_access_chat_shared(self):
         """Test that shared users can access chats."""
-        with patch('access_control.ChatShare') as mock_chat_share:
+        with patch('src.app.access_control.ChatShare') as mock_chat_share:
             mock_chat_share.query.filter_by.return_value.first.return_value = self.share
             assert can_access_chat(self.user, self.chat) == True
     
     def test_can_access_chat_not_shared(self):
         """Test that non-shared users cannot access private chats."""
-        with patch('access_control.ChatShare') as mock_chat_share:
+        with patch('src.app.access_control.ChatShare') as mock_chat_share:
             mock_chat_share.query.filter_by.return_value.first.return_value = None
             assert can_access_chat(self.other_user, self.chat) == False
     
@@ -73,7 +73,7 @@ class TestAccessControl:
     
     def test_can_edit_chat_shared_with_edit(self):
         """Test that users shared with edit permissions can edit."""
-        with patch('access_control.ChatShare') as mock_chat_share:
+        with patch('src.app.access_control.ChatShare') as mock_chat_share:
             mock_chat_share.query.filter_by.return_value.first.return_value = self.share
             assert can_edit_chat(self.user, self.chat) == True
     
@@ -83,13 +83,13 @@ class TestAccessControl:
         share_no_edit.user_id = 1
         share_no_edit.can_edit = False
         
-        with patch('access_control.ChatShare') as mock_chat_share:
+        with patch('src.app.access_control.ChatShare') as mock_chat_share:
             mock_chat_share.query.filter_by.return_value.first.return_value = share_no_edit
             assert can_edit_chat(self.user, self.chat) == False
     
     def test_can_edit_chat_not_shared(self):
         """Test that non-shared users cannot edit chats."""
-        with patch('access_control.ChatShare') as mock_chat_share:
+        with patch('src.app.access_control.ChatShare') as mock_chat_share:
             mock_chat_share.query.filter_by.return_value.first.return_value = None
             assert can_edit_chat(self.other_user, self.chat) == False
     
@@ -101,7 +101,7 @@ class TestAccessControl:
     
     def test_can_delete_chat_shared_user(self):
         """Test that shared users cannot delete chats."""
-        with patch('access_control.ChatShare') as mock_chat_share:
+        with patch('src.app.access_control.ChatShare') as mock_chat_share:
             mock_chat_share.query.filter_by.return_value.first.return_value = self.share
             assert can_delete_chat(self.user, self.chat) == True  # Still owner
     
@@ -113,18 +113,18 @@ class TestAccessControl:
     
     def test_get_current_user_with_session(self):
         """Test get_current_user when user is in session."""
-        with patch('access_control.session') as mock_session:
+        with patch('src.app.access_control.session') as mock_session:
             mock_session.__contains__.return_value = True
             mock_session.__getitem__.return_value = 1
             
-            with patch('access_control.User') as mock_user:
+            with patch('src.app.access_control.User') as mock_user:
                 mock_user.query.get.return_value = self.user
                 result = get_current_user()
                 assert result == self.user
     
     def test_get_current_user_no_session(self):
         """Test get_current_user when no user in session."""
-        with patch('access_control.session') as mock_session:
+        with patch('src.app.access_control.session') as mock_session:
             mock_session.__contains__.return_value = False
             result = get_current_user()
             assert result is None

@@ -22,7 +22,7 @@ def test_ai():
         db.session.commit()
         
         print("Sending test message to AI...")
-        from openai_utils import get_client_type
+        from src.utils.openai_utils import get_client_type
         client_type = get_client_type()
         print(f"Using API: {client_type}")
         response = get_ai_response(chat)
