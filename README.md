@@ -334,6 +334,9 @@ python -m mypy src/app/ --ignore-missing-imports
 python -m flake8 src/ --max-line-length=120
 ```
 
+### macOS Case Sensitivity Note
+**For macOS developers**: Due to the default case-insensitive filesystem, the `templates/` directory may appear in your IDE or terminal as both `templates/` and `Templates/`. These are the same directory. Always reference `templates/` (lowercase) in code and documentation, as that's what Git tracks and what production uses.
+
 ### Project Structure
 ```
 AI_Collab_Online/
