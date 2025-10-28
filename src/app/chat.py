@@ -62,6 +62,21 @@ def view_chat(chat_id: int) -> Any:
         current_app.logger.info(f"Chat room_id: {chat_obj.room_id}, created_by: {chat_obj.created_by}")
 
         if request.method == "POST":
+            def coerce_bool(value, *, default=None):
+                """Convert various truthy/falsey representations to bool."""
+                if value is None:
+                    return default
+                if isinstance(value, bool):
+                    return value
+                if isinstance(value, (int, float)):
+                    return value != 0
+                value_str = str(value).strip().lower()
+                if value_str in ("1", "true", "yes", "on"):
+                    return True
+                if value_str in ("0", "false", "no", "off"):
+                    return False
+                return default
+
             # CSRF-friendly: accept both form POST and fetch-based JSON
             if not user:
                 flash("Please log in to send messages.")
@@ -69,20 +84,35 @@ def view_chat(chat_id: int) -> Any:
 
             # Try form first, then JSON fallback
             content = (request.form.get("content") or "").strip()
-            ai_response_enabled = request.form.get("ai_response") == "1"
+            ai_raw_values = request.form.getlist("ai_response")
+            if ai_raw_values:
+                ai_response_enabled = any(
+                    coerce_bool(val, default=False) for val in ai_raw_values
+                )
+            else:
+                # Default to enabled when the flag is omitted (legacy clients)
+                ai_response_enabled = True
             if not content:
                 # Try JSON then raw body parse
                 if request.is_json:
                     data = request.get_json(silent=True) or {}
                     content = (data.get("content") or "").strip()
-                    ai_response_enabled = bool(data.get("ai_response", ai_response_enabled))
+                    parsed_flag = coerce_bool(
+                        data.get("ai_response"), default=ai_response_enabled
+                    )
+                    if parsed_flag is not None:
+                        ai_response_enabled = parsed_flag
                 else:
                     try:
                         import json
                         data = json.loads(request.data or b"{}")
                         if isinstance(data, dict):
                             content = (data.get("content") or "").strip()
-                            ai_response_enabled = bool(data.get("ai_response", ai_response_enabled))
+                            parsed_flag = coerce_bool(
+                                data.get("ai_response"), default=ai_response_enabled
+                            )
+                            if parsed_flag is not None:
+                                ai_response_enabled = parsed_flag
                     except Exception:
                         pass
 

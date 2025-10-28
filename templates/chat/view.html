@@ -353,6 +353,7 @@
         <form method="POST" action="{{ url_for('chat.view_chat', chat_id=chat.id) }}" class="flex flex-col gap-3" id="message-form">
             <!-- AI Response Toggle -->
             <div class="flex items-center gap-2 mb-3">
+                <input type="hidden" name="ai_response" value="0">
                 <input type="checkbox" 
                        id="ai-response-toggle" 
                        name="ai_response" 
