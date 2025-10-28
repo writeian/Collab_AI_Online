@@ -388,10 +388,11 @@
 /* Modern Input Area */
 .chat-input-container {
   /* Liquid glass bar inspired by iOS 18 "glass" effect */
-  /* Normal flow by default - flexbox positions it naturally at bottom */
-  /* Focus mode will override with position: fixed via inline CSS */
-  position: relative;
-  margin: 0 16px 16px 16px;
+  /* Sticky positioning keeps it visible while scrolling (hovering UX) */
+  /* Focus mode will override with position: fixed !important for full-width overlay */
+  position: sticky;
+  bottom: env(safe-area-inset-bottom, 16px);
+  margin: 0 16px;
   padding: 1rem;
   padding-bottom: calc(1rem + env(safe-area-inset-bottom));
   border-radius: 0.9rem;
@@ -711,12 +712,8 @@
   }
   
   .chat-input-container {
-    /* Keep input within normal flow; stick to bottom of chat on mobile */
-    position: sticky;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 10;
+    /* Mobile: sticky behavior inherited from main rule above */
+    /* Just ensure safe-area padding is respected */
     padding-bottom: calc(1rem + env(safe-area-inset-bottom));
   }
 }
@@ -1552,6 +1549,7 @@
   
   /* Improved chat input area for mobile */
   .chat-input-container {
+    /* Sticky positioning inherited - just adjust padding for mobile */
     padding: 0.75rem 1rem;
     border-top: 1px solid hsl(var(--border));
   }

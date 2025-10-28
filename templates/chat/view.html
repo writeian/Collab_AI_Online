@@ -743,7 +743,7 @@
                 if (focusToggle) focusToggle.textContent = 'Focus';
             }
         }
-        function enforceFocusModeLayout() {
+        function updateComposerPadding() {
             // In focus mode, measure composer and set CSS variable for padding
             // Normal mode: flexbox handles everything, no padding needed
             const isFocusMode = document.body.classList.contains('focus-mode');
@@ -766,7 +766,7 @@
             const saved = localStorage.getItem(FOCUS_KEY);
             if (saved === 'true') {
                 applyFocusMode(true);
-                setTimeout(enforceFocusModeLayout, 50);
+                setTimeout(updateComposerPadding, 50);
             }
         } catch (e) {}
         if (focusToggle) {
@@ -775,22 +775,23 @@
                 applyFocusMode(enabled);
                 try { localStorage.setItem(FOCUS_KEY, enabled.toString()); } catch (e) {}
                 // Re-apply padding in case layout heights changed with focus toggle
-                setTimeout(() => {enforceFocusModeLayout(); }, 50);
+                setTimeout(() => {updateComposerPadding(); }, 50);
             });
         }
         // Keep layout correct on resize while in focus mode
-        window.addEventListener('resize', () => { if (document.body.classList.contains('focus-mode')) enforceFocusModeLayout(); });
+        window.addEventListener('resize', () => updateComposerPadding()); // Update padding in both modes
         
-        // Monitor textarea height changes in focus mode for dynamic padding
+        // Monitor textarea height changes for dynamic padding (works in both modes)
         const messageInputEl = document.getElementById('message-input');
         if (messageInputEl && window.ResizeObserver) {
             const textareaObserver = new ResizeObserver(() => {
-                if (document.body.classList.contains('focus-mode')) {
-                    enforceFocusModeLayout();
-                }
+                updateComposerPadding();  // Update in both sticky and fixed modes
             });
             textareaObserver.observe(messageInputEl);
         }
+        
+        // Initial padding calculation on load
+        setTimeout(() => updateComposerPadding(), 100);
         // iOS VisualViewport-aware adjustments (single registration)
         if (!window.__chat_vv_bound && window.visualViewport) {
             const vvHandler = () => {}; // Layout handled by CSS
