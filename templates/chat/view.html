@@ -894,13 +894,14 @@
             console.error('Could not find chat messages container');
         }
         
-        // Simple submission UX: show sending state without disabling submit on iOS
+        // Enhanced submission UX: spinner + auto-scroll
         const form = document.getElementById('message-form');
         if (form) {
             form.addEventListener('submit', function(e) {
                 const btn = document.getElementById('send-button');
                 const input = document.getElementById('message-input');
                 const aiToggle = document.getElementById('ai-response-toggle');
+                const chatMessages = document.getElementById('chat-messages');
                 
                 // Get the message content
                 const messageContent = input ? input.value.trim() : '';
@@ -916,7 +917,7 @@
                 const aiEnabled = aiToggle ? aiToggle.checked : true;
                 console.log('Sending message with AI response:', aiEnabled ? 'enabled' : 'disabled');
                 
-                // Show non-blocking sending state (do not disable to avoid iOS submission issues)
+                // Show spinner (non-blocking for iOS compatibility)
                 if (btn) {
                     btn.classList.add('sending-state');
                     const sendIcon = btn.querySelector('#send-icon');
@@ -925,7 +926,15 @@
                     if (loadingIcon) loadingIcon.classList.remove('hidden');
                 }
                 
+                // Auto-scroll to bottom after form submits (before page reload)
+                if (chatMessages) {
+                    setTimeout(() => {
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }, 50);
+                }
+                
                 console.log('Form submitted with content:', messageContent);
+                // Form will submit normally and page will reload with new message visible
             });
         }
 
