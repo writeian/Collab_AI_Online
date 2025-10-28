@@ -38,6 +38,7 @@
     .chat-sidebar.open { 
       pointer-events: auto;  /* Open sidebar is interactive */
     }
+  }
   /* Padding now managed by ResizeObserver via --chat-input-h CSS variable */
   /* See components.css:1741 for the CSS variable fallback andfor JS */
   #chat-messages {
@@ -439,6 +440,7 @@
                 if (anchor && typeof anchor.scrollIntoView === 'function') {
                     anchor.scrollIntoView({ block: 'end' });
                 }
+            }
             // Ensure we land at absolute bottom regardless of content shifts
             chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
         };
@@ -470,6 +472,7 @@
                 // Show button when scrolled up
                 scrollButton.classList.add('visible');
             }
+        }
     }
 
     // Touch-Optimized Scrolling and Pull-to-Refresh
