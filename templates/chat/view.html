@@ -744,24 +744,32 @@
             }
         }
         function updateComposerPadding() {
-            // In focus mode, measure composer and set CSS variable for padding
-            // Normal mode: flexbox handles everything, no padding needed
-            const isFocusMode = document.body.classList.contains('focus-mode');
+            // Update padding in BOTH modes (sticky and fixed)
+            // Measures actual composer height + safe-area for dynamic padding
             const messagesEl = document.getElementById('chat-messages');
             const composerEl = document.querySelector('.chat-input-container');
             
-            if (messagesEl && composerEl && isFocusMode) {
-                // Focus mode: composer is fixed, need padding
-                const composerHeight = composerEl.offsetHeight || 0;
-                // Read actual safe-area-inset-bottom from CSS (iPhone X+ has 34px)
-                const computedStyle = getComputedStyle(document.documentElement);
-                const safeAreaBottom = parseInt(computedStyle.getPropertyValue('padding-bottom') || '0') || 16;
-                const totalPadding = composerHeight + Math.max(safeAreaBottom, 16);
-                messagesEl.style.setProperty('--chat-input-h', totalPadding + 'px');
-            } else if (messagesEl) {
-                // Normal mode: clear the variable, use default (just safe-area)
-                messagesEl.style.removeProperty('--chat-input-h');
-            }
+            if (!messagesEl || !composerEl) return;
+            
+            // Measure actual composer height
+            const composerHeight = composerEl.offsetHeight || 0;
+            
+            // Read actual safe-area from composer's computed paddingBottom
+            // (includes the env(safe-area-inset-bottom) value)
+            const composerStyle = getComputedStyle(composerEl);
+            const composerPaddingBottom = parseFloat(composerStyle.paddingBottom) || 0;
+            // Base padding is 1rem, extract safe-area portion
+            const basePadding = parseFloat(composerStyle.fontSize) || 16;
+            const safeAreaBottom = Math.max(composerPaddingBottom - basePadding, 16);
+            
+            // Add buffer for breathing room
+            const buffer = 8;
+            const totalPadding = composerHeight + safeAreaBottom + buffer;
+            
+            // Set padding in BOTH modes (sticky needs it too for multiline)
+            messagesEl.style.setProperty('--chat-input-h', totalPadding + 'px');
+        }
+        
         try {
             const saved = localStorage.getItem(FOCUS_KEY);
             if (saved === 'true') {
@@ -1184,5 +1192,8 @@
         }
         return null;
     }
+    }
+    }
+}
 </script>
 {% endblock %}
