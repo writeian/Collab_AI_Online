@@ -38,13 +38,9 @@
     .chat-sidebar.open { 
       pointer-events: auto;  /* Open sidebar is interactive */
     }
-  }
-  /* Ensure content never hides behind the footer */
-  :root { 
-    --chat-input-clearance: 104px; 
-  }
+  /* Padding now managed by ResizeObserver via --chat-input-h CSS variable */
+  /* See components.css:1741 for the CSS variable fallback andfor JS */
   #chat-messages {
-    padding-bottom: calc(env(safe-area-inset-bottom, 16px) + var(--chat-input-clearance));
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     touch-action: pan-y;
@@ -143,8 +139,6 @@
                     </div>
                 </div>
             </div>
-            <!-- Spacer to ensure last message is never obscured by the input bar -->
-            <div id="chat-bottom-spacer" aria-hidden="true" style="height:0"></div>
         </div>
 
         <!-- Room Members -->
@@ -355,15 +349,6 @@
             {% endfor %}
         </div>
 
-        <!-- Scroll to Bottom Button (hidden by default) -->
-        <button id="scroll-to-bottom" 
-                class="scroll-to-bottom"
-                onclick="scrollToBottom()"
-                title="Scroll to bottom">
-            <i data-lucide="arrow-down" class="w-5 h-5"></i>
-        </button>
-
-        <!-- Message Input -->
         <div class="p-4 border-t border-border chat-input-container">
         <form method="POST" action="{{ url_for('chat.view_chat', chat_id=chat.id) }}" class="flex flex-col gap-3" id="message-form">
             <!-- AI Response Toggle -->
@@ -396,6 +381,16 @@
             </div>
         </form>
     </div>
+
+        <!-- Scroll to Bottom Button (hidden by default) -->
+        <button id="scroll-to-bottom" 
+                class="scroll-to-bottom"
+                onclick="scrollToBottom()"
+                title="Scroll to bottom">
+            <i data-lucide="arrow-down" class="w-5 h-5"></i>
+        </button>
+
+        <!-- Message Input -->
         </div>
     </div>
 </div>
@@ -443,7 +438,6 @@
                 if (anchor && typeof anchor.scrollIntoView === 'function') {
                     anchor.scrollIntoView({ block: 'end' });
                 }
-            }
             // Ensure we land at absolute bottom regardless of content shifts
             chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
         };
@@ -475,7 +469,6 @@
                 // Show button when scrolled up
                 scrollButton.classList.add('visible');
             }
-        }
     }
 
     // Touch-Optimized Scrolling and Pull-to-Refresh
@@ -700,54 +693,8 @@
             autoScrollOnLoad();
         }
 
-        // Ensure latest message isn't hidden by the translucent input bar
-        const chatMessagesRef = document.getElementById('chat-messages');
-        const inputBar = document.querySelector('.chat-input-container');
-        // Bottom spacer buffers
-        function getNonFocusBufferPx() { return (window.innerWidth <= 768) ? 10 : 12; }
-        function getFocusBufferPx() { return (window.innerWidth <= 768) ? 16 : 20; }
+        // Padding handled by CSS flexbox layout
 
-        function isNearBottom(el) {
-            if (!el) return false;
-            return (el.scrollHeight - el.scrollTop - el.clientHeight) < 100;
-        }
-        function isNearTop(el) {
-            if (!el) return false;
-            return el.scrollTop < 40; // small threshold
-        }
-
-        function applyBottomPadding(nudgeScroll) {
-            if (!chatMessagesRef || !inputBar) return;
-            const spacer = document.getElementById('chat-bottom-spacer');
-            const wasNearBottom = isNearBottom(chatMessagesRef);
-            const inputHeight = inputBar.offsetHeight || 0;
-            const isFocus = document.body.classList.contains('focus-mode');
-            const buffer = isFocus ? getFocusBufferPx() : getNonFocusBufferPx();
-            const spacerHeight = Math.max(0, inputHeight + buffer);
-            if (spacer) spacer.style.height = spacerHeight + 'px';
-            // Remove direct padding-bottom manipulations to avoid conflicts
-            chatMessagesRef.style.removeProperty('padding-bottom');
-            chatMessagesRef.style.setProperty('--chat-input-h', spacerHeight + 'px');
-            if (nudgeScroll && wasNearBottom) chatMessagesRef.scrollTop = chatMessagesRef.scrollHeight - chatMessagesRef.clientHeight;
-        }
-
-        // Initial application after first paint
-        setTimeout(() => applyBottomPadding(true), 30);
-        // Re-apply after resize/input changes as needed
-        window.addEventListener('resize', () => applyBottomPadding(false));
-        // Recompute when focus mode toggles (padding rule removed from CSS)
-        document.addEventListener('click', (e) => {
-            if (e.target && (e.target.id === 'focus-mode-toggle' || e.target.closest('#focus-mode-toggle'))) {
-                setTimeout(() => applyBottomPadding(true), 80);
-            }
-        });
-
-        // React to input bar size changes (responsive/font changes)
-        if (window.ResizeObserver && inputBar) {
-            const ro = new ResizeObserver(() => applyBottomPadding(true));
-            ro.observe(inputBar);
-        }
-        
         // Chat Sidebar Toggle functionality (mobile only)
         const chatSidebarToggle = document.getElementById('chat-sidebar-toggle');
         const chatSidebar = document.querySelector('.chat-sidebar');
@@ -797,28 +744,24 @@
             }
         }
         function enforceFocusModeLayout() {
-            try {
-                const inputBarEl = document.querySelector('.chat-input-container');
-                const messagesEl = document.getElementById('chat-messages');
-                if (!inputBarEl || !messagesEl) return;
-                if (document.body.classList.contains('focus-mode')) {
-                    inputBarEl.style.position = 'fixed';
-                    inputBarEl.style.left = '0';
-                    inputBarEl.style.right = '0';
-                    inputBarEl.style.bottom = '0';
-                    inputBarEl.style.zIndex = '10000';
-                    // Do not set padding here; spacer handles bottom clearance
-                    applyBottomPadding(true);
-                } else {
-                    inputBarEl.style.position = '';
-                    inputBarEl.style.left = '';
-                    inputBarEl.style.right = '';
-                    inputBarEl.style.bottom = '';
-                    inputBarEl.style.zIndex = '';
-                    applyBottomPadding(true);
-                }
-            } catch (_) {}
-        }
+            // In focus mode, measure composer and set CSS variable for padding
+            // Normal mode: flexbox handles everything, no padding needed
+            const isFocusMode = document.body.classList.contains('focus-mode');
+            const messagesEl = document.getElementById('chat-messages');
+            const composerEl = document.querySelector('.chat-input-container');
+            
+            if (messagesEl && composerEl && isFocusMode) {
+                // Focus mode: composer is fixed, need padding
+                const composerHeight = composerEl.offsetHeight || 0;
+                // Read actual safe-area-inset-bottom from CSS (iPhone X+ has 34px)
+                const computedStyle = getComputedStyle(document.documentElement);
+                const safeAreaBottom = parseInt(computedStyle.getPropertyValue('padding-bottom') || '0') || 16;
+                const totalPadding = composerHeight + Math.max(safeAreaBottom, 16);
+                messagesEl.style.setProperty('--chat-input-h', totalPadding + 'px');
+            } else if (messagesEl) {
+                // Normal mode: clear the variable, use default (just safe-area)
+                messagesEl.style.removeProperty('--chat-input-h');
+            }
         try {
             const saved = localStorage.getItem(FOCUS_KEY);
             if (saved === 'true') {
@@ -832,88 +775,30 @@
                 applyFocusMode(enabled);
                 try { localStorage.setItem(FOCUS_KEY, enabled.toString()); } catch (e) {}
                 // Re-apply padding in case layout heights changed with focus toggle
-                setTimeout(() => { applyBottomPadding(true); enforceFocusModeLayout(); }, 50);
+                setTimeout(() => {enforceFocusModeLayout(); }, 50);
             });
         }
         // Keep layout correct on resize while in focus mode
         window.addEventListener('resize', () => { if (document.body.classList.contains('focus-mode')) enforceFocusModeLayout(); });
-        // iOS VisualViewport-aware adjustments (single registration)
-        if (!window.__chat_vv_bound && window.visualViewport) {
-            const vvHandler = () => { try { applyBottomPadding(false); enforceFocusModeLayout(); } catch(e){} };
-            window.visualViewport.addEventListener('resize', vvHandler);
-            window.visualViewport.addEventListener('scroll', vvHandler);
-            window.__chat_vv_bound = true;
-        }
-        // Input focus/blur adjustments for mobile keyboards (single registration)
-        if (!window.__chat_input_bound) {
-            const inputEl = document.getElementById('message-input');
-            if (inputEl) {
-                // Auto-grow textarea on input (desktop). Shift+Enter newline, Enter submits
-                inputEl.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        const form = document.getElementById('message-form');
-                        if (form && typeof form.requestSubmit === 'function') {
-                            form.requestSubmit(); // triggers submit event -> spinner
-                        } else if (form) {
-                            // Fallback: manually toggle spinner then submit
-                            try {
-                                const btn = document.getElementById('send-button');
-                                if (btn) {
-                                    btn.classList.add('sending-state');
-                                    const sendIcon = btn.querySelector('#send-icon');
-                                    const loadingIcon = btn.querySelector('#loading-icon');
-                                    if (sendIcon) sendIcon.style.display = 'none';
-                                    if (loadingIcon) loadingIcon.classList.remove('hidden');
-                                }
-                            } catch(_) {}
-                            form.submit();
-                        }
-                    }
-                });
-                const autogrow = () => {
-                    try {
-                        // Cap differs by viewport size; use computed CSS max-height
-                        inputEl.style.height = 'auto';
-                        const styles = getComputedStyle(inputEl);
-                        const maxH = parseFloat(styles.maxHeight) || (window.innerWidth <= 768 ? window.innerHeight * 0.35 : window.innerHeight * 0.45);
-                        const newH = Math.min(inputEl.scrollHeight + 2, maxH);
-                        inputEl.style.height = newH + 'px';
-                        setTimeout(() => { applyBottomPadding(true); }, 10);
-                    } catch (e) {}
-                };
-                inputEl.addEventListener('input', autogrow);
-                // Run once on load to fit any prefilled text
-                setTimeout(autogrow, 0);
-                inputEl.addEventListener('focus', () => { setTimeout(() => { applyBottomPadding(true); enforceFocusModeLayout(); }, 50); });
-                inputEl.addEventListener('blur', () => { setTimeout(() => { applyBottomPadding(true); enforceFocusModeLayout(); }, 50); });
-            }
-            window.__chat_input_bound = true;
-        }
-        // iOS VisualViewport-aware adjustments (single registration)
-        if (!window.__chat_vv_bound && window.visualViewport) {
-            const vvHandler = () => { try { applyBottomPadding(false); enforceFocusModeLayout(); } catch(e){} };
-            window.visualViewport.addEventListener('resize', vvHandler);
-            window.visualViewport.addEventListener('scroll', vvHandler);
-            window.__chat_vv_bound = true;
-        }
-        // Input focus/blur adjustments for mobile keyboards (single registration)
-        if (!window.__chat_input_bound) {
-            const inputEl = document.getElementById('message-input');
-            if (inputEl) {
-                inputEl.addEventListener('focus', () => { setTimeout(() => { applyBottomPadding(true); enforceFocusModeLayout(); }, 50); });
-                inputEl.addEventListener('blur', () => { setTimeout(() => { applyBottomPadding(true); enforceFocusModeLayout(); }, 50); });
-            }
-            window.__chat_input_bound = true;
-        }
-        // (deduped above)
-        // Input focus/blur adjustments for mobile keyboards
-        const messageInput = document.getElementById('message-input');
-        if (messageInput) {
-            messageInput.addEventListener('focus', () => { setTimeout(() => { applyBottomPadding(true); enforceFocusModeLayout(); }, 50); });
-            messageInput.addEventListener('blur', () => { setTimeout(() => { applyBottomPadding(true); enforceFocusModeLayout(); }, 50); });
-        }
         
+        // Monitor textarea height changes in focus mode for dynamic padding
+        const messageInputEl = document.getElementById('message-input');
+        if (messageInputEl && window.ResizeObserver) {
+            const textareaObserver = new ResizeObserver(() => {
+                if (document.body.classList.contains('focus-mode')) {
+                    enforceFocusModeLayout();
+                }
+            });
+            textareaObserver.observe(messageInputEl);
+        }
+        // iOS VisualViewport-aware adjustments (single registration)
+        if (!window.__chat_vv_bound && window.visualViewport) {
+            const vvHandler = () => {}; // Layout handled by CSS
+            window.visualViewport.addEventListener('resize', vvHandler);
+            window.visualViewport.addEventListener('scroll', vvHandler);
+            window.__chat_vv_bound = true;
+        }
+
         // AI Response Toggle functionality
         const aiToggle = document.getElementById('ai-response-toggle');
         const toggleLabel = document.querySelector('label[for="ai-response-toggle"]');
@@ -937,7 +822,6 @@
                 } else {
                     toggleLabel.innerHTML = '🤖 AI Response <span class="text-xs text-muted-foreground">(Check to enable AI)</span>';
                 }
-            }
             
             // Save toggle state to localStorage when it changes
             function saveToggleState() {
@@ -1065,6 +949,10 @@
             if (!el) return false;
             return (el.scrollHeight - el.scrollTop - el.clientHeight) < 120;
         }
+        function isNearTop(el) {
+            if (!el) return false;
+            return el.scrollTop < 40; // small threshold
+        }
 
         async function pollNewMessages() {
             if (document.hidden) return; // pause when tab hidden
@@ -1106,9 +994,7 @@
                 // Format timestamps for newly appended nodes
                 try { formatAllMessageTimes(container); } catch(e){}
                 setLastMessageId(data.last_id || getLastMessageId());
-                // Recompute padding now that input/messages may have shifted
-                try { applyBottomPadding(false); } catch (e) {}
-                // Only auto-scroll when user was already near bottom before update
+                // Recompute padding now that input/messages may have shifted// Only auto-scroll when user was already near bottom before update
                 if (wasNearBottom && !wasNearTop) {
                     container.scrollTop = container.scrollHeight;
                 } else {
