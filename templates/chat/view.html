@@ -1003,11 +1003,17 @@
                 // Format timestamps for newly appended nodes
                 try { formatAllMessageTimes(container); } catch(e){}
                 setLastMessageId(data.last_id || getLastMessageId());
-                // Recompute padding now that input/messages may have shifted// Only auto-scroll when user was already near bottom before update
+                // Recompute padding now that input/messages may have shifted
+                try { updateComposerPadding(); } catch (e) { console.error('Padding update failed:', e); }
+                
+                // Only auto-scroll when user was already near bottom before update
                 if (wasNearBottom && !wasNearTop) {
-                    container.scrollTop = container.scrollHeight;
+                    // Auto-scroll on both desktop AND mobile when user is at bottom
+                    setTimeout(() => {
+                        container.scrollTop = container.scrollHeight;
+                    }, 100);  // Small delay to ensure DOM is updated
                 } else {
-                    // reveal scroll-to-bottom chip
+                    // User scrolled up - show scroll button instead
                     updateScrollButton();
                 }
                 backoff = POLL_INTERVAL_MS; // reset after success
