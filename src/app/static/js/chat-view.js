@@ -296,8 +296,17 @@
             } catch (e) { /* no-op */ }
         }
         formatAllMessageTimes();
-        // Initialize touch-optimized scrolling
-        new ChatTouchOptimizer();
+        
+        // Initialize touch-optimized scrolling (DISABLED ON MOBILE)
+        // On iOS/Android, the pull-to-refresh → window.location.reload() causes scroll traps
+        // Mobile browsers have native pull-to-refresh anyway
+        const isMobileDevice = /iP(ad|hone|od)|Android/i.test(navigator.userAgent);
+        if (!isMobileDevice) {
+            new ChatTouchOptimizer();
+            console.log('✅ ChatTouchOptimizer enabled (desktop)');
+        } else {
+            console.log('⏭️  ChatTouchOptimizer disabled (mobile - prevents reload scroll trap)');
+        }
         
         // Initialize existing scroll button functionality
         const chatMessagesElement = document.getElementById('chat-messages');
