@@ -631,6 +631,7 @@
                 if (isMobile) {
                     window.lastUserScrollTime = Date.now();
                 }
+                markUserActivity();
                 
                 // Update scroll button visibility
                 updateScrollButton();
@@ -649,6 +650,7 @@
                 const btn = document.getElementById('send-button');
                 const input = document.getElementById('message-input');
                 const aiToggle = document.getElementById('ai-response-toggle');
+                markUserActivity();
                 
                 // Get the message content
                 const messageContent = input ? input.value.trim() : '';
@@ -677,11 +679,31 @@
             });
         }
 
-        // Incremental polling for new messages
-        const POLL_INTERVAL_MS = 5000;
+        // Incremental polling for new messages with adaptive intervals
+        // Active polling (5s) when user is interacting = real-time feel
+        // Idle polling (90s) after 2 minutes inactive = reduced server load
+        const ACTIVE_POLL_MS = 5000;   // 5s  = 720/hour (requires high rate limit)
+        const IDLE_POLL_MS = 90000;    // 90s = 40/hour (well under 50/hour cap)
+        const IDLE_TIMEOUT_MS = 120000; // 2 minutes before switching to idle
+        let lastUserActivity = Date.now();
+
         let pollTimer = null;
-        let backoff = POLL_INTERVAL_MS;
+        let backoff = ACTIVE_POLL_MS;
         const maxBackoff = 30000;
+
+        function markUserActivity() {
+            lastUserActivity = Date.now();
+        }
+
+        function getCurrentPollInterval() {
+            const idleDuration = Date.now() - lastUserActivity;
+            return idleDuration >= IDLE_TIMEOUT_MS ? IDLE_POLL_MS : ACTIVE_POLL_MS;
+        }
+
+        function scheduleNextPoll(delayMs) {
+            if (pollTimer) clearTimeout(pollTimer);
+            pollTimer = setTimeout(pollNewMessages, delayMs);
+        }
 
         function getLastMessageId() {
             const container = document.getElementById('chat-messages');
@@ -709,7 +731,10 @@
         }
 
         async function pollNewMessages() {
-            if (document.hidden) return; // pause when tab hidden
+            if (document.hidden) {
+                scheduleNextPoll(getCurrentPollInterval());
+                return; // pause when tab hidden
+            }
             try {
                 const lastId = getLastMessageId();
                 
@@ -724,6 +749,7 @@
                 
                 if (!chatId) {
                     console.error('Could not determine chat ID from URL or data attribute');
+                    scheduleNextPoll(Math.max(backoff, getCurrentPollInterval()));
                     return;
                 }
                 
@@ -732,7 +758,8 @@
                 if (!data.success) throw new Error(data.error || 'poll failed');
                 const list = data.messages || [];
                 if (list.length === 0) {
-                    backoff = POLL_INTERVAL_MS; // reset backoff on empty success
+                    backoff = ACTIVE_POLL_MS; // reset backoff on empty success
+                    scheduleNextPoll(Math.max(backoff, getCurrentPollInterval()));
                     return;
                 }
                 const container = document.getElementById('chat-messages');
@@ -782,20 +809,21 @@
                     // reveal scroll-to-bottom chip
                     updateScrollButton();
                 }
-                backoff = POLL_INTERVAL_MS; // reset after success
+                backoff = ACTIVE_POLL_MS; // reset after success
             } catch (e) {
                 // backoff on errors
                 backoff = Math.min(backoff * 2, maxBackoff);
             }
+            scheduleNextPoll(Math.max(backoff, getCurrentPollInterval()));
         }
 
         function startPolling() {
-            if (pollTimer) clearInterval(pollTimer);
-            pollTimer = setInterval(pollNewMessages, POLL_INTERVAL_MS);
+            scheduleNextPoll(getCurrentPollInterval());
         }
 
         document.addEventListener('visibilitychange', function() {
             if (!document.hidden) {
+                markUserActivity();
                 // trigger an immediate poll when tab becomes visible
                 pollNewMessages();
             }

@@ -23,7 +23,7 @@ from flask import (
     session,
 )
 from datetime import datetime
-from src.app import db, markdown_filter
+from src.app import db, markdown_filter, limiter
 from typing import Any
 from src.models import Chat, Message, User, PromptRecord, Room, Comment, RoomMember
 from src.utils.openai_utils import get_ai_response, get_modes_for_room, BASE_MODES
@@ -563,9 +563,16 @@ def edit_chat(chat_id: int) -> Any:
 
 
 @chat.route("/<int:chat_id>/messages", methods=["GET"])
+@limiter.limit("1000 per hour")  # High limit for polling - active users poll every 5s
 @require_chat_access
 def get_new_messages(chat_id: int) -> Any:
-    """Return messages newer than a given message id for incremental polling."""
+    """Return messages newer than a given message id for incremental polling.
+    
+    Adaptive polling intervals (chat-view.js):
+    - Active: 5s (720/hour) when user interacting
+    - Idle: 30-90s (40-120/hour) after 2 minutes inactive
+    Rate limit set high to accommodate active polling while preventing abuse.
+    """
     try:
         chat_obj = Chat.query.get(chat_id)
         if not chat_obj:
