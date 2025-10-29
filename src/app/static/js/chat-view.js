@@ -695,8 +695,21 @@
             if (document.hidden) return; // pause when tab hidden
             try {
                 const lastId = getLastMessageId();
-                const chatContainer = document.querySelector('.chat-container');
-                const chatId = chatContainer.dataset.chatId;
+                
+                // Get chat ID from URL (more robust than data attribute)
+                let chatId = window.location.pathname.match(/\/chat\/(\d+)/)?.[1];
+                
+                // Fallback: try data attribute if URL parsing fails
+                if (!chatId) {
+                    const chatContainer = document.querySelector('.chat-container');
+                    chatId = chatContainer?.dataset.chatId;
+                }
+                
+                if (!chatId) {
+                    console.error('Could not determine chat ID from URL or data attribute');
+                    return;
+                }
+                
                 const resp = await fetch(`/chat/${chatId}/messages?after_id=${lastId}`);
                 const data = await resp.json();
                 if (!data.success) throw new Error(data.error || 'poll failed');
