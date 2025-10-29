@@ -162,12 +162,13 @@
                 
                 // Show pull indicator
                 this.showPullIndicator();
-                e.preventDefault();
+                // e.preventDefault() REMOVED - was blocking native iOS scroll
+                // Let native scroll work naturally (matches October 6 fix)
             } else if (this.isPulling) {
                 // Continue pull gesture
                 this.pullDistance = Math.min(deltaY * 0.5, 80);
                 this.updatePullIndicator();
-                e.preventDefault();
+                // e.preventDefault() REMOVED - was blocking native iOS scroll
             }
         }
         
