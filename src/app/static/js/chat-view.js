@@ -366,14 +366,16 @@
                 
                 // Update the icon
                 const icon = chatSidebarToggle.querySelector('i');
-                if (chatSidebar.classList.contains('open')) {
-                    icon.setAttribute('data-lucide', 'x');
-                } else {
-                    icon.setAttribute('data-lucide', 'panel-left');
+                if (icon) {
+                    if (chatSidebar.classList.contains('open')) {
+                        icon.setAttribute('data-lucide', 'x');
+                    } else {
+                        icon.setAttribute('data-lucide', 'panel-left');
+                    }
+                    
+                    // Reinitialize Lucide icons
+                    lucide.createIcons();
                 }
-                
-                // Reinitialize Lucide icons
-                lucide.createIcons();
             });
             
             // Close sidebar when clicking outside (mobile only)
@@ -386,8 +388,10 @@
                     
                     // Update the icon
                     const icon = chatSidebarToggle.querySelector('i');
-                    icon.setAttribute('data-lucide', 'panel-left');
-                    lucide.createIcons();
+                    if (icon) {
+                        icon.setAttribute('data-lucide', 'panel-left');
+                        lucide.createIcons();
+                    }
                 }
             });
         }
