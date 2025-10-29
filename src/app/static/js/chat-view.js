@@ -337,7 +337,10 @@
             // Remove direct padding-bottom manipulations to avoid conflicts
             chatMessagesRef.style.removeProperty('padding-bottom');
             chatMessagesRef.style.setProperty('--chat-input-h', spacerHeight + 'px');
-            if (nudgeScroll && wasNearBottom) chatMessagesRef.scrollTop = chatMessagesRef.scrollHeight - chatMessagesRef.clientHeight;
+            const isMobileViewport = window.innerWidth <= 768 || /iP(ad|hone|od)/i.test(navigator.userAgent);
+            if (!isMobileViewport && nudgeScroll && wasNearBottom) {
+                chatMessagesRef.scrollTop = chatMessagesRef.scrollHeight - chatMessagesRef.clientHeight;
+            }
         }
 
         // Initial application after first paint
