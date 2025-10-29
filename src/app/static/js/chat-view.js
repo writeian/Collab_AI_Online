@@ -297,6 +297,27 @@
         }
         formatAllMessageTimes();
         
+        function getUserInitials(displayName) {
+            if (!displayName) return '';
+            const parts = displayName.trim().split(/\s+/);
+            if (parts.length >= 2) {
+                return (parts[0][0] + parts[1][0]).toUpperCase();
+            }
+            return displayName.substring(0, 2).toUpperCase();
+        }
+
+        function getUserAvatarHtml(user) {
+            if (!user) return '';
+            const id = typeof user.id === 'number' ? user.id : 0;
+            const colorClass = 'avatar-color-' + ((id % 6) + 1);
+            const initials = getUserInitials(user.display_name || '');
+            return `
+                <div class="user-avatar ${colorClass}">
+                    <span class="avatar-text">${initials}</span>
+                </div>
+            `;
+        }
+
         // Initialize touch-optimized scrolling (DISABLED ON MOBILE)
         // On iOS/Android, the pull-to-refresh → window.location.reload() causes scroll traps
         // Mobile browsers have native pull-to-refresh anyway
@@ -782,6 +803,7 @@
                           <div class="flex-1"><div class="message-content text-right">${msg.rendered_html || `<p>${msg.content}</p>`}
                           <p class="message-timestamp"><time class=\"msg-time\" data-ts=\"${Math.floor(new Date(msg.timestamp).getTime()/1000)}\"></time></p>
                           </div></div>
+                          ${getUserAvatarHtml(msg.user)}
                         </div>`}
                       </div>`;
                     container.appendChild(wrapper);
