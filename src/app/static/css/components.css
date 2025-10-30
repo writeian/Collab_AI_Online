@@ -2467,10 +2467,13 @@
    Sidebar Accordion Components
    Phase 1: Collapsible Tools Section
    Added: October 28, 2025
+   Polished: Per user feedback
    =================================== */
 
 .sidebar-section {
-    border-bottom: 1px solid hsl(var(--border));
+    margin: 0 0 1rem 0;  /* Spacing between sections */
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.75rem;  /* Softer edges */
 }
 
 /* Remove default details marker */
@@ -2484,12 +2487,13 @@
     display: none;
 }
 
-/* Summary bar styling */
+/* Summary bar styling - breathing room + polish */
 .sidebar-summary {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 1rem;
+    padding: 0.75rem 1rem;  /* Consistent padding */
+    border-radius: 0.75rem;
     background: transparent;
     transition: background-color 0.2s ease;
     font-size: 0.875rem;
@@ -2503,6 +2507,12 @@
 
 .sidebar-summary:active {
     background: hsl(var(--muted) / 0.8);
+}
+
+/* Card feel when expanded */
+.sidebar-section[open] {
+    background: hsl(var(--card));
+    box-shadow: 0 4px 12px rgb(15 23 42 / 0.08);
 }
 
 /* Chevron rotation animation */
@@ -2522,11 +2532,10 @@
     background: transparent;
 }
 
-/* Keyboard focus indicator */
-.sidebar-summary:focus {
-    outline: 2px solid hsl(var(--primary));
-    outline-offset: -2px;
-    background: hsl(var(--muted) / 0.3);
+/* Custom focus state - keyboard friendly, not overpowering */
+.sidebar-summary:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--primary) / 0.3);
 }
 
 .sidebar-summary:focus:not(:focus-visible) {

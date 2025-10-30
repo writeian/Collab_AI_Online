@@ -81,28 +81,9 @@
                     Back to Room
                 </a>
             </div>
-        </div>
-
-
-        <!-- Tools Section (Collapsible) - Phase 1 -->
-        <details class="sidebar-section" data-section="tools" open>
-            <summary class="sidebar-summary">
-                <i data-lucide="wand-2" class="w-5 h-5"></i>
-                <span>Tools</span>
-                <i data-lucide="chevron-down" class="w-4 h-4 chevron"></i>
-            </summary>
-            <div class="sidebar-panel">
-                <!-- Chat Info -->
-                <div class="space-y-2">
-                <h3 class="font-medium">{{ chat.title }}</h3>
-                <p class="text-sm text-muted-foreground">
-                    Writing Mode: {{ chat.mode }}
-                </p>
-                {% if chat.google_doc_url %}
-                <p class="text-sm text-muted-foreground">
-                    📄 Google Doc Linked
-                </p>
-                {% endif %}
+            
+            <!-- Chat Context (Always Visible) -->
+            <div class="mt-3 pt-3 border-t border-border space-y-1">
                 
                 <!-- System Instructions Dropdown -->
                 <details class="mt-4 system-instructions">
