@@ -783,6 +783,8 @@
                     scheduleNextPoll(Math.max(backoff, getCurrentPollInterval()));
                     return;
                 }
+                // New content arrived – treat as fresh activity so we stay on the fast cadence
+                markUserActivity();
                 const container = document.getElementById('chat-messages');
                 const wasNearBottom = isNearBottom(container);
                 const wasNearTop = isNearTop(container);

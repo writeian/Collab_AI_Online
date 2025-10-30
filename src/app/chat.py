@@ -563,15 +563,15 @@ def edit_chat(chat_id: int) -> Any:
 
 
 @chat.route("/<int:chat_id>/messages", methods=["GET"])
-@limiter.limit("1000 per hour")  # High limit for polling - active users poll every 5s
+@limiter.limit("60 per minute; 1000 per hour")
 @require_chat_access
 def get_new_messages(chat_id: int) -> Any:
     """Return messages newer than a given message id for incremental polling.
-    
+
     Adaptive polling intervals (chat-view.js):
-    - Active: 5s (720/hour) when user interacting
-    - Idle: 30-90s (40-120/hour) after 2 minutes inactive
-    Rate limit set high to accommodate active polling while preventing abuse.
+    - Active: 5 s (≈720/hour) when the user is interacting.
+    - Idle: 30+ s (≈120/hour or less) after two minutes of inactivity.
+    The higher rate limit allows legitimate polling while still guarding against abuse.
     """
     try:
         chat_obj = Chat.query.get(chat_id)
