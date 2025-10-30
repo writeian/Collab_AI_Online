@@ -74,17 +74,32 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     </div>`;
     
-    // Insert before Room Members section
-    const roomMembers = sidebar.querySelector('h3, .text-lg, [class*="member"]')?.parentElement;
-    if (roomMembers) {
-        const docDiv = document.createElement('div');
-        docDiv.innerHTML = docGenHTML;
-        roomMembers.parentNode.insertBefore(docDiv, roomMembers);
-        
-        // Refresh Lucide icons
-        if (window.lucide && typeof lucide.createIcons === 'function') {
-            lucide.createIcons();
+    // Insert into Tools section (new collapsible structure) or fallback to old location
+    const docDiv = document.createElement('div');
+    docDiv.innerHTML = docGenHTML;
+    
+    // Priority 1: Try new Tools panel structure (Phase 1 sidebar overhaul)
+    const toolsPanel = document.querySelector('.sidebar-section[data-section="tools"] .sidebar-panel');
+    if (toolsPanel) {
+        // Insert at top of Tools panel
+        toolsPanel.insertBefore(docDiv, toolsPanel.firstChild);
+        console.log('📦 Document dropdown injected into Tools panel (new structure)');
+    } else {
+        // Priority 2: Fallback to old logic (before Room Members)
+        const roomMembers = sidebar.querySelector('h3, .text-lg, [class*="member"]')?.parentElement;
+        if (roomMembers) {
+            roomMembers.parentNode.insertBefore(docDiv, roomMembers);
+            console.log('📦 Document dropdown injected before Room Members (legacy)');
+        } else {
+            // Priority 3: Last resort - insert at top of sidebar
+            sidebar.insertBefore(docDiv, sidebar.firstChild);
+            console.log('📦 Document dropdown injected at sidebar top (fallback)');
         }
+    }
+    
+    // Refresh Lucide icons
+    if (window.lucide && typeof lucide.createIcons === 'function') {
+        lucide.createIcons();
     }
 });
 

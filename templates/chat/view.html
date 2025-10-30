@@ -82,6 +82,15 @@
                 </a>
             </div>
             
+
+        <!-- Tools Section (Collapsible) - Phase 1 -->
+        <details class="sidebar-section" data-section="tools" open>
+            <summary class="sidebar-summary">
+                <i data-lucide="wand-2" class="w-5 h-5"></i>
+                <span>Tools</span>
+                <i data-lucide="chevron-down" class="w-4 h-4 chevron"></i>
+            </summary>
+            <div class="sidebar-panel">
             <!-- Chat Info -->
             <div class="space-y-2">
                 <h3 class="font-medium">{{ chat.title }}</h3>
@@ -151,6 +160,8 @@
                 {% set color_class = 'avatar-color-' ~ ((member.id % 6) + 1) %}
                 <div class="member-item">
                     <div class="member-avatar {{ color_class }}">
+            </div>
+        </details>
                         <span class="avatar-text">
                             {% if ' ' in member.display_name %}
                                 {{ member.display_name.split(' ')[0][0] }}{{ member.display_name.split(' ')[1][0] }}

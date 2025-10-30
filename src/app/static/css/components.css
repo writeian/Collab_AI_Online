@@ -2462,3 +2462,93 @@
 .bg-card .text-xs.text-muted-foreground { color: var(--muted-fg-40) !important; }
 .bg-card .group-size-info .text-muted-foreground { color: var(--muted-fg-40) !important; }
 .bg-card p.text-sm.text-muted-foreground { color: var(--muted-fg-50) !important; }
+
+/* ===================================
+   Sidebar Accordion Components
+   Phase 1: Collapsible Tools Section
+   Added: October 28, 2025
+   =================================== */
+
+.sidebar-section {
+    border-bottom: 1px solid hsl(var(--border));
+}
+
+/* Remove default details marker */
+.sidebar-section summary {
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+}
+
+.sidebar-section summary::-webkit-details-marker {
+    display: none;
+}
+
+/* Summary bar styling */
+.sidebar-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: transparent;
+    transition: background-color 0.2s ease;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: hsl(var(--foreground));
+}
+
+.sidebar-summary:hover {
+    background: hsl(var(--muted) / 0.5);
+}
+
+.sidebar-summary:active {
+    background: hsl(var(--muted) / 0.8);
+}
+
+/* Chevron rotation animation */
+.sidebar-summary .chevron {
+    margin-left: auto;
+    transition: transform 0.2s ease;
+    color: hsl(var(--muted-foreground));
+}
+
+.sidebar-section[open] .sidebar-summary .chevron {
+    transform: rotate(180deg);
+}
+
+/* Panel content */
+.sidebar-panel {
+    padding: 0 1rem 1rem 1rem;
+    background: transparent;
+}
+
+/* Keyboard focus indicator */
+.sidebar-summary:focus {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: -2px;
+    background: hsl(var(--muted) / 0.3);
+}
+
+.sidebar-summary:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Constrain long lists inside panels (for future phases) */
+.sidebar-panel .scrollable-list {
+    max-height: 300px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile: Ensure details doesn't conflict with drawer */
+@media (max-width: 768px) {
+    .sidebar-section {
+        /* Keep simple - no transforms that create stacking contexts */
+        transform: none;
+    }
+    
+    .sidebar-summary {
+        /* Larger tap target on mobile */
+        padding: 1.25rem 1rem;
+    }
+}
