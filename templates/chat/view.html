@@ -81,7 +81,8 @@
                     Back to Room
                 </a>
             </div>
-            
+        </div>
+
 
         <!-- Tools Section (Collapsible) - Phase 1 -->
         <details class="sidebar-section" data-section="tools" open>
@@ -91,8 +92,8 @@
                 <i data-lucide="chevron-down" class="w-4 h-4 chevron"></i>
             </summary>
             <div class="sidebar-panel">
-            <!-- Chat Info -->
-            <div class="space-y-2">
+                <!-- Chat Info -->
+                <div class="space-y-2">
                 <h3 class="font-medium">{{ chat.title }}</h3>
                 <p class="text-sm text-muted-foreground">
                     Writing Mode: {{ chat.mode }}
@@ -149,7 +150,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </details>
 
         <!-- Room Members -->
         <div class="overflow-y-auto p-4">
@@ -160,8 +161,6 @@
                 {% set color_class = 'avatar-color-' ~ ((member.id % 6) + 1) %}
                 <div class="member-item">
                     <div class="member-avatar {{ color_class }}">
-            </div>
-        </details>
                         <span class="avatar-text">
                             {% if ' ' in member.display_name %}
                                 {{ member.display_name.split(' ')[0][0] }}{{ member.display_name.split(' ')[1][0] }}
