@@ -194,8 +194,17 @@
             </div>
         </details>
 
-        <!-- Chat List (if multiple chats) -->
-        <div class="flex-1 overflow-y-auto p-4">
+        <!-- Other Chats Section (Collapsible) -->
+        <details class="sidebar-section" data-section="other-chats" open>
+            <summary class="sidebar-summary">
+                <i data-lucide="messages-square" class="w-5 h-5"></i>
+                <span>Other Chats</span>
+                <span class="badge">{{ (other_chats|length) if other_chats else 0 }}</span>
+                <i data-lucide="chevron-down" class="w-4 h-4 chevron"></i>
+            </summary>
+            <div class="sidebar-panel">
+                <!-- Chat List (if multiple chats) -->
+                <div class="flex-1 overflow-y-auto">
             <h4 class="text-sm font-medium mb-3">Other Chats</h4>
             {% if other_chats %}
             <div class="space-y-2">
@@ -219,7 +228,9 @@
             {% else %}
             <p class="text-sm text-muted-foreground">No other chats in this room.</p>
             {% endif %}
-        </div>
+                </div>
+            </div>
+        </details>
     </div>
     
     <!-- Main Chat Area -->
