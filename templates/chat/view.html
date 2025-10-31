@@ -156,40 +156,39 @@
             <div class="sidebar-panel">
                 <!-- Room Members -->
                 <div class="overflow-y-auto">
-            <h4 class="text-sm font-medium mb-3">Room Members</h4>
-            {% if room_members %}
-            <div class="member-list">
-                {% for member in room_members %}
-                {% set color_class = 'avatar-color-' ~ ((member.id % 6) + 1) %}
-                <div class="member-item">
-                    <div class="member-avatar {{ color_class }}">
-                        <span class="avatar-text">
-                            {% if ' ' in member.display_name %}
-                                {{ member.display_name.split(' ')[0][0] }}{{ member.display_name.split(' ')[1][0] }}
-                            {% else %}
-                                {{ member.display_name[:2] }}
-                            {% endif %}
-                        </span>
+                    <h4 class="text-sm font-medium mb-3">Room Members</h4>
+                    {% if room_members %}
+                    <div class="member-list">
+                        {% for member in room_members %}
+                        {% set color_class = 'avatar-color-' ~ ((member.id % 6) + 1) %}
+                        <div class="member-item">
+                            <div class="member-avatar {{ color_class }}">
+                                <span class="avatar-text">
+                                    {% if ' ' in member.display_name %}
+                                        {{ member.display_name.split(' ')[0][0] }}{{ member.display_name.split(' ')[1][0] }}
+                                    {% else %}
+                                        {{ member.display_name[:2] }}
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="member-info">
+                                <p class="member-name">{{ member.display_name }}</p>
+                            </div>
+                            <div class="member-actions">
+                                <a href="{{ url_for('auth.profile') }}" 
+                                   class="member-action-btn primary" title="View Profile">
+                                    👤
+                                </a>
+                                <button class="member-action-btn" title="Message (Coming Soon)" disabled>
+                                    💬
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
                     </div>
-                    <div class="member-info">
-                        <p class="member-name">{{ member.display_name }}</p>
-                    </div>
-                    <div class="member-actions">
-                        <a href="{{ url_for('auth.profile') }}" 
-                           class="member-action-btn primary" title="View Profile">
-                            👤
-                        </a>
-                        <button class="member-action-btn" title="Message (Coming Soon)" disabled>
-                            💬
-                        </button>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <p class="text-sm text-muted-foreground">No members found.</p>
-            {% endif %}
-                    </div>
+                    {% else %}
+                    <p class="text-sm text-muted-foreground">No members found.</p>
+                    {% endif %}
                 </div>
             </div>
         </details>
@@ -204,30 +203,30 @@
             </summary>
             <div class="sidebar-panel">
                 <!-- Chat List (if multiple chats) -->
-                <div class="flex-1 overflow-y-auto">
-            <h4 class="text-sm font-medium mb-3">Other Chats</h4>
-            {% if other_chats %}
-            <div class="space-y-2">
-                {% for other_chat in other_chats %}
-                <a href="{{ url_for('chat.view_chat', chat_id=other_chat.id) }}" 
-                   class="block p-3 rounded-lg border border-border hover:bg-muted transition-colors">
-                    <div class="flex items-center justify-between">
-                        <div class="flex-1 min-w-0">
-                            <h5 class="font-medium text-sm truncate">{{ other_chat.title }}</h5>
-                            <p class="text-xs text-muted-foreground">{{ other_chat.mode|title }} Mode</p>
-                            <p class="text-xs text-muted-foreground">{{ other_chat.created_at.strftime('%b %d, %Y') }}</p>
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <span class="text-xs text-muted-foreground">{{ other_chat.messages|length }} messages</span>
-                            <i data-lucide="chevron-right" class="w-4 h-4 text-muted-foreground"></i>
-                        </div>
+                <div class="overflow-y-auto">
+                    <h4 class="text-sm font-medium mb-3">Other Chats</h4>
+                    {% if other_chats %}
+                    <div class="space-y-2">
+                        {% for other_chat in other_chats %}
+                        <a href="{{ url_for('chat.view_chat', chat_id=other_chat.id) }}" 
+                           class="block p-3 rounded-lg border border-border hover:bg-muted transition-colors">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1 min-w-0">
+                                    <h5 class="font-medium text-sm truncate">{{ other_chat.title }}</h5>
+                                    <p class="text-xs text-muted-foreground">{{ other_chat.mode|title }} Mode</p>
+                                    <p class="text-xs text-muted-foreground">{{ other_chat.created_at.strftime('%b %d, %Y') }}</p>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <span class="text-xs text-muted-foreground">{{ other_chat.messages|length }} messages</span>
+                                    <i data-lucide="chevron-right" class="w-4 h-4 text-muted-foreground"></i>
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
                     </div>
-                </a>
-                {% endfor %}
-            </div>
-            {% else %}
-            <p class="text-sm text-muted-foreground">No other chats in this room.</p>
-            {% endif %}
+                    {% else %}
+                    <p class="text-sm text-muted-foreground">No other chats in this room.</p>
+                    {% endif %}
                 </div>
             </div>
         </details>
