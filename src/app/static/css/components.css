@@ -2471,19 +2471,29 @@
    =================================== */
 
 .sidebar-section {
-    margin: 0 0 1rem 0;  /* Spacing between sections */
+    margin: 0 1rem 1rem 1rem;  /* Side margins for breathing room */
     border: 1px solid hsl(var(--border));
     border-radius: 0.75rem;  /* Softer edges */
 }
 
-/* Remove default details marker */
+/* Remove default details marker (browser triangle/caret) */
 .sidebar-section summary {
     list-style: none;
     cursor: pointer;
     user-select: none;
 }
 
-.sidebar-section summary::-webkit-details-marker {
+/* Hide browser default markers completely */
+details.sidebar-section > summary::marker,
+details.sidebar-section > summary::-webkit-details-marker {
+    content: '';
+    display: none;
+}
+
+/* Also hide marker in tone/critique widget */
+#tone-critique-mount details > summary::marker,
+#tone-critique-mount details > summary::-webkit-details-marker {
+    content: '';
     display: none;
 }
 
@@ -2532,14 +2542,19 @@
     background: transparent;
 }
 
-/* Custom focus state - keyboard friendly, not overpowering */
-.sidebar-summary:focus-visible {
+/* Custom focus state - keyboard friendly, works in Safari */
+.sidebar-summary:focus {
     outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2);
+}
+
+.sidebar-summary:focus-visible {
     box-shadow: 0 0 0 2px hsl(var(--primary) / 0.3);
 }
 
 .sidebar-summary:focus:not(:focus-visible) {
     outline: none;
+    box-shadow: none;
 }
 
 /* Constrain long lists inside panels (for future phases) */
