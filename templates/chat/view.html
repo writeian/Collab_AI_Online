@@ -83,10 +83,9 @@
             </div>
             
             <!-- Chat Context (Always Visible) -->
-            <div class="mt-3 pt-3 border-t border-border space-y-1">
-                
+            <div class="mt-3 pt-3 border-t border-border space-y-4">
                 <!-- System Instructions Dropdown -->
-                <details class="mt-4 system-instructions">
+                <details class="mt-1 system-instructions">
                     <summary class="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground">
                         🤖 AI Assistant Role
                     </summary>
@@ -100,9 +99,10 @@
                             and helping you develop your skills step by step.
                         {% endif %}
                     </div>
+                </details>
                 
                 <!-- Learning Progress Assessment -->
-                <div class="mt-4 learning-progress-section">
+                <div class="learning-progress-section">
                     <div class="flex items-center justify-between mb-2">
                         <h4 class="text-sm font-medium text-foreground">Learning Progress</h4>
                         <button id="assess-progress-btn" 
@@ -130,8 +130,19 @@
                     </div>
                 </div>
             </div>
+        </div>
 
-                    </div>
+        <!-- Tools Section (Collapsible) -->
+        <details class="sidebar-section" data-section="tools" open>
+            <summary class="sidebar-summary">
+                <i data-lucide="wand-2" class="w-5 h-5"></i>
+                <span>Tools</span>
+                <i data-lucide="chevron-down" class="w-4 h-4 chevron"></i>
+            </summary>
+            <div class="sidebar-panel space-y-4">
+                <!-- Document generation dropdown is injected here via restore-document-generation.js -->
+                <div id="tone-critique-mount"></div>
+            </div>
         </details>
 
         <!-- Room Members -->
