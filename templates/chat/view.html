@@ -145,8 +145,17 @@
             </div>
         </details>
 
-        <!-- Room Members -->
-        <div class="overflow-y-auto p-4">
+        <!-- Participants Section (Collapsible) -->
+        <details class="sidebar-section" data-section="members" open>
+            <summary class="sidebar-summary">
+                <i data-lucide="users" class="w-5 h-5"></i>
+                <span>Participants</span>
+                <span class="badge">{{ (room_members|length) if room_members else 0 }}</span>
+                <i data-lucide="chevron-down" class="w-4 h-4 chevron"></i>
+            </summary>
+            <div class="sidebar-panel">
+                <!-- Room Members -->
+                <div class="overflow-y-auto">
             <h4 class="text-sm font-medium mb-3">Room Members</h4>
             {% if room_members %}
             <div class="member-list">
@@ -180,7 +189,10 @@
             {% else %}
             <p class="text-sm text-muted-foreground">No members found.</p>
             {% endif %}
-        </div>
+                    </div>
+                </div>
+            </div>
+        </details>
 
         <!-- Chat List (if multiple chats) -->
         <div class="flex-1 overflow-y-auto p-4">
