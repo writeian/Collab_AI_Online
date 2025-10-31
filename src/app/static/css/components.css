@@ -152,6 +152,7 @@
   border-right: 1px solid hsl(var(--border));
   backdrop-filter: blur(10px);
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  padding: 0 1rem 1rem 1rem;  /* Breathing room for accordion sections */
 }
 
 .chat-main {
@@ -2471,7 +2472,7 @@
    =================================== */
 
 .sidebar-section {
-    margin: 0 1rem 1rem 1rem;  /* Side margins for breathing room */
+    margin: 0 0 1rem 0;  /* Bottom margin only (sidebar has padding now) */
     border: 1px solid hsl(var(--border));
     border-radius: 0.75rem;  /* Softer edges */
 }
@@ -2483,18 +2484,18 @@
     user-select: none;
 }
 
-/* Hide browser default markers completely */
-details.sidebar-section > summary::marker,
-details.sidebar-section > summary::-webkit-details-marker {
-    content: '';
-    display: none;
+/* Hide browser default markers completely - GLOBAL for all details in sidebar */
+.chat-sidebar summary::marker,
+.chat-sidebar summary::-webkit-details-marker {
+    content: '' !important;
+    display: none !important;
 }
 
-/* Also hide marker in tone/critique widget */
-#tone-critique-mount details > summary::marker,
-#tone-critique-mount details > summary::-webkit-details-marker {
-    content: '';
-    display: none;
+/* Ensure all details elements in sidebar hide markers */
+.chat-sidebar details > summary::marker,
+.chat-sidebar details > summary::-webkit-details-marker {
+    content: '' !important;
+    display: none !important;
 }
 
 /* Summary bar styling - breathing room + polish */
@@ -2519,10 +2520,10 @@ details.sidebar-section > summary::-webkit-details-marker {
     background: hsl(var(--muted) / 0.8);
 }
 
-/* Card feel when expanded */
+/* Card feel when expanded - enhanced visibility */
 .sidebar-section[open] {
-    background: hsl(var(--card));
-    box-shadow: 0 4px 12px rgb(15 23 42 / 0.08);
+    background: hsl(var(--card) / 0.95);
+    box-shadow: 0 6px 16px rgb(15 23 42 / 0.1);
 }
 
 /* Chevron rotation animation */
