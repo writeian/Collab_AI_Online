@@ -153,6 +153,8 @@
   backdrop-filter: blur(10px);
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
   padding: 0 1rem 1rem 1rem;  /* Breathing room for accordion sections */
+  overflow-y: auto;  /* Allow scrolling when content exceeds height */
+  -webkit-overflow-scrolling: touch;  /* Smooth scrolling on iOS */
 }
 
 .chat-main {
