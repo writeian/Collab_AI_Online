@@ -2472,7 +2472,7 @@
    =================================== */
 
 .sidebar-section {
-    margin: 0 0 1.5rem 0;  /* 24px - Clearer separation between major sections */
+    margin: 0 0 1.25rem 0;  /* 20px - Tighter section spacing */
     border: 1px solid hsl(var(--border));
     border-radius: 0.75rem;  /* Softer edges */
 }
@@ -2601,14 +2601,14 @@
 .tool-stack { 
     display: flex; 
     flex-direction: column; 
-    gap: 0.75rem;  /* 12px - Tighter spacing for related tools */
+    gap: 0.625rem;  /* 10px - Compact spacing for related tools */
 }
 
 .tool-card {
     border: 1px solid hsl(var(--border));
     border-radius: 0.75rem;
     background: hsl(var(--card));
-    padding: 1rem;
+    padding: 0.875rem;  /* 14px - Tighter card padding */
     box-shadow: 0 4px 12px rgb(15 23 42 / 0.08);
 }
 
@@ -2683,7 +2683,7 @@
     }
     
     .sidebar-section {
-        margin-bottom: 1.5rem;  /* Keep 24px separation */
+        margin-bottom: 1.25rem;  /* Match desktop 20px */
     }
 }
 
