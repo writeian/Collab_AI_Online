@@ -127,8 +127,11 @@
                                 <i data-lucide="activity" class="w-4 h-4"></i>
                                 Learning Progress
                             </div>
+                            <button type="button" class="tool-card__chevron" aria-expanded="true" aria-controls="progress-body" onclick="toggleToolCard(this, 'progress-body')">
+                                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                            </button>
                         </div>
-                        <div class="tool-card__body">
+                        <div class="tool-card__body" id="progress-body">
                             <button id="assess-progress-btn" 
                                     class="text-xs px-2 py-1 bg-primary/10 text-primary rounded hover:bg-primary/20 transition-colors"
                                     onclick="assessLearningProgress()">
