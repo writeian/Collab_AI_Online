@@ -2680,7 +2680,8 @@
 }
 
 /* Hide duplicate summary in tone component (card header shows title) */
-.tool-card__body > details > summary {
+/* Use sr-only pattern to keep accessible for screen readers */
+#tone-card .tool-card__body > details > summary {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -2692,18 +2693,9 @@
     border: 0;
 }
 
-/* Or simpler if accessibility not a concern for this duplicate: */
-#tone-card .tool-card__body > details > summary {
-    display: none;
-}
-
 /* Tone slider body spacing improvements */
 #tone-card .tool-card__body {
     padding-top: 0.5rem;
-}
-
-#tone-card .tool-card__body > details {
-    /* Tone component is wrapped in details - style the content */
 }
 
 #tone-card .tool-card__body > details > div {
