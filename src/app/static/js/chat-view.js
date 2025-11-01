@@ -1075,9 +1075,20 @@
     
     // Initialize tone from sessionStorage if available
     try {
-        const savedTone = sessionStorage.getItem('room81_critique_level');
-        if (savedTone) {
-            updateToneSummary(parseInt(savedTone, 10));
+        // Get chat ID from URL
+        const chatId = window.location.pathname.match(/\/chat\/(\d+)/)?.[1];
+        if (chatId) {
+            // Try new key first (chat_${chatId}_critique)
+            let savedTone = sessionStorage.getItem(`chat_${chatId}_critique`);
+            
+            // Fallback to legacy key (room81_critique_level) for transition
+            if (!savedTone) {
+                savedTone = sessionStorage.getItem('room81_critique_level');
+            }
+            
+            if (savedTone) {
+                updateToneSummary(parseInt(savedTone, 10));
+            }
         }
     } catch (e) {
         console.log('Could not load saved tone:', e);
