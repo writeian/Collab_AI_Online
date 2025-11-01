@@ -2696,3 +2696,41 @@
 #tone-card .tool-card__body > details > summary {
     display: none;
 }
+
+/* Tone slider body spacing improvements */
+#tone-card .tool-card__body {
+    padding-top: 0.5rem;
+}
+
+#tone-card .tool-card__body > details {
+    /* Tone component is wrapped in details - style the content */
+}
+
+#tone-card .tool-card__body > details > div {
+    /* Inner content padding */
+    padding: 0.75rem;
+    background: hsl(var(--muted) / 0.3);
+    border-radius: 0.5rem;
+}
+
+/* Slider spacing */
+#tone-card input[type="range"] {
+    margin: 0.75rem 0;
+}
+
+/* Labels alignment */
+#tone-card .flex.justify-between {
+    margin-bottom: 0.5rem;
+}
+
+/* Save button spacing */
+#tone-card button[id*="save"] {
+    margin-top: 0.75rem;
+}
+
+/* Tip text spacing */
+#tone-card p.text-\\[11px\\] {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid hsl(var(--border) / 0.3);
+}
