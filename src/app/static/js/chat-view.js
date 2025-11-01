@@ -922,6 +922,12 @@
         const progressStatus = document.getElementById('progress-status');
         const progressContent = document.getElementById('progress-content');
         
+        // Update Tools summary with assessment result
+        const summaryLabel = recommendation && recommendation.ready ? 'Ready to advance' : 
+                           recommendation && recommendation.confidence > 0.7 ? 'Good progress' :
+                           'In progress';
+        updateProgressSummary(summaryLabel);
+        
         let html = '';
         
         if (recommendation.type === 'ready') {
@@ -1037,4 +1043,42 @@
             };
         }
         return null;
+    }
+
+    // ===================================
+    // Tools Summary Status Updates
+    // ===================================
+    
+    // Tone level names
+    const TONE_LABELS = ['Not set', 'Very Supportive', 'Supportive', 'Balanced', 'Critical', 'Very Critical'];
+    
+    function updateToneSummary(level) {
+        const summaryEl = document.getElementById('tone-summary');
+        if (summaryEl) {
+            summaryEl.textContent = TONE_LABELS[level] || 'Not set';
+        }
+    }
+    
+    function updateProgressSummary(status) {
+        const summaryEl = document.getElementById('progress-summary');
+        if (summaryEl) {
+            summaryEl.textContent = status || 'Not assessed';
+        }
+    }
+    
+    // Listen for tone changes (from critique component)
+    document.addEventListener('tone:change', function(e) {
+        if (e.detail && typeof e.detail.level !== 'undefined') {
+            updateToneSummary(e.detail.level);
+        }
+    });
+    
+    // Initialize tone from sessionStorage if available
+    try {
+        const savedTone = sessionStorage.getItem('room81_critique_level');
+        if (savedTone) {
+            updateToneSummary(parseInt(savedTone, 10));
+        }
+    } catch (e) {
+        console.log('Could not load saved tone:', e);
     }
