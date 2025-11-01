@@ -59,9 +59,10 @@
         template.innerHTML = html.trim();
         const toneMarkup = template.content.firstElementChild; // existing <details> block
         
-        // Force details element open (summary is hidden via CSS)
+        // Prepare details element (summary is hidden via CSS)
         if (toneMarkup?.tagName === 'DETAILS') {
-          toneMarkup.setAttribute('open', '');  // Keep content visible
+          toneMarkup.id = 'tone-details';
+          toneMarkup.removeAttribute('open');  // Start closed
           // Summary is already hidden via CSS sr-only pattern
         }
         
@@ -76,10 +77,15 @@
             <i data-lucide="sliders" class="w-4 h-4"></i>
             Tone & Critique
           </div>
+          <button type="button" class="tool-card__chevron" aria-expanded="false" aria-controls="tone-body" onclick="toggleToolCard(this, 'tone-body')">
+            <i data-lucide="chevron-down" class="w-4 h-4"></i>
+          </button>
         `;
         
         const toneBody = document.createElement('div');
         toneBody.className = 'tool-card__body';
+        toneBody.id = 'tone-body';
+        toneBody.setAttribute('hidden', '');  // Start collapsed
         toneBody.appendChild(toneMarkup);
         
         toneCard.appendChild(toneHeader);
