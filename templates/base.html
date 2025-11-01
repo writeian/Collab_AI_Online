@@ -59,6 +59,12 @@
         template.innerHTML = html.trim();
         const toneMarkup = template.content.firstElementChild; // existing <details> block
         
+        // Force details element open (summary is hidden via CSS)
+        if (toneMarkup?.tagName === 'DETAILS') {
+          toneMarkup.setAttribute('open', '');  // Keep content visible
+          // Summary is already hidden via CSS sr-only pattern
+        }
+        
         const toneCard = document.createElement('section');
         toneCard.className = 'tool-card';
         toneCard.id = 'tone-card';
