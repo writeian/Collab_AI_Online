@@ -121,9 +121,14 @@
             <div class="sidebar-panel">
                 <div class="tool-stack space-y-4">
                     <!-- 1. Learning Progress Card -->
-                    <section id="learning-progress-card" class="space-y-2">
-                        <div class="flex items-center justify-between mb-2">
-                            <h4 class="text-sm font-medium text-foreground">Learning Progress</h4>
+                    <section class="tool-card" id="progress-card">
+                        <div class="tool-card__header">
+                            <div class="tool-card__title">
+                                <i data-lucide="activity" class="w-4 h-4"></i>
+                                Learning Progress
+                            </div>
+                        </div>
+                        <div class="tool-card__body">
                             <button id="assess-progress-btn" 
                                     class="text-xs px-2 py-1 bg-primary/10 text-primary rounded hover:bg-primary/20 transition-colors"
                                     onclick="assessLearningProgress()">
@@ -146,6 +151,7 @@
                                     Analyzing your progress...
                                 </div>
                             </div>
+                        </div>
                         </div>
                     </section>
                     
