@@ -2734,3 +2734,10 @@
     padding-top: 0.5rem;
     border-top: 1px solid hsl(var(--border) / 0.3);
 }
+
+/* Chat list in Other Chats section */
+.chat-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;  /* 8px - Tight list spacing */
+}
