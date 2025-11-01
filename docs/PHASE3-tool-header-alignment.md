@@ -288,3 +288,45 @@ Ready for implementation when we decide to start the card-alignment work. Until 
      * Add class hooks (`.tone-card__slider`, `.tone-card__actions`) and apply consistent spacing in `components.css` (e.g., extra padding above the slider, align “Save” and tip text).
      * Optionally center-align slider labels or left-align everything for clarity.
    - Difficulty: Low/Medium – CSS tweaks, ensure layout remains responsive.
+
+---
+
+## Phase 3 Spacing Harmonisation Plan
+
+### Goals
+- Adopt an 8pt spacing rhythm across the sidebar.
+- Differentiate spacing within the tool stack (tighter) vs. between major sections (looser).
+- Align legacy sections (Participants, Other Chats) with the new card pattern.
+
+### Step-by-Step Work Plan
+
+1. **Confirm Token Values**
+   - Document current padding/margin values in `components.css` (see audit).
+   - Decide on target tokens: e.g., 24px section gap, 12px tool-card gap, 16px card padding.
+
+2. **Section-Level Adjustments**
+   - Update `.sidebar-section` margin-bottom to 24px (1.5rem).
+   - Ensure top padding on `.chat-sidebar` provides at least 16px breathing room under the navigation.
+
+3. **Tool Stack Rhythm**
+   - Set `.tool-stack` gap to 12px (0.75rem).
+   - Keep `tool-card` padding at 16px.
+   - Adjust `.tool-card__header` margin-bottom to 10–12px (if needed to match internal rhythm).
+
+4. **Legacy Panels Alignment**
+   - Inside Participants/Other Chats panels, replace Tailwind utilities with explicit spacing tokens tied to the 8pt scale (e.g., convert `mb-3` to `margin-bottom: 12px`).
+
+5. **Mobile Breakpoint Review**
+   - At `@media (max-width: 768px)` reduce `.tool-stack` gap to ~10px, and confirm the 44px tap target remains intact.
+   - Ensure bottom padding on `.chat-sidebar` remains ≥16px to avoid cards touching the drawer edge.
+
+6. **Testing**
+   - Desktop & tablet: collapse/expand all cards, confirm spacing stays consistent.
+   - Mobile drawer: confirm reduced gaps and tap targets behave as expected.
+   - Accessibility: tab through headers to ensure focus rings align with new padding.
+
+7. **Documentation**
+   - Update this doc’s spacing table with final tokens for future reference.
+
+8. **Mobile Scroll Behaviour**
+   - Ensure `.chat-sidebar` exposes `overflow-y: auto` (plus `-webkit-overflow-scrolling: touch`) so the drawer scrolls when content exceeds the viewport.
