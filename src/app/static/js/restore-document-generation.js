@@ -34,39 +34,39 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="space-y-3">
                 <!-- Export Chat History -->
                 <div>
-                    <div class="text-xs font-medium text-foreground mb-1">📄 Export Chat History</div>
+                    <div class="text-xs font-medium text-foreground mb-1"><i data-lucide="download" class="w-4 h-4"></i> Export Chat History</div>
                     <div class="flex gap-1">
                         <button onclick="exportDocument(this, 'raw', 'txt', ${chatId})" 
                                 class="flex-1 p-1 text-xs rounded border border-border hover:bg-accent transition-colors"
-                                title="Export as .txt">📄 .txt</button>
+                                title="Export as .txt"><i data-lucide="file-text" class="w-3 h-3"></i> .txt</button>
                         <button onclick="exportDocument(this, 'raw', 'docx', ${chatId})" 
                                 class="flex-1 p-1 text-xs rounded border border-border hover:bg-accent transition-colors"
-                                title="Export as .docx">📝 .docx</button>
+                                title="Export as .docx"><i data-lucide="file-edit" class="w-3 h-3"></i> .docx</button>
                     </div>
                 </div>
                 
                 <!-- Create Notes -->
                 <div>
-                    <div class="text-xs font-medium text-foreground mb-1">📝 Create Notes</div>
+                    <div class="text-xs font-medium text-foreground mb-1"><i data-lucide="sticky-note" class="w-4 h-4"></i> Create Notes</div>
                     ${messageCount >= 5 ? `
                     <div class="flex gap-1">
                         <button onclick="exportDocument(this, 'notes', 'txt', ${chatId})" 
-                                class="flex-1 p-1 text-xs rounded border border-border hover:bg-accent transition-colors">📄 .txt</button>
+                                class="flex-1 p-1 text-xs rounded border border-border hover:bg-accent transition-colors"><i data-lucide="file-text" class="w-3 h-3"></i> .txt</button>
                         <button onclick="exportDocument(this, 'notes', 'docx', ${chatId})" 
-                                class="flex-1 p-1 text-xs rounded border border-border hover:bg-accent transition-colors">📝 .docx</button>
+                                class="flex-1 p-1 text-xs rounded border border-border hover:bg-accent transition-colors"><i data-lucide="file-edit" class="w-3 h-3"></i> .docx</button>
                     </div>` : 
                     `<div class="text-xs text-muted-foreground">${5 - messageCount} more messages needed</div>`}
                 </div>
                 
                 <!-- Create Outline -->
                 <div>
-                    <div class="text-xs font-medium text-foreground mb-1">📋 Create Outline</div>
+                    <div class="text-xs font-medium text-foreground mb-1"><i data-lucide="list-tree" class="w-4 h-4"></i> Create Outline</div>
                     ${messageCount >= 10 ? `
                     <div class="flex gap-1">
                         <button onclick="exportDocument(this, 'outline', 'txt', ${chatId})" 
-                                class="flex-1 p-1 text-xs rounded border border-border hover:bg-accent transition-colors">📄 .txt</button>
+                                class="flex-1 p-1 text-xs rounded border border-border hover:bg-accent transition-colors"><i data-lucide="file-text" class="w-3 h-3"></i> .txt</button>
                         <button onclick="exportDocument(this, 'outline', 'docx', ${chatId})" 
-                                class="flex-1 p-1 text-xs rounded border border-border hover:bg-accent transition-colors">📝 .docx</button>
+                                class="flex-1 p-1 text-xs rounded border border-border hover:bg-accent transition-colors"><i data-lucide="file-edit" class="w-3 h-3"></i> .docx</button>
                     </div>` :
                     `<div class="text-xs text-muted-foreground">${10 - messageCount} more messages needed</div>`}
                 </div>
