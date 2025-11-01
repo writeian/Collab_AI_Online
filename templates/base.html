@@ -53,7 +53,34 @@
         const res = await fetch('/static/components/chat/tone_critique_control.html', { credentials: 'same-origin' });
         if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
         const html = await res.text();
-        mount.innerHTML = html;
+        
+        // Wrap fetched HTML in tool-card structure
+        const template = document.createElement('template');
+        template.innerHTML = html.trim();
+        const toneMarkup = template.content.firstElementChild; // existing <details> block
+        
+        const toneCard = document.createElement('section');
+        toneCard.className = 'tool-card';
+        toneCard.id = 'tone-card';
+        
+        const toneHeader = document.createElement('div');
+        toneHeader.className = 'tool-card__header';
+        toneHeader.innerHTML = `
+          <div class="tool-card__title">
+            <i data-lucide="sliders" class="w-4 h-4"></i>
+            Tone & Critique
+          </div>
+        `;
+        
+        const toneBody = document.createElement('div');
+        toneBody.className = 'tool-card__body';
+        toneBody.appendChild(toneMarkup);
+        
+        toneCard.appendChild(toneHeader);
+        toneCard.appendChild(toneBody);
+        
+        mount.replaceChildren(toneCard);
+        
         if (window.lucide?.createIcons) lucide.createIcons();
         
         // Initialize critique tool functionality
@@ -88,6 +115,12 @@
             
             try {
               sessionStorage.setItem(`chat_${chatId}_critique`, level);
+              
+              // Dispatch tone:change event for summary update
+              document.dispatchEvent(new CustomEvent('tone:change', {
+                detail: { level: level }
+              }));
+              
               this.textContent = 'Saved!';
               setTimeout(() => {
                 this.textContent = 'Save';
@@ -102,6 +135,19 @@
               }, 2000);
             }
           });
+        }
+        
+        // Initialize summary on load with saved value
+        const chatId = getChatId();
+        const savedLevel = sessionStorage.getItem(`chat_${chatId}_critique`);
+        if (savedLevel) {
+          const level = parseInt(savedLevel);
+          slider.value = level;
+          label.textContent = levelNames[level] || 'Balanced';
+          // Dispatch initial event for summary
+          document.dispatchEvent(new CustomEvent('tone:change', {
+            detail: { level: level }
+          }));
         }
       }
       
