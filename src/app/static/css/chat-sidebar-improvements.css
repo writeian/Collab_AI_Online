@@ -83,7 +83,7 @@
 
 /* Tone critique specific styling */
 #tone-critique-mount {
-    margin-top: 1rem;
+    margin-top: 0;  /* Stack gap controls spacing now */
 }
 
 #tone-critique-mount details {
