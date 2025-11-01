@@ -2678,3 +2678,21 @@
         height: 2.75rem;
     }
 }
+
+/* Hide duplicate summary in tone component (card header shows title) */
+.tool-card__body > details > summary {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Or simpler if accessibility not a concern for this duplicate: */
+#tone-card .tool-card__body > details > summary {
+    display: none;
+}
