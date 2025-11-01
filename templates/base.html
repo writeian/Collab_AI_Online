@@ -77,7 +77,7 @@
             <i data-lucide="sliders" class="w-4 h-4"></i>
             Tone & Critique
           </div>
-          <button type="button" class="tool-card__chevron" aria-expanded="true" aria-controls="tone-body" onclick="toggleToolCard(this, 'tone-body')">
+          <button type="button" class="tool-card__chevron" aria-expanded="false" aria-controls="tone-body" onclick="toggleToolCard(this, 'tone-body')">
             <i data-lucide="chevron-down" class="w-4 h-4"></i>
           </button>
         `;
@@ -85,7 +85,7 @@
         const toneBody = document.createElement('div');
         toneBody.className = 'tool-card__body';
         toneBody.id = 'tone-body';
-        // Start open (slider visible by default)
+        toneBody.setAttribute('hidden', '');  // Start collapsed
         toneBody.appendChild(toneMarkup);
         
         toneCard.appendChild(toneHeader);
