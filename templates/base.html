@@ -62,7 +62,7 @@
         // Prepare details element (summary is hidden via CSS)
         if (toneMarkup?.tagName === 'DETAILS') {
           toneMarkup.id = 'tone-details';
-          toneMarkup.removeAttribute('open');  // Start closed
+          toneMarkup.setAttribute('open', '');  // Keep slider visible when card expands
           // Summary is already hidden via CSS sr-only pattern
         }
         
