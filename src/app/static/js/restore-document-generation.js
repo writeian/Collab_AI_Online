@@ -18,20 +18,20 @@ document.addEventListener('DOMContentLoaded', function() {
     // Count messages for progressive unlock
     const messageCount = document.querySelectorAll('.message, [class*="message"]').length;
     
-    // Create document generation HTML
+    // Create document generation HTML with tool-card structure
     const docGenHTML = `
-    <div class="px-4 py-2 border-t border-border">
-        <div class="relative">
-            <button onclick="toggleDocumentDropdown()" 
-                    class="w-full flex items-center justify-between text-sm font-medium text-foreground hover:text-primary transition-colors">
-                <div class="flex items-center gap-2">
-                    <i data-lucide="file-text" class="w-4 h-4"></i>
-                    Generate Document
-                </div>
-                <i data-lucide="chevron-down" class="w-4 h-4 dropdown-arrow transition-transform"></i>
+    <section class="tool-card" id="doc-gen-card">
+        <div class="tool-card__header">
+            <div class="tool-card__title">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                Generate Document
+            </div>
+            <button type="button" class="tool-card__chevron" aria-expanded="false" aria-controls="document-dropdown" onclick="toggleDocumentDropdown(this)">
+                <i data-lucide="chevron-down" class="w-4 h-4"></i>
             </button>
-            
-            <div id="document-dropdown" class="hidden mt-3 space-y-3">
+        </div>
+        <div class="tool-card__body" id="document-dropdown" hidden>
+            <div class="space-y-3">
                 <!-- Export Chat History -->
                 <div>
                     <div class="text-xs font-medium text-foreground mb-1">📄 Export Chat History</div>
@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         </div>
-    </div>`;
+    </section>`;
     
     // Insert into Tools section (new collapsible structure) or fallback to old location
     const docDiv = document.createElement('div');
@@ -110,13 +110,19 @@ function getChatIdFromUrl() {
     return match ? match[1] : null;
 }
 
-function toggleDocumentDropdown() {
+function toggleDocumentDropdown(button) {
     const dropdown = document.getElementById('document-dropdown');
-    const arrow = document.querySelector('.dropdown-arrow');
     
-    if (dropdown && arrow) {
-        dropdown.classList.toggle('hidden');
-        arrow.style.transform = dropdown.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+    if (dropdown && button) {
+        // Toggle hidden attribute
+        const isHidden = dropdown.hasAttribute('hidden');
+        if (isHidden) {
+            dropdown.removeAttribute('hidden');
+            button.setAttribute('aria-expanded', 'true');
+        } else {
+            dropdown.setAttribute('hidden', '');
+            button.setAttribute('aria-expanded', 'false');
+        }
     }
 }
 
