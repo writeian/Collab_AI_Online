@@ -2,7 +2,7 @@
 <div class="px-4 py-2 border-t border-border">
     <div class="relative">
         <!-- Dropdown Header Button -->
-        <button onclick="toggleDocumentDropdown()" 
+        <button onclick="toggleDocumentDropdown(this)" 
                 class="w-full flex items-center justify-between text-sm font-medium text-foreground hover:text-primary transition-colors">
             <div class="flex items-center gap-2">
                 <i data-lucide="file-text" class="w-4 h-4"></i>
@@ -80,14 +80,8 @@
 </div>
 
 <script>
-function toggleDocumentDropdown() {
-    const container = document.getElementById('document-dropdown').parentElement;
-    const dropdown = container.querySelector('#document-dropdown');
-    const arrow = container.querySelector('.dropdown-arrow');
-    
-    dropdown.classList.toggle('hidden');
-    arrow.style.transform = dropdown.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
-}
+// Toggle function now defined in restore-document-generation.js (global scope)
+// This legacy template updated to match new signature: toggleDocumentDropdown(button)
 
 function exportDocument(button, docType, format, chatId) {
     const original = button.innerHTML;
