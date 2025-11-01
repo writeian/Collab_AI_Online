@@ -165,3 +165,20 @@ function exportDocument(button, docType, format, chatId) {
         button.disabled = false; 
     }, 2000);
 }
+
+// Generic toggle function for tool cards
+function toggleToolCard(button, bodyId) {
+    const body = document.getElementById(bodyId);
+    
+    if (body && button) {
+        // Toggle visibility
+        const isHidden = body.hasAttribute('hidden');
+        if (isHidden) {
+            body.removeAttribute('hidden');
+            button.setAttribute('aria-expanded', 'true');
+        } else {
+            body.setAttribute('hidden', '');
+            button.setAttribute('aria-expanded', 'false');
+        }
+    }
+}
