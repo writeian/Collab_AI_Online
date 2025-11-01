@@ -91,11 +91,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // Priority 2: Fallback to old logic (before Room Members)
         const roomMembers = sidebar.querySelector('h3, .text-lg, [class*="member"]')?.parentElement;
         if (roomMembers) {
-            roomMembers.parentNode.insertBefore(docDiv, roomMembers);
+            // Insert section directly (not wrapper div) for consistent spacing
+            roomMembers.parentNode.insertBefore(docDiv.firstElementChild, roomMembers);
             console.log('📦 Document dropdown injected before Room Members (legacy)');
         } else {
             // Priority 3: Last resort - insert at top of sidebar
-            sidebar.insertBefore(docDiv, sidebar.firstChild);
+            // Insert section directly (not wrapper div) for consistent spacing
+            sidebar.insertBefore(docDiv.firstElementChild, sidebar.firstChild);
             console.log('📦 Document dropdown injected at sidebar top (fallback)');
         }
     }
