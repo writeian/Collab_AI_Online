@@ -101,34 +101,7 @@
                     </div>
                 </details>
                 
-                <!-- Learning Progress Assessment -->
-                <div class="learning-progress-section">
-                    <div class="flex items-center justify-between mb-2">
-                        <h4 class="text-sm font-medium text-foreground">Learning Progress</h4>
-                        <button id="assess-progress-btn" 
-                                class="text-xs px-2 py-1 bg-primary/10 text-primary rounded hover:bg-primary/20 transition-colors"
-                                onclick="assessLearningProgress()">
-                            🔍 Assess Progress
-                        </button>
-                    </div>
-                    
-                    <!-- Progress Status Display -->
-                    <div id="progress-status" class="hidden">
-                        <div id="progress-content" class="p-3 rounded-md text-xs">
-                            <!-- Progress content will be populated by JavaScript -->
-                        </div>
-                    </div>
-                    
-                    <!-- Loading State -->
-                    <div id="progress-loading" class="hidden">
-                        <div class="p-3 rounded-md text-xs text-muted-foreground">
-                            <div class="flex items-center gap-2">
-                                <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
-                                Analyzing your progress...
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
             </div>
         </div>
 
@@ -139,9 +112,43 @@
                 <span>Tools</span>
                 <i data-lucide="chevron-down" class="w-4 h-4 chevron"></i>
             </summary>
-            <div class="sidebar-panel space-y-4">
-                <!-- Document generation dropdown is injected here via restore-document-generation.js -->
-                <div id="tone-critique-mount"></div>
+            <div class="sidebar-panel">
+                <div class="tool-stack space-y-4">
+                    <!-- 1. Learning Progress Card -->
+                    <section id="learning-progress-card" class="space-y-2">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="text-sm font-medium text-foreground">Learning Progress</h4>
+                            <button id="assess-progress-btn" 
+                                    class="text-xs px-2 py-1 bg-primary/10 text-primary rounded hover:bg-primary/20 transition-colors"
+                                    onclick="assessLearningProgress()">
+                                🔍 Assess Progress
+                            </button>
+                        </div>
+                        
+                        <!-- Progress Status Display -->
+                        <div id="progress-status" class="hidden">
+                            <div id="progress-content" class="p-3 rounded-md text-xs">
+                                <!-- Progress content will be populated by JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <!-- Loading State -->
+                        <div id="progress-loading" class="hidden">
+                            <div class="p-3 rounded-md text-xs text-muted-foreground">
+                                <div class="flex items-center gap-2">
+                                    <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
+                                    Analyzing your progress...
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <!-- 2. Tone & Critique Card (injected via base.html) -->
+                    <div id="tone-critique-mount"></div>
+                    
+                    <!-- 3. Document Generation Card (injected via restore-document-generation.js) -->
+                    <div id="doc-gen-mount"></div>
+                </div>
             </div>
         </details>
 

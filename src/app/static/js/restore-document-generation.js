@@ -78,12 +78,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const docDiv = document.createElement('div');
     docDiv.innerHTML = docGenHTML;
     
-    // Priority 1: Try new Tools panel structure (Phase 1 sidebar overhaul)
-    const toolsPanel = document.querySelector('.sidebar-section[data-section="tools"] .sidebar-panel');
-    if (toolsPanel) {
-        // Insert at top of Tools panel
-        toolsPanel.insertBefore(docDiv, toolsPanel.firstChild);
-        console.log('📦 Document dropdown injected into Tools panel (new structure)');
+    // Priority 1: Try doc-gen-mount (tool-stack organization)
+    const docMount = document.getElementById('doc-gen-mount');
+    if (docMount) {
+        docMount.appendChild(docDiv);
+        console.log('📦 Document dropdown injected into doc-gen-mount (tool-stack)');
+    } else if (false) {  // Skip old toolsPanel method
+        // Fallback disabled - use legacy method below
+        console.log('⚠️ doc-gen-mount not found, using fallback');
     } else {
         // Priority 2: Fallback to old logic (before Room Members)
         const roomMembers = sidebar.querySelector('h3, .text-lg, [class*="member"]')?.parentElement;
