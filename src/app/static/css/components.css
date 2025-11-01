@@ -2608,7 +2608,7 @@
     border: 1px solid hsl(var(--border));
     border-radius: 0.75rem;
     background: hsl(var(--card));
-    padding: 0.875rem;  /* 14px - Tighter card padding */
+    padding: 0.75rem;  /* 12px - compact card padding */
     box-shadow: 0 4px 12px rgb(15 23 42 / 0.08);
 }
 
@@ -2617,7 +2617,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;  /* match reduced padding */
 }
 
 .tool-card__title {
