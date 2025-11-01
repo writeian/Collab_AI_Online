@@ -81,7 +81,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Priority 1: Try doc-gen-mount (tool-stack organization)
     const docMount = document.getElementById('doc-gen-mount');
     if (docMount) {
-        docMount.appendChild(docDiv);
+        // Append the section directly (not the wrapper div) so tool-stack spacing works
+        docMount.appendChild(docDiv.firstElementChild);
         console.log('📦 Document dropdown injected into doc-gen-mount (tool-stack)');
     } else if (false) {  // Skip old toolsPanel method
         // Fallback disabled - use legacy method below
