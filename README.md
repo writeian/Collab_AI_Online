@@ -506,3 +506,23 @@ Collab_AI_Online/
 
 **Type Coverage**: 85% of functions have comprehensive type hints for better code quality and IDE support.
  # Force redeploy to fix import issue - Wed Sep 17 05:56:01 PDT 2025
+
+---
+
+## Recent Updates (Oct-Nov 2025)
+
+### Sidebar Overhaul (Phases 1-3)
+- **Collapsible sections**: Tools, Participants, Other Chats with smart defaults
+- **Unified tool cards**: Learning Progress, Tone & Critique, Document Generation
+- **Dynamic dashboard**: Tools summary shows current tone and progress status at a glance
+- **Professional polish**: Lucide icons, 8pt spacing rhythm, accessible ARIA patterns
+- **Mobile optimized**: Scrollable drawer, 44px tap targets, responsive spacing
+
+### Performance & UX
+- **Adaptive polling**: 5s when active, 90s when idle; auto-wake on new messages
+- **iPhone scroll fixed**: Native iOS behavior, no scroll traps
+- **External JS architecture**: -815 lines of inline code removed
+- **Clean console**: All accessibility and integration issues resolved
+
+See `docs/SESSION-SUMMARY-2025-10-28.md` and `docs/PHASE3-tool-header-alignment.md` for complete details.
+
