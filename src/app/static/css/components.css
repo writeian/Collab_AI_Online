@@ -582,6 +582,20 @@
   font-weight: 500;
   color: hsl(var(--foreground));
   transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.system-instructions summary .chevron {
+  transition: transform 0.2s ease;
+  color: hsl(var(--muted-foreground));
+}
+
+.system-instructions[open] summary .chevron {
+  transform: rotate(180deg);
+  color: hsl(var(--foreground));
 }
 
 .system-instructions summary:hover {
