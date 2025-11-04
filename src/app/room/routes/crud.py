@@ -523,13 +523,25 @@ def create_chat(room_id: int) -> Any:
         return redirect(url_for("room.room_crud.view_room", room_id=room.id))
 
     if request.method == "POST":
-        title = request.form["title"].strip()
-        mode = request.form.get("mode", "explore")
-        google_doc_url = request.form.get("google_doc_url", "").strip()
+        is_json = request.is_json or request.headers.get('Content-Type', '').startswith('application/json')
+        payload = request.get_json(silent=True) if is_json else None
+
+        if payload is not None:
+            title = (payload.get("title") or "").strip()
+            mode = payload.get("mode", "explore")
+            google_doc_url = (payload.get("google_doc_url") or "").strip()
+        else:
+            title = (request.form.get("title") or "").strip()
+            mode = request.form.get("mode", "explore")
+            google_doc_url = request.form.get("google_doc_url", "").strip()
 
         if not title:
-            flash("Chat title is required.")
-            return redirect(url_for("room.room_crud.create_chat", room_id=room.id))
+            title = f"New {mode.title()} Chat"
+            if not title.strip():
+                if payload is not None:
+                    return jsonify({"success": False, "error": "Chat title is required."}), 400
+                flash("Chat title is required.")
+                return redirect(url_for("room.room_crud.create_chat", room_id=room.id))
 
         # Validate Google Doc URL if provided
         if google_doc_url:
@@ -624,6 +636,9 @@ def create_chat(room_id: int) -> Any:
                 db.session.commit()
 
                 flash("Google Doc content imported successfully!")
+
+        if payload is not None:
+            return jsonify({"success": True, "chat_id": chat_obj.id})
 
         return redirect(url_for("chat.view_chat", chat_id=chat_obj.id))
 

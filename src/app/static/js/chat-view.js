@@ -1012,19 +1012,57 @@
         progressStatus.classList.remove('hidden');
     }
     
-    function createNextStepChat() {
-        // Redirect to create chat page with next step pre-selected
+    async function createNextStepChat() {
+        const chatContainer = document.querySelector('.chat-container');
+        if (!chatContainer) {
+            console.error('Chat container not found');
+            return;
+        }
+
+        const roomId = chatContainer.dataset.roomId;
+        const currentMode = chatContainer.dataset.chatMode || 'explore';
+
+        if (!roomId) {
+            console.error('Room ID missing on chat container');
+            return;
+        }
+
         const nextStep = getNextStepFromRecommendation();
-        if (nextStep) {
-            const chatContainer = document.querySelector('.chat-container');
-            const roomId = chatContainer.dataset.roomId;
-            const createChatUrl = `/room/${roomId}/chat/create?mode=${nextStep.key}`;
-            window.location.href = createChatUrl;
-        } else {
-            // Fallback to regular create chat page
-            const chatContainer = document.querySelector('.chat-container');
-            const roomId = chatContainer.dataset.roomId;
-            window.location.href = `/room/${roomId}/chat/create`;
+        const mode = nextStep ? nextStep.key : currentMode || 'explore';
+        const title = nextStep
+            ? `Next Step: ${nextStep.label}`
+            : `New ${mode.charAt(0).toUpperCase() + mode.slice(1)} Chat`;
+
+        try {
+            const response = await fetch(`/room/${roomId}/chat/create`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    title,
+                    mode,
+                    source: 'next_step'
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Request failed with status ${response.status}`);
+            }
+
+            const data = await response.json();
+            if (data?.success && data?.chat_id) {
+                window.location.href = `/chat/${data.chat_id}`;
+                return;
+            }
+
+            // Unexpected response shape – fallback to legacy page
+            console.warn('Unexpected response creating chat:', data);
+            window.location.href = `/room/${roomId}/chat/create?mode=${mode}`;
+        } catch (error) {
+            console.error('Failed to create next step chat:', error);
+            // Fallback to legacy flow on error
+            window.location.href = `/room/${roomId}/chat/create?mode=${mode}`;
         }
     }
     
