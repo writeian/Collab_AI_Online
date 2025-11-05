@@ -543,6 +543,15 @@ def create_chat(room_id: int) -> Any:
                 flash("Chat title is required.")
                 return redirect(url_for("room.room_crud.create_chat", room_id=room.id))
 
+        if payload is not None and payload.get("source") == "next_step":
+            existing_chat = (
+                Chat.query.filter_by(room_id=room.id, mode=mode)
+                .order_by(Chat.created_at.desc())
+                .first()
+            )
+            if existing_chat:
+                return jsonify({"success": True, "chat_id": existing_chat.id, "existing": True})
+
         # Validate Google Doc URL if provided
         if google_doc_url:
             is_valid, doc_id_or_error = validate_google_docs_url(google_doc_url)

@@ -24,7 +24,7 @@ from flask import (
 )
 from datetime import datetime
 from src.app import db, markdown_filter, limiter
-from typing import Any
+from typing import Any, Dict, List
 from src.models import Chat, Message, User, PromptRecord, Room, Comment, RoomMember
 from src.utils.openai_utils import get_ai_response, get_modes_for_room, BASE_MODES
 from src.utils.progression import compute_suggestion, should_show_with_exponential_cooldown
@@ -335,6 +335,26 @@ def view_chat(chat_id: int) -> Any:
 
         # Get dynamic modes for this chat's room
         modes = get_modes_for_room(chat_obj.room)
+        mode_order = list(modes.keys())
+        room_chat_map: Dict[str, List[int]] = {}
+        try:
+            room_chats = (
+                Chat.query.filter_by(room_id=chat_obj.room_id)
+                .order_by(Chat.created_at.asc())
+                .all()
+            )
+        except Exception:
+            room_chats = []
+        if room_chats:
+            for rc in room_chats:
+                if not rc.mode:
+                    continue
+                room_chat_map.setdefault(rc.mode, []).append(rc.id)
+
+        mode_labels = {
+            key: getattr(mode_obj, "label", key) or key
+            for key, mode_obj in modes.items()
+        }
 
         # Get invitation count for navigation
         from src.app.room.utils.room_utils import get_invitation_count
@@ -364,6 +384,9 @@ def view_chat(chat_id: int) -> Any:
             other_chats=other_chats,
             invitation_count=invitation_count,
             suggestion=suggestion,
+            mode_order=mode_order,
+            mode_labels=mode_labels,
+            room_chat_map=room_chat_map,
         )
     except Exception as e:
         current_app.logger.error(f"Error in chat view for chat_id {chat_id}: {str(e)}")

@@ -69,7 +69,10 @@
 <div class="flex bg-background chat-container h-full"
      data-chat-id="{{ chat.id }}"
      data-room-id="{{ room.id }}"
-     data-chat-mode="{{ chat.mode }}">
+     data-chat-mode="{{ chat.mode }}"
+     data-mode-order='{{ mode_order|tojson }}'
+     data-mode-labels='{{ mode_labels|tojson }}'
+     data-mode-map='{{ room_chat_map|tojson }}'>
     <!-- Sidebar -->
     <div class="w-80 chat-sidebar flex flex-col h-full max-h-full">
         <!-- Header -->

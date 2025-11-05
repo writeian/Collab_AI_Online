@@ -858,6 +858,100 @@
     });
     
     // Learning Progress Assessment Functions
+    let lastProgressRecommendation = null;
+    const DEFAULT_MODE_ORDER = ['explore', 'focus', 'context', 'proposal', 'outline', 'draft', 'revise', 'evidence', 'citation', 'reflect'];
+
+    function getChatContainer() {
+        return document.querySelector('.chat-container');
+    }
+
+    function parseDatasetJson(value, fallback = null) {
+        if (!value) return fallback;
+        try {
+            return JSON.parse(value);
+        } catch (e) {
+            console.warn('Unable to parse dataset JSON value', value, e);
+            return fallback;
+        }
+    }
+
+    let cachedModeOrder = null;
+    function getModeOrder() {
+        if (cachedModeOrder) return cachedModeOrder;
+        const container = getChatContainer();
+        if (!container) return DEFAULT_MODE_ORDER;
+        const parsed = parseDatasetJson(container.dataset.modeOrder, null);
+        cachedModeOrder = Array.isArray(parsed) && parsed.length ? parsed : DEFAULT_MODE_ORDER;
+        return cachedModeOrder;
+    }
+
+    let cachedModeLabels = null;
+    function getModeLabels() {
+        if (cachedModeLabels) return cachedModeLabels;
+        const container = getChatContainer();
+        if (!container) return {};
+        const parsed = parseDatasetJson(container.dataset.modeLabels, {});
+        cachedModeLabels = parsed && typeof parsed === 'object' ? parsed : {};
+        return cachedModeLabels;
+    }
+
+    let cachedModeMap = null;
+    function getModeChatMap() {
+        if (cachedModeMap) return cachedModeMap;
+        const container = getChatContainer();
+        if (!container) return {};
+        const parsed = parseDatasetJson(container.dataset.modeMap, {});
+        cachedModeMap = parsed && typeof parsed === 'object' ? parsed : {};
+        return cachedModeMap;
+    }
+
+    function getExistingChatIdForMode(mode) {
+        if (!mode) return null;
+        const map = getModeChatMap();
+        const entries = map && map[mode];
+        if (!entries) return null;
+        if (Array.isArray(entries) && entries.length > 0) {
+            const last = entries[entries.length - 1];
+            if (typeof last === 'number') return last;
+            if (last && typeof last === 'object') {
+                return last.id || last.chat_id || null;
+            }
+        } else if (typeof entries === 'number') {
+            return entries;
+        }
+        return null;
+    }
+
+    function showRoomCompletionMessage() {
+        const progressStatus = document.getElementById('progress-status');
+        const progressContent = document.getElementById('progress-content');
+        const assessBtn = document.getElementById('assess-progress-btn');
+        updateProgressSummary('Room complete');
+
+        if (progressContent) {
+            progressContent.innerHTML = `
+                <div class="bg-emerald-50 border border-emerald-200 rounded-md p-3">
+                    <div class="flex items-start gap-2">
+                        <div class="text-emerald-600 text-lg">🎉</div>
+                        <div class="flex-1">
+                            <p class="font-medium text-emerald-800 mb-1">Congratulations! Room completed</p>
+                            <p class="text-emerald-700 text-xs">You’ve finished every step in this learning journey. Feel free to review past chats or start a new room to keep exploring.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (progressStatus) {
+            progressStatus.classList.remove('hidden');
+        }
+
+        if (assessBtn) {
+            assessBtn.disabled = true;
+            assessBtn.textContent = 'Room completed';
+        }
+    }
+
     function assessLearningProgress() {
         console.log('🔍 Assess Progress button clicked!');
         
@@ -875,7 +969,7 @@
         progressLoading.classList.remove('hidden');
         
         // Make API request
-        const chatContainer = document.querySelector('.chat-container');
+        const chatContainer = getChatContainer();
         console.log('Chat container:', chatContainer);
         console.log('Dataset:', chatContainer ? chatContainer.dataset : 'No container found');
         
@@ -921,6 +1015,7 @@
     function displayProgressResult(recommendation) {
         const progressStatus = document.getElementById('progress-status');
         const progressContent = document.getElementById('progress-content');
+        lastProgressRecommendation = recommendation || null;
         
         // Update Tools summary with assessment result
         const summaryLabel = recommendation && recommendation.ready ? 'Ready to advance' : 
@@ -997,6 +1092,7 @@
     function displayProgressError(error) {
         const progressStatus = document.getElementById('progress-status');
         const progressContent = document.getElementById('progress-content');
+        lastProgressRecommendation = null;
         
         progressContent.innerHTML = `
             <div class="bg-red-50 border border-red-200 rounded-md p-3">
@@ -1013,7 +1109,7 @@
     }
     
     async function createNextStepChat() {
-        const chatContainer = document.querySelector('.chat-container');
+        const chatContainer = getChatContainer();
         if (!chatContainer) {
             console.error('Chat container not found');
             return;
@@ -1028,10 +1124,23 @@
         }
 
         const nextStep = getNextStepFromRecommendation();
-        const mode = nextStep ? nextStep.key : currentMode || 'explore';
-        const title = nextStep
-            ? `Next Step: ${nextStep.label}`
-            : `New ${mode.charAt(0).toUpperCase() + mode.slice(1)} Chat`;
+        if (!nextStep) {
+            console.log('No next step available - room complete');
+            showRoomCompletionMessage();
+            return;
+        }
+
+        const mode = nextStep.key || currentMode || 'explore';
+        const modeLabels = getModeLabels();
+        const label = nextStep.label || modeLabels[mode] || mode;
+        const existingChatId = getExistingChatIdForMode(mode);
+        if (existingChatId) {
+            console.log(`Next step chat already exists for mode ${mode} (chat ${existingChatId}) - redirecting`);
+            window.location.href = `/chat/${existingChatId}`;
+            return;
+        }
+
+        const title = `Next Step: ${label}`;
 
         try {
             const response = await fetch(`/room/${roomId}/chat/create`, {
@@ -1055,6 +1164,10 @@
                 window.location.href = `/chat/${data.chat_id}`;
                 return;
             }
+            if (data?.existing && data?.chat_id) {
+                window.location.href = `/chat/${data.chat_id}`;
+                return;
+            }
 
             // Unexpected response shape – fallback to legacy page
             console.warn('Unexpected response creating chat:', data);
@@ -1067,19 +1180,26 @@
     }
     
     function getNextStepFromRecommendation() {
-        // This would be populated from the recommendation data
-        // For now, we'll use a simple approach
-        const chatContainer = document.querySelector('.chat-container');
-        const currentMode = chatContainer.dataset.chatMode;
-        const modeOrder = ['explore', 'focus', 'context', 'proposal', 'outline', 'draft', 'revise', 'evidence', 'citation', 'reflect'];
+        if (lastProgressRecommendation && lastProgressRecommendation.next_step && lastProgressRecommendation.next_step.key) {
+            return lastProgressRecommendation.next_step;
+        }
+
+        const chatContainer = getChatContainer();
+        const currentMode = chatContainer?.dataset?.chatMode;
+        if (!currentMode) return null;
+
+        const modeOrder = getModeOrder();
+        const labels = getModeLabels();
         const currentIndex = modeOrder.indexOf(currentMode);
-        
+
         if (currentIndex >= 0 && currentIndex < modeOrder.length - 1) {
+            const key = modeOrder[currentIndex + 1];
             return {
-                key: modeOrder[currentIndex + 1],
-                label: `Step ${currentIndex + 2}`
+                key,
+                label: labels[key] || `Step ${currentIndex + 2}`
             };
         }
+
         return null;
     }
 
