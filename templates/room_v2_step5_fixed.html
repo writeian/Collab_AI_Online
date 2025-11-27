@@ -31,7 +31,7 @@
       
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <!-- Study Group -->
-        <a href="{{ url_for('room.template_wizard', template_id='study-group') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
+        <a href="{{ url_for('room.room_templates.template_wizard', template_type='study-group') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
           <div class="flex items-center mb-3">
             <i data-lucide="book-open" class="w-5 h-5 text-blue-600 mr-2"></i>
             <h5 class="font-semibold text-foreground">Study Group</h5>
@@ -41,7 +41,7 @@
         </a>
         
         <!-- Business Hub -->
-        <a href="{{ url_for('room.template_wizard', template_id='business-hub') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
+        <a href="{{ url_for('room.room_templates.template_wizard', template_type='business-hub') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
           <div class="flex items-center mb-3">
             <i data-lucide="briefcase" class="w-5 h-5 text-green-600 mr-2"></i>
             <h5 class="font-semibold text-foreground">Business Hub</h5>
@@ -51,7 +51,7 @@
         </a>
         
         <!-- Creative Studio -->
-        <a href="{{ url_for('room.template_wizard', template_id='creative-studio') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
+        <a href="{{ url_for('room.room_templates.template_wizard', template_type='creative-studio') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
           <div class="flex items-center mb-3">
             <i data-lucide="palette" class="w-5 h-5 text-purple-600 mr-2"></i>
             <h5 class="font-semibold text-foreground">Creative Studio</h5>
@@ -61,7 +61,7 @@
         </a>
         
         <!-- Writing Workshop -->
-        <a href="{{ url_for('room.template_wizard', template_id='writing-workshop') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
+        <a href="{{ url_for('room.room_templates.template_wizard', template_type='writing-workshop') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
           <div class="flex items-center mb-3">
             <i data-lucide="pen-tool" class="w-5 h-5 text-red-600 mr-2"></i>
             <h5 class="font-semibold text-foreground">Writing Workshop</h5>
@@ -71,7 +71,7 @@
         </a>
         
         <!-- Learning Lab -->
-        <a href="{{ url_for('room.template_wizard', template_id='learning-lab') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
+        <a href="{{ url_for('room.room_templates.template_wizard', template_type='learning-lab') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
           <div class="flex items-center mb-3">
             <i data-lucide="flask-conical" class="w-5 h-5 text-amber-600 mr-2"></i>
             <h5 class="font-semibold text-foreground">Learning Lab</h5>
@@ -81,7 +81,7 @@
         </a>
         
         <!-- Community Space -->
-        <a href="{{ url_for('room.template_wizard', template_id='community-space') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
+        <a href="{{ url_for('room.room_templates.template_wizard', template_type='community-space') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
           <div class="flex items-center mb-3">
             <i data-lucide="users" class="w-5 h-5 text-indigo-600 mr-2"></i>
             <h5 class="font-semibold text-foreground">Community Space</h5>
@@ -91,7 +91,7 @@
         </a>
         
         <!-- Academic Essay -->
-        <a href="{{ url_for('room.template_wizard', template_id='academic-essay') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
+        <a href="{{ url_for('room.room_templates.template_wizard', template_type='academic-essay') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
           <div class="flex items-center mb-3">
             <i data-lucide="file-text" class="w-5 h-5 text-teal-600 mr-2"></i>
             <h5 class="font-semibold text-foreground">Academic Essay</h5>
