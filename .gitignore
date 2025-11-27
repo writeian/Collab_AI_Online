@@ -82,6 +82,16 @@ tests/*.log
 scripts/*.tmp
 scripts/*.log
 
+# Production data exports (NEVER commit)
+*.csv
+*_sample.csv
+*_export.csv
+*_dump.sql
+scripts/*_sample.py
+scripts/export_*.py
+scripts/list_tables.py
+scripts/check_*.py
+
 # Cleanup logs
 *_cleanup_log.json
 *_fix_log.json

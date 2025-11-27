@@ -2,6 +2,9 @@
 """
 Migrate existing room descriptions to use the new smart description logic.
 Updates rooms that have the generic template description with better descriptions based on their goals.
+
+SECURITY: This script uses Flask app context to access the database.
+It reads credentials from environment variables via app.config, NOT hardcoded values.
 """
 
 import sys
