@@ -129,54 +129,73 @@
     </div>
     
     <!-- FIXED: Proper Grid Layout -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-total-rooms="{{ total_rooms }}">
       {% for room_data in sorted_rooms %}
       {% set room = room_data.room %}
       {% set is_owner = room_data.is_owner %}
       {% set stats = room_data.stats %}
       {% set display_description = room.description or room.short_description %}
       
+      {% set status_label = 'Quiet' %}
+      {% set status_class = 'bg-gray-100 text-gray-500' %}
+      {% if stats.has_unread %}
+        {% set status_label = 'New' %}
+        {% set status_class = 'bg-red-100 text-red-700' %}
+      {% elif stats.recent_chats > 0 or stats.recent_messages > 0 %}
+        {% set status_label = 'Active' %}
+        {% set status_class = 'bg-orange-100 text-orange-700' %}
+      {% endif %}
+      
       <!-- Individual Room Card -->
-      <div class="bg-white border border-gray-200 rounded-lg p-4 transition-all duration-200 cursor-pointer
+      <div class="bg-white border border-gray-200 rounded-lg transition-all duration-200 cursor-pointer room-card
                   hover:bg-gradient-to-r hover:from-amber-50 hover:to-yellow-50 hover:border-amber-200 hover:shadow-lg hover:-translate-y-1
-                  {% if stats.has_unread %}ring-2 ring-red-200 bg-red-50/30{% endif %}">
+                  {% if stats.has_unread %}ring-2 ring-red-200 bg-red-50/30{% endif %}"
+           data-room-card data-room-id="{{ room.id }}">
         
-        <!-- Header: Title Only -->
-        <div class="flex items-center justify-between mb-3">
-          <h4 class="text-xl font-bold text-blue-600 hover:text-blue-800 transition-colors tracking-tight">
+        <!-- Collapsible Header -->
+        <div class="flex items-start justify-between gap-3 mb-3 room-card__header">
+          <div class="flex-1 min-w-0">
             <a href="{{ url_for('room.room_crud.view_room', room_id=room.id) }}" class="block">
-              {{ room.name }}
+              <h4 class="text-xl font-bold text-blue-600 hover:text-blue-800 transition-colors tracking-tight truncate">
+                {{ room.name }}
+              </h4>
             </a>
-          </h4>
-          
-          <!-- Unread Count (if any) -->
-          {% if stats.has_unread %}
-            <span class="bg-red-500 text-white text-xs px-3 py-1 rounded-full font-medium">
-              {{ stats.unread_messages }} new
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="text-xs font-semibold px-2.5 py-1 rounded-full {{ status_class }}">
+              {{ status_label }}
             </span>
-          {% endif %}
+            <button type="button"
+                    class="p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors room-card__toggle"
+                    aria-expanded="true"
+                    aria-controls="room-card-body-{{ room.id }}"
+                    data-room-toggle="{{ room.id }}">
+              <i data-lucide="chevron-down" class="w-4 h-4 room-card__chevron"></i>
+            </button>
+          </div>
         </div>
         
-        <!-- Description -->
-        {% if display_description %}
-        <p class="text-base text-gray-700 leading-relaxed mb-4">
-          {{ display_description }}
-        </p>
-        {% endif %}
-        
-        <!-- Activity Status -->
-        <div class="flex justify-end mb-4">
-          {% if stats.has_unread %}
-            <span class="text-red-600 text-sm font-medium px-3 py-1.5 bg-red-50 rounded-full">New messages!</span>
-          {% elif stats.recent_chats > 0 or stats.recent_messages > 0 %}
-            <span class="text-orange-600 text-sm font-medium px-3 py-1.5 bg-orange-50 rounded-full">Active</span>
-          {% else %}
-            <span class="text-gray-400 text-sm px-3 py-1.5 bg-gray-50 rounded-full">Quiet</span>
+        <div class="room-card__body" id="room-card-body-{{ room.id }}">
+          <!-- Description -->
+          {% if display_description %}
+          <p class="text-base text-gray-700 leading-relaxed mb-4">
+            {{ display_description }}
+          </p>
           {% endif %}
-        </div>
-        
-        <!-- Three Collapsible Sections -->
-        <div class="space-y-2">
+          
+          <!-- Activity Status -->
+          <div class="flex justify-end mb-4">
+            {% if stats.has_unread %}
+              <span class="text-red-600 text-sm font-medium px-3 py-1.5 bg-red-50 rounded-full">New messages!</span>
+            {% elif stats.recent_chats > 0 or stats.recent_messages > 0 %}
+              <span class="text-orange-600 text-sm font-medium px-3 py-1.5 bg-orange-50 rounded-full">Active</span>
+            {% else %}
+              <span class="text-gray-400 text-sm px-3 py-1.5 bg-gray-50 rounded-full">Quiet</span>
+            {% endif %}
+          </div>
+          
+          <!-- Three Collapsible Sections -->
+          <div class="space-y-2">
           
           <!-- 1. Activity Overview -->
           <div class="border border-blue-200 rounded-lg">
@@ -320,7 +339,74 @@
   
 </div>
 
+<style>
+.room-card {
+  padding: 1rem;
+}
+.room-card.collapsed .room-card__body {
+  display: none;
+}
+.room-card__chevron {
+  transition: transform 0.2s ease;
+}
+.room-card.collapsed .room-card__chevron {
+  transform: rotate(-90deg);
+}
+.room-card__toggle:focus-visible {
+  outline: 2px solid rgba(59, 130, 246, 0.6);
+  outline-offset: 2px;
+}
+</style>
+
 <script>
+document.addEventListener('DOMContentLoaded', () => {
+  const grid = document.querySelector('[data-total-rooms]');
+  const totalRooms = grid ? parseInt(grid.dataset.totalRooms || '0', 10) : 0;
+  const shouldCollapseByDefault = Number.isFinite(totalRooms) && totalRooms > 3;
+
+  const cards = document.querySelectorAll('[data-room-card]');
+  cards.forEach((card) => {
+    const toggle = card.querySelector('[data-room-toggle]');
+    const body = card.querySelector('.room-card__body');
+    if (!toggle || !body) return;
+
+    const applyState = (expanded) => {
+      if (expanded) {
+        card.classList.remove('collapsed');
+        toggle.setAttribute('aria-expanded', 'true');
+      } else {
+        card.classList.add('collapsed');
+        toggle.setAttribute('aria-expanded', 'false');
+      }
+    };
+
+    applyState(!shouldCollapseByDefault);
+
+    const handleToggle = () => {
+      const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+      applyState(!isExpanded);
+    };
+
+    toggle.addEventListener('click', (event) => {
+      event.stopPropagation();
+      handleToggle();
+    });
+
+    const header = card.querySelector('.room-card__header');
+    if (header) {
+      header.addEventListener('click', (event) => {
+        if (event.target.closest('a')) return;
+        if (event.target.closest('.room-card__toggle')) return;
+        handleToggle();
+      });
+    }
+  });
+
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+});
+
 function showTemplateWizards() {
   document.getElementById('template-wizards-existing').classList.remove('hidden');
   document.getElementById('template-wizards-existing').scrollIntoView({ behavior: 'smooth', block: 'start' });
