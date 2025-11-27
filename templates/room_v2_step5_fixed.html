@@ -31,7 +31,7 @@
       
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <!-- Study Group -->
-        <a href="/room/template/study-group" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
+        <a href="{{ url_for('room.template_wizard', template_id='study-group') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
           <div class="flex items-center mb-3">
             <i data-lucide="book-open" class="w-5 h-5 text-blue-600 mr-2"></i>
             <h5 class="font-semibold text-foreground">Study Group</h5>
@@ -41,7 +41,7 @@
         </a>
         
         <!-- Business Hub -->
-        <a href="/room/template/business-hub" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
+        <a href="{{ url_for('room.template_wizard', template_id='business-hub') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
           <div class="flex items-center mb-3">
             <i data-lucide="briefcase" class="w-5 h-5 text-green-600 mr-2"></i>
             <h5 class="font-semibold text-foreground">Business Hub</h5>
@@ -51,7 +51,7 @@
         </a>
         
         <!-- Creative Studio -->
-        <a href="/room/template/creative-studio" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
+        <a href="{{ url_for('room.template_wizard', template_id='creative-studio') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
           <div class="flex items-center mb-3">
             <i data-lucide="palette" class="w-5 h-5 text-purple-600 mr-2"></i>
             <h5 class="font-semibold text-foreground">Creative Studio</h5>
@@ -61,7 +61,7 @@
         </a>
         
         <!-- Writing Workshop -->
-        <a href="/room/template/writing-workshop" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
+        <a href="{{ url_for('room.template_wizard', template_id='writing-workshop') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
           <div class="flex items-center mb-3">
             <i data-lucide="pen-tool" class="w-5 h-5 text-red-600 mr-2"></i>
             <h5 class="font-semibold text-foreground">Writing Workshop</h5>
@@ -71,7 +71,7 @@
         </a>
         
         <!-- Learning Lab -->
-        <a href="/room/template/learning-lab" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
+        <a href="{{ url_for('room.template_wizard', template_id='learning-lab') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
           <div class="flex items-center mb-3">
             <i data-lucide="flask-conical" class="w-5 h-5 text-amber-600 mr-2"></i>
             <h5 class="font-semibold text-foreground">Learning Lab</h5>
@@ -81,7 +81,7 @@
         </a>
         
         <!-- Community Space -->
-        <a href="/room/template/community-space" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
+        <a href="{{ url_for('room.template_wizard', template_id='community-space') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
           <div class="flex items-center mb-3">
             <i data-lucide="users" class="w-5 h-5 text-indigo-600 mr-2"></i>
             <h5 class="font-semibold text-foreground">Community Space</h5>
@@ -91,7 +91,7 @@
         </a>
         
         <!-- Academic Essay -->
-        <a href="/room/template/academic-essay" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
+        <a href="{{ url_for('room.template_wizard', template_id='academic-essay') }}" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all hover:scale-105 cursor-pointer">
           <div class="flex items-center mb-3">
             <i data-lucide="file-text" class="w-5 h-5 text-teal-600 mr-2"></i>
             <h5 class="font-semibold text-foreground">Academic Essay</h5>
@@ -150,7 +150,7 @@
       <div class="bg-white border border-gray-200 rounded-lg transition-all duration-200 cursor-pointer room-card
                   hover:bg-gradient-to-r hover:from-amber-50 hover:to-yellow-50 hover:border-amber-200 hover:shadow-lg hover:-translate-y-1
                   {% if stats.has_unread %}ring-2 ring-red-200 bg-red-50/30{% endif %}"
-           data-room-card data-room-id="{{ room.id }}">
+           data-room-card data-room-id="{{ room.id }}" data-room-index="{{ loop.index0 }}">
         
         <!-- Collapsible Header -->
         <div class="flex items-start justify-between gap-3 mb-3 room-card__header">
@@ -200,14 +200,17 @@
           <!-- 1. Activity Overview -->
           <div class="border border-blue-200 rounded-lg">
             <button onclick="toggleSection({{ room.id }}, 'activity')" 
-                    class="w-full flex items-center justify-between p-3 bg-blue-50 hover:bg-blue-100 transition-colors">
+                    class="w-full flex items-center justify-between p-3 bg-blue-50 hover:bg-blue-100 transition-colors"
+                    id="activity-button-{{ room.id }}"
+                    aria-expanded="false"
+                    aria-controls="activity-{{ room.id }}">
               <div class="flex items-center gap-2 text-sm font-semibold text-blue-900 uppercase tracking-wide">
                 <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
                 Activity Overview
               </div>
               <i data-lucide="chevron-down" class="w-4 h-4 transition-transform" id="activity-chevron-{{ room.id }}"></i>
             </button>
-            <div id="activity-{{ room.id }}" class="hidden p-3 border-t border-blue-200">
+            <div id="activity-{{ room.id }}" class="hidden p-3 border-t border-blue-200" role="region" aria-labelledby="activity-button-{{ room.id }}">
               <div class="text-blue-800 space-y-2">
                 <div class="flex items-center justify-between">
                   <span class="text-sm text-blue-700">Chats:</span>
@@ -223,7 +226,7 @@
                 </div>
                 <div class="flex items-center justify-between">
                   <span class="text-sm text-blue-700">Last activity:</span>
-                  <span class="text-sm font-mono">{{ stats.last_activity.strftime('%m/%d/%y %H:%M') }}</span>
+                  <span class="text-sm font-mono">{{ stats.last_activity.strftime('%m/%d/%y %H:%M') if stats.last_activity else 'Never' }}</span>
                 </div>
                 {% if stats.has_unread %}
                 <div class="flex items-center justify-between text-red-700 font-medium bg-red-50 px-2 py-1 rounded">
@@ -239,14 +242,17 @@
           {% if room.goals %}
           <div class="border border-green-200 rounded-lg">
             <button onclick="toggleSection({{ room.id }}, 'goals')" 
-                    class="w-full flex items-center justify-between p-3 bg-green-50 hover:bg-green-100 transition-colors">
+                    class="w-full flex items-center justify-between p-3 bg-green-50 hover:bg-green-100 transition-colors"
+                    id="goals-button-{{ room.id }}"
+                    aria-expanded="false"
+                    aria-controls="goals-{{ room.id }}">
               <div class="flex items-center gap-2 text-sm font-semibold text-green-900 uppercase tracking-wide">
                 <i data-lucide="target" class="w-4 h-4"></i>
                 Learning Goals
               </div>
               <i data-lucide="chevron-down" class="w-4 h-4 transition-transform" id="goals-chevron-{{ room.id }}"></i>
             </button>
-            <div id="goals-{{ room.id }}" class="hidden px-3 pb-3 border-t border-green-200">
+            <div id="goals-{{ room.id }}" class="hidden px-3 pb-3 border-t border-green-200" role="region" aria-labelledby="goals-button-{{ room.id }}">
               <div class="text-green-800 text-sm leading-relaxed whitespace-pre-line">
                 {{ room.goals }}
               </div>
@@ -257,14 +263,17 @@
           <!-- 3. Room Management -->
           <div class="border border-gray-200 rounded-lg">
             <button onclick="toggleSection({{ room.id }}, 'management')" 
-                    class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition-colors">
+                    class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition-colors"
+                    id="management-button-{{ room.id }}"
+                    aria-expanded="false"
+                    aria-controls="management-{{ room.id }}">
               <div class="flex items-center gap-2 text-sm font-semibold text-gray-900 uppercase tracking-wide">
                 <i data-lucide="settings" class="w-4 h-4"></i>
                 Room Management
               </div>
               <i data-lucide="chevron-down" class="w-4 h-4 transition-transform" id="management-chevron-{{ room.id }}"></i>
             </button>
-            <div id="management-{{ room.id }}" class="hidden p-3 border-t border-gray-200">
+            <div id="management-{{ room.id }}" class="hidden p-3 border-t border-gray-200" role="region" aria-labelledby="management-button-{{ room.id }}">
               <div class="text-gray-800 space-y-3">
                 <!-- Room Info -->
                 <div class="space-y-1">
@@ -366,13 +375,19 @@
 document.addEventListener('DOMContentLoaded', () => {
   const grid = document.querySelector('[data-total-rooms]');
   const totalRooms = grid ? parseInt(grid.dataset.totalRooms || '0', 10) : 0;
-  const shouldCollapseByDefault = Number.isFinite(totalRooms) && totalRooms > 3;
 
   const cards = document.querySelectorAll('[data-room-card]');
   cards.forEach((card) => {
     const toggle = card.querySelector('[data-room-toggle]');
     const body = card.querySelector('.room-card__body');
     if (!toggle || !body) return;
+    
+    // Get room index (0-based)
+    const roomIndex = parseInt(card.dataset.roomIndex || '0', 10);
+    
+    // If >6 rooms, collapse all except first 3 (most recent)
+    // Otherwise, expand all
+    const shouldExpand = totalRooms <= 6 || roomIndex < 3;
 
     const applyState = (expanded) => {
       if (expanded) {
@@ -384,7 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     };
 
-    applyState(!shouldCollapseByDefault);
+    applyState(shouldExpand);
 
     const handleToggle = () => {
       const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
@@ -423,15 +438,18 @@ function hideTemplateWizards() {
 function toggleSection(roomId, sectionType) {
     const section = document.getElementById(`${sectionType}-${roomId}`);
     const chevron = document.getElementById(`${sectionType}-chevron-${roomId}`);
+    const button = document.getElementById(`${sectionType}-button-${roomId}`);
     
     if (section.classList.contains('hidden')) {
         // Expand
         section.classList.remove('hidden');
         chevron.style.transform = 'rotate(180deg)';
+        if (button) button.setAttribute('aria-expanded', 'true');
     } else {
         // Collapse
         section.classList.add('hidden');
         chevron.style.transform = 'rotate(0deg)';
+        if (button) button.setAttribute('aria-expanded', 'false');
     }
 }
 </script>
