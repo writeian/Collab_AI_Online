@@ -105,20 +105,50 @@ def generate_room_short_description(template_type: str, room_name: str = "", gro
     base_description = template_info.get("short_description", "")
     
     if not base_description:
-        # Enhanced description for custom rooms - use AI-generated title
-        if template_key == "general" and room_name:
-            # Use the AI-generated room title (much cleaner than raw goals)
-            # Convert title to description subject
-            title_lower = room_name.lower()
+        # Enhanced description for custom rooms - use goals if available
+        if template_key == "general" and goals:
+            # Extract primary goal from goals field
+            summary = goals.strip().splitlines()
+            primary_goal = next((g.strip('.').strip() for g in summary if g.strip()), "")
             
-            # Clean up the title for description use
+            # If goals is prose (single paragraph), try splitting by sentences
+            if not primary_goal or len(summary) == 1:
+                sentences = goals.split('.')
+                primary_goal = sentences[0].strip() if sentences else ""
+            
+            # Build description from primary goal
+            if primary_goal and len(primary_goal) > 10:
+                # Determine audience phrase based on group size
+                if group_size == "individual":
+                    audience_phrase = "you master your learning objectives"
+                elif group_size in ("small", "medium"):
+                    audience_phrase = "your group collaborate and achieve together"
+                elif group_size == "large":
+                    audience_phrase = "your team work effectively towards shared goals"
+                else:
+                    audience_phrase = "you achieve your learning goals"
+                
+                # Capitalize first letter if needed
+                if primary_goal and primary_goal[0].islower():
+                    primary_goal = primary_goal[0].upper() + primary_goal[1:]
+                
+                base = f"{primary_goal}."
+                # Ensure it's not too long
+                if len(base) > 250:
+                    base = base[:247] + "..."
+                
+                return f"{base} Designed to help {audience_phrase}."
+        
+        # Fallback to room name if no goals
+        if template_key == "general" and room_name:
+            title_lower = room_name.lower()
             if title_lower and len(title_lower) > 3:
                 return (
                     f"A collaborative learning space focused on {title_lower}. "
                     f"Designed to help you achieve your learning goals through structured guidance and support."
                 )
         
-        # Fallback for unknown template types
+        # Final fallback for unknown template types
         safe_label = str(template_key).replace('-', ' ')
         return (
             f"A collaborative learning space for {safe_label} learning. Designed to help you "
