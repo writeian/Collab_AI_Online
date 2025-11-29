@@ -618,10 +618,24 @@ def get_ai_response(
     *,
     model: Optional[str] = None,  # Ignored for now, using default based on available API
     temperature: float = 0.7,  # Ignored for Anthropic
-    max_tokens: int = 300,
+    max_tokens: Optional[int] = None,
     extra_system: Optional[str] = None,
 ) -> Tuple[str, bool]:
-    """Return the assistant's reply text and truncation status for a given Chat row."""
+    """
+    Return the assistant's reply text and truncation status for a given Chat row.
+    
+    Configurable via environment variables:
+    - AI_MAX_TOKENS: Maximum tokens for AI response (default 400)
+    - AI_MAX_HISTORY: Number of conversation turns to include (default 8)
+    """
+    # Read configuration from environment
+    DEFAULT_MAX_TOKENS = int(os.getenv("AI_MAX_TOKENS", "400"))
+    MAX_HISTORY_TURNS = int(os.getenv("AI_MAX_HISTORY", "8"))
+    
+    # Use provided max_tokens or fall back to config
+    if max_tokens is None:
+        max_tokens = DEFAULT_MAX_TOKENS
+    
     # Check for API key first
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
@@ -641,12 +655,27 @@ def get_ai_response(
     # Import here to avoid circular imports
     from src.models import Message
 
-    messages_payload = [
+    # Fetch all messages for this chat
+    all_messages = [
         {"role": m.role, "content": m.content}
         for m in Message.query.filter_by(chat_id=chat.id)
         .order_by(Message.timestamp)
         .all()
     ]
+    
+    # Cap message history to last N turns (user + assistant pairs)
+    # Each "turn" is 2 messages (user + assistant), so take last MAX_HISTORY_TURNS * 2
+    if len(all_messages) > MAX_HISTORY_TURNS * 2:
+        messages_payload = all_messages[-(MAX_HISTORY_TURNS * 2):]
+        try:
+            current_app.logger.info(
+                f"📊 Context trimmed: {len(all_messages)} messages → {len(messages_payload)} "
+                f"(last {MAX_HISTORY_TURNS} turns)"
+            )
+        except:
+            pass
+    else:
+        messages_payload = all_messages
 
     return call_anthropic_api(messages_payload, system_prompt, max_tokens)
 
