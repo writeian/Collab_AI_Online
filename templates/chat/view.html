@@ -63,6 +63,9 @@
   </a>
   <span class="breadcrumb-separator">/</span>
   <span class="breadcrumb-current">{{ chat.title }}</span>
+  <span class="text-xs text-muted-foreground ml-2">
+    — Mode: {{ modes[chat.mode].label if modes.get(chat.mode) else chat.mode|title }}
+  </span>
 </div>
 
 <div class="chat-layout">
@@ -99,6 +102,12 @@
                         <i data-lucide="chevron-down" class="w-4 h-4 chevron text-muted-foreground"></i>
                     </summary>
                     <div class="mt-2 p-3 bg-muted rounded-md text-xs system-instructions">
+                        <!-- Mode Label -->
+                        <div class="text-xs font-semibold text-primary mb-2 pb-2 border-b border-border/50">
+                            Mode: {{ modes[chat.mode].label if modes.get(chat.mode) else chat.mode|title }}
+                        </div>
+                        
+                        <!-- System Prompt -->
                         {% if chat.mode in modes %}
                             {{ modes[chat.mode].prompt }}
                         {% else %}
