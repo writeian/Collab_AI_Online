@@ -514,12 +514,12 @@ Building on these insights from your previous exploration, let's now focus on th
             
             # If current chat has few messages, try to get context from other completed chats in room
             elif current_message_count < 5:
-                logger.info(f"🔍 New chat detected (chat_id={chat_id}, {current_message_count} msgs), looking for learning context in room {room_id}")
+                current_app.logger.info(f"🔍 New chat detected (chat_id={chat_id}, {current_message_count} msgs), looking for learning context in room {room_id}")
                 
                 learning_context = get_learning_context_for_room(room_id, exclude_chat_id=chat_id)
                 
                 if learning_context:
-                    logger.info(f"✅ Found learning context for room {room_id}, length: {len(learning_context)} chars")
+                    current_app.logger.info(f"✅ Found learning context for room {room_id}, length: {len(learning_context)} chars")
                     # Enhance prompt with cumulative learning context
                     enhanced_prompt = f"""{base_prompt}
 
@@ -528,10 +528,10 @@ LEARNING CONTEXT FROM YOUR PREVIOUS DISCUSSIONS:
 
 Building on all these insights from your learning journey, let's continue with this next step.
 """
-                    logger.info(f"🧠 Enhanced prompt created with learning context")
+                    current_app.logger.info(f"🧠 Enhanced prompt created with learning context")
                     return enhanced_prompt
                 else:
-                    logger.warning(f"❌ No learning context found for room {room_id} (new chat will use base prompt only)")
+                    current_app.logger.warning(f"❌ No learning context found for room {room_id} (new chat will use base prompt only)")
                     
         except Exception as e:
             # Context enhancement failed - continue with base prompt
