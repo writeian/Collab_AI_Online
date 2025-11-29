@@ -7,6 +7,8 @@ Control AI response length and conversation context via environment variables.
 
 ## Environment Variables
 
+**Note:** These settings currently apply to the **Anthropic (Claude) path**. The OpenAI path still defaults to 300 tokens and would need the same environment handling if you switch to it in the future.
+
 ### `AI_MAX_TOKENS`
 **Default:** `400`  
 **Range:** `200-2000`  
@@ -36,8 +38,10 @@ AI_MAX_TOKENS=500  # Longer responses, higher cost
 **Purpose:** Number of conversation turns to include as context
 
 **What is a "turn"?**
-- 1 turn = 1 user message + 1 assistant response
-- 8 turns = 16 messages (last 8 exchanges)
+- 1 turn = 1 user message + 1 assistant response (a pair)
+- 8 turns = 16 messages (last 8 user+assistant exchanges)
+
+**Note:** History trimming currently applies to the **Anthropic path only** in `get_ai_response()`. The OpenAI helper doesn't trim context yet.
 
 **Impact:**
 - **4 turns**: Minimal context, faster responses, might lose continuity
