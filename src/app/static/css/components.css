@@ -394,10 +394,10 @@
   /* Sticky positioning keeps it visible while scrolling (hovering UX) */
   /* Focus mode will override with position: fixed !important for full-width overlay */
   position: sticky;
-  bottom: env(safe-area-inset-bottom, 16px);
-  margin: 0 16px;
-  padding: 1rem;
-  padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+  bottom: 0;
+  margin: 0 16px 16px 16px;
+  padding: 0.75rem 1rem;
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
   border-radius: 0.9rem;
   border: 1px solid rgba(255, 255, 255, 0.28);
   background: linear-gradient(
@@ -1755,7 +1755,7 @@
     flex: 1 1 auto;
     /* Normal mode: flexbox handles spacing (composer is in flow) */
     /* Focus mode: JS sets --chat-input-h when composer becomes fixed */
-    padding-bottom: var(--chat-input-h, env(safe-area-inset-bottom, 16px));
+    padding-bottom: 1.25rem;
 }
 
 /* Mobile-specific improvements (removed aggressive height constraints) */
