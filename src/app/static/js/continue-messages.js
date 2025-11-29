@@ -6,15 +6,15 @@
   function enhanceBubble(bubble) {
     if (!bubble || bubble.dataset.continueEnhanced === '1') return;
 
-    // Only add continue button if message was truncated
-    const isTruncated = bubble.dataset.truncated === 'true';
-    if (!isTruncated) return;
-
     const content = bubble.querySelector('.message-content');
     if (!content) return;
 
-    // remove any old anchors injected elsewhere
+    // ALWAYS remove any old anchors first (cleanup before gating)
     content.querySelectorAll('a.continue-link, .continue-cta').forEach(el => el.remove());
+
+    // Only add continue button if message was truncated
+    const isTruncated = bubble.dataset.truncated === 'true';
+    if (!isTruncated) return;
 
     const ts = content.querySelector('.message-timestamp');
 
