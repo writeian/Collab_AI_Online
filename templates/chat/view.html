@@ -252,7 +252,7 @@
                             <div class="flex items-center justify-between">
                                 <div class="flex-1 min-w-0">
                                     <h5 class="font-medium text-sm truncate">{{ other_chat.title }}</h5>
-                                    <p class="text-xs text-muted-foreground">{{ other_chat.mode|title }} Mode</p>
+                                    <p class="text-xs text-muted-foreground">{{ modes[other_chat.mode].label if modes.get(other_chat.mode) else other_chat.mode|title }}</p>
                                     <p class="text-xs text-muted-foreground">{{ other_chat.created_at.strftime('%b %d, %Y') }}</p>
                                 </div>
                                 <div class="flex items-center gap-1">
