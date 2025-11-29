@@ -1621,17 +1621,44 @@
     min-height: 48px;
   }
   
-  /* Better room grid for mobile */
+  /* Better room grid for mobile - prevent horizontal overflow */
   .room-grid {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
   
-  /* Improved room cards for mobile */
+  /* Improved room cards for mobile - force containment */
   .room-card {
-    padding: 1rem;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    padding: 0.75rem;
     border-radius: 12px;
     margin-bottom: 0.5rem;
+  }
+  
+  /* Allow all card contents to shrink and wrap */
+  .room-card * {
+    min-width: 0; /* Flex items can shrink below content size */
+  }
+  
+  /* Ensure room card header can shrink properly */
+  .room-card__header {
+    min-width: 0;
+  }
+  
+  /* Force Tailwind grid to respect viewport on mobile */
+  .grid {
+    overflow: hidden; /* Prevent grid blowout */
+  }
+  
+  /* Prevent horizontal scroll on mobile */
+  body {
+    overflow-x: hidden;
+  }
+  
+  .max-w-7xl {
+    overflow-x: hidden; /* Container-level protection */
   }
   
   /* Better room stats for mobile */

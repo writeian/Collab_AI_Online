@@ -369,6 +369,25 @@
   outline: 2px solid rgba(59, 130, 246, 0.6);
   outline-offset: 2px;
 }
+
+/* Mobile overflow prevention */
+@media (max-width: 640px) {
+  .room-card {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  
+  .room-card__header {
+    min-width: 0;
+  }
+  
+  .room-card h4 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
 </style>
 
 <script>
