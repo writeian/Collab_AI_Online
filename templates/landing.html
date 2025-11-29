@@ -8,27 +8,41 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/globals.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='landing.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='landing.css') }}?v=13">
+    <style>
+      header.landing-navbar-dark { background:#000; color:#fff; }
+      header.landing-navbar-dark a { color:#fff !important; }
+      .landing-nav-row{ display:flex; justify-content:space-between; align-items:center; height:4rem; white-space:nowrap; flex-wrap:nowrap; }
+    </style>
 </head>
 <body>
     <div class="landing-bg"></div>
     
-    <!-- Navigation Header -->
-    <header class="bg-card border-b border-border" style="position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
+    <!-- Navigation Header (dark, single row) -->
+    <header class="landing-navbar-dark border-b border-border" style="position: fixed; top: 0; left: 0; right: 0; z-index: 1000;">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" style="padding-left:1.25rem;padding-right:1.25rem;">
+            <div class="landing-nav-row">
                 <!-- Logo and Title -->
                 <div class="flex items-center">
-                    <a href="{{ url_for('room.room_crud.index') }}" class="text-2xl font-bold text-foreground hover:text-primary transition-colors">
+                    <a href="{{ url_for('room.room_crud.index') }}" class="text-2xl font-bold text-white tracking-tight no-underline hover:text-primary transition-colors">
                         AI Collab
                     </a>
                 </div>
                 
                 <!-- Navigation Links -->
-                <nav class="flex items-center space-x-8">
-                    <a href="{{ url_for('auth.login') }}" class="text-muted-foreground hover:text-foreground transition-colors">Login</a>
-                    <a href="{{ url_for('auth.register') }}" class="text-muted-foreground hover:text-foreground transition-colors">Register</a>
-                    <a href="{{ url_for('about') }}" class="text-muted-foreground hover:text-foreground transition-colors">About</a>
+                <nav class="hidden md:flex items-center space-x-4 lg:space-x-8">
+                    {% if user %}
+                        <a href="{{ url_for('room.room_crud.index') }}" class="hover:text-primary/80 transition-colors relative text-sm sm:text-base">Home</a>
+                        {% if is_admin %}
+                        <a href="{{ url_for('admin.dashboard') }}" class="transition-colors text-sm sm:text-base">Admin</a>
+                        {% endif %}
+                        <a href="{{ url_for('auth.profile') }}" class="transition-colors text-sm sm:text-base">Profile</a>
+                        <a href="{{ url_for('auth.logout') }}" class="transition-colors text-sm sm:text-base">Logout</a>
+                    {% else %}
+                        <a href="{{ url_for('auth.login') }}" class="transition-colors text-sm sm:text-base">Login</a>
+                        <a href="{{ url_for('auth.register') }}" class="transition-colors text-sm sm:text-base">Register</a>
+                        <a href="{{ url_for('about') }}" class="transition-colors text-sm sm:text-base">About</a>
+                    {% endif %}
                 </nav>
             </div>
         </div>
@@ -44,7 +58,7 @@
         <section class="landing-step">
             <img src="{{ url_for('static', filename='images/Landing page image no text 1.png') }}" alt="Step 1" class="landing-img">
             <div class="caption">
-                <p><strong>AI tools remain opaque, closed rooms, positioned just outside the circle of learning and collaboration.</strong> Students and teammates step into isolated chatrooms, but their process remains invisible to instructors, leaders, and peers.</p>
+                <p><strong>AI tools remain opaque, closed rooms, positioned just outside the circle of learning and collaboration.</strong> Students and teammates step into isolated chatrooms and their process remains invisible to instructors, leaders, and peers.</p>
             </div>
         </section>
         <section class="landing-step">
