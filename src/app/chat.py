@@ -660,11 +660,51 @@ def delete_chat(chat_id: int) -> Any:
 @require_chat_access
 @chat.route("/<int:chat_id>/continue/<int:message_id>", methods=["POST"])
 def continue_message(chat_id: int, message_id: int) -> Any:
-    print(f"continue_message called with chat_id={chat_id}, message_id={message_id}")
+    """
+    Continue a truncated AI response.
+    Includes context from the cut-off message to ensure continuity.
+    """
+    current_app.logger.info(f"Continue message: chat_id={chat_id}, message_id={message_id}")
+    
     prev_msg = Message.query.get_or_404(message_id)
     chat_obj = Chat.query.get_or_404(chat_id)
-    ai_content, is_truncated = get_ai_response(chat_obj)
-    print(f"get_ai_response returned: {ai_content[:40]}, truncated: {is_truncated}")
+    
+    # Extract tail snippet from truncated message (last 150-200 chars)
+    # This gives the AI the exact handoff point
+    truncated_content = prev_msg.content or ""
+    tail_length = min(200, len(truncated_content))
+    tail_snippet = truncated_content[-tail_length:].strip()
+    
+    # Find the last complete sentence in the tail for a cleaner handoff
+    # Look for sentence endings (. ! ?) in the last portion
+    last_sentence_end = max(
+        tail_snippet.rfind('. '),
+        tail_snippet.rfind('! '),
+        tail_snippet.rfind('? ')
+    )
+    
+    if last_sentence_end > 50:  # Only use if we found a sentence boundary
+        tail_snippet = tail_snippet[last_sentence_end + 2:]  # After the period and space
+    
+    # Create continuation instructions
+    continuation_prompt = (
+        f"CONTINUATION INSTRUCTION: Your previous response was cut off mid-thought. "
+        f"Continue from where you left off. Do NOT repeat what you already said. "
+        f"Pick up seamlessly from this point:\n\n"
+        f"...{tail_snippet}\n\n"
+        f"Continue naturally without restating prior content."
+    )
+    
+    # Get AI response with continuation context
+    ai_content, is_truncated = get_ai_response(
+        chat_obj,
+        extra_system=continuation_prompt
+    )
+    
+    current_app.logger.info(
+        f"Continuation generated: {len(ai_content)} chars, truncated={is_truncated}"
+    )
+    
     try:
         new_msg = Message(
             chat_id=chat_obj.id,
@@ -675,11 +715,15 @@ def continue_message(chat_id: int, message_id: int) -> Any:
         )
         db.session.add(new_msg)
         db.session.commit()
-        print(
-            f"Created continued message: {new_msg.id}, parent: {new_msg.parent_message_id}, truncated: {new_msg.is_truncated}, content: {new_msg.content[:40]}"
+        
+        current_app.logger.info(
+            f"✅ Continued message created: {new_msg.id}, parent: {prev_msg.id}, "
+            f"truncated: {is_truncated}"
         )
     except Exception as e:
-        print(f"Exception while creating continued message: {e}")
+        current_app.logger.error(f"Failed to create continued message: {e}")
+        db.session.rollback()
+        
     return redirect(url_for("chat.view_chat", chat_id=chat_obj.id))
 
 

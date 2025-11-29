@@ -32,16 +32,50 @@
     a.innerHTML = `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
       stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg> Continue`;
 
-    // action: submit the existing form with "continue"
-    a.addEventListener('click', () => {
-      const form = document.getElementById('message-form');
-      const input = document.getElementById('message-input');
-      if (!form || !input) return;
-      const old = input.value;
-      input.value = 'Complete or expand your last message';
-      if (typeof form.requestSubmit === 'function') form.requestSubmit(); else form.submit();
-      // restore whatever was typed
-      setTimeout(() => { input.value = old; }, 0);
+    // action: call the continue endpoint with message context
+    a.addEventListener('click', async () => {
+      // Get message ID from bubble
+      const messageWrapper = bubble.closest('[data-message-id]');
+      if (!messageWrapper) return;
+      
+      const messageId = messageWrapper.dataset.messageId;
+      const chatId = window.location.pathname.match(/\/chat\/(\d+)/)?.[1];
+      
+      if (!chatId || !messageId) {
+        console.error('Cannot continue: missing chat ID or message ID');
+        return;
+      }
+      
+      // Show loading state
+      a.disabled = true;
+      a.innerHTML = `<svg class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg> Continuing...`;
+      
+      try {
+        // Call the continue endpoint
+        const response = await fetch(`/chat/${chatId}/continue/${messageId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+          }
+        });
+        
+        if (response.ok) {
+          // Redirect or reload to show continued message
+          window.location.reload();
+        } else {
+          console.error('Continue failed:', response.status);
+          a.disabled = false;
+          a.innerHTML = `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg> Continue`;
+        }
+      } catch (error) {
+        console.error('Continue error:', error);
+        a.disabled = false;
+        a.innerHTML = `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg> Continue`;
+      }
     });
 
     // preferred placement: at the very end of the AI text (inline in the last block if possible)
