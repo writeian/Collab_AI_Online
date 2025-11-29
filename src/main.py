@@ -42,12 +42,16 @@ def run_production_migrations(app):
             # Try to run migrations, but don't fail if tables don't exist yet
             try:
                 command.upgrade(alembic_cfg, "head")
-                print("Alembic migrations complete.")
+                print("✅ Alembic migrations complete.")
+                app.config["MIGRATION_STATUS"] = "applied"
             except Exception as e:
-                print(f"Alembic migration warning: {e}")
+                print(f"⚠️ Alembic migration warning: {e}")
                 print("Continuing with app startup...")
+                app.config["MIGRATION_ERROR"] = str(e)
         except Exception as e:
-            print("Alembic migration failed:", e)
+            print(f"❌ Alembic migration failed: {e}")
+            app.config["MIGRATION_ERROR"] = str(e)
+            # Don't crash - let app continue
             print("Continuing with app startup...")
         
         # Ensure basic tables exist using the created app context
@@ -97,38 +101,74 @@ print("🚀 FLASK APP CREATED - ADDING REQUEST LOGGING 🚀")
 run_production_migrations(app)
 
 
-# Health check endpoint for Railway
+# Liveness check - Is the process alive?
 @app.route("/health")
 def health():
-    """Health check endpoint for monitoring and deployment verification."""
+    """
+    Liveness probe: Returns 200 as long as the process is running.
+    Does NOT check database - use /ready for that.
+    """
+    return {
+        "status": "alive",
+        "timestamp": datetime.utcnow().isoformat(),
+    }, 200
+
+
+# Readiness check - Is the app ready to serve traffic?
+@app.route("/ready")
+def ready():
+    """
+    Readiness probe: Returns 200 only when database is connected and migrations applied.
+    Used by load balancers to determine if traffic should be routed here.
+    """
+    from time import time as current_time
+    
+    checks = {}
+    overall_status = 200
+    
+    # Database connection check (with timeout)
+    db_start = current_time()
     try:
-        # Test database connection
-        if app.config.get("SQLALCHEMY_DATABASE_URI"):
-            with app.app_context():
-                with db.engine.connect() as conn:
-                    conn.execute(db.text("SELECT 1"))
-            return {
-                "status": "healthy",
-                "message": "App is running - PHASE 3 RESTRUCTURING COMPLETE",
-                "database": "connected",
-                "version": "3.0.0",
-                "deployment_test": "PHASE 3 SUCCESSFUL",
-                "timestamp": "2025-01-27 15:00",
-                "commit": "phase3-complete",
-            }, 200
-        else:
-            return {
-                "status": "healthy",
-                "message": "App is running",
-                "database": "not configured",
-            }, 200
+        # Short timeout (2s) to fail fast if DB is unreachable
+        with db.engine.connect().execution_options(timeout=2.0) as conn:
+            conn.execute(db.text("SELECT 1"))
+        
+        latency_ms = int((current_time() - db_start) * 1000)
+        checks["database"] = {
+            "status": "connected",
+            "latency_ms": latency_ms
+        }
     except Exception as e:
-        return {
-            "status": "unhealthy",
-            "error": str(e),
-            "database": "error",
-            "timestamp": datetime.now(datetime.UTC).isoformat(),
-        }, 500
+        checks["database"] = {
+            "status": "error",
+            "message": str(e)[:200]  # Truncate long error messages
+        }
+        overall_status = 503
+    
+    # Check for DB initialization errors
+    if app.config.get("DB_INIT_ERROR"):
+        checks["db_init"] = {
+            "status": "error",
+            "message": app.config["DB_INIT_ERROR"][:200]
+        }
+        overall_status = 503
+    
+    # Check for migration errors
+    if app.config.get("MIGRATION_ERROR"):
+        checks["migrations"] = {
+            "status": "error", 
+            "message": app.config["MIGRATION_ERROR"][:200]
+        }
+        overall_status = 503
+    elif app.config.get("MIGRATION_STATUS") == "applied":
+        checks["migrations"] = {"status": "applied"}
+    
+    return {
+        "status": "ready" if overall_status == 200 else "not_ready",
+        "checks": checks,
+        "timestamp": datetime.utcnow().isoformat(),
+        "version": "3.1.0"
+    }, overall_status
 
 
 # Test endpoint to list all routes

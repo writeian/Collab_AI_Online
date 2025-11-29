@@ -75,7 +75,14 @@ def create_app(config_name=None):
     # Eagerly import models and ensure tables exist
     from src import models as _models
     with app.app_context():
-        db.create_all()
+        try:
+            db.create_all()
+            app.config["DB_INIT_STATUS"] = "success"
+            app.logger.info("✅ Database tables initialized successfully")
+        except Exception as e:
+            app.logger.error(f"❌ Database initialization failed: {e}")
+            app.config["DB_INIT_ERROR"] = str(e)
+            # Don't crash - let app continue to start so /health can report the error
     
     # Initialize CSRF protection
     csrf.init_app(app)
