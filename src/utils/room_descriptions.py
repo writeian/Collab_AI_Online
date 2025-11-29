@@ -107,37 +107,57 @@ def generate_room_short_description(template_type: str, room_name: str = "", gro
     if not base_description:
         # Enhanced description for custom rooms - use goals if available
         if template_key == "general" and goals:
-            # Extract primary goal from goals field
-            summary = goals.strip().splitlines()
-            primary_goal = next((g.strip('.').strip() for g in summary if g.strip()), "")
+            # Clean up goals text
+            goals_cleaned = goals.strip()
             
-            # If goals is prose (single paragraph), try splitting by sentences
-            if not primary_goal or len(summary) == 1:
-                sentences = goals.split('.')
-                primary_goal = sentences[0].strip() if sentences else ""
+            # Try to extract multiple sentences/goals
+            # First, split by newlines (for bullet-point style goals)
+            lines = [line.strip() for line in goals_cleaned.splitlines() if line.strip()]
             
-            # Build description from primary goal
-            if primary_goal and len(primary_goal) > 10:
-                # Determine audience phrase based on group size
-                if group_size == "individual":
-                    audience_phrase = "you master your learning objectives"
-                elif group_size in ("small", "medium"):
-                    audience_phrase = "your group collaborate and achieve together"
-                elif group_size == "large":
-                    audience_phrase = "your team work effectively towards shared goals"
-                else:
-                    audience_phrase = "you achieve your learning goals"
+            # If we have multiple lines, use first two
+            if len(lines) > 1:
+                first_goal = lines[0].strip('.').strip()
+                second_goal = lines[1].strip('.').strip()
+            else:
+                # Single paragraph - split by sentences
+                # Handle common sentence endings
+                sentences = []
+                for part in goals_cleaned.replace('? ', '.|').replace('! ', '.|').split('.'):
+                    cleaned = part.replace('|', '. ').strip()
+                    if cleaned and len(cleaned) > 10:  # Ignore very short fragments
+                        sentences.append(cleaned)
                 
+                first_goal = sentences[0] if len(sentences) > 0 else ""
+                second_goal = sentences[1] if len(sentences) > 1 else ""
+            
+            # Build description from goals
+            if first_goal and len(first_goal) > 10:
                 # Capitalize first letter if needed
-                if primary_goal and primary_goal[0].islower():
-                    primary_goal = primary_goal[0].upper() + primary_goal[1:]
+                if first_goal[0].islower():
+                    first_goal = first_goal[0].upper() + first_goal[1:]
                 
-                base = f"{primary_goal}."
-                # Ensure it's not too long
-                if len(base) > 250:
-                    base = base[:247] + "..."
+                # Build the description
+                if second_goal and len(second_goal) > 10:
+                    # Capitalize second goal if needed
+                    if second_goal[0].islower():
+                        second_goal = second_goal[0].upper() + second_goal[1:]
+                    
+                    description = f"{first_goal}. {second_goal}."
+                else:
+                    # Only one goal - just use it
+                    description = f"{first_goal}."
                 
-                return f"{base} Designed to help {audience_phrase}."
+                # Ensure it's not too long (max 300 chars)
+                if len(description) > 300:
+                    # Truncate at word boundary
+                    description = description[:297]
+                    last_space = description.rfind(' ')
+                    if last_space > 200:
+                        description = description[:last_space] + "..."
+                    else:
+                        description = description + "..."
+                
+                return description
         
         # Fallback to room name if no goals
         if template_key == "general" and room_name:

@@ -17,6 +17,32 @@ from src.utils.room_descriptions import generate_room_short_description
 # Test cases from production data (room_sample.csv)
 TEST_CASES = [
     {
+        "id": 100,
+        "name": "Tuberculosis Study",
+        "goals": "To learn about the history, pathology, treatment, social dimensions, and cultural influences of tuberculosis.",
+        "group_size": None,
+        "old_description": "To learn about the history, pathology, treatment, social dimensions, and cultural influences of tuberculosis. Designed to help you achieve your learning goals.",
+        "expected": "To learn about the history, pathology, treatment, social dimensions, and cultural influences of tuberculosis."
+    },
+    {
+        "id": 101,
+        "name": "Two Sentence Goals",
+        "goals": "Learn Python programming fundamentals. Build real-world applications with best practices.",
+        "group_size": None,
+        "old_description": "Generic description",
+        "expected": "Learn Python programming fundamentals. Build real-world applications with best practices."
+    },
+    {
+        "id": 102,
+        "name": "Multi-line Goals",
+        "goals": """Understand machine learning algorithms
+Apply them to real datasets
+Build predictive models""",
+        "group_size": None,
+        "old_description": "Generic description",
+        "expected": "Understand machine learning algorithms. Apply them to real datasets."
+    },
+    {
         "id": 90,
         "name": "Python Sudoku Solver Development",
         "goals": "To build a Soduku program in Python that solves all levels of puzzle.",
