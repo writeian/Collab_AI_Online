@@ -434,6 +434,34 @@ def get_modes_for_room(room: Any) -> Dict[str, Any]:
         return BASE_TEMPLATES["academic_essay"]["modes"]
 
 
+# Mode-specific brevity guidance (Phase 2)
+MODE_CONCISE_HINTS = {
+    # Early exploration modes - Keep brief, ask questions
+    "explore": "Ask 2-3 probing questions. Keep explanations to 2-3 short paragraphs.",
+    "focus": "Guide with 2-3 focused questions and brief examples.",
+    "context": "Suggest 2-3 key sources or search strategies. Be concise.",
+    
+    # Middle development modes - Balanced depth
+    "proposal": "Provide 2-3 paragraphs of guidance. Use bullets for multiple points.",
+    "evidence": "Comment on 2-3 key pieces of evidence. Keep feedback specific.",
+    "argument": "Highlight 2-3 main points to strengthen. Be direct.",
+    
+    # Later refinement modes - Brief, specific feedback
+    "draft": "Provide focused feedback on structure and clarity (2-3 paragraphs).",
+    "organize": "Suggest 2-3 concrete organizational improvements.",
+    "polish": "Provide 2-3 specific edits or refinements. Be concise.",
+    "refine": "Point out 2-3 areas to improve. Use bullets for clarity.",
+    
+    # Presentation/completion - Very brief
+    "present": "Give 2-3 presentation tips. Be direct and actionable.",
+    "final": "Provide 2-3 final checks or affirmations. Keep it encouraging and brief.",
+    
+    # Study group modes - Brief collaborative prompts
+    "connect": "Suggest 2-3 collaboration strategies. Keep it practical.",
+    "sustain": "Recommend 2-3 sustainability practices. Be action-oriented.",
+}
+
+
 def get_mode_system_prompt(mode: str, room_id: Optional[int] = None, chat_id: Optional[int] = None) -> str:
     """Get the system prompt for a mode, enhanced with discussion context if available."""
     # Import here to avoid circular imports
@@ -508,6 +536,11 @@ Building on all these insights from your learning journey, let's continue with t
         except Exception as e:
             # Context enhancement failed - continue with base prompt
             pass
+    
+    # Phase 2: Add mode-specific concise instruction (if available)
+    concise_hint = MODE_CONCISE_HINTS.get(mode)
+    if concise_hint:
+        base_prompt = f"{base_prompt}\n\nSTYLE GUIDANCE: {concise_hint}"
     
     # Return standard prompt if no enhancement possible
     return base_prompt
@@ -627,6 +660,7 @@ def get_ai_response(
     Configurable via environment variables:
     - AI_MAX_TOKENS: Maximum tokens for AI response (default 400)
     - AI_MAX_HISTORY: Number of conversation turns to include (default 8)
+    - AI_MAX_TOKENS_{MODE}: Optional per-mode override (e.g., AI_MAX_TOKENS_DRAFT=500)
     """
     # Read configuration from environment
     DEFAULT_MAX_TOKENS = int(os.getenv("AI_MAX_TOKENS", "400"))
@@ -634,7 +668,18 @@ def get_ai_response(
     
     # Use provided max_tokens or fall back to config
     if max_tokens is None:
-        max_tokens = DEFAULT_MAX_TOKENS
+        # Check for mode-specific override first
+        mode_token_var = f"AI_MAX_TOKENS_{chat.mode.upper()}"
+        mode_specific_tokens = os.getenv(mode_token_var)
+        
+        if mode_specific_tokens:
+            try:
+                max_tokens = int(mode_specific_tokens)
+                current_app.logger.info(f"Using mode-specific token limit: {mode_token_var}={max_tokens}")
+            except (ValueError, TypeError):
+                max_tokens = DEFAULT_MAX_TOKENS
+        else:
+            max_tokens = DEFAULT_MAX_TOKENS
     
     # Check for API key first
     api_key = os.getenv("ANTHROPIC_API_KEY")

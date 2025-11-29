@@ -267,6 +267,7 @@ OPENAI_MODEL=gpt-4o-mini
 # Response configuration (defaults: 400 tokens, 8 turns)
 AI_MAX_TOKENS=400
 AI_MAX_HISTORY=8
+# Per-mode overrides (optional): AI_MAX_TOKENS_DRAFT=500, AI_MAX_TOKENS_POLISH=350
 ```
 
 Limits

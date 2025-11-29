@@ -218,7 +218,128 @@ AI_MAX_HISTORY=8
 
 ---
 
+---
+
+## Phase 2: Mode-Specific Response Tailoring
+
+### Overview
+Different learning modes need different response styles. Phase 2 adds mode-aware brevity hints.
+
+### Mode-Specific Concise Instructions
+
+**Built-in guidance per mode:**
+
+| Mode | Concise Hint | Rationale |
+|------|--------------|-----------|
+| `explore` | Ask 2-3 probing questions, 2-3 short paragraphs | Early exploration needs questions, not essays |
+| `focus` | Guide with 2-3 focused questions and brief examples | Help narrow without overwhelming |
+| `context` | Suggest 2-3 key sources or search strategies | Concise source guidance |
+| `proposal` | 2-3 paragraphs of guidance, use bullets for multiple points | Balance depth with clarity |
+| `evidence` | Comment on 2-3 key pieces of evidence | Specific, focused feedback |
+| `argument` | Highlight 2-3 main points to strengthen | Direct, actionable |
+| `draft` | Focused feedback on structure and clarity (2-3 paragraphs) | Needs more depth than polish |
+| `organize` | Suggest 2-3 concrete organizational improvements | Specific structural guidance |
+| `polish` | 2-3 specific edits or refinements, be concise | Final stage, brief tweaks |
+| `present` | 2-3 presentation tips, direct and actionable | Brief, practical |
+
+**Implementation:**
+These hints are appended to the system prompt:
+```
+{base_prompt}
+
+STYLE GUIDANCE: {mode_concise_hint}
+```
+
+**No code changes needed** - works automatically based on chat.mode.
+
+---
+
+### Per-Mode Token Limits (Optional)
+
+For modes that need more depth, you can override the default:
+
+```bash
+# Global default
+AI_MAX_TOKENS=400
+
+# Mode-specific overrides
+AI_MAX_TOKENS_DRAFT=500      # Draft needs more room
+AI_MAX_TOKENS_ARGUMENT=450   # Argument needs depth
+AI_MAX_TOKENS_POLISH=350     # Polish is brief
+```
+
+**Pattern:** `AI_MAX_TOKENS_{MODE_KEY_UPPERCASE}`
+
+**Examples:**
+- `AI_MAX_TOKENS_EXPLORE=350` - Keep exploration brief
+- `AI_MAX_TOKENS_DRAFT=500` - Give drafting more room
+- `AI_MAX_TOKENS_POLISH=300` - Polish is concise
+
+---
+
+### How It Works Together
+
+**Example - Explore Mode:**
+```
+User in "explore" mode chat asks question
+  ↓
+System builds prompt:
+  Base: "You are an expert instructor..."
+  +
+  Concise hint: "Ask 2-3 probing questions. Keep explanations 
+                 to 2-3 short paragraphs."
+  +
+  Token limit: AI_MAX_TOKENS_EXPLORE (if set) or 400 (default)
+  ↓
+AI responds with:
+  - 2-3 thoughtful questions
+  - Brief explanation
+  - Stays within token limit
+  - Less likely to truncate
+```
+
+**Example - Draft Mode:**
+```
+User in "draft" mode gets feedback
+  ↓
+System builds prompt:
+  Base: "You are an expert writing coach..."
+  +
+  Concise hint: "Provide focused feedback on structure and 
+                 clarity (2-3 paragraphs)."
+  +
+  Token limit: AI_MAX_TOKENS_DRAFT=500 (more room for depth)
+  ↓
+AI responds with:
+  - Detailed structural feedback
+  - Uses extra tokens (500 vs 400)
+  - Appropriate depth for drafting stage
+```
+
+---
+
+### Benefits
+
+**Mode-Aware Responses:**
+- ✅ Exploration modes: Brief, question-focused
+- ✅ Development modes: Balanced guidance
+- ✅ Refinement modes: Specific, concise feedback
+- ✅ Natural fit to learning stage
+
+**Reduced Truncation:**
+- Early modes use fewer tokens (more concise)
+- Later modes can use more tokens (if configured)
+- Better token budget management
+
+**Improved Learning:**
+- Right level of detail for each stage
+- No overwhelming bullet lists in early exploration
+- Sufficient depth when needed for drafting
+- Concise, actionable polish feedback
+
+---
+
 **Date:** November 27, 2025  
-**Version:** 3.1.0  
+**Version:** 3.2.0 (Phase 2)  
 **Status:** Implemented and configurable
 
