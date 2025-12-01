@@ -254,8 +254,6 @@ def require_room_access(f):
     @wraps(f)
     def decorated_function(room_id, *args, **kwargs):
         from flask import current_app
-        print(f"🔐🔐🔐 ROOM ACCESS CHECK: Checking access for room {room_id} 🔐🔐🔐")
-        current_app.logger.error(f"🔐🔐🔐 ROOM ACCESS CHECK: Checking access for room {room_id} 🔐🔐🔐")
         
         user = get_current_user()
         
@@ -323,42 +321,24 @@ def require_chat_access(f):
 
     @wraps(f)
     def decorated_function(chat_id, *args, **kwargs):
-        from flask import current_app
-        print(f"🚨🚨🚨 CHAT ACCESS CHECK STARTED: chat_id={chat_id} 🚨🚨🚨")
-        try:
-            current_app.logger.error(f"🔐 require_chat_access: chat_id={chat_id}")
-            print(f"🔐 require_chat_access: chat_id={chat_id}")
-            chat = Chat.query.get_or_404(chat_id)
-            current_app.logger.info(f"🔐 Chat found: {chat.title}, room_id={chat.room_id}")
-            user = get_current_user()
-            current_app.logger.info(f"🔐 User: {user.username if user else None}")
+        chat = Chat.query.get_or_404(chat_id)
+        user = get_current_user()
 
-            if not can_access_chat(user, chat):
-                current_app.logger.warning(f"🔐 Access denied for user {user.username if user else None} to chat {chat_id}")
-                flash("You don't have access to this chat.")
-                return redirect(url_for("room.room_crud.index"))
-
-            current_app.logger.info(f"🔐 Access granted, marking invitation...")
-            # Mark invitation accepted when entering a chat of the room
-            try:
-                membership = RoomMember.query.filter_by(room_id=chat.room_id, user_id=user.id).first()
-                if membership and getattr(membership, 'accepted_at', None) is None:
-                    # Nested transaction so failures don't poison the main session
-                    with db.session.begin_nested():
-                        membership.accepted_at = datetime.utcnow()
-                    current_app.logger.info(f"🔐 Marked invitation accepted for user {user.id}")
-            except Exception as e:
-                current_app.logger.error(f"🔐 Error marking invitation: {e}")
-                db.session.rollback()
-
-            current_app.logger.info(f"🔐 Calling view function for chat {chat_id}")
-            return f(chat_id, *args, **kwargs)
-        except Exception as outer_e:
-            current_app.logger.error(f"🔐 CRITICAL ERROR in require_chat_access for chat {chat_id}: {outer_e}")
-            import traceback
-            current_app.logger.error(traceback.format_exc())
-            flash("An error occurred while accessing the chat.")
+        if not can_access_chat(user, chat):
+            flash("You don't have access to this chat.")
             return redirect(url_for("room.room_crud.index"))
+
+        # Mark invitation accepted when entering a chat of the room
+        try:
+            membership = RoomMember.query.filter_by(room_id=chat.room_id, user_id=user.id).first()
+            if membership and getattr(membership, 'accepted_at', None) is None:
+                # Nested transaction so failures don't poison the main session
+                with db.session.begin_nested():
+                    membership.accepted_at = datetime.utcnow()
+        except Exception:
+            db.session.rollback()
+
+        return f(chat_id, *args, **kwargs)
 
     return decorated_function
 
