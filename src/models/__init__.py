@@ -19,6 +19,7 @@ from .custom_prompt import CustomPrompt
 from .rubric import RubricCriterion, RubricLevel, RoomRubric
 from .refinement import RoomRefinementHistory
 from .learning import ChatNotes
+from .pin import PinnedItem
 
 __all__ = [
     "User",
@@ -40,4 +41,5 @@ __all__ = [
     "RoomRubric",
     "RoomRefinementHistory",
     "ChatNotes",
+    "PinnedItem",
 ]

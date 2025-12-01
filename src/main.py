@@ -85,6 +85,75 @@ def run_production_migrations(app):
                         print("✓ chat_notes table created manually")
                     except Exception as create_error:
                         print(f"❌ Failed to create chat_notes table: {create_error}")
+                
+                # CRITICAL: Manually create pinned_items table (migration system broken)
+                try:
+                    from src.models import PinnedItem
+                    PinnedItem.query.first()  # Test if table exists
+                    print("✓ pinned_items table exists")
+                except Exception:
+                    print("⚠️ pinned_items table missing, creating manually...")
+                    try:
+                        # Detect if PostgreSQL or SQLite
+                        is_postgres = 'postgresql' in str(db.engine.url)
+                        
+                        if is_postgres:
+                            # PostgreSQL-specific SQL
+                            db.engine.execute("""
+                                CREATE TABLE IF NOT EXISTS pinned_items (
+                                    id SERIAL PRIMARY KEY,
+                                    user_id INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+                                    room_id INTEGER NOT NULL REFERENCES room(id) ON DELETE CASCADE,
+                                    chat_id INTEGER NOT NULL REFERENCES chat(id) ON DELETE CASCADE,
+                                    message_id INTEGER REFERENCES message(id) ON DELETE CASCADE,
+                                    comment_id INTEGER REFERENCES comment(id) ON DELETE CASCADE,
+                                    role VARCHAR(20),
+                                    content TEXT NOT NULL,
+                                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                    CONSTRAINT check_exactly_one_item CHECK (
+                                        (message_id IS NOT NULL AND comment_id IS NULL) OR
+                                        (message_id IS NULL AND comment_id IS NOT NULL)
+                                    )
+                                );
+                                CREATE UNIQUE INDEX IF NOT EXISTS unique_user_message_pin 
+                                    ON pinned_items(user_id, message_id) WHERE message_id IS NOT NULL;
+                                CREATE UNIQUE INDEX IF NOT EXISTS unique_user_comment_pin 
+                                    ON pinned_items(user_id, comment_id) WHERE comment_id IS NOT NULL;
+                                CREATE INDEX IF NOT EXISTS ix_pinned_items_user_id ON pinned_items(user_id);
+                                CREATE INDEX IF NOT EXISTS ix_pinned_items_room_id ON pinned_items(room_id);
+                                CREATE INDEX IF NOT EXISTS ix_pinned_items_chat_id ON pinned_items(chat_id);
+                                CREATE INDEX IF NOT EXISTS ix_pins_user_chat ON pinned_items(user_id, chat_id);
+                            """)
+                        else:
+                            # SQLite-compatible SQL
+                            db.engine.execute("""
+                                CREATE TABLE IF NOT EXISTS pinned_items (
+                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    user_id INTEGER NOT NULL REFERENCES user(id) ON DELETE CASCADE,
+                                    room_id INTEGER NOT NULL REFERENCES room(id) ON DELETE CASCADE,
+                                    chat_id INTEGER NOT NULL REFERENCES chat(id) ON DELETE CASCADE,
+                                    message_id INTEGER REFERENCES message(id) ON DELETE CASCADE,
+                                    comment_id INTEGER REFERENCES comment(id) ON DELETE CASCADE,
+                                    role VARCHAR(20),
+                                    content TEXT NOT NULL,
+                                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                    CHECK (
+                                        (message_id IS NOT NULL AND comment_id IS NULL) OR
+                                        (message_id IS NULL AND comment_id IS NOT NULL)
+                                    )
+                                );
+                                CREATE UNIQUE INDEX IF NOT EXISTS unique_user_message_pin 
+                                    ON pinned_items(user_id, message_id);
+                                CREATE UNIQUE INDEX IF NOT EXISTS unique_user_comment_pin 
+                                    ON pinned_items(user_id, comment_id);
+                                CREATE INDEX IF NOT EXISTS ix_pinned_items_user_id ON pinned_items(user_id);
+                                CREATE INDEX IF NOT EXISTS ix_pinned_items_room_id ON pinned_items(room_id);
+                                CREATE INDEX IF NOT EXISTS ix_pinned_items_chat_id ON pinned_items(chat_id);
+                                CREATE INDEX IF NOT EXISTS ix_pins_user_chat ON pinned_items(user_id, chat_id);
+                            """)
+                        print("✓ pinned_items table created manually")
+                    except Exception as create_error:
+                        print(f"❌ Failed to create pinned_items table: {create_error}")
         except Exception as e:
             print(f"Table creation warning: {e}")
             print("Continuing with app startup...")

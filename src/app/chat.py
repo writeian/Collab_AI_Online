@@ -372,6 +372,12 @@ def view_chat(chat_id: int) -> Any:
         except Exception:
             suggestion = None
 
+        # Get pinned items for this chat
+        from src.utils.pin_helpers import get_pinned_ids_for_chat, get_pinned_items_for_chat
+        
+        pinned_ids = get_pinned_ids_for_chat(user.id, chat_obj.id)
+        pinned_items = get_pinned_items_for_chat(user.id, chat_obj.id)
+
         return render_template(
             "chat/view.html",
             chat=chat_obj,
@@ -387,6 +393,9 @@ def view_chat(chat_id: int) -> Any:
             mode_order=mode_order,
             mode_labels=mode_labels,
             room_chat_map=room_chat_map,
+            pinned_message_ids=pinned_ids['messages'],
+            pinned_comment_ids=pinned_ids['comments'],
+            pinned_items=pinned_items,
         )
     except Exception as e:
         current_app.logger.error(f"Error in chat view for chat_id {chat_id}: {str(e)}")
@@ -417,85 +426,6 @@ def export_chat(chat_id: int) -> Any:
         current_app.logger.error(f"Error showing export page for chat {chat_id}: {e}")
         flash("Failed to load export page. Please try again.", "error")
         return redirect(url_for("chat.view_chat", chat_id=chat_id))
-
-
-        messages = (
-            Message.query.options(joinedload(Message.user))
-            .filter_by(chat_id=chat_obj.id)
-            .order_by(Message.timestamp)
-            .all()
-        )
-        # Get comments for this chat (with safe fallback if schema not yet migrated)
-        try:
-            comments = (
-                Comment.query.options(joinedload(Comment.user))
-                .filter_by(chat_id=chat_obj.id)
-                .order_by(Comment.timestamp)
-                .all()
-            )
-        except Exception as _e:
-            current_app.logger.warning(
-                f"Comments load failed (likely pending migration). Rendering without comments. err={_e}"
-            )
-            comments = []
-
-        # Get room members for sidebar display
-        room_members = (
-            RoomMember.query.options(joinedload(RoomMember.user))
-            .filter_by(room_id=chat_obj.room_id)
-            .all()
-        )
-        member_users = [member.user for member in room_members]
-
-        # Add room owner to member list if not already included
-        owner = User.query.get(chat_obj.room.owner_id)
-        if owner and owner not in member_users:
-            member_users.append(owner)
-
-        # Get other chats in the same room (excluding current chat)
-        other_chats = (
-            Chat.query.filter_by(room_id=chat_obj.room_id)
-            .filter(Chat.id != chat_obj.id)
-            .order_by(Chat.created_at.desc())
-            .all()
-        )
-
-        # Get dynamic modes for this chat's room
-        modes = get_modes_for_room(chat_obj.room)
-
-        # Get invitation count for navigation
-        from src.app.room.utils.room_utils import get_invitation_count
-
-        invitation_count = get_invitation_count(user)
-
-        # Extract one-time suggestion payload from session (if present)
-        suggestion = None
-        try:
-            ms = session.get('_mode_suggest', {}) or {}
-            suggestion = ms.pop(str(chat_obj.id), None)
-            if suggestion is not None:
-                session['_mode_suggest'] = ms
-                session.modified = True
-        except Exception:
-            suggestion = None
-
-        return render_template(
-            "chat/view.html",
-            chat=chat_obj,
-            room=chat_obj.room,
-            messages=messages,
-            comments=comments,
-            user=user,
-            modes=modes,
-            room_members=member_users,
-            other_chats=other_chats,
-            invitation_count=invitation_count,
-            suggestion=suggestion,
-        )
-    except Exception as e:
-        current_app.logger.error(f"Error in chat view for chat_id {chat_id}: {str(e)}")
-        flash("An error occurred while loading the chat. Please try again.", "error")
-        return redirect(url_for("room.room_crud.index"))
 
 
 @chat.route("/<int:chat_id>/comment", methods=["POST"])
@@ -753,3 +683,133 @@ def assess_progression(chat_id: int) -> Any:
             ),
             500,
         )
+
+
+@chat.route("/<int:chat_id>/pin", methods=["POST"])
+@require_chat_access
+def pin_item_route(chat_id: int) -> Any:
+    """
+    Pin a message or comment in a chat.
+    
+    Expects JSON body with either:
+    - message_id: int
+    - comment_id: int
+    
+    Returns JSON with success status and pinned state.
+    """
+    from src.utils.pin_helpers import pin_item
+    
+    user = get_current_user()
+    if not user:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+    
+    # Validate chat access (already done by decorator, but double-check)
+    chat_obj = Chat.query.get_or_404(chat_id)
+    
+    # Parse JSON request
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"success": False, "error": "Invalid request"}), 400
+    
+    message_id = data.get("message_id")
+    comment_id = data.get("comment_id")
+    
+    # Validate exactly one item specified
+    if not message_id and not comment_id:
+        return jsonify({"success": False, "error": "Must specify message_id or comment_id"}), 400
+    
+    if message_id and comment_id:
+        return jsonify({"success": False, "error": "Cannot pin both message and comment"}), 400
+    
+    # Get the item to pin
+    if message_id:
+        message = Message.query.get(message_id)
+        if not message:
+            return jsonify({"success": False, "error": "Message not found"}), 404
+        
+        # Verify message belongs to this chat
+        if message.chat_id != chat_id:
+            return jsonify({"success": False, "error": "Message not in this chat"}), 400
+        
+        result = pin_item(user, message=message)
+    else:
+        comment = Comment.query.get(comment_id)
+        if not comment:
+            return jsonify({"success": False, "error": "Comment not found"}), 404
+        
+        # Verify comment belongs to this chat
+        if comment.chat_id != chat_id:
+            return jsonify({"success": False, "error": "Comment not in this chat"}), 400
+        
+        result = pin_item(user, comment=comment)
+    
+    if result['success']:
+        return jsonify(result), 200
+    else:
+        return jsonify(result), 400
+
+
+@chat.route("/<int:chat_id>/unpin", methods=["POST"])
+@require_chat_access
+def unpin_item_route(chat_id: int) -> Any:
+    """
+    Unpin a message or comment in a chat.
+    
+    Expects JSON body with either:
+    - message_id: int
+    - comment_id: int
+    
+    Returns JSON with success status and pinned state.
+    """
+    from src.utils.pin_helpers import unpin_item
+    
+    user = get_current_user()
+    if not user:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+    
+    # Validate chat access
+    chat_obj = Chat.query.get_or_404(chat_id)
+    
+    # Parse JSON request
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"success": False, "error": "Invalid request"}), 400
+    
+    message_id = data.get("message_id")
+    comment_id = data.get("comment_id")
+    
+    # Validate exactly one item specified
+    if not message_id and not comment_id:
+        return jsonify({"success": False, "error": "Must specify message_id or comment_id"}), 400
+    
+    if message_id and comment_id:
+        return jsonify({"success": False, "error": "Cannot unpin both message and comment"}), 400
+    
+    # Get the item to unpin
+    if message_id:
+        message = Message.query.get(message_id)
+        if not message:
+            # Idempotent - return success even if message doesn't exist
+            return jsonify({"success": True, "pinned": False, "deleted": False}), 200
+        
+        # Verify message belongs to this chat
+        if message.chat_id != chat_id:
+            return jsonify({"success": False, "error": "Message not in this chat"}), 400
+        
+        result = unpin_item(user, message=message)
+    else:
+        comment = Comment.query.get(comment_id)
+        if not comment:
+            # Idempotent - return success even if comment doesn't exist
+            return jsonify({"success": True, "pinned": False, "deleted": False}), 200
+        
+        # Verify comment belongs to this chat
+        if comment.chat_id != chat_id:
+            return jsonify({"success": False, "error": "Comment not in this chat"}), 400
+        
+        result = unpin_item(user, comment=comment)
+    
+    if result['success']:
+        return jsonify(result), 200
+    else:
+        return jsonify(result), 400
