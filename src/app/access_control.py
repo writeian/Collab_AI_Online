@@ -341,8 +341,9 @@ def require_chat_access(f):
             try:
                 membership = RoomMember.query.filter_by(room_id=chat.room_id, user_id=user.id).first()
                 if membership and getattr(membership, 'accepted_at', None) is None:
-                    membership.accepted_at = datetime.utcnow()
-                    db.session.commit()
+                    # Nested transaction so failures don't poison the main session
+                    with db.session.begin_nested():
+                        membership.accepted_at = datetime.utcnow()
                     current_app.logger.info(f"🔐 Marked invitation accepted for user {user.id}")
             except Exception as e:
                 current_app.logger.error(f"🔐 Error marking invitation: {e}")
