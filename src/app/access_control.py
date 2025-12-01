@@ -177,10 +177,12 @@ def can_access_chat(user: Optional[User], chat: Optional[Chat]) -> bool:
     """
     from flask import current_app
     
-    current_app.logger.warning(f"🔍 can_access_chat: user={user.username if user else None}, chat_id={chat.id if chat else None}")
+    print(f"🔍 can_access_chat:")
+    current_app.logger.error(f"🔍 can_access_chat: user={user.username if user else None}, chat_id={chat.id if chat else None}")
     
     if not chat:
-        current_app.logger.warning(f"🔍 can_access_chat: DENIED - no chat object")
+        print(f"🔍 can_access_chat:")
+    current_app.logger.error(f"🔍 can_access_chat: DENIED - no chat object")
         return False
     
     # Admins have full access
@@ -190,7 +192,8 @@ def can_access_chat(user: Optional[User], chat: Optional[Chat]) -> bool:
     
     # Check if user can access the room that contains this chat
     room_access = can_access_room(user, chat.room)
-    current_app.logger.warning(f"🔍 can_access_chat: room_access={room_access} for room_id={chat.room_id if chat.room else None}")
+    print(f"🔍 can_access_chat:")
+    current_app.logger.error(f"🔍 can_access_chat: room_access={room_access} for room_id={chat.room_id if chat.room else None}")
     
     return room_access
 
@@ -335,8 +338,10 @@ def require_chat_access(f):
     @wraps(f)
     def decorated_function(chat_id, *args, **kwargs):
         from flask import current_app
+        print(f"🚨🚨🚨 CHAT ACCESS CHECK STARTED: chat_id={chat_id} 🚨🚨🚨")
         try:
-            current_app.logger.info(f"🔐 require_chat_access: chat_id={chat_id}")
+            current_app.logger.error(f"🔐 require_chat_access: chat_id={chat_id}")
+            print(f"🔐 require_chat_access: chat_id={chat_id}")
             chat = Chat.query.get_or_404(chat_id)
             current_app.logger.info(f"🔐 Chat found: {chat.title}, room_id={chat.room_id}")
             user = get_current_user()
