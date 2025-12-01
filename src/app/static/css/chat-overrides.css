@@ -37,3 +37,34 @@
   outline: 2px solid hsl(var(--primary));
   outline-offset: 2px;
 }
+
+/* Pin toggle - bubble-specific colors (match Add Comment pattern) */
+.message-bubble.user .message-timestamp > button.pin-toggle {
+  color: #ffffff !important;  /* White text on purple user bubbles */
+  background-color: rgba(255,255,255,0.16) !important;
+  border: 1px solid rgba(255,255,255,0.35) !important;
+  font-weight: 600 !important;
+}
+
+.message-bubble.assistant .message-timestamp > button.pin-toggle {
+  color: hsl(var(--primary)) !important;  /* Primary color on light AI bubbles */
+  background-color: rgba(100,116,139,0.1) !important;
+  border: 1px solid rgba(100,116,139,0.25) !important;
+  font-weight: 600 !important;
+}
+
+/* Hover states */
+.message-bubble.user .message-timestamp > button.pin-toggle:hover {
+  filter: brightness(1.1);
+  transform: scale(1.02);
+}
+
+.message-bubble.assistant .message-timestamp > button.pin-toggle:hover {
+  filter: brightness(0.9);
+  transform: scale(1.02);
+}
+
+.message-timestamp > button.pin-toggle:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
