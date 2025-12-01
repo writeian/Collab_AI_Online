@@ -375,7 +375,7 @@
             </div>
             {% endif %}
             {% for message in messages %}
-            <div class="flex {% if message.role == \'user\' %}justify-end{% else %}justify-start{% endif %}" id="message-{{ message.id }}" data-message-id="{{ message.id }}">
+            <div class="flex {% if message.role == 'user' %}justify-end{% else %}justify-start{% endif %}" id="message-{{ message.id }}" data-message-id="{{ message.id }}">
                 <div class="message-bubble {% if message.role == 'user' %}user{% else %}assistant{% endif %}" 
                      {% if message.role == 'assistant' %}data-truncated="{{ 'true' if message.is_truncated else 'false' }}"{% endif %}>
                     {% if message.role == 'assistant' %}
