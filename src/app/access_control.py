@@ -181,8 +181,8 @@ def can_access_chat(user: Optional[User], chat: Optional[Chat]) -> bool:
     current_app.logger.error(f"🔍 can_access_chat: user={user.username if user else None}, chat_id={chat.id if chat else None}")
     
     if not chat:
-        print(f"🔍 can_access_chat:")
-    current_app.logger.error(f"🔍 can_access_chat: DENIED - no chat object")
+        print(f"🔍 can_access_chat: DENIED - no chat object")
+        current_app.logger.error(f"🔍 can_access_chat: DENIED - no chat object")
         return False
     
     # Admins have full access
@@ -192,7 +192,7 @@ def can_access_chat(user: Optional[User], chat: Optional[Chat]) -> bool:
     
     # Check if user can access the room that contains this chat
     room_access = can_access_room(user, chat.room)
-    print(f"🔍 can_access_chat:")
+    print(f"🔍 can_access_chat: room_access={room_access} for room_id={chat.room_id if chat.room else None}")
     current_app.logger.error(f"🔍 can_access_chat: room_access={room_access} for room_id={chat.room_id if chat.room else None}")
     
     return room_access
