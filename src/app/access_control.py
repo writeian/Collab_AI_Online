@@ -175,13 +175,24 @@ def can_access_chat(user: Optional[User], chat: Optional[Chat]) -> bool:
     Returns:
         bool: True if user can access the chat, False otherwise
     """
+    from flask import current_app
+    
+    current_app.logger.warning(f"🔍 can_access_chat: user={user.username if user else None}, chat_id={chat.id if chat else None}")
+    
     if not chat:
+        current_app.logger.warning(f"🔍 can_access_chat: DENIED - no chat object")
         return False
+    
     # Admins have full access
     if is_admin(user):
+        current_app.logger.info(f"🔍 can_access_chat: GRANTED - user is admin")
         return True
+    
     # Check if user can access the room that contains this chat
-    return can_access_room(user, chat.room)
+    room_access = can_access_room(user, chat.room)
+    current_app.logger.warning(f"🔍 can_access_chat: room_access={room_access} for room_id={chat.room_id if chat.room else None}")
+    
+    return room_access
 
 
 def can_edit_chat(user: Optional[User], chat: Optional[Chat]) -> bool:
