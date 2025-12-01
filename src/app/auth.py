@@ -33,20 +33,7 @@ auth = Blueprint("auth", __name__)
 
 @auth.route("/register", methods=["GET", "POST"])
 def register() -> Any:
-    print("=== REGISTRATION ROUTE CALLED ===")
     if request.method == "POST":
-        # Debug logging
-        print(f"Registration POST request received")
-        print(f"Form data: {dict(request.form)}")
-        print(f"Content-Type: {request.content_type}")
-        print(f"Headers: {dict(request.headers)}")
-        
-        # Check for CSRF token
-        if 'csrf_token' in request.form:
-            print(f"CSRF token present: {request.form['csrf_token'][:20]}...")
-        else:
-            print("WARNING: No CSRF token found in form data")
-        
         try:
             # Required fields
             username = request.form["username"].strip()
@@ -66,12 +53,7 @@ def register() -> Any:
             receive_updates = request.form.get("receive_updates") == "1"
             contact_for_research = request.form.get("contact_for_research") == "1"
 
-            print(f"Parsed form data - username: {username}, email: {email}")
         except Exception as e:
-            print(f"ERROR parsing form data: {e}")
-            print(f"Exception type: {type(e)}")
-            import traceback
-            print(f"Traceback: {traceback.format_exc()}")
             flash("Invalid form data. Please try again.", "error")
             return render_template("register.html"), 400
 

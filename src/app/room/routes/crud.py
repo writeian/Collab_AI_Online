@@ -187,56 +187,33 @@ def view_room_mountain(room_id: int) -> Any:
 @require_room_access
 def view_room(room_id: int) -> Any:
     """View a specific room (overview) - SAFE MOUNTAIN VIEW WITH FALLBACK."""
-    print(f"🎯🎯🎯 NEW ROOM ROUTE HIT: Processing room {room_id} 🎯🎯🎯")
-    current_app.logger.error(f"🎯🎯🎯 NEW ROOM ROUTE HIT: Processing room {room_id} 🎯🎯🎯")
     try:
-        print(f"🔍 STEP 1: Getting current user for room {room_id}")
         user = get_current_user()
-        print(f"🔍 STEP 2: Getting room by ID {room_id} for user {user.username if user else 'None'}")
         room = RoomService.get_room_by_id(room_id, user)
-        print(f"🔍 STEP 3: Room lookup result: {room.name if room else 'None'}")
         
         if not room:
             flash("Room not found or you don't have access to it.", "error")
             return redirect(url_for('room.room_crud.index'))
         
         # Get room data (same for both templates)
-        print(f"🔍 STEP 4: Getting room chats for {room_id}")
         chats = RoomService.get_room_chats(room, user)
-        print(f"🔍 STEP 5: Getting room members for {room_id}")
         members = RoomService.get_room_members(room, user)
-        print(f"🔍 STEP 6: Getting room display data for {room_id}")
         room_data = RoomService.get_room_display_data(room, user)
-        print(f"🔍 DATA CHECK: Room {room_id} has {len(chats) if chats else 0} chats, {len(members) if members else 0} members")
         
         # Get learning modes for mountain view
-        print(f"🔍 STEP 7: Getting learning modes for room {room_id}")
         modes = {}
         try:
-            print(f"🔍 STEP 7a: Calling get_modes_for_room({room.name})")
             modes_obj = get_modes_for_room(room)
-            print(f"🔍 STEP 7b: Modes object type: {type(modes_obj)}")
-            print(f"🔍 STEP 7c: Modes object: {modes_obj}")
             if hasattr(modes_obj, 'items'):
-                print(f"🔍 STEP 7d: Converting modes to dict")
                 for k, v in modes_obj.items():
                     modes[k] = v
-                print(f"🔍 STEP 7e: Final modes dict: {modes}")
-            else:
-                print(f"🔍 STEP 7f: Modes object has no items() method")
         except Exception as e:
-            print(f"🔍 STEP 7 ERROR: Failed to load modes for room {room_id}: {e}")
             current_app.logger.warning(f"Failed to load modes for room {room_id}: {e}")
             modes = {}
 
-        # TRY MOUNTAIN VIEW WITH COMPREHENSIVE DEBUGGING
+        # Try mountain view with fallback
         try:
-            print(f"🏔️ STEP 8: Attempting mountain view render for room {room_id}")
-            print(f"🏔️ STEP 8a: Template data ready - Room: {room.name}")
-            print(f"🏔️ STEP 8b: Chats: {len(chats)}, Members: {len(members)}, Modes: {len(modes)}")
-            print(f"🏔️ STEP 8c: About to call render_template...")
-            
-            result = render_template(
+            return render_template(
                 "room/view_mountain_simple.html",
                 room=room,
                 room_data=room_data,
@@ -246,12 +223,8 @@ def view_room(room_id: int) -> Any:
                 user=user
             )
             
-            print(f"🏔️ STEP 8d: Mountain template rendered successfully for room {room_id}")
-            return result
-            
         except Exception as mountain_error:
-            # FALLBACK TO STANDARD VIEW
-            print(f"🚨 STEP 8 ERROR: Mountain view failed for room {room_id}: {mountain_error}")
+            # Fallback to standard view
             print(f"🔄 STEP 9: Falling back to standard view for room {room_id}")
             current_app.logger.error(f"🚨 MOUNTAIN VIEW FAILED for room {room_id}: {mountain_error}")
             current_app.logger.info(f"🔄 FALLBACK: Using standard view for room {room_id}")

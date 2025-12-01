@@ -404,11 +404,8 @@ def view_chat(chat_id: int) -> Any:
             pinned_items=pinned_items,
         )
     except Exception as e:
-        # Use .exception() to get full traceback in logs
-        current_app.logger.exception(f"💥 CHAT VIEW CRASH for chat_id {chat_id}: {str(e)}")
-        print(f"💥💥💥 CHAT VIEW EXCEPTION for chat {chat_id}: {e}")
-        import traceback
-        print(traceback.format_exc())
+        # Log exception with full traceback
+        current_app.logger.exception(f"Error in chat view for chat_id {chat_id}")
         flash("An error occurred while loading the chat. Please try again.", "error")
         return redirect(url_for("room.room_crud.index"))
 
