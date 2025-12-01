@@ -201,12 +201,18 @@
               </a>
             {% elif is_current %}
               <a href="/room/{{ room.id }}/chat/create?mode={{ mode_key }}" 
+                 data-start-chat
+                 data-mode="{{ mode_key }}"
+                 data-title="New {{ clean_title }}"
                  class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 shadow-lg">
                 <i data-lucide="arrow-up-right" class="w-4 h-4 mr-2"></i>
                 {% if step_chats %}Continue Climb{% else %}Start Ascent{% endif %}
               </a>
             {% else %}
               <a href="/room/{{ room.id }}/chat/create?mode={{ mode_key }}" 
+                 data-start-chat
+                 data-mode="{{ mode_key }}"
+                 data-title="New {{ clean_title }}"
                  class="inline-flex items-center px-4 py-2 bg-amber-100 text-amber-700 text-sm font-medium rounded-lg hover:bg-amber-200 transition-colors">
                 <i data-lucide="fast-forward" class="w-4 h-4 mr-2"></i>
                 Skip Ahead
@@ -491,6 +497,46 @@ document.addEventListener('DOMContentLoaded', function() {
   // rename to avoid redeclaration clash with the earlier `steps`
   const stepEls = [...document.querySelectorAll('[id^="step-"]')];
   if (!container || !svg || stepEls.length === 0) return;
+
+  // One-click chat creation from step buttons (keeps old page as fallback)
+  const startButtons = document.querySelectorAll('[data-start-chat]');
+  startButtons.forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      if (btn.dataset.loading === '1') return;
+      const mode = btn.dataset.mode;
+      const title = btn.dataset.title || `New ${mode || 'Chat'}`;
+      const fallbackHref = btn.getAttribute('href') || window.location.href;
+      const endpoint = `/room/{{ room.id }}/chat/create`;
+
+      // Optimistic UI: prevent double clicks
+      btn.dataset.loading = '1';
+      const originalText = btn.innerHTML;
+      btn.classList.add('opacity-70', 'pointer-events-none');
+      btn.innerHTML = '<span class="flex items-center gap-2"><span class="animate-pulse">Starting…</span></span>';
+
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode, title, source: 'next_step' }),
+        });
+        const data = await res.json();
+        if (res.ok && data.success && data.chat_id) {
+          window.location.href = `/chat/${data.chat_id}`;
+          return;
+        }
+        throw new Error(data.error || 'Chat creation failed');
+      } catch (err) {
+        console.warn('[chat-start] falling back to form page:', err);
+        window.location.href = fallbackHref; // graceful fallback to existing page
+      } finally {
+        btn.dataset.loading = '0';
+        btn.innerHTML = originalText;
+        btn.classList.remove('opacity-70', 'pointer-events-none');
+      }
+    });
+  });
 
   function pathD(points, tension = 0.35) {
     if (points.length < 2) return '';
