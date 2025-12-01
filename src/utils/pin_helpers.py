@@ -257,6 +257,11 @@ def get_pinned_ids_for_chat(user_id: int, chat_id: int) -> Dict[str, Set[int]]:
         
     except Exception as e:
         logger.error(f"Error getting pinned IDs: {e}")
+        # Roll back to recover the session if the table/query failed (e.g., missing table)
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
         return {
             'messages': set(),
             'comments': set()
@@ -284,5 +289,9 @@ def get_pinned_items_for_chat(user_id: int, chat_id: int) -> list:
         
     except Exception as e:
         logger.error(f"Error getting pinned items: {e}")
+        # Roll back to recover the session if the table/query failed
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
         return []
-
