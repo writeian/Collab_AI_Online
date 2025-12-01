@@ -411,7 +411,7 @@
                                         💬 Add Comment
                                     </button>
                                     <button type="button" 
-                                            class="text-xs text-muted-foreground hover:text-foreground ml-2 pin-toggle" 
+                                            class="text-xs ml-2 pin-toggle" 
                                             data-pin-message="{{ message.id }}"
                                             data-pinned="{{ 'true' if message.id in pinned_message_ids else 'false' }}">
                                         {% if message.id in pinned_message_ids %}
@@ -437,7 +437,7 @@
                                         💬 Add Comment
                                     </button>
                                     <button type="button" 
-                                            class="text-xs text-muted-foreground hover:text-foreground ml-2 pin-toggle" 
+                                            class="text-xs ml-2 pin-toggle" 
                                             data-pin-message="{{ message.id }}"
                                             data-pinned="{{ 'true' if message.id in pinned_message_ids else 'false' }}">
                                         {% if message.id in pinned_message_ids %}
@@ -487,7 +487,7 @@
                                 {{ comment.timestamp.strftime('%I:%M %p') }}
                                 {% if user %}
                                 <button type="button" 
-                                        class="text-xs text-muted-foreground hover:text-foreground ml-2 pin-toggle" 
+                                        class="text-xs ml-2 pin-toggle" 
                                         data-pin-comment="{{ comment.id }}"
                                         data-pinned="{{ 'true' if comment.id in pinned_comment_ids else 'false' }}">
                                     {% if comment.id in pinned_comment_ids %}
