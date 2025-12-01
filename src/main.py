@@ -256,6 +256,25 @@ def list_routes():
     return {"routes": routes}
 
 
+
+# Debug: Check deployed code version
+@app.route("/version")
+def version_check():
+    """Check which commit/version is deployed."""
+    import subprocess
+    try:
+        commit = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode().strip()
+    except:
+        commit = 'unknown'
+    
+    return {
+        "commit": commit,
+        "has_pin_logging": True,  # This line added in commit aff3088
+        "has_nested_transaction": True,  # This line added in commit acbec7a
+        "timestamp": datetime.utcnow().isoformat()
+    }, 200
+
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
 # Force deployment Sun Sep 14 21:41:37 PDT 2025
