@@ -372,11 +372,17 @@ def view_chat(chat_id: int) -> Any:
         except Exception:
             suggestion = None
 
-        # Get pinned items for this chat
-        from src.utils.pin_helpers import get_pinned_ids_for_chat, get_pinned_items_for_chat
-        
-        pinned_ids = get_pinned_ids_for_chat(user.id, chat_obj.id)
-        pinned_items = get_pinned_items_for_chat(user.id, chat_obj.id)
+        # Get pinned items for this chat (with defensive error handling)
+        try:
+            from src.utils.pin_helpers import get_pinned_ids_for_chat, get_pinned_items_for_chat
+            
+            pinned_ids = get_pinned_ids_for_chat(user.id, chat_obj.id)
+            pinned_items = get_pinned_items_for_chat(user.id, chat_obj.id)
+        except Exception as pin_error:
+            # If pins fail (e.g., table doesn't exist), continue without them
+            current_app.logger.warning(f"Pins unavailable for chat {chat_obj.id}: {pin_error}")
+            pinned_ids = {'messages': set(), 'comments': set()}
+            pinned_items = []
 
         return render_template(
             "chat/view.html",
