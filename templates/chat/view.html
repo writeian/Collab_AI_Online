@@ -46,6 +46,24 @@
     overscroll-behavior: contain;
     touch-action: pan-y;
   }
+  /* Pin toggle buttons inherit font/color for consistent styling */
+  .pin-toggle {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    opacity: 0.75;
+    transition: color 0.15s ease, opacity 0.15s ease;
+  }
+  .pin-toggle:hover,
+  .pin-toggle:focus-visible {
+    opacity: 1;
+    color: inherit;
+  }
 </style>
 {% endblock %}
 
