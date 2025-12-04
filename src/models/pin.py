@@ -1,19 +1,21 @@
 #!/usr/bin/env python3
 """
 pin.py
-Purpose: PinnedItem model for user-specific message/comment pinning
+Purpose: PinnedItem and PinChatMetadata models for pinning features
 Status: [ACTIVE]
 Created: 2025-12-01
+Updated: 2025-12-04
 Author: AI Collab Team
 
-Allows users to pin messages or comments within chats for quick reference.
-Stores content snapshot at pin time (truncated to 5000 chars).
+PinnedItem: Allows users to pin messages or comments within chats for quick reference.
+PinChatMetadata: Stores metadata for pin-seeded chats (option, pin snapshot).
 """
 
 from datetime import datetime, timezone
 from src.app import db
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from sqlalchemy.exc import IntegrityError
+import json
 
 
 class PinnedItem(db.Model):
@@ -130,4 +132,74 @@ class PinnedItem(db.Model):
             return content
         
         return content[:max_length] + '...'
+
+
+class PinChatMetadata(db.Model):
+    """
+    Metadata for pin-seeded chats.
+    
+    Stores the option selected and a snapshot of pins used to create the chat.
+    This allows pin chats to render even if original pins are deleted.
+    """
+    
+    __tablename__ = 'pin_chat_metadata'
+    __table_args__ = {'extend_existing': True}
+
+    id = db.Column(db.Integer, primary_key=True)
+    chat_id = db.Column(
+        db.Integer, 
+        db.ForeignKey('chat.id', ondelete='CASCADE'), 
+        nullable=False,
+        unique=True,  # One metadata per chat
+        index=True
+    )
+    option = db.Column(db.String(32), nullable=False)  # e.g., "explore", "study", "research_essay"
+    pin_snapshot = db.Column(db.Text, nullable=False)  # JSON array of pin data
+    created_at = db.Column(
+        db.DateTime, 
+        default=lambda: datetime.now(timezone.utc), 
+        nullable=False
+    )
+
+    # Relationship
+    chat = db.relationship('Chat', backref=db.backref('pin_metadata', uselist=False))
+
+    def __repr__(self) -> str:
+        return f'<PinChatMetadata chat_id={self.chat_id} option={self.option}>'
+    
+    @property
+    def pins(self) -> List[Dict[str, Any]]:
+        """Parse and return the pin snapshot as a list of dicts."""
+        try:
+            return json.loads(self.pin_snapshot) if self.pin_snapshot else []
+        except (json.JSONDecodeError, TypeError):
+            return []
+    
+    @property
+    def pin_count(self) -> int:
+        """Return the number of pins used to create this chat."""
+        return len(self.pins)
+    
+    @staticmethod
+    def create_snapshot(pins: List['PinnedItem']) -> str:
+        """
+        Create a JSON snapshot from a list of PinnedItem objects.
+        
+        Args:
+            pins: List of PinnedItem objects to snapshot
+            
+        Returns:
+            JSON string with pin data
+        """
+        snapshot = []
+        for pin in pins:
+            snapshot.append({
+                'id': pin.id,
+                'content': pin.content[:2000] if pin.content else '',  # Truncate for storage
+                'role': pin.role,
+                'author': pin.user.username if pin.user else 'Unknown',
+                'chat_id': pin.chat_id,
+                'created_at': pin.created_at.isoformat() if pin.created_at else None
+            })
+        return json.dumps(snapshot)
 

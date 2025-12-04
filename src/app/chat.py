@@ -332,6 +332,27 @@ def view_chat(chat_id: int) -> Any:
             .order_by(Chat.created_at.desc())
             .all()
         )
+        
+        # Get pin chat metadata for grouping
+        try:
+            from src.models import PinChatMetadata
+            pin_chat_ids = set()
+            pin_chat_info = {}  # chat_id -> {pin_count, option}
+            
+            pin_metas = PinChatMetadata.query.filter(
+                PinChatMetadata.chat_id.in_([c.id for c in other_chats] + [chat_obj.id])
+            ).all()
+            
+            for meta in pin_metas:
+                pin_chat_ids.add(meta.chat_id)
+                pin_chat_info[meta.chat_id] = {
+                    'pin_count': meta.pin_count,
+                    'option': meta.option
+                }
+        except Exception as e:
+            current_app.logger.warning(f"Could not load pin chat metadata: {e}")
+            pin_chat_ids = set()
+            pin_chat_info = {}
 
         # Get dynamic modes for this chat's room
         modes = get_modes_for_room(chat_obj.room)
@@ -410,6 +431,8 @@ def view_chat(chat_id: int) -> Any:
             personal_pins=personal_pins,
             shared_pins=shared_pins,
             is_room_owner=is_room_owner,
+            pin_chat_ids=pin_chat_ids,
+            pin_chat_info=pin_chat_info,
         )
     except Exception as e:
         # Log exception with full traceback

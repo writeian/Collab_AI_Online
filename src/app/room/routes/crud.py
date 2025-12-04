@@ -6,7 +6,7 @@ Handles HTTP requests for room operations.
 from flask import Blueprint, render_template, request, jsonify, current_app, flash, redirect, url_for
 from typing import Any, Tuple, List
 from src.app import db
-from src.models import Room, User, Chat, RoomMember
+from src.models import Room, User, Chat, RoomMember, Message, PinnedItem, PinChatMetadata
 from ..services.room_service import RoomService
 from ..types import RoomCreationData, RoomUpdateData
 from ..utils.room_utils import get_invitation_count
@@ -634,6 +634,293 @@ def create_chat(room_id: int) -> Any:
         user=user,
         invitation_count=get_invitation_count(user)
     )
+
+
+# =============================================================================
+# PIN-SEEDED CHAT CREATION (Phase D)
+# =============================================================================
+
+# Valid pin chat options
+PIN_CHAT_OPTIONS = {
+    "explore", "study", "research_essay", "presentation", 
+    "learning_exercise", "startup", "artistic", "social_impact", "analyze"
+}
+
+# Minimum pins required (configurable)
+MIN_PINS_REQUIRED = 3
+
+
+@crud_bp.route("/<int:room_id>/chats/from-pins", methods=["POST"])
+@require_login
+@csrf.exempt
+def create_chat_from_pins(room_id: int) -> Any:
+    """
+    Create a new chat seeded with shared pins.
+    
+    POST body (JSON):
+    {
+        "pin_ids": [1, 2, 3, ...],  // Must be ≥3 shared pins from this room
+        "option": "explore",         // One of PIN_CHAT_OPTIONS
+        "include_summary": false     // Optional, for future use
+    }
+    
+    Returns:
+    - 201: {"success": true, "chat_id": <id>}
+    - 400: {"success": false, "error": "<message>"}
+    - 403: {"success": false, "error": "Access denied"}
+    """
+    from src.app.access_control import can_create_chats_in_room
+    
+    user = get_current_user()
+    room = Room.query.get_or_404(room_id)
+    
+    # Check room access and permission to create chats
+    if not can_create_chats_in_room(user, room):
+        return jsonify({
+            "success": False, 
+            "error": "You don't have permission to create chats in this room."
+        }), 403
+    
+    # Enforce per-room chat cap
+    try:
+        max_chats = int(current_app.config.get('ROOM_MAX_CHATS') or 25)
+    except Exception:
+        max_chats = 25
+    
+    existing_count = Chat.query.filter_by(room_id=room.id).count()
+    if existing_count >= max_chats:
+        return jsonify({
+            "success": False,
+            "error": f"Chat limit reached for this room (max {max_chats})."
+        }), 400
+    
+    # Parse request body
+    data = request.get_json(silent=True) or {}
+    pin_ids = data.get("pin_ids", [])
+    option = (data.get("option") or "").strip().lower()
+    
+    # Validate option
+    if option not in PIN_CHAT_OPTIONS:
+        return jsonify({
+            "success": False,
+            "error": f"Invalid option. Must be one of: {', '.join(sorted(PIN_CHAT_OPTIONS))}"
+        }), 400
+    
+    # Validate pin_ids is a list
+    if not isinstance(pin_ids, list):
+        return jsonify({
+            "success": False,
+            "error": "pin_ids must be a list of integers."
+        }), 400
+    
+    # Validate minimum pins
+    if len(pin_ids) < MIN_PINS_REQUIRED:
+        return jsonify({
+            "success": False,
+            "error": f"At least {MIN_PINS_REQUIRED} pins are required."
+        }), 400
+    
+    # Fetch and validate pins
+    pins = PinnedItem.query.filter(PinnedItem.id.in_(pin_ids)).all()
+    
+    # Check all requested pins were found
+    if len(pins) != len(pin_ids):
+        found_ids = {p.id for p in pins}
+        missing_ids = set(pin_ids) - found_ids
+        return jsonify({
+            "success": False,
+            "error": f"Pins not found: {list(missing_ids)}"
+        }), 400
+    
+    # Validate all pins belong to this room and are shared
+    for pin in pins:
+        if pin.room_id != room_id:
+            return jsonify({
+                "success": False,
+                "error": f"Pin {pin.id} does not belong to this room."
+            }), 400
+        if not pin.is_shared:
+            return jsonify({
+                "success": False,
+                "error": f"Pin {pin.id} is not shared. Only shared pins can be used."
+            }), 400
+    
+    # Generate title
+    option_labels = {
+        "explore": "Explore & Brainstorm",
+        "study": "Study & Master",
+        "research_essay": "Research Essay",
+        "presentation": "Presentation",
+        "learning_exercise": "Learning Exercise",
+        "startup": "Startup Plan",
+        "artistic": "Artistic Creation",
+        "social_impact": "Social Impact",
+        "analyze": "Analysis"
+    }
+    option_label = option_labels.get(option, option.title())
+    title = f"Pinned Insights — {option_label} — {room.name}"
+    
+    # Truncate title if too long
+    if len(title) > 120:
+        title = title[:117] + "..."
+    
+    try:
+        # Create the chat
+        chat_obj = Chat(
+            title=title,
+            room_id=room.id,
+            created_by=user.id,
+            mode=f"pins_{option}"  # Use pins_ prefix to distinguish from regular modes
+        )
+        db.session.add(chat_obj)
+        db.session.flush()  # Get chat ID
+        
+        # Create pin metadata with snapshot
+        pin_snapshot = PinChatMetadata.create_snapshot(pins)
+        metadata = PinChatMetadata(
+            chat_id=chat_obj.id,
+            option=option,
+            pin_snapshot=pin_snapshot
+        )
+        db.session.add(metadata)
+        
+        # Generate AI introduction using pin_synthesis module
+        try:
+            from src.utils.pin_synthesis import generate_pin_chat_introduction
+            
+            # Convert PinnedItem objects to dicts for the function
+            pins_data = [
+                {
+                    "id": p.id,
+                    "content": p.content,
+                    "role": p.role,
+                    "author": p.user.username if p.user else "Unknown"
+                }
+                for p in pins
+            ]
+            
+            intro_content = generate_pin_chat_introduction(
+                pins=pins_data,
+                option=option,
+                room_goals=room.goals,
+                room_name=room.name
+            )
+        except Exception as intro_error:
+            current_app.logger.warning(f"AI intro failed, using fallback: {intro_error}")
+            intro_content = _generate_pin_chat_intro(pins, option, option_label, room)
+        
+        intro_message = Message(
+            chat_id=chat_obj.id,
+            role="assistant",
+            content=intro_content,
+            is_truncated=False
+        )
+        db.session.add(intro_message)
+        
+        db.session.commit()
+        
+        current_app.logger.info(
+            f"✅ Pin chat created: chat_id={chat_obj.id}, option={option}, pins={len(pins)}, user={user.id}"
+        )
+        
+        return jsonify({
+            "success": True,
+            "chat_id": chat_obj.id
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"❌ Failed to create pin chat: {e}")
+        return jsonify({
+            "success": False,
+            "error": "Failed to create chat. Please try again."
+        }), 500
+
+
+def _generate_pin_chat_intro(pins: list, option: str, option_label: str, room) -> str:
+    """
+    Generate introduction message for a pin-seeded chat.
+    
+    This is a template-based fallback. Phase 3 will add full AI-generated intros
+    via the pin_synthesis module.
+    """
+    pin_count = len(pins)
+    
+    # Build pin summary (first 3 pins, truncated)
+    pin_summaries = []
+    for i, pin in enumerate(pins[:3]):
+        content_preview = pin.content[:100] + "..." if len(pin.content) > 100 else pin.content
+        pin_summaries.append(f"• {content_preview}")
+    
+    if pin_count > 3:
+        pin_summaries.append(f"• ...and {pin_count - 3} more pins")
+    
+    pins_text = "\n".join(pin_summaries)
+    
+    # Option-specific intro templates
+    intro_templates = {
+        "explore": f"""Welcome! Let's explore and brainstorm together using these **{pin_count} pinned insights** from your room.
+
+📌 **Your Pinned Context:**
+{pins_text}
+
+I'm here to help you discover connections, generate new ideas, and explore possibilities based on these insights.
+
+**How would you like to begin?**
+• Tell me what connections or patterns you notice
+• Ask me to find themes across these pins
+• Share a question or idea you'd like to explore""",
+        
+        "study": f"""Welcome! I'll help you study and master the content in these **{pin_count} pinned insights**.
+
+📌 **Study Material:**
+{pins_text}
+
+I'll guide you through understanding these concepts deeply, testing your knowledge, and building mastery.
+
+**Ready to begin?**
+• Ask me to explain any concept in depth
+• Request a quiz or practice questions
+• Tell me what you'd like to focus on first""",
+        
+        "research_essay": f"""Welcome! Let's work on drafting a research essay using these **{pin_count} pinned insights** as source material.
+
+📌 **Source Material:**
+{pins_text}
+
+I'll help you synthesize these insights into a well-structured essay with clear arguments and evidence.
+
+**Where would you like to start?**
+• Identify the main thesis or argument
+• Create an outline structure
+• Summarize the key points from each pin""",
+        
+        "analyze": f"""Welcome! Let's analyze and synthesize these **{pin_count} pinned insights** together.
+
+📌 **Content to Analyze:**
+{pins_text}
+
+I'll help you identify patterns, draw conclusions, and create actionable insights.
+
+**What would you like to explore?**
+• Find common themes and patterns
+• Identify gaps or contradictions
+• Create a summary of key takeaways"""
+    }
+    
+    # Use specific template or generic fallback
+    if option in intro_templates:
+        return intro_templates[option]
+    
+    # Generic fallback for other options
+    return f"""Welcome! I'm here to help you with **{option_label}** using these **{pin_count} pinned insights** from your room.
+
+📌 **Your Pinned Context:**
+{pins_text}
+
+🎯 **Room Goals:** {room.goals[:200] + '...' if room.goals and len(room.goals) > 200 else room.goals or 'Not specified'}
+
+Let me know how you'd like to proceed, and I'll help you make the most of these insights!"""
 
 
 def _generate_title_and_modes(goals_text: str) -> Tuple[str, List]:

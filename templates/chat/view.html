@@ -262,12 +262,51 @@
                 <i data-lucide="chevron-down" class="w-4 h-4 chevron"></i>
             </summary>
             <div class="sidebar-panel">
-                <!-- Chat List (if multiple chats) -->
+                <!-- Pin Chat CTA (when ≥3 shared pins) -->
+                {% if shared_pins|length >= 3 %}
+                <div class="pin-chat-cta-prominent mb-4 p-3 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg shadow-md">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2 text-white">
+                            <i data-lucide="pin" class="w-5 h-5"></i>
+                            <span class="font-medium">{{ shared_pins|length }} Shared Pins</span>
+                        </div>
+                        <button type="button" 
+                                class="pin-chat-start-btn px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white text-sm font-medium rounded-md transition-colors flex items-center gap-1.5"
+                                data-room-id="{{ room.id }}"
+                                data-pin-count="{{ shared_pins|length }}">
+                            <i data-lucide="sparkles" class="w-4 h-4"></i>
+                            New from Pins
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Chat List -->
                 <div class="overflow-y-auto">
                     <h4 class="text-sm font-medium mb-3">Other Chats</h4>
                     {% if other_chats %}
-                    <div class="chat-list">
+                    
+                    {# Count pin chats for section header #}
+                    {% set pin_chat_count = namespace(value=0) %}
+                    {% for c in other_chats %}
+                        {% if c.id in pin_chat_ids %}
+                            {% set pin_chat_count.value = pin_chat_count.value + 1 %}
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {# Check if there are regular chats #}
+                    {% set has_regular = namespace(value=false) %}
+                    {% for other_chat in other_chats %}
+                        {% if other_chat.id not in pin_chat_ids %}
+                            {% set has_regular.value = true %}
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {# Regular Chats #}
+                    {% if has_regular.value %}
+                    <div class="chat-list space-y-2 mb-4">
                         {% for other_chat in other_chats %}
+                        {% if other_chat.id not in pin_chat_ids %}
                         <a href="{{ url_for('chat.view_chat', chat_id=other_chat.id) }}" 
                            class="block p-3 rounded-lg border border-border hover:bg-muted transition-colors">
                             <div class="flex items-center justify-between">
@@ -277,13 +316,56 @@
                                     <p class="text-xs text-muted-foreground">{{ other_chat.created_at.strftime('%b %d, %Y') }}</p>
                                 </div>
                                 <div class="flex items-center gap-1">
-                                    <span class="text-xs text-muted-foreground">{{ other_chat.messages|length }} messages</span>
+                                    <span class="text-xs text-muted-foreground">{{ other_chat.messages|length }} msgs</span>
                                     <i data-lucide="chevron-right" class="w-4 h-4 text-muted-foreground"></i>
                                 </div>
                             </div>
                         </a>
+                        {% endif %}
                         {% endfor %}
                     </div>
+                    {% endif %}
+                    
+                    {# Pin-based Chats (grouped at bottom) #}
+                    {% if pin_chat_count.value > 0 %}
+                    <div class="pin-chats-group">
+                        <div class="flex items-center gap-2 mb-2 pt-2 border-t border-border">
+                            <i data-lucide="pin" class="w-4 h-4 text-indigo-500"></i>
+                            <span class="text-xs font-medium text-indigo-600 dark:text-indigo-400">Pin-based Chats</span>
+                            <span class="text-xs text-muted-foreground">({{ pin_chat_count.value }})</span>
+                        </div>
+                        <div class="chat-list space-y-2">
+                            {% for other_chat in other_chats %}
+                            {% if other_chat.id in pin_chat_ids %}
+                            {% set pin_info = pin_chat_info.get(other_chat.id, {}) %}
+                            <a href="{{ url_for('chat.view_chat', chat_id=other_chat.id) }}" 
+                               class="block p-3 rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50/50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex-1 min-w-0">
+                                        <h5 class="font-medium text-sm truncate">{{ other_chat.title }}</h5>
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-800 text-indigo-700 dark:text-indigo-300 rounded text-xs">
+                                                <i data-lucide="pin" class="w-3 h-3"></i>
+                                                {{ pin_info.get('pin_count', '?') }} pins
+                                            </span>
+                                            <span class="text-xs text-muted-foreground">{{ other_chat.created_at.strftime('%b %d') }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-xs text-muted-foreground">{{ other_chat.messages|length }} msgs</span>
+                                        <i data-lucide="chevron-right" class="w-4 h-4 text-muted-foreground"></i>
+                                    </div>
+                                </div>
+                            </a>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if not has_regular.value and pin_chat_count.value == 0 %}
+                    <p class="text-sm text-muted-foreground">No other chats in this room.</p>
+                    {% endif %}
                     {% else %}
                     <p class="text-sm text-muted-foreground">No other chats in this room.</p>
                     {% endif %}
@@ -303,7 +385,16 @@
                         <i data-lucide="panel-left" class="w-5 h-5"></i>
                     </button>
                     <div>
-                        <h1 class="text-lg font-medium">{{ chat.title }}</h1>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-lg font-medium">{{ chat.title }}</h1>
+                            {% if chat.id in pin_chat_ids %}
+                            {% set current_pin_info = pin_chat_info.get(chat.id, {}) %}
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-medium" title="This chat was created from {{ current_pin_info.get('pin_count', '?') }} shared pins">
+                                <i data-lucide="pin" class="w-3 h-3"></i>
+                                {{ current_pin_info.get('pin_count', '?') }} pins
+                            </span>
+                            {% endif %}
+                        </div>
                         <p class="text-sm text-muted-foreground">
                             {{ chat.created_at.strftime('%B %d, %Y') }}
                         </p>
@@ -523,5 +614,6 @@
     {{ super() }}
     <script src="{{ url_for('static', filename='js/chat-view.js') }}?v=2025-10-28"></script>
     <script src="{{ url_for('static', filename='js/pin-toggle.js') }}?v=2025-12-04-inplace"></script>
+    <script src="{{ url_for('static', filename='js/pin-chat.js') }}?v=2025-12-04"></script>
 {% endblock %}
 <!-- PIN OPACITY FIX DEPLOYED 2025-12-01T03:15Z -->

@@ -646,6 +646,57 @@ def call_anthropic_api(messages: List[Dict[str, str]], system_prompt: str = "", 
             raise Exception(f"Anthropic API call failed: {str(e)}")
 
 
+def _get_pin_chat_system_prompt(chat: Any) -> str:
+    """
+    Build system prompt for a pin-seeded chat.
+    
+    Retrieves PinChatMetadata and uses pin_synthesis module to build the prompt.
+    Falls back to a generic prompt if metadata is not found.
+    
+    Args:
+        chat: Chat object with mode starting with "pins_"
+        
+    Returns:
+        System prompt string with pin context
+    """
+    try:
+        from src.models import PinChatMetadata, Room
+        from src.utils.pin_synthesis import get_pin_chat_system_prompt
+        
+        # Look up pin metadata for this chat
+        metadata = PinChatMetadata.query.filter_by(chat_id=chat.id).first()
+        
+        if not metadata:
+            current_app.logger.warning(f"No PinChatMetadata found for pin chat {chat.id}")
+            return "You are a helpful AI assistant. The user has selected some pinned content to work with."
+        
+        # Get room goals
+        room = Room.query.get(chat.room_id)
+        room_goals = room.goals if room else None
+        
+        # Extract option from mode (e.g., "pins_explore" -> "explore")
+        option = chat.mode.replace("pins_", "") if chat.mode else "analyze"
+        
+        # Get pins from snapshot
+        pins = metadata.pins
+        
+        # Build the system prompt
+        prompt = get_pin_chat_system_prompt(option, pins, room_goals)
+        
+        # Log prompt size for monitoring
+        prompt_chars = len(prompt)
+        current_app.logger.info(
+            f"🔗 Pin chat prompt: chat={chat.id}, option={option}, pins={len(pins)}, "
+            f"prompt_chars={prompt_chars}, {'⚠️ LARGE' if prompt_chars > 12000 else '✓ OK'}"
+        )
+        
+        return prompt
+        
+    except Exception as e:
+        current_app.logger.error(f"Error building pin chat system prompt: {e}")
+        return "You are a helpful AI assistant working with pinned content. Help the user achieve their goals."
+
+
 def get_ai_response(
     chat: Any,
     *,
@@ -689,8 +740,15 @@ def get_ai_response(
             False,
         )
 
-    # Get mode-specific system prompt with discussion context
-    base_system_prompt = get_mode_system_prompt(chat.mode, chat.room_id, chat.id)
+    # Check if this is a pin-seeded chat (mode starts with "pins_")
+    is_pin_chat = chat.mode and chat.mode.startswith("pins_")
+    
+    if is_pin_chat:
+        # Use pin-specific system prompt
+        base_system_prompt = _get_pin_chat_system_prompt(chat)
+    else:
+        # Get mode-specific system prompt with discussion context
+        base_system_prompt = get_mode_system_prompt(chat.mode, chat.room_id, chat.id)
     
     # Add extra system instructions if provided (for critique tool)
     system_prompt = base_system_prompt

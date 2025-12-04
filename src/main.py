@@ -206,6 +206,45 @@ def run_production_migrations(app):
                         print("✓ is_shared column added")
                     except Exception as alter_error:
                         print(f"❌ Failed to add is_shared column: {alter_error}")
+                
+                # PHASE D: Manually create pin_chat_metadata table for pin-seeded chats
+                try:
+                    from src.models import PinChatMetadata
+                    PinChatMetadata.query.first()  # Test if table exists
+                    print("✓ pin_chat_metadata table exists")
+                except Exception:
+                    print("⚠️ pin_chat_metadata table missing, creating manually...")
+                    try:
+                        is_postgres = 'postgresql' in str(db.engine.url)
+                        
+                        with db.engine.connect() as conn:
+                            if is_postgres:
+                                conn.execute(db.text("""
+                                    CREATE TABLE IF NOT EXISTS pin_chat_metadata (
+                                        id SERIAL PRIMARY KEY,
+                                        chat_id INTEGER NOT NULL UNIQUE REFERENCES chat(id) ON DELETE CASCADE,
+                                        option VARCHAR(32) NOT NULL,
+                                        pin_snapshot TEXT NOT NULL,
+                                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                    )
+                                """))
+                                conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_pin_chat_metadata_chat_id ON pin_chat_metadata(chat_id)"))
+                            else:
+                                # SQLite-compatible SQL
+                                conn.execute(db.text("""
+                                    CREATE TABLE IF NOT EXISTS pin_chat_metadata (
+                                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                        chat_id INTEGER NOT NULL UNIQUE REFERENCES chat(id) ON DELETE CASCADE,
+                                        option VARCHAR(32) NOT NULL,
+                                        pin_snapshot TEXT NOT NULL,
+                                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                    )
+                                """))
+                                conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_pin_chat_metadata_chat_id ON pin_chat_metadata(chat_id)"))
+                            conn.commit()
+                        print("✓ pin_chat_metadata table created manually")
+                    except Exception as create_error:
+                        print(f"❌ Failed to create pin_chat_metadata table: {create_error}")
         except Exception as e:
             print(f"Table creation warning: {e}")
             print("Continuing with app startup...")
