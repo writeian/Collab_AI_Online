@@ -200,6 +200,24 @@ def view_room(room_id: int) -> Any:
         members = RoomService.get_room_members(room, user)
         room_data = RoomService.get_room_display_data(room, user)
         
+        # Get pin chat metadata for grouping
+        pin_chat_ids = set()
+        pin_chat_info = {}
+        try:
+            from src.models import PinChatMetadata
+            if chats:
+                pin_metas = PinChatMetadata.query.filter(
+                    PinChatMetadata.chat_id.in_([c.id for c in chats])
+                ).all()
+                for meta in pin_metas:
+                    pin_chat_ids.add(meta.chat_id)
+                    pin_chat_info[meta.chat_id] = {
+                        'pin_count': meta.pin_count,
+                        'option': meta.option
+                    }
+        except Exception as e:
+            current_app.logger.warning(f"Could not load pin chat metadata: {e}")
+        
         # Get learning modes for mountain view
         modes = {}
         try:
@@ -220,7 +238,9 @@ def view_room(room_id: int) -> Any:
                 chats=chats,
                 members=members,
                 modes=modes,
-                user=user
+                user=user,
+                pin_chat_ids=pin_chat_ids,
+                pin_chat_info=pin_chat_info
             )
             
         except Exception as mountain_error:
@@ -237,7 +257,9 @@ def view_room(room_id: int) -> Any:
                 members=members,
                 user=user,
                 invitation_count=get_invitation_count(user),
-                get_display_title=get_display_title
+                get_display_title=get_display_title,
+                pin_chat_ids=pin_chat_ids,
+                pin_chat_info=pin_chat_info
             )
             
     except Exception as e:
