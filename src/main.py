@@ -70,18 +70,20 @@ def run_production_migrations(app):
                 except Exception:
                     print("⚠️ chat_notes table missing, creating manually...")
                     try:
-                        db.engine.execute("""
-                            CREATE TABLE IF NOT EXISTS chat_notes (
-                                id SERIAL PRIMARY KEY,
-                                chat_id INTEGER NOT NULL UNIQUE REFERENCES chat(id),
-                                room_id INTEGER NOT NULL REFERENCES room(id),
-                                notes_content TEXT NOT NULL,
-                                generated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                message_count INTEGER NOT NULL
-                            );
-                            CREATE INDEX IF NOT EXISTS ix_chat_notes_room_id ON chat_notes(room_id);
-                            CREATE INDEX IF NOT EXISTS ix_chat_notes_generated_at ON chat_notes(generated_at);
-                        """)
+                        with db.engine.connect() as conn:
+                            conn.execute(db.text("""
+                                CREATE TABLE IF NOT EXISTS chat_notes (
+                                    id SERIAL PRIMARY KEY,
+                                    chat_id INTEGER NOT NULL UNIQUE REFERENCES chat(id),
+                                    room_id INTEGER NOT NULL REFERENCES room(id),
+                                    notes_content TEXT NOT NULL,
+                                    generated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                    message_count INTEGER NOT NULL
+                                )
+                            """))
+                            conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_chat_notes_room_id ON chat_notes(room_id)"))
+                            conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_chat_notes_generated_at ON chat_notes(generated_at)"))
+                            conn.commit()
                         print("✓ chat_notes table created manually")
                     except Exception as create_error:
                         print(f"❌ Failed to create chat_notes table: {create_error}")
@@ -97,103 +99,110 @@ def run_production_migrations(app):
                         # Detect if PostgreSQL or SQLite
                         is_postgres = 'postgresql' in str(db.engine.url)
                         
-                        if is_postgres:
-                            # PostgreSQL-specific SQL
-                            db.engine.execute("""
-                                CREATE TABLE IF NOT EXISTS pinned_items (
-                                    id SERIAL PRIMARY KEY,
-                                    user_id INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
-                                    room_id INTEGER NOT NULL REFERENCES room(id) ON DELETE CASCADE,
-                                    chat_id INTEGER NOT NULL REFERENCES chat(id) ON DELETE CASCADE,
-                                    message_id INTEGER REFERENCES message(id) ON DELETE CASCADE,
-                                    comment_id INTEGER REFERENCES comment(id) ON DELETE CASCADE,
-                                    role VARCHAR(20),
-                                    content TEXT NOT NULL,
-                                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                    CONSTRAINT check_exactly_one_item CHECK (
-                                        (message_id IS NOT NULL AND comment_id IS NULL) OR
-                                        (message_id IS NULL AND comment_id IS NOT NULL)
+                        with db.engine.connect() as conn:
+                            if is_postgres:
+                                # PostgreSQL-specific SQL (includes is_shared column)
+                                conn.execute(db.text("""
+                                    CREATE TABLE IF NOT EXISTS pinned_items (
+                                        id SERIAL PRIMARY KEY,
+                                        user_id INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+                                        room_id INTEGER NOT NULL REFERENCES room(id) ON DELETE CASCADE,
+                                        chat_id INTEGER NOT NULL REFERENCES chat(id) ON DELETE CASCADE,
+                                        message_id INTEGER REFERENCES message(id) ON DELETE CASCADE,
+                                        comment_id INTEGER REFERENCES comment(id) ON DELETE CASCADE,
+                                        role VARCHAR(20),
+                                        content TEXT NOT NULL,
+                                        is_shared BOOLEAN NOT NULL DEFAULT FALSE,
+                                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                        CONSTRAINT check_exactly_one_item CHECK (
+                                            (message_id IS NOT NULL AND comment_id IS NULL) OR
+                                            (message_id IS NULL AND comment_id IS NOT NULL)
+                                        )
                                     )
-                                );
-                                CREATE UNIQUE INDEX IF NOT EXISTS unique_user_message_pin 
-                                    ON pinned_items(user_id, message_id) WHERE message_id IS NOT NULL;
-                                CREATE UNIQUE INDEX IF NOT EXISTS unique_user_comment_pin 
-                                    ON pinned_items(user_id, comment_id) WHERE comment_id IS NOT NULL;
-                                CREATE INDEX IF NOT EXISTS ix_pinned_items_user_id ON pinned_items(user_id);
-                                CREATE INDEX IF NOT EXISTS ix_pinned_items_room_id ON pinned_items(room_id);
-                                CREATE INDEX IF NOT EXISTS ix_pinned_items_chat_id ON pinned_items(chat_id);
-                                CREATE INDEX IF NOT EXISTS ix_pins_user_chat ON pinned_items(user_id, chat_id);
-                            """)
-                        else:
-                            # SQLite-compatible SQL
-                            db.engine.execute("""
-                                CREATE TABLE IF NOT EXISTS pinned_items (
-                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                    user_id INTEGER NOT NULL REFERENCES user(id) ON DELETE CASCADE,
-                                    room_id INTEGER NOT NULL REFERENCES room(id) ON DELETE CASCADE,
-                                    chat_id INTEGER NOT NULL REFERENCES chat(id) ON DELETE CASCADE,
-                                    message_id INTEGER REFERENCES message(id) ON DELETE CASCADE,
-                                    comment_id INTEGER REFERENCES comment(id) ON DELETE CASCADE,
-                                    role VARCHAR(20),
-                                    content TEXT NOT NULL,
-                                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                    CHECK (
-                                        (message_id IS NOT NULL AND comment_id IS NULL) OR
-                                        (message_id IS NULL AND comment_id IS NOT NULL)
+                                """))
+                                conn.execute(db.text("CREATE UNIQUE INDEX IF NOT EXISTS unique_user_message_pin ON pinned_items(user_id, message_id) WHERE message_id IS NOT NULL"))
+                                conn.execute(db.text("CREATE UNIQUE INDEX IF NOT EXISTS unique_user_comment_pin ON pinned_items(user_id, comment_id) WHERE comment_id IS NOT NULL"))
+                                conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_pinned_items_user_id ON pinned_items(user_id)"))
+                                conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_pinned_items_room_id ON pinned_items(room_id)"))
+                                conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_pinned_items_chat_id ON pinned_items(chat_id)"))
+                                conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_pins_user_chat ON pinned_items(user_id, chat_id)"))
+                                conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_pinned_items_chat_shared ON pinned_items(chat_id, is_shared)"))
+                                conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_pinned_items_room_shared ON pinned_items(room_id, is_shared)"))
+                            else:
+                                # SQLite-compatible SQL (includes is_shared column)
+                                conn.execute(db.text("""
+                                    CREATE TABLE IF NOT EXISTS pinned_items (
+                                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                        user_id INTEGER NOT NULL REFERENCES user(id) ON DELETE CASCADE,
+                                        room_id INTEGER NOT NULL REFERENCES room(id) ON DELETE CASCADE,
+                                        chat_id INTEGER NOT NULL REFERENCES chat(id) ON DELETE CASCADE,
+                                        message_id INTEGER REFERENCES message(id) ON DELETE CASCADE,
+                                        comment_id INTEGER REFERENCES comment(id) ON DELETE CASCADE,
+                                        role VARCHAR(20),
+                                        content TEXT NOT NULL,
+                                        is_shared INTEGER NOT NULL DEFAULT 0,
+                                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                        CHECK (
+                                            (message_id IS NOT NULL AND comment_id IS NULL) OR
+                                            (message_id IS NULL AND comment_id IS NOT NULL)
+                                        )
                                     )
-                                );
-                                CREATE UNIQUE INDEX IF NOT EXISTS unique_user_message_pin 
-                                    ON pinned_items(user_id, message_id);
-                                CREATE UNIQUE INDEX IF NOT EXISTS unique_user_comment_pin 
-                                    ON pinned_items(user_id, comment_id);
-                                CREATE INDEX IF NOT EXISTS ix_pinned_items_user_id ON pinned_items(user_id);
-                                CREATE INDEX IF NOT EXISTS ix_pinned_items_room_id ON pinned_items(room_id);
-                                CREATE INDEX IF NOT EXISTS ix_pinned_items_chat_id ON pinned_items(chat_id);
-                                CREATE INDEX IF NOT EXISTS ix_pins_user_chat ON pinned_items(user_id, chat_id);
-                            """)
+                                """))
+                                conn.execute(db.text("CREATE UNIQUE INDEX IF NOT EXISTS unique_user_message_pin ON pinned_items(user_id, message_id)"))
+                                conn.execute(db.text("CREATE UNIQUE INDEX IF NOT EXISTS unique_user_comment_pin ON pinned_items(user_id, comment_id)"))
+                                conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_pinned_items_user_id ON pinned_items(user_id)"))
+                                conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_pinned_items_room_id ON pinned_items(room_id)"))
+                                conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_pinned_items_chat_id ON pinned_items(chat_id)"))
+                                conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_pins_user_chat ON pinned_items(user_id, chat_id)"))
+                                conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_pinned_items_chat_shared ON pinned_items(chat_id, is_shared)"))
+                                conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_pinned_items_room_shared ON pinned_items(room_id, is_shared)"))
+                            conn.commit()
                         print("✓ pinned_items table created manually")
                     except Exception as create_error:
                         print(f"❌ Failed to create pinned_items table: {create_error}")
                 
                 # PHASE B: Add is_shared column to pinned_items for shared pins feature
                 try:
-                    result = db.engine.execute("SELECT is_shared FROM pinned_items LIMIT 1")
-                    result.close()
+                    with db.engine.connect() as conn:
+                        result = conn.execute(db.text("SELECT is_shared FROM pinned_items LIMIT 1"))
+                        result.close()
                     print("✓ is_shared column exists")
-                except Exception:
-                    print("⚠️ is_shared column missing, adding...")
+                except Exception as check_error:
+                    print(f"⚠️ is_shared column missing ({check_error}), adding...")
                     try:
                         is_postgres = 'postgresql' in str(db.engine.url)
-                        if is_postgres:
-                            db.engine.execute("""
-                                ALTER TABLE pinned_items 
-                                ADD COLUMN is_shared BOOLEAN NOT NULL DEFAULT FALSE;
-                            """)
-                            db.engine.execute("""
-                                CREATE INDEX IF NOT EXISTS ix_pinned_items_chat_shared 
-                                    ON pinned_items(chat_id, is_shared);
-                            """)
-                            db.engine.execute("""
-                                CREATE INDEX IF NOT EXISTS ix_pinned_items_room_shared 
-                                    ON pinned_items(room_id, is_shared);
-                            """)
-                        else:
-                            # SQLite: BOOLEAN stored as INTEGER
-                            db.engine.execute("""
-                                ALTER TABLE pinned_items 
-                                ADD COLUMN is_shared INTEGER NOT NULL DEFAULT 0;
-                            """)
-                            try:
-                                db.engine.execute("""
-                                    CREATE INDEX ix_pinned_items_chat_shared 
-                                        ON pinned_items(chat_id, is_shared);
-                                """)
-                                db.engine.execute("""
-                                    CREATE INDEX ix_pinned_items_room_shared 
-                                        ON pinned_items(room_id, is_shared);
-                                """)
-                            except Exception:
-                                pass  # Indexes may already exist
+                        with db.engine.connect() as conn:
+                            if is_postgres:
+                                conn.execute(db.text("""
+                                    ALTER TABLE pinned_items 
+                                    ADD COLUMN IF NOT EXISTS is_shared BOOLEAN NOT NULL DEFAULT FALSE
+                                """))
+                                conn.execute(db.text("""
+                                    CREATE INDEX IF NOT EXISTS ix_pinned_items_chat_shared 
+                                        ON pinned_items(chat_id, is_shared)
+                                """))
+                                conn.execute(db.text("""
+                                    CREATE INDEX IF NOT EXISTS ix_pinned_items_room_shared 
+                                        ON pinned_items(room_id, is_shared)
+                                """))
+                            else:
+                                # SQLite: BOOLEAN stored as INTEGER
+                                conn.execute(db.text("""
+                                    ALTER TABLE pinned_items 
+                                    ADD COLUMN is_shared INTEGER NOT NULL DEFAULT 0
+                                """))
+                                try:
+                                    conn.execute(db.text("""
+                                        CREATE INDEX ix_pinned_items_chat_shared 
+                                            ON pinned_items(chat_id, is_shared)
+                                    """))
+                                    conn.execute(db.text("""
+                                        CREATE INDEX ix_pinned_items_room_shared 
+                                            ON pinned_items(room_id, is_shared)
+                                    """))
+                                except Exception:
+                                    pass  # Indexes may already exist
+                            conn.commit()
                         print("✓ is_shared column added")
                     except Exception as alter_error:
                         print(f"❌ Failed to add is_shared column: {alter_error}")
