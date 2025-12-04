@@ -357,6 +357,15 @@
         }
     }
     
+    // Show inline error message (matches pin-toggle.js pattern)
+    function showError(button, message) {
+        const errorMsg = document.createElement('span');
+        errorMsg.className = 'text-xs text-red-600 ml-2 pin-error-msg';
+        errorMsg.textContent = message;
+        button.parentElement.appendChild(errorMsg);
+        setTimeout(() => errorMsg.remove(), 3000);
+    }
+    
     // Attach event listeners to pin buttons
     function attachPinListeners() {
         // Share/Unshare buttons
@@ -382,15 +391,16 @@
                     if (response.ok) {
                         await refreshPins();
                     } else {
-                        const data = await response.json();
-                        alert(data.error || 'Failed to update pin');
+                        const data = await response.json().catch(() => ({}));
                         this.textContent = originalText;
                         this.disabled = false;
+                        showError(this, data.error || 'Failed to update');
                     }
                 } catch (error) {
                     console.error('Error updating pin:', error);
                     this.textContent = originalText;
                     this.disabled = false;
+                    showError(this, 'Network error');
                 }
             };
         });
@@ -417,15 +427,16 @@
                     if (response.ok) {
                         await refreshPins();
                     } else {
-                        const data = await response.json();
-                        alert(data.error || 'Failed to remove pin');
+                        const data = await response.json().catch(() => ({}));
                         this.textContent = originalText;
                         this.disabled = false;
+                        showError(this, data.error || 'Failed to remove');
                     }
                 } catch (error) {
                     console.error('Error removing pin:', error);
                     this.textContent = originalText;
                     this.disabled = false;
+                    showError(this, 'Network error');
                 }
             };
         });
