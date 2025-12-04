@@ -193,18 +193,17 @@
                         </div>
                     </section>
                     
-                    <!-- 2. Tone & Critique Card (injected via base.html) -->
-                    <div id="tone-critique-mount"></div>
+                    <!-- 2. Pinned Items Card -->
+                    {% include 'chat/_pins_sidebar.html' %}
                     
                     <!-- 3. Document Generation Card (injected via restore-document-generation.js) -->
                     <div id="doc-gen-mount"></div>
+                    
+                    <!-- 4. Tone & Critique Card (injected via base.html) -->
+                    <div id="tone-critique-mount"></div>
                 </div>
             </div>
         </details>
-
-
-        <!-- Pinned Items Section (with tabs for personal/shared) -->
-        {% include 'chat/_pins_sidebar.html' %}
 
         <!-- Participants Section (Collapsible) -->
         <details class="sidebar-section" data-section="members" open>

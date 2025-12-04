@@ -1,8 +1,9 @@
 {# 
   _pins_sidebar.html
-  Purpose: Pins sidebar section with tabs for personal and shared pins
+  Purpose: Pins tool card with tabs for personal and shared pins
   Status: [ACTIVE]
   Created: 2025-12-04
+  Updated: 2025-12-04 - Converted to tool-card format
   
   Expects:
   - personal_pins: list of PinnedItem objects (user's personal pins)
@@ -13,25 +14,23 @@
 
 {% set total_pins = (personal_pins|length) + (shared_pins|length) %}
 
-{% if total_pins > 0 or shared_pins is defined %}
-<details class="sidebar-section" data-section="pinned" data-user-id="{{ user.id }}" data-room-owner="{{ 'true' if is_room_owner else 'false' }}" open>
-    <summary class="sidebar-summary">
-        <i data-lucide="pin" class="w-5 h-5"></i>
-        <span class="flex-1 flex flex-col gap-0.5">
-            <span class="font-medium">Pinned Items</span>
-            <span class="text-xs text-muted-foreground summary-meta">
-                {% if total_pins > 0 %}
-                    {{ total_pins }} item{{ 's' if total_pins != 1 else '' }}
-                {% else %}
-                    No pins yet
-                {% endif %}
-            </span>
-        </span>
-        <i data-lucide="chevron-down" class="w-4 h-4 chevron"></i>
-    </summary>
-    <div class="sidebar-panel">
+{# Always render the card so users can see where pins will appear #}
+<section class="tool-card" id="pins-card" data-section="pinned" data-user-id="{{ user.id }}" data-room-owner="{{ 'true' if is_room_owner else 'false' }}">
+    <div class="tool-card__header">
+        <div class="tool-card__title">
+            <i data-lucide="pin" class="w-4 h-4"></i>
+            Pinned Items
+            {% if total_pins > 0 %}
+            <span class="ml-1 px-1.5 py-0.5 bg-primary/10 text-primary rounded-full text-xs summary-meta">{{ total_pins }}</span>
+            {% endif %}
+        </div>
+        <button type="button" class="tool-card__chevron" aria-expanded="{{ 'true' if total_pins > 0 else 'false' }}" aria-controls="pins-body" onclick="toggleToolCard(this, 'pins-body')">
+            <i data-lucide="chevron-down" class="w-4 h-4"></i>
+        </button>
+    </div>
+    <div class="tool-card__body" id="pins-body" {{ '' if total_pins > 0 else 'hidden' }}>
         <!-- Tabs for My Pins / Shared Pins -->
-        <div class="pins-tabs flex border-b border-border mb-3">
+        <div class="pins-tabs flex border-b border-border mb-2">
             <button type="button" 
                     class="pins-tab flex-1 py-2 text-xs font-medium text-center border-b-2 transition-colors"
                     data-tab="personal"
@@ -180,8 +179,7 @@
             {% endif %}
         </div>
     </div>
-</details>
-{% endif %}
+</section>
 
 <style>
 /* Pin tabs styling */
@@ -340,13 +338,21 @@
                 sharedTab.innerHTML = `Shared ${badge}`;
             }
             
-            // Update summary count
+            // Update header count badge
             const totalPins = personalPins.length + sharedPins.length;
-            const summaryMeta = document.querySelector('.summary-meta');
+            const summaryMeta = document.querySelector('#pins-card .summary-meta');
             if (summaryMeta) {
-                summaryMeta.textContent = totalPins > 0 
-                    ? `${totalPins} item${totalPins !== 1 ? 's' : ''}`
-                    : 'No pins yet';
+                summaryMeta.textContent = totalPins;
+                summaryMeta.style.display = totalPins > 0 ? '' : 'none';
+            } else if (totalPins > 0) {
+                // Badge doesn't exist yet, add it
+                const title = document.querySelector('#pins-card .tool-card__title');
+                if (title && !title.querySelector('.summary-meta')) {
+                    const badge = document.createElement('span');
+                    badge.className = 'ml-1 px-1.5 py-0.5 bg-primary/10 text-primary rounded-full text-xs summary-meta';
+                    badge.textContent = totalPins;
+                    title.appendChild(badge);
+                }
             }
             
             // Re-attach event listeners
