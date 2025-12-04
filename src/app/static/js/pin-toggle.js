@@ -106,17 +106,16 @@
             
             button.classList.remove('opacity-50');
             
-            // If this is in the pinned items sidebar, reload to update the list
-            if (button.closest('.sidebar-panel')) {
-                // Reload page to update sidebar
-                window.location.reload();
-            } else {
-                // Show brief success feedback
-                button.classList.add('text-green-600');
-                setTimeout(() => {
-                    button.classList.remove('text-green-600');
-                }, 1000);
+            // Refresh the sidebar pins in-place (no page reload)
+            if (typeof window.refreshPins === 'function') {
+                window.refreshPins();
             }
+            
+            // Show brief success feedback
+            button.classList.add('text-green-600');
+            setTimeout(() => {
+                button.classList.remove('text-green-600');
+            }, 1000);
             
         } catch (error) {
             console.error('Pin toggle error:', error);
