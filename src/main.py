@@ -154,6 +154,49 @@ def run_production_migrations(app):
                         print("✓ pinned_items table created manually")
                     except Exception as create_error:
                         print(f"❌ Failed to create pinned_items table: {create_error}")
+                
+                # PHASE B: Add is_shared column to pinned_items for shared pins feature
+                try:
+                    result = db.engine.execute("SELECT is_shared FROM pinned_items LIMIT 1")
+                    result.close()
+                    print("✓ is_shared column exists")
+                except Exception:
+                    print("⚠️ is_shared column missing, adding...")
+                    try:
+                        is_postgres = 'postgresql' in str(db.engine.url)
+                        if is_postgres:
+                            db.engine.execute("""
+                                ALTER TABLE pinned_items 
+                                ADD COLUMN is_shared BOOLEAN NOT NULL DEFAULT FALSE;
+                            """)
+                            db.engine.execute("""
+                                CREATE INDEX IF NOT EXISTS ix_pinned_items_chat_shared 
+                                    ON pinned_items(chat_id, is_shared);
+                            """)
+                            db.engine.execute("""
+                                CREATE INDEX IF NOT EXISTS ix_pinned_items_room_shared 
+                                    ON pinned_items(room_id, is_shared);
+                            """)
+                        else:
+                            # SQLite: BOOLEAN stored as INTEGER
+                            db.engine.execute("""
+                                ALTER TABLE pinned_items 
+                                ADD COLUMN is_shared INTEGER NOT NULL DEFAULT 0;
+                            """)
+                            try:
+                                db.engine.execute("""
+                                    CREATE INDEX ix_pinned_items_chat_shared 
+                                        ON pinned_items(chat_id, is_shared);
+                                """)
+                                db.engine.execute("""
+                                    CREATE INDEX ix_pinned_items_room_shared 
+                                        ON pinned_items(room_id, is_shared);
+                                """)
+                            except Exception:
+                                pass  # Indexes may already exist
+                        print("✓ is_shared column added")
+                    except Exception as alter_error:
+                        print(f"❌ Failed to add is_shared column: {alter_error}")
         except Exception as e:
             print(f"Table creation warning: {e}")
             print("Continuing with app startup...")

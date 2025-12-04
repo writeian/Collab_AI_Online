@@ -203,64 +203,8 @@
         </details>
 
 
-        <!-- Pinned Items Section (Collapsible) -->
-        {% if pinned_items %}
-        <details class="sidebar-section" data-section="pinned" open>
-            <summary class="sidebar-summary">
-                <i data-lucide="pin" class="w-5 h-5"></i>
-                <span class="flex-1 flex flex-col gap-0.5">
-                    <span class="font-medium">Pinned in this Chat</span>
-                    <span class="text-xs text-muted-foreground summary-meta">
-                        {{ pinned_items|length }} item{{ 's' if pinned_items|length != 1 else '' }} pinned
-                    </span>
-                </span>
-                <i data-lucide="chevron-down" class="w-4 h-4 chevron"></i>
-            </summary>
-            <div class="sidebar-panel">
-                <div class="space-y-2">
-                    {% for pin in pinned_items %}
-                    <div class="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md text-sm">
-                        <div class="flex items-start justify-between gap-2 mb-1">
-                            <span class="text-xs font-medium text-yellow-800 dark:text-yellow-300">
-                                {% if pin.role == 'assistant' %}
-                                    🤖 AI Response
-                                {% elif pin.role == 'user' %}
-                                    👤 User Message
-                                {% else %}
-                                    💬 Comment
-                                {% endif %}
-                            </span>
-                            <span class="text-xs text-muted-foreground">
-                                {{ pin.created_at.strftime('%I:%M %p') }}
-                            </span>
-                        </div>
-                        <p class="text-xs text-gray-700 dark:text-gray-300 line-clamp-3">
-                            {{ pin.content|striptags|truncate(150) }}
-                        </p>
-                        <div class="mt-2 flex gap-2">
-                            {% if pin.message_id %}
-                            <a href="#message-{{ pin.message_id }}" 
-                               class="text-xs text-primary hover:text-primary/80">
-                                Jump to message →
-                            </a>
-                            {% endif %}
-                            <button type="button" 
-                                    class="text-xs text-red-600 hover:text-red-800 ml-auto pin-toggle" 
-                                    {% if pin.message_id %}
-                                    data-pin-message="{{ pin.message_id }}"
-                                    {% else %}
-                                    data-pin-comment="{{ pin.comment_id }}"
-                                    {% endif %}
-                                    data-pinned="true">
-                                Remove
-                            </button>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </details>
-        {% endif %}
+        <!-- Pinned Items Section (with tabs for personal/shared) -->
+        {% include 'chat/_pins_sidebar.html' %}
 
         <!-- Participants Section (Collapsible) -->
         <details class="sidebar-section" data-section="members" open>

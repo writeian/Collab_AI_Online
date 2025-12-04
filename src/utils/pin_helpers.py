@@ -53,7 +53,8 @@ def is_pinned(
 def pin_item(
     user: User,
     message: Optional[Message] = None,
-    comment: Optional[Comment] = None
+    comment: Optional[Comment] = None,
+    shared: bool = False
 ) -> Dict[str, Any]:
     """
     Pin a message or comment for the user.
@@ -64,9 +65,10 @@ def pin_item(
         user: User object doing the pinning
         message: Optional Message object to pin
         comment: Optional Comment object to pin
+        shared: Whether to create as a shared pin (default: personal)
         
     Returns:
-        Dict with keys: success (bool), pinned (bool), created (bool), error (str)
+        Dict with keys: success (bool), pinned (bool), created (bool), is_shared (bool), error (str)
     """
     try:
         # Validate exactly one item
@@ -98,18 +100,21 @@ def pin_item(
             message_id=message_id,
             comment_id=comment_id,
             role=role,
-            content=content_snapshot
+            content=content_snapshot,
+            is_shared=shared
         )
         
         db.session.add(pin)
         db.session.commit()
         
-        logger.info(f"User {user.id} pinned {'message' if message else 'comment'} {message_id or comment_id}")
+        visibility = 'shared' if shared else 'personal'
+        logger.info(f"User {user.id} pinned {'message' if message else 'comment'} {message_id or comment_id} ({visibility})")
         
         return {
             'success': True,
             'pinned': True,
-            'created': True
+            'created': True,
+            'is_shared': shared
         }
         
     except ValueError as e:
@@ -295,3 +300,322 @@ def get_pinned_items_for_chat(user_id: int, chat_id: int) -> list:
         except Exception:
             pass
         return []
+
+
+# =============================================================================
+# PHASE B: Shared Pins Functions
+# =============================================================================
+
+def get_personal_pins_for_chat(user_id: int, chat_id: int) -> list:
+    """
+    Get only the user's personal (non-shared) pins for a chat.
+    
+    Args:
+        user_id: ID of the user
+        chat_id: ID of the chat
+        
+    Returns:
+        List of PinnedItem objects (personal only)
+    """
+    try:
+        return PinnedItem.query.filter_by(
+            user_id=user_id,
+            chat_id=chat_id,
+            is_shared=False
+        ).order_by(PinnedItem.created_at.desc()).all()
+        
+    except Exception as e:
+        logger.error(f"Error getting personal pins: {e}")
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        return []
+
+
+def get_shared_pins_for_chat(chat_id: int) -> list:
+    """
+    Get all shared pins for a chat (visible to all room members).
+    
+    Includes author attribution via the user relationship.
+    
+    Args:
+        chat_id: ID of the chat
+        
+    Returns:
+        List of PinnedItem objects (shared only)
+    """
+    try:
+        return PinnedItem.query.filter_by(
+            chat_id=chat_id,
+            is_shared=True
+        ).order_by(PinnedItem.created_at.desc()).all()
+        
+    except Exception as e:
+        logger.error(f"Error getting shared pins: {e}")
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        return []
+
+
+def get_shared_pins_for_room(room_id: int) -> list:
+    """
+    Get all shared pins across a room (all chats).
+    
+    Useful for room-wide pin views.
+    
+    Args:
+        room_id: ID of the room
+        
+    Returns:
+        List of PinnedItem objects (shared only)
+    """
+    try:
+        return PinnedItem.query.filter_by(
+            room_id=room_id,
+            is_shared=True
+        ).order_by(PinnedItem.created_at.desc()).all()
+        
+    except Exception as e:
+        logger.error(f"Error getting room shared pins: {e}")
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        return []
+
+
+def get_pins_for_sidebar(user_id: int, chat_id: int) -> Dict[str, list]:
+    """
+    Get pins organized for sidebar display: personal and shared separately.
+    
+    Args:
+        user_id: ID of the user viewing
+        chat_id: ID of the chat
+        
+    Returns:
+        Dict with 'personal' and 'shared' keys containing lists of PinnedItems
+    """
+    try:
+        # Personal: user's own non-shared pins
+        personal = PinnedItem.query.filter_by(
+            user_id=user_id,
+            chat_id=chat_id,
+            is_shared=False
+        ).order_by(PinnedItem.created_at.desc()).all()
+        
+        # Shared: all shared pins in the chat
+        shared = PinnedItem.query.filter_by(
+            chat_id=chat_id,
+            is_shared=True
+        ).order_by(PinnedItem.created_at.desc()).all()
+        
+        return {
+            'personal': personal,
+            'shared': shared
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting sidebar pins: {e}")
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        return {
+            'personal': [],
+            'shared': []
+        }
+
+
+def share_pin(user: User, pin_id: int) -> Dict[str, Any]:
+    """
+    Share a personal pin (make it visible to all room members).
+    
+    Only the pin owner can share their own pin.
+    
+    Args:
+        user: User requesting the share
+        pin_id: ID of the pin to share
+        
+    Returns:
+        Dict with success, is_shared, error keys
+    """
+    try:
+        pin = PinnedItem.query.get(pin_id)
+        
+        if not pin:
+            return {'success': False, 'error': 'Pin not found'}
+        
+        # Only owner can share
+        if pin.user_id != user.id:
+            return {'success': False, 'error': 'Only the pin owner can share'}
+        
+        if pin.is_shared:
+            # Already shared - idempotent
+            return {'success': True, 'is_shared': True, 'changed': False}
+        
+        pin.is_shared = True
+        db.session.commit()
+        
+        logger.info(f"User {user.id} shared pin {pin_id}")
+        
+        return {'success': True, 'is_shared': True, 'changed': True}
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error sharing pin: {e}")
+        return {'success': False, 'error': 'Failed to share pin'}
+
+
+def unshare_pin(user: User, pin_id: int, is_room_owner: bool = False) -> Dict[str, Any]:
+    """
+    Unshare a shared pin (make it personal again).
+    
+    Pin owner can always unshare their own pin.
+    Room owner can unshare any pin (moderation).
+    
+    Args:
+        user: User requesting the unshare
+        pin_id: ID of the pin to unshare
+        is_room_owner: Whether the user is the room owner
+        
+    Returns:
+        Dict with success, is_shared, error keys
+    """
+    try:
+        pin = PinnedItem.query.get(pin_id)
+        
+        if not pin:
+            return {'success': False, 'error': 'Pin not found'}
+        
+        # Owner or room owner can unshare
+        if pin.user_id != user.id and not is_room_owner:
+            return {'success': False, 'error': 'Only the pin owner or room owner can unshare'}
+        
+        if not pin.is_shared:
+            # Already personal - idempotent
+            return {'success': True, 'is_shared': False, 'changed': False}
+        
+        pin.is_shared = False
+        db.session.commit()
+        
+        logger.info(f"User {user.id} unshared pin {pin_id}")
+        
+        return {'success': True, 'is_shared': False, 'changed': True}
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error unsharing pin: {e}")
+        return {'success': False, 'error': 'Failed to unshare pin'}
+
+
+def update_pin_visibility(
+    user: User, 
+    pin_id: int, 
+    shared: bool, 
+    is_room_owner: bool = False
+) -> Dict[str, Any]:
+    """
+    Update pin visibility (shared or personal).
+    
+    Single endpoint for PATCH /pin/<id> to change visibility.
+    
+    Args:
+        user: User requesting the change
+        pin_id: ID of the pin
+        shared: New visibility state (True=shared, False=personal)
+        is_room_owner: Whether the user is the room owner
+        
+    Returns:
+        Dict with success, is_shared, error keys
+    """
+    if shared:
+        return share_pin(user, pin_id)
+    else:
+        return unshare_pin(user, pin_id, is_room_owner)
+
+
+def remove_pin_by_id(user: User, pin_id: int, is_room_owner: bool = False) -> Dict[str, Any]:
+    """
+    Remove a pin by its ID.
+    
+    Pin owner can always remove their own pin.
+    Room owner can remove any pin (moderation).
+    
+    Args:
+        user: User requesting the removal
+        pin_id: ID of the pin to remove
+        is_room_owner: Whether the user is the room owner
+        
+    Returns:
+        Dict with success, deleted, error keys
+    """
+    try:
+        pin = PinnedItem.query.get(pin_id)
+        
+        if not pin:
+            # Idempotent - return success if pin doesn't exist
+            return {'success': True, 'pinned': False, 'deleted': False}
+        
+        # Only owner or room owner can delete
+        if pin.user_id != user.id and not is_room_owner:
+            return {'success': False, 'error': 'No permission to remove this pin'}
+        
+        db.session.delete(pin)
+        db.session.commit()
+        
+        logger.info(f"User {user.id} removed pin {pin_id} (room_owner={is_room_owner})")
+        
+        return {'success': True, 'pinned': False, 'deleted': True}
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error removing pin: {e}")
+        return {'success': False, 'error': 'Failed to remove pin'}
+
+
+def get_pins_for_ai_context(user_id: int, chat_id: int) -> Dict[str, list]:
+    """
+    Get pins for AI prompt building with proper isolation.
+    
+    CRITICAL: Personal pins are ONLY included for the owner.
+    Shared pins are included for all users.
+    
+    Args:
+        user_id: ID of the user making the AI request
+        chat_id: ID of the chat
+        
+    Returns:
+        Dict with 'personal' (owner only) and 'shared' (all) pins
+    """
+    try:
+        # Personal: ONLY the requesting user's non-shared pins
+        personal = PinnedItem.query.filter_by(
+            user_id=user_id,
+            chat_id=chat_id,
+            is_shared=False
+        ).order_by(PinnedItem.created_at.desc()).all()
+        
+        # Shared: all shared pins (safe for any user)
+        shared = PinnedItem.query.filter_by(
+            chat_id=chat_id,
+            is_shared=True
+        ).order_by(PinnedItem.created_at.desc()).all()
+        
+        return {
+            'personal': personal,
+            'shared': shared
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting AI context pins: {e}")
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        return {
+            'personal': [],
+            'shared': []
+        }

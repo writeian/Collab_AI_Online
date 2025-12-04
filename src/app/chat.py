@@ -374,15 +374,21 @@ def view_chat(chat_id: int) -> Any:
 
         # Get pinned items for this chat (with defensive error handling)
         try:
-            from src.utils.pin_helpers import get_pinned_ids_for_chat, get_pinned_items_for_chat
+            from src.utils.pin_helpers import get_pinned_ids_for_chat, get_pins_for_sidebar
             
             pinned_ids = get_pinned_ids_for_chat(user.id, chat_obj.id)
-            pinned_items = get_pinned_items_for_chat(user.id, chat_obj.id)
+            pins_data = get_pins_for_sidebar(user.id, chat_obj.id)
+            personal_pins = pins_data.get('personal', [])
+            shared_pins = pins_data.get('shared', [])
         except Exception as pin_error:
             # If pins fail (e.g., table doesn't exist), continue without them
             current_app.logger.warning(f"Pins unavailable for chat {chat_obj.id}: {pin_error}")
             pinned_ids = {'messages': set(), 'comments': set()}
-            pinned_items = []
+            personal_pins = []
+            shared_pins = []
+        
+        # Check if current user is room owner (for moderation)
+        is_room_owner = chat_obj.room.owner_id == user.id
 
         return render_template(
             "chat/view.html",
@@ -401,7 +407,9 @@ def view_chat(chat_id: int) -> Any:
             room_chat_map=room_chat_map,
             pinned_message_ids=pinned_ids['messages'],
             pinned_comment_ids=pinned_ids['comments'],
-            pinned_items=pinned_items,
+            personal_pins=personal_pins,
+            shared_pins=shared_pins,
+            is_room_owner=is_room_owner,
         )
     except Exception as e:
         # Log exception with full traceback
@@ -698,9 +706,9 @@ def pin_item_route(chat_id: int) -> Any:
     """
     Pin a message or comment in a chat.
     
-    Expects JSON body with either:
-    - message_id: int
-    - comment_id: int
+    Expects JSON body with:
+    - message_id: int (required) OR comment_id: int (required)
+    - shared: bool (optional, default false) - create as shared pin
     
     Returns JSON with success status and pinned state.
     """
@@ -720,6 +728,7 @@ def pin_item_route(chat_id: int) -> Any:
     
     message_id = data.get("message_id")
     comment_id = data.get("comment_id")
+    shared = data.get("shared", False)  # Default to personal pin
     
     # Validate exactly one item specified
     if not message_id and not comment_id:
@@ -738,7 +747,7 @@ def pin_item_route(chat_id: int) -> Any:
         if message.chat_id != chat_id:
             return jsonify({"success": False, "error": "Message not in this chat"}), 400
         
-        result = pin_item(user, message=message)
+        result = pin_item(user, message=message, shared=shared)
     else:
         comment = Comment.query.get(comment_id)
         if not comment:
@@ -748,7 +757,7 @@ def pin_item_route(chat_id: int) -> Any:
         if comment.chat_id != chat_id:
             return jsonify({"success": False, "error": "Comment not in this chat"}), 400
         
-        result = pin_item(user, comment=comment)
+        result = pin_item(user, comment=comment, shared=shared)
     
     if result['success']:
         return jsonify(result), 200
@@ -763,12 +772,14 @@ def unpin_item_route(chat_id: int) -> Any:
     Unpin a message or comment in a chat.
     
     Expects JSON body with either:
-    - message_id: int
-    - comment_id: int
+    - message_id: int (unpins current user's pin on this message)
+    - comment_id: int (unpins current user's pin on this comment)
+    - pin_id: int (directly delete a pin - room owners can delete any pin)
     
     Returns JSON with success status and pinned state.
     """
-    from src.utils.pin_helpers import unpin_item
+    from src.utils.pin_helpers import unpin_item, remove_pin_by_id
+    from src.models import PinnedItem, Room
     
     user = get_current_user()
     if not user:
@@ -777,17 +788,35 @@ def unpin_item_route(chat_id: int) -> Any:
     # Validate chat access
     chat_obj = Chat.query.get_or_404(chat_id)
     
+    # Check if user is room owner (for moderation)
+    room = Room.query.get(chat_obj.room_id)
+    is_room_owner = room and room.owner_id == user.id
+    
     # Parse JSON request
     data = request.get_json(silent=True)
     if not data:
         return jsonify({"success": False, "error": "Invalid request"}), 400
     
+    # Option 1: Direct pin_id (for room owner moderation or sidebar remove)
+    pin_id = data.get("pin_id")
+    if pin_id:
+        result = remove_pin_by_id(user, pin_id, is_room_owner)
+        if result['success']:
+            return jsonify(result), 200
+        elif result.get('error') == 'Pin not found':
+            return jsonify(result), 404
+        elif 'permission' in result.get('error', '').lower():
+            return jsonify(result), 403
+        else:
+            return jsonify(result), 400
+    
+    # Option 2: message_id or comment_id (legacy/inline unpin)
     message_id = data.get("message_id")
     comment_id = data.get("comment_id")
     
     # Validate exactly one item specified
     if not message_id and not comment_id:
-        return jsonify({"success": False, "error": "Must specify message_id or comment_id"}), 400
+        return jsonify({"success": False, "error": "Must specify message_id, comment_id, or pin_id"}), 400
     
     if message_id and comment_id:
         return jsonify({"success": False, "error": "Cannot unpin both message and comment"}), 400
@@ -820,3 +849,112 @@ def unpin_item_route(chat_id: int) -> Any:
         return jsonify(result), 200
     else:
         return jsonify(result), 400
+
+
+@chat.route("/<int:chat_id>/pin/<int:pin_id>", methods=["PATCH"])
+@require_chat_access
+def update_pin_visibility_route(chat_id: int, pin_id: int) -> Any:
+    """
+    Update pin visibility (shared or personal).
+    
+    Expects JSON body with:
+    - shared: bool (required) - new visibility state
+    
+    Only pin owner can share their pin.
+    Pin owner or room owner can unshare.
+    
+    Returns JSON with success status and new visibility.
+    """
+    from src.utils.pin_helpers import update_pin_visibility
+    from src.models import PinnedItem, Room
+    
+    user = get_current_user()
+    if not user:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+    
+    # Get the pin
+    pin = PinnedItem.query.get(pin_id)
+    if not pin:
+        return jsonify({"success": False, "error": "Pin not found"}), 404
+    
+    # Verify pin belongs to this chat
+    if pin.chat_id != chat_id:
+        return jsonify({"success": False, "error": "Pin not in this chat"}), 400
+    
+    # Parse JSON request
+    data = request.get_json(silent=True)
+    if not data or 'shared' not in data:
+        return jsonify({"success": False, "error": "Must specify 'shared' boolean"}), 400
+    
+    shared = bool(data.get("shared"))
+    
+    # Check if user is room owner (for moderation)
+    chat_obj = Chat.query.get(chat_id)
+    room = Room.query.get(chat_obj.room_id) if chat_obj else None
+    is_room_owner = room and room.owner_id == user.id
+    
+    result = update_pin_visibility(user, pin_id, shared, is_room_owner)
+    
+    if result['success']:
+        return jsonify(result), 200
+    elif result.get('error') == 'Pin not found':
+        return jsonify(result), 404
+    elif 'Only the pin owner' in result.get('error', ''):
+        return jsonify(result), 403
+    else:
+        return jsonify(result), 400
+
+
+@chat.route("/<int:chat_id>/pins", methods=["GET"])
+@require_chat_access
+def list_pins_route(chat_id: int) -> Any:
+    """
+    List pins for a chat with scope filtering.
+    
+    Query params:
+    - scope: 'personal' | 'shared' | 'all' (default: 'all')
+    
+    Returns JSON with pins organized by scope.
+    """
+    from src.utils.pin_helpers import get_pins_for_sidebar
+    
+    user = get_current_user()
+    if not user:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+    
+    # Validate chat exists
+    chat_obj = Chat.query.get_or_404(chat_id)
+    
+    scope = request.args.get('scope', 'all')
+    
+    pins_data = get_pins_for_sidebar(user.id, chat_id)
+    
+    def serialize_pin(pin):
+        return {
+            'id': pin.id,
+            'message_id': pin.message_id,
+            'comment_id': pin.comment_id,
+            'content': pin.content[:200] + '...' if len(pin.content) > 200 else pin.content,
+            'role': pin.role,
+            'is_shared': pin.is_shared,
+            'created_at': pin.created_at.isoformat(),
+            'user_id': pin.user_id,
+            'username': pin.user.username if pin.user else 'Unknown'
+        }
+    
+    if scope == 'personal':
+        return jsonify({
+            'success': True,
+            'pins': [serialize_pin(p) for p in pins_data['personal']]
+        }), 200
+    elif scope == 'shared':
+        return jsonify({
+            'success': True,
+            'pins': [serialize_pin(p) for p in pins_data['shared']]
+        }), 200
+    else:  # all
+        return jsonify({
+            'success': True,
+            'personal': [serialize_pin(p) for p in pins_data['personal']],
+            'shared': [serialize_pin(p) for p in pins_data['shared']]
+        }), 200

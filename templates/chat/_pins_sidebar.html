@@ -1,0 +1,347 @@
+{# 
+  _pins_sidebar.html
+  Purpose: Pins sidebar section with tabs for personal and shared pins
+  Status: [ACTIVE]
+  Created: 2025-12-04
+  
+  Expects:
+  - personal_pins: list of PinnedItem objects (user's personal pins)
+  - shared_pins: list of PinnedItem objects (shared by all room members)
+  - user: the logged-in user
+  - is_room_owner: boolean indicating if user owns the room
+#}
+
+{% set total_pins = (personal_pins|length) + (shared_pins|length) %}
+
+{% if total_pins > 0 or shared_pins is defined %}
+<details class="sidebar-section" data-section="pinned" open>
+    <summary class="sidebar-summary">
+        <i data-lucide="pin" class="w-5 h-5"></i>
+        <span class="flex-1 flex flex-col gap-0.5">
+            <span class="font-medium">Pinned Items</span>
+            <span class="text-xs text-muted-foreground summary-meta">
+                {% if total_pins > 0 %}
+                    {{ total_pins }} item{{ 's' if total_pins != 1 else '' }}
+                {% else %}
+                    No pins yet
+                {% endif %}
+            </span>
+        </span>
+        <i data-lucide="chevron-down" class="w-4 h-4 chevron"></i>
+    </summary>
+    <div class="sidebar-panel">
+        <!-- Tabs for My Pins / Shared Pins -->
+        <div class="pins-tabs flex border-b border-border mb-3">
+            <button type="button" 
+                    class="pins-tab flex-1 py-2 text-xs font-medium text-center border-b-2 transition-colors"
+                    data-tab="personal"
+                    data-active="true">
+                My Pins
+                {% if personal_pins|length > 0 %}
+                <span class="ml-1 px-1.5 py-0.5 bg-primary/10 text-primary rounded-full text-xs">
+                    {{ personal_pins|length }}
+                </span>
+                {% endif %}
+            </button>
+            <button type="button" 
+                    class="pins-tab flex-1 py-2 text-xs font-medium text-center border-b-2 transition-colors"
+                    data-tab="shared"
+                    data-active="false">
+                Shared
+                {% if shared_pins|length > 0 %}
+                <span class="ml-1 px-1.5 py-0.5 bg-blue-500/10 text-blue-600 rounded-full text-xs">
+                    {{ shared_pins|length }}
+                </span>
+                {% endif %}
+            </button>
+        </div>
+
+        <!-- Personal Pins Panel -->
+        <div class="pins-panel space-y-2" data-panel="personal" data-visible="true">
+            {% if personal_pins|length > 0 %}
+                {% for pin in personal_pins %}
+                <div class="pin-card p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md text-sm">
+                    <div class="flex items-start justify-between gap-2 mb-1">
+                        <span class="text-xs font-medium text-yellow-800 dark:text-yellow-300">
+                            {% if pin.role == 'assistant' %}
+                                🤖 AI Response
+                            {% elif pin.role == 'user' %}
+                                👤 Your Message
+                            {% else %}
+                                💬 Comment
+                            {% endif %}
+                        </span>
+                        <span class="text-xs text-muted-foreground">
+                            {{ pin.created_at.strftime('%b %d, %I:%M %p') }}
+                        </span>
+                    </div>
+                    <p class="text-xs text-gray-700 dark:text-gray-300 line-clamp-3">
+                        {{ pin.content|striptags|truncate(150) }}
+                    </p>
+                    <div class="mt-2 flex items-center gap-2">
+                        {% if pin.message_id %}
+                        <a href="#message-{{ pin.message_id }}" 
+                           class="text-xs text-primary hover:text-primary/80">
+                            Jump →
+                        </a>
+                        {% endif %}
+                        
+                        <!-- Share action -->
+                        <button type="button" 
+                                class="text-xs text-blue-600 hover:text-blue-800 share-pin-toggle"
+                                data-pin-id="{{ pin.id }}"
+                                data-shared="false"
+                                title="Share with room members">
+                            Share
+                        </button>
+                        
+                        <!-- Remove action (uses pin_id for direct deletion) -->
+                        <button type="button" 
+                                class="text-xs text-red-600 hover:text-red-800 ml-auto remove-pin-btn"
+                                data-pin-id="{{ pin.id }}">
+                            Remove
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="pins-empty text-center py-4">
+                    <span class="text-muted-foreground text-sm">No personal pins yet</span>
+                    <p class="text-xs text-muted-foreground mt-1">
+                        Click "Pin" on any message to save it here
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Shared Pins Panel -->
+        <div class="pins-panel space-y-2" data-panel="shared" data-visible="false" style="display: none;">
+            {% if shared_pins|length > 0 %}
+                {% for pin in shared_pins %}
+                <div class="pin-card p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md text-sm">
+                    <div class="flex items-start justify-between gap-2 mb-1">
+                        <span class="text-xs font-medium text-blue-800 dark:text-blue-300">
+                            {% if pin.role == 'assistant' %}
+                                🤖 AI Response
+                            {% elif pin.role == 'user' %}
+                                👤 Message
+                            {% else %}
+                                💬 Comment
+                            {% endif %}
+                        </span>
+                        <span class="text-xs text-muted-foreground">
+                            {{ pin.created_at.strftime('%b %d') }}
+                        </span>
+                    </div>
+                    
+                    <!-- Attribution badge -->
+                    <div class="text-xs text-blue-600 dark:text-blue-400 mb-1">
+                        {% if pin.user %}
+                            Shared by {{ pin.user.display_name or pin.user.username }}
+                        {% else %}
+                            Shared by former member
+                        {% endif %}
+                    </div>
+                    
+                    <p class="text-xs text-gray-700 dark:text-gray-300 line-clamp-3">
+                        {{ pin.content|striptags|truncate(150) }}
+                    </p>
+                    <div class="mt-2 flex items-center gap-2">
+                        {% if pin.message_id %}
+                        <a href="#message-{{ pin.message_id }}" 
+                           class="text-xs text-primary hover:text-primary/80">
+                            Jump →
+                        </a>
+                        {% endif %}
+                        
+                        <!-- Unshare action (only for owner or room owner) -->
+                        {% if pin.user_id == user.id or is_room_owner %}
+                        <button type="button" 
+                                class="text-xs text-orange-600 hover:text-orange-800 share-pin-toggle"
+                                data-pin-id="{{ pin.id }}"
+                                data-shared="true"
+                                title="Make private again">
+                            Unshare
+                        </button>
+                        {% endif %}
+                        
+                        <!-- Remove action (only for owner or room owner) -->
+                        {% if pin.user_id == user.id or is_room_owner %}
+                        <button type="button" 
+                                class="text-xs text-red-600 hover:text-red-800 ml-auto remove-pin-btn"
+                                data-pin-id="{{ pin.id }}">
+                            Remove
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="pins-empty text-center py-4">
+                    <span class="text-muted-foreground text-sm">No shared pins yet</span>
+                    <p class="text-xs text-muted-foreground mt-1">
+                        Share a pin to make it visible to all room members
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</details>
+{% endif %}
+
+<style>
+/* Pin tabs styling */
+.pins-tab[data-active="true"] {
+    color: hsl(var(--primary));
+    border-color: hsl(var(--primary));
+}
+
+.pins-tab[data-active="false"] {
+    color: hsl(var(--muted-foreground));
+    border-color: transparent;
+}
+
+.pins-tab:hover {
+    color: hsl(var(--foreground));
+}
+
+/* Pin card animations */
+.pin-card {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pin-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+</style>
+
+<script>
+// Pin tabs functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const tabs = document.querySelectorAll('.pins-tab');
+    const panels = document.querySelectorAll('.pins-panel');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const targetPanel = this.dataset.tab;
+            
+            // Update tab states
+            tabs.forEach(t => t.dataset.active = 'false');
+            this.dataset.active = 'true';
+            
+            // Update panel visibility
+            panels.forEach(panel => {
+                if (panel.dataset.panel === targetPanel) {
+                    panel.style.display = 'block';
+                    panel.dataset.visible = 'true';
+                } else {
+                    panel.style.display = 'none';
+                    panel.dataset.visible = 'false';
+                }
+            });
+        });
+    });
+    
+    // Share/Unshare pin functionality
+    document.querySelectorAll('.share-pin-toggle').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const pinId = this.dataset.pinId;
+            const isCurrentlyShared = this.dataset.shared === 'true';
+            const newSharedState = !isCurrentlyShared;
+            
+            // Get chat ID from the URL
+            const chatId = window.location.pathname.match(/\/chat\/(\d+)/)?.[1];
+            if (!chatId) return;
+            
+            // Disable button during request
+            this.disabled = true;
+            const originalText = this.textContent;
+            this.textContent = '...';
+            
+            try {
+                // Get CSRF token from cookie (decode the full value, don't split on '.')
+                const csrfCookie = document.cookie
+                    .split('; ')
+                    .find(row => row.startsWith('csrf_token='));
+                const csrfToken = csrfCookie 
+                    ? decodeURIComponent(csrfCookie.split('=')[1])
+                    : '';
+                
+                const response = await fetch(`/chat/${chatId}/pin/${pinId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ shared: newSharedState })
+                });
+                
+                if (response.ok) {
+                    // Reload to update both tabs
+                    window.location.reload();
+                } else {
+                    const data = await response.json();
+                    alert(data.error || 'Failed to update pin');
+                    this.textContent = originalText;
+                    this.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error updating pin:', error);
+                this.textContent = originalText;
+                this.disabled = false;
+            }
+        });
+    });
+    
+    // Remove pin functionality (using pin_id for direct deletion)
+    document.querySelectorAll('.remove-pin-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const pinId = this.dataset.pinId;
+            
+            // Get chat ID from the URL
+            const chatId = window.location.pathname.match(/\/chat\/(\d+)/)?.[1];
+            if (!chatId) return;
+            
+            // Disable button during request
+            this.disabled = true;
+            const originalText = this.textContent;
+            this.textContent = '...';
+            
+            try {
+                // Get CSRF token from cookie
+                const csrfCookie = document.cookie
+                    .split('; ')
+                    .find(row => row.startsWith('csrf_token='));
+                const csrfToken = csrfCookie 
+                    ? decodeURIComponent(csrfCookie.split('=')[1])
+                    : '';
+                
+                const response = await fetch(`/chat/${chatId}/unpin`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ pin_id: parseInt(pinId) })
+                });
+                
+                if (response.ok) {
+                    // Reload to update sidebar
+                    window.location.reload();
+                } else {
+                    const data = await response.json();
+                    alert(data.error || 'Failed to remove pin');
+                    this.textContent = originalText;
+                    this.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error removing pin:', error);
+                this.textContent = originalText;
+                this.disabled = false;
+            }
+        });
+    });
+});
+</script>
+
