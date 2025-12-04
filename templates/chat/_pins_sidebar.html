@@ -253,6 +253,20 @@
 
 .pin-chat-modal-content {
     animation: pin-modal-slide-up 0.3s ease-out;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(12px) saturate(120%);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+}
+
+@media (prefers-color-scheme: dark) {
+    .pin-chat-modal-content {
+        background: rgba(20, 24, 33, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+}
+
+.pin-chat-modal-backdrop {
+    background: rgba(17, 24, 39, 0.5);
 }
 
 @keyframes pin-modal-slide-up {
