@@ -102,6 +102,7 @@ AI Collab Online is an **intelligent learning platform** that creates adaptive, 
 - **AI-Generated Welcome Messages**: Contextual introductions that integrate room goals + learning objectives + previous work
 - **Progressive Learning Paths**: Flexible, non-linear progression that remembers entire learning journey
 - **Learning Context Management**: Dedicated module for note storage, retrieval, and context enhancement
+- **Pin-Seeded Chats**: Create focused conversations from shared pins with 9 synthesis options (explore, study, essay, presentation, etc.) and pin-aware AI responses
 
 ### 📝 **Document Generation & Export**
 - **Chat-to-Document Export**: Transform discussions into structured notes, outlines, or raw transcripts
@@ -121,6 +122,7 @@ AI Collab Online is an **intelligent learning platform** that creates adaptive, 
 - **Learning step progression** with mode-specific AI guidance
 - **AI response toggle** with persistent per-chat preferences
 - **Google Docs integration** for document analysis and import
+- **Pin-aware AI responses** - Pin-seeded chats maintain full pin context throughout the conversation
 
 ### 📊 **Analytics & Administration**
 - **Learning progression tracking** with automatic note generation analytics
@@ -149,6 +151,16 @@ AI Collab Online is an **intelligent learning platform** that creates adaptive, 
 ---
 
 ## 🆕 **Recent Major Updates**
+
+### 📌 **Pin-Seeded Chats (v3.2)** - *December 2025*
+- **Shared pins as chat seeds**: Create focused conversations from ≥3 shared pins
+- **9 synthesis options**: Explore, Study, Research Essay, Presentation, Learning Exercise, Startup, Artistic, Social Impact, Analyze
+- **Pin-aware AI responses**: System prompts include full pin context for contextual conversations
+- **Pin snapshot persistence**: `PinChatMetadata` stores pin content at creation time (immune to source changes)
+- **Room view integration**: "Pin-based Chats" section in mountain view and pin badges on chat cards
+- **Chat sidebar grouping**: Pin chats grouped under "Pin-based Chats" divider with pin count badges
+- **Option picker modal**: Glass-effect modal with icons, descriptions, and loading states
+- **Prompt length monitoring**: 15K char limit with truncation and logging for large pin sets
 
 ### 🏔️ **Mountain Learning Journey (v3.0)** - *September 2025*
 - **Visual learning progression** with beautiful mountain climbing interface as the default room experience
@@ -274,6 +286,8 @@ Limits
 ```
 # Per-room chat cap (default 25)
 ROOM_MAX_CHATS=25
+# Minimum shared pins required for pin-seeded chats (default 3)
+# PIN_CHAT_MIN_PINS=3  # (hardcoded, configurable in future)
 ```
 
 ### Prerequisites
