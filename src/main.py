@@ -31,7 +31,12 @@ except Exception as e:
 
 
 def run_production_migrations(app):
-    """Run Alembic migrations in production environment."""
+    """Run Alembic migrations in production environment.
+    
+    Uses PostgreSQL advisory locks to prevent race conditions when multiple
+    Gunicorn workers start simultaneously. Only one worker will run migrations;
+    others will wait and then skip if migrations are already complete.
+    """
     # Only run migrations if explicitly enabled (prevents per-worker runs)
     run_migrations = os.getenv("RUN_DB_MIGRATIONS_ON_STARTUP", "true").lower() == "true"
     if not run_migrations:
@@ -44,29 +49,91 @@ def run_production_migrations(app):
             from alembic import command
             from alembic.runtime.migration import MigrationContext
             from alembic.script import ScriptDirectory
+            import time
 
-            print("Running Alembic migrations...")
+            print("🔒 Acquiring migration lock...")
             alembic_cfg = Config("alembic.ini")
             
-            # Check current migration version before running
+            # Use PostgreSQL advisory lock to prevent concurrent migration runs
+            # Lock ID: 1234567890 (arbitrary but consistent)
+            LOCK_ID = 1234567890
+            lock_acquired = False
+            
             with app.app_context():
                 from src.app import db
                 conn = db.engine.connect()
-                context = MigrationContext.configure(conn)
-                current_rev = context.get_current_revision()
                 
-                # Get head revision
-                script = ScriptDirectory.from_config(alembic_cfg)
-                head_rev = script.get_current_head()
+                # Try to acquire advisory lock (non-blocking)
+                # If another worker is running migrations, this will return False
+                try:
+                    lock_result = conn.execute(
+                        db.text("SELECT pg_try_advisory_lock(:lock_id)").bindparams(lock_id=LOCK_ID)
+                    ).scalar()
+                    lock_acquired = lock_result
+                except Exception as lock_error:
+                    # If advisory locks aren't available (e.g., SQLite), fall back to old behavior
+                    print(f"⚠️ Advisory lock not available ({lock_error}), proceeding without lock")
+                    lock_acquired = True  # Proceed anyway
                 
-                if current_rev == head_rev:
-                    print(f"✅ Database already at head revision ({head_rev}). Skipping migrations.")
-                    app.config["MIGRATION_STATUS"] = "applied"
-                    conn.close()
-                    return
+                if not lock_acquired:
+                    print("⏳ Another worker is running migrations. Waiting 5 seconds...")
+                    time.sleep(5)
+                    # Check if migrations are already complete
+                    try:
+                        context = MigrationContext.configure(conn)
+                        current_rev = context.get_current_revision()
+                        script = ScriptDirectory.from_config(alembic_cfg)
+                        head_rev = script.get_current_head()
+                        
+                        if current_rev == head_rev:
+                            print(f"✅ Migrations already complete ({head_rev}). Skipping.")
+                            app.config["MIGRATION_STATUS"] = "applied"
+                            conn.close()
+                            return
+                        else:
+                            print(f"⚠️ Migrations still in progress. Skipping this worker.")
+                            conn.close()
+                            return
+                    except Exception:
+                        # alembic_version table might not exist yet, let the other worker handle it
+                        print("⚠️ Migrations in progress by another worker. Skipping.")
+                        conn.close()
+                        return
+                
+                # We have the lock - proceed with migration checks
+                print("✅ Migration lock acquired. Checking current revision...")
+                
+                try:
+                    context = MigrationContext.configure(conn)
+                    current_rev = context.get_current_revision()
+                    
+                    # Get head revision
+                    script = ScriptDirectory.from_config(alembic_cfg)
+                    head_rev = script.get_current_head()
+                    
+                    if current_rev == head_rev:
+                        print(f"✅ Database already at head revision ({head_rev}). Skipping migrations.")
+                        app.config["MIGRATION_STATUS"] = "applied"
+                        # Release lock before returning
+                        try:
+                            conn.execute(db.text("SELECT pg_advisory_unlock(:lock_id)").bindparams(lock_id=LOCK_ID))
+                        except:
+                            pass
+                        conn.close()
+                        return
+                except Exception as check_error:
+                    # alembic_version table might not exist - that's okay, we'll create it
+                    print(f"ℹ️  Checking revision status: {check_error}")
+                    print("   (This is normal if alembic_version table doesn't exist yet)")
+                
+                # Keep connection open to maintain lock during migrations
+                # We'll close it after migrations complete
+                migration_conn = conn
             
-            # Try to run migrations, but don't fail if tables don't exist yet
+            # Run migrations with error handling
+            # Note: The advisory lock is still held by migration_conn
             try:
+                print("🚀 Running Alembic migrations...")
                 command.upgrade(alembic_cfg, "head")
                 print("✅ Alembic migrations complete.")
                 app.config["MIGRATION_STATUS"] = "applied"
@@ -74,9 +141,45 @@ def run_production_migrations(app):
                 if "MIGRATION_ERROR" in app.config:
                     del app.config["MIGRATION_ERROR"]
             except Exception as e:
-                print(f"⚠️ Alembic migration warning: {e}")
+                error_msg = str(e)
+                # Check if it's a race condition error we can safely ignore
+                if "duplicate key value violates unique constraint" in error_msg and "pg_type_typname_nsp_index" in error_msg:
+                    print(f"⚠️ Race condition detected (another worker created alembic_version). Checking status...")
+                    # Check if migrations actually completed despite the error
+                    with app.app_context():
+                        from src.app import db
+                        check_conn = db.engine.connect()
+                        try:
+                            context = MigrationContext.configure(check_conn)
+                            current_rev = context.get_current_revision()
+                            script = ScriptDirectory.from_config(alembic_cfg)
+                            head_rev = script.get_current_head()
+                            if current_rev == head_rev:
+                                print(f"✅ Migrations completed successfully by another worker ({head_rev})")
+                                app.config["MIGRATION_STATUS"] = "applied"
+                                check_conn.close()
+                                # Release lock and close connection
+                                try:
+                                    migration_conn.execute(db.text("SELECT pg_advisory_unlock(:lock_id)").bindparams(lock_id=LOCK_ID))
+                                except:
+                                    pass
+                                migration_conn.close()
+                                return
+                        except:
+                            pass
+                        check_conn.close()
+                
+                print(f"⚠️ Alembic migration warning: {error_msg}")
                 print("Continuing with app startup...")
-                app.config["MIGRATION_ERROR"] = str(e)
+                app.config["MIGRATION_ERROR"] = error_msg
+            finally:
+                # Always release lock and close connection
+                if 'migration_conn' in locals():
+                    try:
+                        migration_conn.execute(db.text("SELECT pg_advisory_unlock(:lock_id)").bindparams(lock_id=LOCK_ID))
+                    except:
+                        pass
+                    migration_conn.close()
         except Exception as e:
             print(f"❌ Alembic migration failed: {e}")
             app.config["MIGRATION_ERROR"] = str(e)
