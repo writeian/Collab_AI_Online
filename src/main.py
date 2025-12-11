@@ -32,18 +32,47 @@ except Exception as e:
 
 def run_production_migrations(app):
     """Run Alembic migrations in production environment."""
+    # Only run migrations if explicitly enabled (prevents per-worker runs)
+    run_migrations = os.getenv("RUN_DB_MIGRATIONS_ON_STARTUP", "true").lower() == "true"
+    if not run_migrations:
+        print("⚠️ Migrations disabled via RUN_DB_MIGRATIONS_ON_STARTUP=false")
+        return
+    
     if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("FLASK_ENV") == "production":
         try:
             from alembic.config import Config
             from alembic import command
+            from alembic.runtime.migration import MigrationContext
+            from alembic.script import ScriptDirectory
 
             print("Running Alembic migrations...")
             alembic_cfg = Config("alembic.ini")
+            
+            # Check current migration version before running
+            with app.app_context():
+                from src.app import db
+                conn = db.engine.connect()
+                context = MigrationContext.configure(conn)
+                current_rev = context.get_current_revision()
+                
+                # Get head revision
+                script = ScriptDirectory.from_config(alembic_cfg)
+                head_rev = script.get_current_head()
+                
+                if current_rev == head_rev:
+                    print(f"✅ Database already at head revision ({head_rev}). Skipping migrations.")
+                    app.config["MIGRATION_STATUS"] = "applied"
+                    conn.close()
+                    return
+            
             # Try to run migrations, but don't fail if tables don't exist yet
             try:
                 command.upgrade(alembic_cfg, "head")
                 print("✅ Alembic migrations complete.")
                 app.config["MIGRATION_STATUS"] = "applied"
+                # Clear any previous migration errors
+                if "MIGRATION_ERROR" in app.config:
+                    del app.config["MIGRATION_ERROR"]
             except Exception as e:
                 print(f"⚠️ Alembic migration warning: {e}")
                 print("Continuing with app startup...")
