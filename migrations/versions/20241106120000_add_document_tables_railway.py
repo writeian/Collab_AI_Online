@@ -38,93 +38,111 @@ def upgrade():
     # Enable pg_trgm extension for full-text search (if not already enabled)
     op.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm;")
     
-    # Create document table
-    op.create_table(
-        'document',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('file_id', sa.String(length=255), nullable=False),
-        sa.Column('name', sa.String(length=500), nullable=False),
-        sa.Column('full_text', sa.Text(), nullable=True),
-        sa.Column('file_size', sa.Integer(), nullable=False, server_default='0'),
-        sa.Column('room_id', sa.Integer(), nullable=False),
-        sa.Column('uploaded_by', sa.Integer(), nullable=True),
-        sa.Column('uploaded_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
-        sa.Column('summary', sa.Text(), nullable=True),
-        sa.ForeignKeyConstraint(['room_id'], ['room.id'], ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(['uploaded_by'], ['user.id'], ondelete='SET NULL'),
-        sa.PrimaryKeyConstraint('id')
-    )
+    conn = op.get_bind()
     
-    # Create indexes on document table
-    op.create_index(op.f('ix_document_file_id'), 'document', ['file_id'], unique=False)
-    op.create_index(op.f('ix_document_room_id'), 'document', ['room_id'], unique=False)
-    op.create_index(op.f('ix_document_uploaded_by'), 'document', ['uploaded_by'], unique=False)
-    op.create_index(op.f('ix_document_uploaded_at'), 'document', ['uploaded_at'], unique=False)
+    # Check if document table already exists (idempotent migration)
+    doc_table_exists = conn.execute(sa.text("""
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema='public' AND table_name='document'
+    """)).fetchone()
     
-    # Create composite unique constraint: (room_id, file_id)
-    # This allows same file_id in different rooms, but prevents duplicates within a room
-    op.create_index(
-        'ix_document_room_file_unique',
-        'document',
-        ['room_id', 'file_id'],
-        unique=True
-    )
+    if doc_table_exists is None:
+        # Create document table
+        op.create_table(
+            'document',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('file_id', sa.String(length=255), nullable=False),
+            sa.Column('name', sa.String(length=500), nullable=False),
+            sa.Column('full_text', sa.Text(), nullable=True),
+            sa.Column('file_size', sa.Integer(), nullable=False, server_default='0'),
+            sa.Column('room_id', sa.Integer(), nullable=False),
+            sa.Column('uploaded_by', sa.Integer(), nullable=True),
+            sa.Column('uploaded_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
+            sa.Column('summary', sa.Text(), nullable=True),
+            sa.ForeignKeyConstraint(['room_id'], ['room.id'], ondelete='CASCADE'),
+            sa.ForeignKeyConstraint(['uploaded_by'], ['user.id'], ondelete='SET NULL'),
+            sa.PrimaryKeyConstraint('id')
+        )
+        
+        # Create indexes on document table
+        op.create_index(op.f('ix_document_file_id'), 'document', ['file_id'], unique=False)
+        op.create_index(op.f('ix_document_room_id'), 'document', ['room_id'], unique=False)
+        op.create_index(op.f('ix_document_uploaded_by'), 'document', ['uploaded_by'], unique=False)
+        op.create_index(op.f('ix_document_uploaded_at'), 'document', ['uploaded_at'], unique=False)
+        
+        # Create composite unique constraint: (room_id, file_id)
+        # This allows same file_id in different rooms, but prevents duplicates within a room
+        op.create_index(
+            'ix_document_room_file_unique',
+            'document',
+            ['room_id', 'file_id'],
+            unique=True
+        )
     
-    # Create document_chunk table with TSVECTOR type
-    op.create_table(
-        'document_chunk',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('document_id', sa.Integer(), nullable=False),
-        sa.Column('chunk_index', sa.Integer(), nullable=False),
-        sa.Column('chunk_text', sa.Text(), nullable=False),
-        sa.Column('start_char', sa.Integer(), nullable=True),
-        sa.Column('end_char', sa.Integer(), nullable=True),
-        sa.Column('token_count', sa.Integer(), nullable=True),
-        sa.Column('search_vector', postgresql.TSVECTOR(), nullable=True),  # Proper TSVECTOR type
-        sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
-        sa.ForeignKeyConstraint(['document_id'], ['document.id'], ondelete='CASCADE'),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('document_id', 'chunk_index', name='uq_document_chunk_doc_idx')  # Uniqueness constraint
-    )
+    # Check if document_chunk table already exists (idempotent migration)
+    chunk_table_exists = conn.execute(sa.text("""
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema='public' AND table_name='document_chunk'
+    """)).fetchone()
     
-    # Create indexes on document_chunk table
-    op.create_index(op.f('ix_document_chunk_document_id'), 'document_chunk', ['document_id'], unique=False)
+    if chunk_table_exists is None:
+        # Create document_chunk table with TSVECTOR type
+        op.create_table(
+            'document_chunk',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('document_id', sa.Integer(), nullable=False),
+            sa.Column('chunk_index', sa.Integer(), nullable=False),
+            sa.Column('chunk_text', sa.Text(), nullable=False),
+            sa.Column('start_char', sa.Integer(), nullable=True),
+            sa.Column('end_char', sa.Integer(), nullable=True),
+            sa.Column('token_count', sa.Integer(), nullable=True),
+            sa.Column('search_vector', postgresql.TSVECTOR(), nullable=True),  # Proper TSVECTOR type
+            sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
+            sa.ForeignKeyConstraint(['document_id'], ['document.id'], ondelete='CASCADE'),
+            sa.PrimaryKeyConstraint('id'),
+            sa.UniqueConstraint('document_id', 'chunk_index', name='uq_document_chunk_doc_idx')  # Uniqueness constraint
+        )
+        
+        # Create indexes on document_chunk table
+        op.create_index(op.f('ix_document_chunk_document_id'), 'document_chunk', ['document_id'], unique=False)
+        
+        # Create GIN index directly on search_vector column (not computed)
+        op.execute("""
+            CREATE INDEX idx_chunk_search_vector 
+            ON document_chunk 
+            USING gin (search_vector);
+        """)
+        
+        # Create composite index for housekeeping queries (document_id, created_at)
+        op.create_index(
+            'ix_document_chunk_doc_created_at',
+            'document_chunk',
+            ['document_id', 'created_at'],
+            unique=False
+        )
+        
+        # Create trigger function to update search_vector automatically
+        op.execute("""
+            CREATE OR REPLACE FUNCTION update_document_chunk_search_vector()
+            RETURNS TRIGGER AS $$
+            BEGIN
+                NEW.search_vector := to_tsvector('english', NEW.chunk_text);
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+        """)
+        
+        # Create trigger to auto-update search_vector on insert/update
+        op.execute("""
+            CREATE TRIGGER document_chunk_search_vector_update
+            BEFORE INSERT OR UPDATE ON document_chunk
+            FOR EACH ROW
+            EXECUTE FUNCTION update_document_chunk_search_vector();
+        """)
     
-    # Create GIN index directly on search_vector column (not computed)
-    op.execute("""
-        CREATE INDEX idx_chunk_search_vector 
-        ON document_chunk 
-        USING gin (search_vector);
-    """)
-    
-    # Create composite index for housekeeping queries (document_id, created_at)
-    op.create_index(
-        'ix_document_chunk_doc_created_at',
-        'document_chunk',
-        ['document_id', 'created_at'],
-        unique=False
-    )
-    
-    # Create trigger function to update search_vector automatically
-    op.execute("""
-        CREATE OR REPLACE FUNCTION update_document_chunk_search_vector()
-        RETURNS TRIGGER AS $$
-        BEGIN
-            NEW.search_vector := to_tsvector('english', NEW.chunk_text);
-            RETURN NEW;
-        END;
-        $$ LANGUAGE plpgsql;
-    """)
-    
-    # Create trigger to auto-update search_vector on insert/update
-    op.execute("""
-        CREATE TRIGGER document_chunk_search_vector_update
-        BEFORE INSERT OR UPDATE ON document_chunk
-        FOR EACH ROW
-        EXECUTE FUNCTION update_document_chunk_search_vector();
-    """)
-    
-    # Create function to get room storage usage
+    # Create function to get room storage usage (idempotent - CREATE OR REPLACE)
     op.execute("""
         CREATE OR REPLACE FUNCTION get_room_storage_usage(target_room_id INTEGER)
         RETURNS TABLE(
