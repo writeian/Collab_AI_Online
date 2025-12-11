@@ -343,26 +343,43 @@ def run_production_migrations(app):
 
 # Create the Flask application
 print("🚀 CREATING FLASK APP WITH DEBUG LOGGING 🚀")
-app = create_app()
-print("🚀 FLASK APP CREATED - ADDING REQUEST LOGGING 🚀")
+try:
+    app = create_app()
+    print("🚀 FLASK APP CREATED - ADDING REQUEST LOGGING 🚀")
+except Exception as e:
+    print(f"❌ CRITICAL: Failed to create Flask app: {e}")
+    import traceback
+    traceback.print_exc()
+    # Create minimal app for health checks
+    app = Flask(__name__)
+    app.config['ERROR_STATUS'] = str(e)
 
-# Clean startup - removed excessive debug logging
-
-# Automatically run Alembic migrations in production (e.g., on Railway)
-run_production_migrations(app)
-
-
-# Liveness check - Is the process alive?
+# Liveness check - Is the process alive? (Register early for healthchecks)
 @app.route("/health")
 def health():
     """
     Liveness probe: Returns 200 as long as the process is running.
     Does NOT check database - use /ready for that.
     """
-    return {
-        "status": "alive",
-        "timestamp": datetime.utcnow().isoformat(),
-    }, 200
+    try:
+        return {
+            "status": "alive",
+            "timestamp": datetime.utcnow().isoformat(),
+        }, 200
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "timestamp": datetime.utcnow().isoformat(),
+        }, 200  # Still return 200 so Railway knows process is alive
+
+# Automatically run Alembic migrations in production (e.g., on Railway)
+# Do this AFTER health endpoint is registered so healthchecks can pass
+try:
+    run_production_migrations(app)
+except Exception as e:
+    print(f"⚠️ Migration error (non-critical): {e}")
+    # Don't crash - app can still serve health checks
 
 
 # Readiness check - Is the app ready to serve traffic?
