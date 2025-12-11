@@ -20,6 +20,7 @@ from .rubric import RubricCriterion, RubricLevel, RoomRubric
 from .refinement import RoomRefinementHistory
 from .learning import ChatNotes
 from .pin import PinnedItem, PinChatMetadata
+from .card_comment import CardComment, generate_card_key, generate_body_hash
 
 __all__ = [
     "User",
@@ -43,4 +44,7 @@ __all__ = [
     "ChatNotes",
     "PinnedItem",
     "PinChatMetadata",
+    "CardComment",
+    "generate_card_key",
+    "generate_body_hash",
 ]

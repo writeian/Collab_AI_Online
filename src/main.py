@@ -245,6 +245,97 @@ def run_production_migrations(app):
                         print("✓ pin_chat_metadata table created manually")
                     except Exception as create_error:
                         print(f"❌ Failed to create pin_chat_metadata table: {create_error}")
+                
+                # PHASE E: Manually create card_comment table for Card View comments
+                try:
+                    from src.models import CardComment
+                    CardComment.query.first()  # Test if table exists
+                    print("✓ card_comment table exists")
+                    
+                    # Check if content_type column exists, add if missing
+                    try:
+                        is_postgres = 'postgresql' in str(db.engine.url)
+                        with db.engine.connect() as conn:
+                            if is_postgres:
+                                result = conn.execute(db.text(
+                                    "SELECT column_name FROM information_schema.columns "
+                                    "WHERE table_name='card_comment' AND column_name='content_type'"
+                                ))
+                            else:
+                                result = conn.execute(db.text("PRAGMA table_info(card_comment)"))
+                                cols = [row[1] for row in result.fetchall()]
+                                has_content_type = 'content_type' in cols
+                                if not has_content_type:
+                                    conn.execute(db.text(
+                                        "ALTER TABLE card_comment ADD COLUMN content_type VARCHAR(10) NOT NULL DEFAULT 'user'"
+                                    ))
+                                    conn.commit()
+                                    print("✓ Added content_type column to card_comment")
+                                result = None  # Prevent further processing
+                            
+                            if result is not None:  # PostgreSQL path
+                                if not result.fetchone():
+                                    conn.execute(db.text(
+                                        "ALTER TABLE card_comment ADD COLUMN content_type VARCHAR(10) NOT NULL DEFAULT 'user'"
+                                    ))
+                                    conn.commit()
+                                    print("✓ Added content_type column to card_comment")
+                    except Exception as alter_error:
+                        print(f"⚠️ Could not check/add content_type column: {alter_error}")
+                        
+                except Exception:
+                    print("⚠️ card_comment table missing, creating manually...")
+                    try:
+                        is_postgres = 'postgresql' in str(db.engine.url)
+                        
+                        with db.engine.connect() as conn:
+                            if is_postgres:
+                                conn.execute(db.text("""
+                                    CREATE TABLE IF NOT EXISTS card_comment (
+                                        id SERIAL PRIMARY KEY,
+                                        chat_id INTEGER NOT NULL REFERENCES chat(id) ON DELETE CASCADE,
+                                        room_id INTEGER NOT NULL REFERENCES room(id) ON DELETE CASCADE,
+                                        message_id INTEGER NOT NULL REFERENCES message(id) ON DELETE CASCADE,
+                                        user_id INTEGER REFERENCES "user"(id) ON DELETE SET NULL,
+                                        card_key VARCHAR(40) NOT NULL,
+                                        segment_index INTEGER NOT NULL,
+                                        segment_body_hash VARCHAR(16),
+                                        content TEXT NOT NULL,
+                                        content_type VARCHAR(10) NOT NULL DEFAULT 'user',
+                                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                        deleted_at TIMESTAMP
+                                    )
+                                """))
+                                conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_card_comment_card_key ON card_comment(card_key)"))
+                                conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_card_comment_chat_card_created ON card_comment(chat_id, card_key, created_at)"))
+                                conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_card_comment_user_created ON card_comment(user_id, created_at)"))
+                            else:
+                                # SQLite-compatible SQL
+                                conn.execute(db.text("""
+                                    CREATE TABLE IF NOT EXISTS card_comment (
+                                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                        chat_id INTEGER NOT NULL REFERENCES chat(id) ON DELETE CASCADE,
+                                        room_id INTEGER NOT NULL REFERENCES room(id) ON DELETE CASCADE,
+                                        message_id INTEGER NOT NULL REFERENCES message(id) ON DELETE CASCADE,
+                                        user_id INTEGER REFERENCES user(id) ON DELETE SET NULL,
+                                        card_key VARCHAR(40) NOT NULL,
+                                        segment_index INTEGER NOT NULL,
+                                        segment_body_hash VARCHAR(16),
+                                        content TEXT NOT NULL,
+                                        content_type VARCHAR(10) NOT NULL DEFAULT 'user',
+                                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                        deleted_at TIMESTAMP
+                                    )
+                                """))
+                                conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_card_comment_card_key ON card_comment(card_key)"))
+                                conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_card_comment_chat_card_created ON card_comment(chat_id, card_key, created_at)"))
+                                conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_card_comment_user_created ON card_comment(user_id, created_at)"))
+                            conn.commit()
+                        print("✓ card_comment table created manually")
+                    except Exception as create_error:
+                        print(f"❌ Failed to create card_comment table: {create_error}")
         except Exception as e:
             print(f"Table creation warning: {e}")
             print("Continuing with app startup...")

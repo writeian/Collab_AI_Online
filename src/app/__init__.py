@@ -184,8 +184,17 @@ def create_app(config_name=None):
     from src.app.analytics import analytics
     from src.app.documents import documents
     
+    # Dev API (Card View experiment)
+    from src.app.api.card_view import card_view_api
+    
+    # Card Comments API (for Card View)
+    from src.app.api.card_comments import card_comments_api
+    
     # V2 Enhanced Room Dashboard (Clean Implementation)
     from src.app.room_v2 import room_v2
+    
+    # Library Tool integration (document upload and search)
+    from src.app.library import library
 
     app.register_blueprint(auth, url_prefix="/auth")
     app.register_blueprint(chat, url_prefix="/chat")
@@ -199,6 +208,15 @@ def create_app(config_name=None):
     app.register_blueprint(room_v2, url_prefix="/room/v2")
     app.register_blueprint(analytics, url_prefix="/analytics")
     app.register_blueprint(documents, url_prefix="/documents")
+    
+    # Library Tool endpoints
+    app.register_blueprint(library, url_prefix="/api/library")
+    
+    # Dev API (experimental endpoints)
+    app.register_blueprint(card_view_api)  # url_prefix set in blueprint
+    
+    # Card Comments API (no prefix - routes defined with full paths)
+    app.register_blueprint(card_comments_api)
 
     # Diagnostics: template folder + which room template is found
     @app.route("/__tpl")

@@ -201,6 +201,55 @@
                     
                     <!-- 4. Tone & Critique Card (injected via base.html) -->
                     <div id="tone-critique-mount"></div>
+                    <!-- 5. Library Tool Card -->
+                    <section class="tool-card" id="library-card">
+                        <div class="tool-card__header">
+                            <div class="tool-card__title">
+                                <i data-lucide="book-open" class="w-4 h-4"></i>
+                                Library
+                            </div>
+                            <button type="button" class="tool-card__chevron" aria-expanded="false" aria-controls="library-body" onclick="toggleToolCard(this, 'library-body')">
+                                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <div class="tool-card__body" id="library-body" hidden>
+                            <div class="space-y-4">
+                                <div class="space-y-2">
+                                    <label class="text-xs font-medium text-muted-foreground">Storage</label>
+                                    <div class="relative h-10 bg-white/80 dark:bg-gray-800/80 rounded-full overflow-hidden border border-border/30" style="backdrop-filter: blur(4px);">
+                                        <div id="storage-bar" class="absolute inset-y-0 left-0 rounded-full transition-all duration-500" style="width: 0%; background: #b4e380;"></div>
+                                        <div class="absolute inset-0 flex items-center px-4">
+                                            <span id="storage-percentage" class="text-lg font-bold text-foreground relative z-10">0%</span>
+                                        </div>
+                                    </div>
+                                    <div id="storage-warning" class="hidden text-xs text-red-600 font-medium">⚠️ Storage full! Remove documents to free up space.</div>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-medium text-muted-foreground">Upload Document</label>
+                                    <div class="flex gap-2">
+                                        <input type="file" id="library-file-input" accept=".pdf,.docx,.txt" class="hidden">
+                                        <button onclick="document.getElementById('library-file-input').click()" class="flex-1 px-3 py-2 text-xs font-bold bg-primary/10 text-primary rounded hover:bg-primary/20 transition-colors flex items-center justify-center gap-2">
+                                            <i data-lucide="upload" class="w-3 h-3"></i>
+                                            Choose File
+                                        </button>
+                                    </div>
+                                    <div id="library-upload-status" class="text-xs text-muted-foreground hidden"></div>
+                                </div>
+                                <div class="space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <label class="text-xs font-medium text-muted-foreground">Uploaded Documents</label>
+                                        <button onclick="refreshLibraryDocuments()" class="text-xs text-primary hover:text-primary/80">
+                                            <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+                                        </button>
+                                    </div>
+                                    <div id="library-documents-list" class="space-y-2">
+                                        <p class="text-xs text-muted-foreground">No documents uploaded yet.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    
                 </div>
             </div>
         </details>
@@ -615,5 +664,6 @@
     <script src="{{ url_for('static', filename='js/chat-view.js') }}?v=2025-10-28"></script>
     <script src="{{ url_for('static', filename='js/pin-toggle.js') }}?v=2025-12-04-inplace"></script>
     <script src="{{ url_for('static', filename='js/pin-chat.js') }}?v=2025-12-04"></script>
+    <script src="{{ url_for('static', filename='js/library-tool.js') }}"></script>
 {% endblock %}
 <!-- PIN OPACITY FIX DEPLOYED 2025-12-01T03:15Z -->

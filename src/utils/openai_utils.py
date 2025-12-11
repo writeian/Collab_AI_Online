@@ -556,6 +556,7 @@ def call_anthropic_api(messages: List[Dict[str, str]], system_prompt: str = "", 
         "Content-Type": "application/json",
         "x-api-key": api_key,
         "anthropic-version": "2023-06-01",
+        "anthropic-beta": "messages-2023-12-15",
     }
 
     # Convert messages to Anthropic format
@@ -568,7 +569,9 @@ def call_anthropic_api(messages: List[Dict[str, str]], system_prompt: str = "", 
     user_content = "\n\n".join(user_messages)
 
     def _get_anthropic_model() -> str:
-        return os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022")
+        # Default to claude-3-opus-20240229 (verified working model)
+        # User can override with ANTHROPIC_MODEL env var
+        return os.getenv("ANTHROPIC_MODEL", "claude-3-opus-20240229")
 
     data = {
         "model": _get_anthropic_model(),
@@ -750,10 +753,9 @@ def get_ai_response(
         # Get mode-specific system prompt with discussion context
         base_system_prompt = get_mode_system_prompt(chat.mode, chat.room_id, chat.id)
     
-    # Add extra system instructions if provided (for critique tool)
+    # Add extra system instructions if provided (for critique tool or synthesis disabled note)
+    # Note: extra_system may be modified later in the function, so we'll rebuild system_prompt before calling API
     system_prompt = base_system_prompt
-    if extra_system:
-        system_prompt = f"{base_system_prompt}\n\nADDITIONAL STYLE: {extra_system}"
 
     # Import here to avoid circular imports
     from src.models import Message
@@ -779,6 +781,162 @@ def get_ai_response(
             pass
     else:
         messages_payload = all_messages
+
+    # NEW: Search Library Tool documents for relevant context (with room_id scoping)
+    try:
+        # Extract room_id from chat context (canonical source)
+        room_id = None
+        if chat and hasattr(chat, 'room_id'):
+            room_id = chat.room_id
+        
+        # Fallback: Try to get from request args
+        if not room_id:
+            from flask import request
+            room_id = request.args.get('room_id', type=int)
+        
+        # Only search if we have a room_id
+        if room_id:
+            user_messages = [m for m in messages_payload if m.get("role") == "user"]
+            if user_messages:
+                latest_query = user_messages[-1].get("content", "")
+                current_app.logger.info(f"🔍 Searching documents for query: '{latest_query[:50]}...' in room {room_id}")
+            
+                # Detect synthesis/summarization requests with tighter matching
+                # Require explicit synthesis keywords and minimum query length to avoid false positives
+                synthesis_keywords_explicit = [
+                    'summarize all', 'synthesize all', 'summarize everything', 'synthesize everything',
+                    'comprehensive summary', 'comprehensive synthesis', 'synthesis of all',
+                    'summary of all', 'summarize all sources', 'synthesize all sources',
+                    'summarize all documents', 'synthesize all documents'
+                ]
+                synthesis_keywords_broad = [
+                    'all sources', 'all documents', 'all of them', 'overview of all',
+                    'compare all', 'across all', 'all the documents', 'all the sources'
+                ]
+                
+                query_lower = latest_query.lower().strip()
+                query_length = len(query_lower)
+                
+                # Require minimum query length (avoid triggering on single words like "all")
+                # Require explicit keywords OR (broad keywords + longer query)
+                is_synthesis_request = (
+                    query_length >= 10 and (  # Minimum 10 characters
+                        any(kw in query_lower for kw in synthesis_keywords_explicit) or
+                        (any(kw in query_lower for kw in synthesis_keywords_broad) and query_length >= 20)
+                    )
+                )
+            
+                if is_synthesis_request:
+                    # Synthesis mode: Get representative chunks from ALL documents
+                    current_app.logger.info(f"📚 Synthesis mode detected - getting chunks from all documents")
+                    from src.utils.documents.database import (
+                        get_representative_chunks_from_all_documents,
+                        get_document_summaries_only,
+                        SYNTHESIS_MAX_DOCUMENTS,
+                        SYNTHESIS_MAX_TOTAL_CHUNKS,
+                        SYNTHESIS_CHUNK_TEXT_LIMIT,
+                        SYNTHESIS_TOKEN_BUDGET
+                    )
+                    
+                    # Get representative chunks with caps
+                    search_results = get_representative_chunks_from_all_documents(
+                        room_id=room_id,
+                        chunks_per_doc=2,
+                        max_documents=SYNTHESIS_MAX_DOCUMENTS,
+                        max_total_chunks=SYNTHESIS_MAX_TOTAL_CHUNKS,
+                        chunk_text_limit=SYNTHESIS_CHUNK_TEXT_LIMIT
+                    )
+                    
+                    # Estimate token usage (rough: ~4 chars per token)
+                    # Check both 'chunk_text' (from chunks) and 'content' (from summaries)
+                    estimated_tokens = sum(
+                        len(r.get('chunk_text') or r.get('content', '')) // 4 
+                        for r in search_results
+                    )
+                    
+                    # If token budget exceeded, fall back to summaries
+                    if estimated_tokens > SYNTHESIS_TOKEN_BUDGET:
+                        current_app.logger.warning(
+                            f"Synthesis mode: Estimated tokens ({estimated_tokens}) exceed budget ({SYNTHESIS_TOKEN_BUDGET}). "
+                            f"Falling back to document summaries."
+                        )
+                        search_results = get_document_summaries_only(room_id, max_docs=SYNTHESIS_MAX_DOCUMENTS)
+                    
+                    current_app.logger.info(f"📚 Synthesis mode: Retrieved {len(search_results)} chunks/summaries from documents")
+                else:
+                    # Normal search: Get top-ranked chunks
+                    from src.utils.documents.indexer import search_indexed_chunks
+                    search_results = search_indexed_chunks(query=latest_query, room_id=room_id, limit=3, min_rank=0.01)
+            
+                current_app.logger.info(f"📚 Document search returned {len(search_results) if search_results else 0} results")
+            
+                # If synthesis was requested but no results (feature flag disabled), add user-facing note
+                if is_synthesis_request and not search_results:
+                    # Add a note to the AI's system context explaining why synthesis isn't available
+                    synthesis_unavailable_note = (
+                        "\n\nIMPORTANT: The user requested a synthesis of all documents in their Library, "
+                        "but the Library Tool feature is currently disabled (USE_RAILWAY_DOCUMENTS=false). "
+                        "Please inform the user that this feature needs to be enabled by their administrator."
+                    )
+                    # Append to extra_system if it exists, otherwise create it
+                    # Note: system_prompt will be rebuilt after this block to include extra_system
+                    if extra_system:
+                        extra_system += synthesis_unavailable_note
+                    else:
+                        extra_system = synthesis_unavailable_note
+                    current_app.logger.info("⚠️ Synthesis requested but Library Tool disabled - added note to AI context")
+            
+                if search_results:
+                    # Build document context block
+                    context_snippets = []
+                    for result in search_results:
+                        # Check both 'chunk_text' (from chunks) and 'content' (from summaries)
+                        content = result.get('chunk_text') or result.get('content', '')
+                        context_snippets.append({
+                            'title': result.get('document_name', 'Unknown'),
+                            'content': content,
+                            'chunk_index': result.get('chunk_index', 0),
+                            'rank': result.get('rank', 0.0)
+                        })
+                        current_app.logger.info(f"  - {result.get('document_name')}: rank={result.get('rank', 0):.3f}")
+                
+                    doc_context = build_document_context_block(context_snippets)
+                    if doc_context:
+                        # Add document context with clear instructions to use it
+                        # Prepend to user message so AI sees it first
+                        original_question = messages_payload[-1]["content"]
+                        
+                        # Different instructions for synthesis vs normal search
+                        if is_synthesis_request:
+                            instruction = (
+                                f"IMPORTANT: The user wants a comprehensive summary/synthesis of ALL documents "
+                                f"in their Library. The context above includes representative chunks from each document. "
+                                f"Provide a thorough synthesis that covers all documents, identifies common themes, "
+                                f"compares perspectives, and highlights key information from each source.\n\n"
+                            )
+                        else:
+                            instruction = (
+                                f"IMPORTANT: The user has uploaded documents to their Library. "
+                                f"Use the document context above to answer their question. "
+                                f"If the question is about their uploaded documents, reference specific content from the documents.\n\n"
+                            )
+                        
+                        messages_payload[-1]["content"] = (
+                            f"{doc_context}\n\n"
+                            f"{instruction}"
+                            f"User question: {original_question}"
+                        )
+                        current_app.logger.info(f"✅ Added {len(context_snippets)} document chunks to user message")
+                else:
+                    current_app.logger.info("ℹ️  No relevant documents found for this query")
+        # End if room_id
+    except Exception as e:
+        # If document search failed, continue without it (graceful degradation)
+        current_app.logger.error(f"❌ Document search failed: {e}")
+
+    # Rebuild system_prompt to include any extra_system modifications (e.g., synthesis disabled note)
+    if extra_system:
+        system_prompt = f"{base_system_prompt}\n\nADDITIONAL STYLE: {extra_system}"
 
     return call_anthropic_api(messages_payload, system_prompt, max_tokens)
 
@@ -1463,3 +1621,36 @@ Alternative options:
 Just let me know how you'd like to begin!"""
     
     return welcome
+
+
+def build_document_context_block(context_snippets: List[Dict[str, Any]]) -> str:
+    """
+    Build a formatted document context block from search results.
+    
+    Args:
+        context_snippets: List of dicts with 'title', 'content', 'chunk_index', 'rank'
+        
+    Returns:
+        Formatted string with document context, or empty string if no snippets
+    """
+    if not context_snippets:
+        return ""
+    
+    context_lines = ["📚 Relevant Document Context:"]
+    
+    for snippet in context_snippets:
+        title = snippet.get('title', 'Unknown Document')
+        content = snippet.get('content', '')
+        chunk_idx = snippet.get('chunk_index', 0)
+        rank = snippet.get('rank', 0.0)
+        
+        # Truncate content if too long (keep first 400 chars to match synthesis limit)
+        # Note: Chunks are already truncated in get_representative_chunks_from_all_documents,
+        # but keep this as a safety net
+        if len(content) > 400:
+            content = content[:400] + "..."
+        
+        context_lines.append(f"\nFrom: {title} (chunk {chunk_idx}, relevance: {rank:.2f})")
+        context_lines.append(f"{content}")
+    
+    return "\n".join(context_lines)

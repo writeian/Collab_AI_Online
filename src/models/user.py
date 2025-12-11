@@ -57,7 +57,8 @@ class User(db.Model):
     google_auth = db.relationship("GoogleAuth", backref="user", uselist=False)
 
     def set_password(self, password: str) -> None:
-        self.password_hash = generate_password_hash(password)
+        # Use pbkdf2:sha256 instead of scrypt (scrypt requires OpenSSL 1.1+, not available on macOS with LibreSSL)
+        self.password_hash = generate_password_hash(password, method='pbkdf2:sha256')
 
     def check_password(self, password: str) -> bool:
         return check_password_hash(self.password_hash, password)

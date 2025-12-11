@@ -27,10 +27,11 @@ except ImportError:
 from main import app
 
 if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5001))
     print("🚀 Starting AI Collab Online (Phase 3)...")
     print("📁 Using new professional src/ directory structure")
-    print("🌐 Application will be available at: http://localhost:5000")
-    print("🔧 Health check available at: http://localhost:5000/health")
+    print(f"🌐 Application will be available at: http://localhost:{port}")
+    print(f"🔧 Health check available at: http://localhost:{port}/health")
     print("=" * 60)
     
-    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000))) 
+    app.run(debug=True, host='0.0.0.0', port=port) 
