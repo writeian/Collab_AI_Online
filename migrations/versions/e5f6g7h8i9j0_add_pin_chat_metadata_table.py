@@ -19,26 +19,34 @@ depends_on = None
 
 
 def upgrade():
-    # Create pin_chat_metadata table
-    op.create_table('pin_chat_metadata',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('chat_id', sa.Integer(), nullable=False),
-        sa.Column('option', sa.String(length=32), nullable=False),
-        sa.Column('pin_snapshot', sa.Text(), nullable=False),
-        sa.Column('created_at', sa.DateTime(), nullable=False),
-        
-        # Foreign key with CASCADE delete
-        sa.ForeignKeyConstraint(['chat_id'], ['chat.id'], ondelete='CASCADE'),
-        
-        # Primary key
-        sa.PrimaryKeyConstraint('id'),
-        
-        # Unique constraint: one metadata per chat
-        sa.UniqueConstraint('chat_id', name='uq_pin_chat_metadata_chat_id'),
-    )
+    # Create pin_chat_metadata table (idempotent)
+    conn = op.get_bind()
+    result = conn.execute(sa.text("""
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema='public' AND table_name='pin_chat_metadata'
+    """))
     
-    # Create index for chat_id lookups
-    op.create_index('ix_pin_chat_metadata_chat_id', 'pin_chat_metadata', ['chat_id'])
+    if result.fetchone() is None:
+        op.create_table('pin_chat_metadata',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('chat_id', sa.Integer(), nullable=False),
+            sa.Column('option', sa.String(length=32), nullable=False),
+            sa.Column('pin_snapshot', sa.Text(), nullable=False),
+            sa.Column('created_at', sa.DateTime(), nullable=False),
+            
+            # Foreign key with CASCADE delete
+            sa.ForeignKeyConstraint(['chat_id'], ['chat.id'], ondelete='CASCADE'),
+            
+            # Primary key
+            sa.PrimaryKeyConstraint('id'),
+            
+            # Unique constraint: one metadata per chat
+            sa.UniqueConstraint('chat_id', name='uq_pin_chat_metadata_chat_id'),
+        )
+        
+        # Create index for chat_id lookups
+        op.create_index('ix_pin_chat_metadata_chat_id', 'pin_chat_metadata', ['chat_id'])
 
 
 def downgrade():
@@ -47,4 +55,3 @@ def downgrade():
     
     # Drop table
     op.drop_table('pin_chat_metadata')
-

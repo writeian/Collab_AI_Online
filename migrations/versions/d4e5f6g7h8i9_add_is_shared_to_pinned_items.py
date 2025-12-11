@@ -19,12 +19,29 @@ depends_on = None
 
 
 def upgrade():
-    # Add is_shared column with default False (all existing pins become personal)
-    op.add_column('pinned_items', sa.Column('is_shared', sa.Boolean(), nullable=False, server_default='false'))
+    conn = op.get_bind()
     
-    # Add indexes for efficient shared pin queries
-    op.create_index('ix_pinned_items_chat_shared', 'pinned_items', ['chat_id', 'is_shared'], unique=False)
-    op.create_index('ix_pinned_items_room_shared', 'pinned_items', ['room_id', 'is_shared'], unique=False)
+    # Add is_shared column with default False (idempotent)
+    col_exists = conn.execute(sa.text("""
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name='pinned_items' AND column_name='is_shared'
+    """)).fetchone()
+    
+    if col_exists is None:
+        op.add_column('pinned_items', sa.Column('is_shared', sa.Boolean(), nullable=False, server_default='false'))
+    
+    # Add indexes for efficient shared pin queries (idempotent)
+    indexes = conn.execute(sa.text("""
+        SELECT indexname FROM pg_indexes 
+        WHERE tablename = 'pinned_items'
+    """)).fetchall()
+    index_names = {row[0] for row in indexes}
+    
+    if 'ix_pinned_items_chat_shared' not in index_names:
+        op.create_index('ix_pinned_items_chat_shared', 'pinned_items', ['chat_id', 'is_shared'], unique=False)
+    if 'ix_pinned_items_room_shared' not in index_names:
+        op.create_index('ix_pinned_items_room_shared', 'pinned_items', ['room_id', 'is_shared'], unique=False)
 
 
 def downgrade():
@@ -34,4 +51,3 @@ def downgrade():
     
     # Remove column
     op.drop_column('pinned_items', 'is_shared')
-
