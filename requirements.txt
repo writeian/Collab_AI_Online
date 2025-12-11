@@ -49,4 +49,7 @@ python-docx==1.1.2
 
 # Document Processing (Library Tool)
 pypdf>=4.0.0          # PDF text extraction
+
+# AI Services
+anthropic==0.18.1  # For Claude API (required for Library Tool document summarization)
 # Railway deployment test Sun Sep 14 22:27:02 PDT 2025

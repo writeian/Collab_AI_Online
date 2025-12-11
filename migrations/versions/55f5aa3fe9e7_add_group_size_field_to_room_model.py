@@ -20,8 +20,20 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    # Add group_size column to room table
-    op.add_column('room', sa.Column('group_size', sa.String(20), nullable=True))
+    # Add group_size column to room table (only if it doesn't exist)
+    conn = op.get_bind()
+    
+    # Check if column already exists
+    result = conn.execute(sa.text("""
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name='room' AND column_name='group_size'
+    """))
+    
+    if result.fetchone() is None:
+        # Column doesn't exist, add it
+        op.add_column('room', sa.Column('group_size', sa.String(20), nullable=True))
+    # else: column already exists, skip
 
 
 def downgrade() -> None:
