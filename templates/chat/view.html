@@ -2,6 +2,10 @@
 
 {% block title %}Chat - {{ chat.title }}{% endblock %}
 {% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/quiz-panel.css') }}?v=2026-02-10">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/flashcards-panel.css') }}?v=2026-02-10">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/mindmap-panel.css') }}?v=2026-02-10">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/narrative-panel.css') }}?v=2026-02-10">
 <style>
   /* Minimal Focus Mode: hides chrome to maximize chat space */
   body.focus-mode > header, body.focus-mode header { display: none !important; }
@@ -14,6 +18,8 @@
   body.focus-mode main { padding: 0 !important; margin: 0 !important; }
   body.focus-mode, body.focus-mode html { height: 100%; }
   body.focus-mode .chat-layout, body.focus-mode .chat-container, body.focus-mode .chat-main { height: 100vh !important; }
+  body.focus-mode .chat-container { width: 100% !important; }
+  body.focus-mode .chat-main { margin-left: 0 !important; width: 100% !important; }
   /* Ensure input is visible in focus mode on desktop */
   body.focus-mode .chat-input-container { position: fixed !important; left: 0; right: 0; bottom: 0; z-index: 10000; display: block !important; }
   /* Padding for #chat-messages in focus mode is handled dynamically via JS */
@@ -45,6 +51,14 @@
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     touch-action: pan-y;
+  }
+  .pin-toggle {
+    background: none;
+    border: none;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
   }
 </style>
 {% endblock %}
@@ -182,6 +196,55 @@
                     
                     <!-- 4. Tone & Critique Card (injected via base.html) -->
                     <div id="tone-critique-mount"></div>
+
+                    <!-- 5. Library Tool Card -->
+                    <section class="tool-card" id="library-card">
+                        <div class="tool-card__header">
+                            <div class="tool-card__title">
+                                <i data-lucide="book-open" class="w-4 h-4"></i>
+                                Library
+                            </div>
+                            <button type="button" class="tool-card__chevron" aria-expanded="false" aria-controls="library-body" onclick="toggleToolCard(this, 'library-body')">
+                                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <div class="tool-card__body" id="library-body" hidden>
+                            <div class="space-y-4">
+                                <div class="space-y-2">
+                                    <label class="text-xs font-medium text-muted-foreground">Storage</label>
+                                    <div class="relative h-10 bg-white/80 dark:bg-gray-800/80 rounded-full overflow-hidden border border-border/30" style="backdrop-filter: blur(4px);">
+                                        <div id="storage-bar" class="absolute inset-y-0 left-0 rounded-full transition-all duration-500" style="width: 0%; background: #b4e380;"></div>
+                                        <div class="absolute inset-0 flex items-center px-4">
+                                            <span id="storage-percentage" class="text-lg font-bold text-foreground relative z-10">0%</span>
+                                        </div>
+                                    </div>
+                                    <div id="storage-warning" class="hidden text-xs text-red-600 font-medium">Storage full. Remove documents to free space.</div>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-medium text-muted-foreground">Upload Document</label>
+                                    <div class="flex gap-2">
+                                        <input type="file" id="library-file-input" accept=".pdf,.docx,.txt" class="hidden">
+                                        <button type="button" onclick="document.getElementById('library-file-input').click()" class="flex-1 px-3 py-2 text-xs font-bold bg-primary/10 text-primary rounded hover:bg-primary/20 transition-colors flex items-center justify-center gap-2">
+                                            <i data-lucide="upload" class="w-3 h-3"></i>
+                                            Choose File
+                                        </button>
+                                    </div>
+                                    <div id="library-upload-status" class="text-xs text-muted-foreground hidden"></div>
+                                </div>
+                                <div class="space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <label class="text-xs font-medium text-muted-foreground">Uploaded Documents</label>
+                                        <button type="button" onclick="refreshLibraryDocuments()" class="text-xs text-primary hover:text-primary/80">
+                                            <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+                                        </button>
+                                    </div>
+                                    <div id="library-documents-list" class="space-y-2">
+                                        <p class="text-xs text-muted-foreground">No documents uploaded yet.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
                 </div>
             </div>
         </details>
@@ -363,7 +426,7 @@
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <!-- Mobile Sidebar Toggle (hidden on desktop) -->
-                    <button id="chat-sidebar-toggle" class="md:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" aria-label="Toggle sidebar">
+                    <button id="chat-sidebar-toggle" class="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" aria-label="Toggle sidebar">
                         <i data-lucide="panel-left" class="w-5 h-5"></i>
                     </button>
                     <div>
@@ -552,7 +615,32 @@
                 </label>
             </div>
             
-            <div class="flex gap-3 items-end">
+            <div class="flex gap-3 items-end relative">
+            <button type="button"
+                    class="tools-menu-button"
+                    aria-label="Open tools menu"
+                    aria-expanded="false">
+                <i data-lucide="plus" class="w-5 h-5"></i>
+            </button>
+
+            <div class="tools-menu-popup hidden" role="menu">
+                <button type="button" class="tools-menu-item" data-tool="quiz" role="menuitem">
+                    <i data-lucide="file-question" class="w-4 h-4"></i>
+                    <span>Quiz</span>
+                </button>
+                <button type="button" class="tools-menu-item" data-tool="flashcards" role="menuitem">
+                    <i data-lucide="layers" class="w-4 h-4"></i>
+                    <span>Flashcards</span>
+                </button>
+                <button type="button" class="tools-menu-item" data-tool="mindmap" role="menuitem">
+                    <i data-lucide="network" class="w-4 h-4"></i>
+                    <span>Mind Map</span>
+                </button>
+                <button type="button" class="tools-menu-item" data-tool="narrative" role="menuitem">
+                    <i data-lucide="book-open" class="w-4 h-4"></i>
+                    <span>Narrative</span>
+                </button>
+            </div>
             <textarea name="content"
                       placeholder="Type your message..."
                       class="chat-input chat-textarea flex-1"
@@ -583,6 +671,11 @@
     </div>
 </div>
 
+{% include 'components/quiz/quiz_panel.html' %}
+{% include 'components/flashcards/flashcards_panel.html' %}
+{% include 'components/mindmap/mindmap_panel.html' %}
+{% include 'components/narrative/narrative_panel.html' %}
+
 {% endblock %}
 
 {% block extra_js %}
@@ -590,4 +683,12 @@
     <script src="{{ url_for('static', filename='js/chat-view.js') }}?v=2025-10-28"></script>
     <script src="{{ url_for('static', filename='js/pin-toggle.js') }}?v=2025-12-04-inplace"></script>
     <script src="{{ url_for('static', filename='js/pin-chat.js') }}?v=2025-12-04"></script>
+    <script src="{{ url_for('static', filename='js/tool-api.js') }}?v=2026-02-10"></script>
+    <script src="{{ url_for('static', filename='js/library-tool.js') }}?v=2026-02-10"></script>
+    <script src="{{ url_for('static', filename='js/quiz-tool.js') }}?v=2026-02-10"></script>
+    <script src="{{ url_for('static', filename='js/flashcards-tool.js') }}?v=2026-02-10"></script>
+    <script src="{{ url_for('static', filename='vendor/elk.bundled.js') }}?v=2026-02-10" onerror="(function(){var s=document.createElement('script');s.src='https://unpkg.com/elkjs@0.9.2/lib/elk.bundled.js';document.head.appendChild(s);}())"></script>
+    <script src="{{ url_for('static', filename='js/mindmap-tool.js') }}?v=2026-02-10"></script>
+    <script src="{{ url_for('static', filename='js/narrative-tool.js') }}?v=2026-02-10"></script>
+    <script src="{{ url_for('static', filename='js/tools-menu.js') }}?v=2026-02-10"></script>
 {% endblock %}
