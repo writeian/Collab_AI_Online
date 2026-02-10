@@ -99,3 +99,4 @@ scripts/check_*.py
 # Case sensitivity protection (prevent Templates/ on case-sensitive systems)
 # Use exact path to avoid matching templates/ on case-insensitive systems
 /Templates/
+.venv/bin/

@@ -112,12 +112,28 @@ def segment_text():
     
     try:
         from src.utils.card_view import segment_message, enhance_segments_with_ai
+        from src.models.card_comment import generate_card_key
+        import time
         
         # Segment the text (Python-only, fast)
         segments = segment_message(text)
         
-        # Convert to dicts for JSON
-        segment_dicts = [seg.to_dict() for seg in segments]
+        # Generate stable card_key for preview mode (always return card_key)
+        # Use mock message_id for preview: negative timestamp to avoid conflicts with real messages
+        preview_message_id = -int(time.time() * 1000)
+        
+        # Convert to dicts for JSON, ensuring card_key is always present
+        segment_dicts = []
+        for i, seg in enumerate(segments):
+            seg_dict = seg.to_dict()
+            # Always include segment_index for frontend mapping
+            seg_dict["segment_index"] = i
+            # Generate card_key if not present (preview mode)
+            if not seg_dict.get("card_key"):
+                card_key = generate_card_key(preview_message_id, i, seg.body)
+                seg_dict["card_key"] = card_key
+                seg_dict["body_hash"] = seg.generate_body_hash()
+            segment_dicts.append(seg_dict)
         
         # Build response
         response_data = {
@@ -205,8 +221,46 @@ def card_preview():
     
     Provides a UI to paste text and see how it would be segmented into cards.
     Uses the same access guard as the API endpoints.
+    
+    Query params:
+        chat_id: Optional chat ID for real API integration (enables comments)
+        room_id: Optional room ID (derived from chat if chat_id provided)
+        message_id: Optional message ID (required for real API comments)
+    
+    WARNING: When chat_id/message_id are provided, comments will be saved to the database
+    tied to the real chat/message, even though the previewed card content may be unrelated.
+    Only use with test/development chats, never production data.
     """
     if not _is_dev_api_allowed():
         return render_template("errors/403.html"), 403
     
-    return render_template("dev/card_preview.html")
+    # Get chat_id, room_id, and message_id from query params (optional, for real API integration)
+    chat_id = request.args.get("chat_id", type=int)
+    room_id = request.args.get("room_id", type=int)
+    message_id = request.args.get("message_id", type=int)
+    
+    # If chat_id provided, validate and get room_id
+    if chat_id:
+        from src.models import Chat
+        chat = Chat.query.get(chat_id)
+        if chat:
+            room_id = chat.room_id
+            # If message_id not provided but chat_id is, try to get the latest message
+            # NOTE: This creates a mismatch - preview content may be unrelated to this message
+            if not message_id:
+                from src.models import Message
+                latest_message = Message.query.filter_by(chat_id=chat_id).order_by(Message.id.desc()).first()
+                if latest_message:
+                    message_id = latest_message.id
+                    # Log warning about potential mismatch
+                    current_app.logger.warning(
+                        f"Card preview using latest message_id={message_id} for chat_id={chat_id}. "
+                        "Preview content may be unrelated to this message."
+                    )
+        else:
+            # Invalid chat_id, clear it
+            chat_id = None
+            room_id = None
+            message_id = None
+    
+    return render_template("dev/card_preview.html", chat_id=chat_id, room_id=room_id, message_id=message_id)

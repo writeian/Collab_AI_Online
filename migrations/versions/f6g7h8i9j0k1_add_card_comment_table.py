@@ -64,3 +64,4 @@ def downgrade():
     # Drop table
     op.drop_table('card_comment')
 
+
