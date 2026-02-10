@@ -1,0 +1,1473 @@
+/**
+ * Card Overlay Styles
+ * Isolated to dev/preview paths only
+ */
+
+/* Fullscreen Preview Mode - Isolates grid for breakpoint testing */
+.cv-container.cv-fullscreen-preview {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 9999 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important; /* Remove any max-width constraints */
+    background: #000000 !important;
+    overflow-x: hidden !important; /* Prevent horizontal scroll */
+    overflow-y: auto !important; /* Allow vertical scroll only */
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Prevent body overflow in fullscreen */
+body:has(.cv-container.cv-fullscreen-preview) {
+    overflow-x: hidden !important;
+    overflow-y: hidden !important;
+}
+
+.cv-container.cv-fullscreen-preview .cv-header,
+.cv-container.cv-fullscreen-preview .cv-input-panel {
+    display: none !important;
+}
+
+.cv-container.cv-fullscreen-preview .cv-layout {
+    display: block !important;
+    height: 100% !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow-x: hidden !important;
+}
+
+.cv-container.cv-fullscreen-preview .cv-output-panel {
+    height: 100% !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow-x: hidden !important;
+}
+
+.cv-container.cv-fullscreen-preview .cv-panel-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+    background: #000000 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    padding: 1rem !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+}
+
+.cv-container.cv-fullscreen-preview .cv-panel-header h2,
+.cv-container.cv-fullscreen-preview .cv-panel-header i {
+    color: #ffffff !important;
+}
+
+.cv-container.cv-fullscreen-preview .cv-card-count {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+}
+
+.cv-container.cv-fullscreen-preview .cv-cards {
+    flex: 1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important; /* Prevent horizontal scroll */
+    overflow-y: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* Fullscreen: ensure grid uses full width */
+.cv-container.cv-fullscreen-preview .cv-grid {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0.75rem !important;
+    box-sizing: border-box !important;
+}
+
+/* Exit fullscreen button */
+.cv-fullscreen-exit-btn {
+    display: none !important;
+}
+
+.cv-container.cv-fullscreen-preview .cv-fullscreen-exit-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    padding: 0.5rem 1rem !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 6px !important;
+    color: #ffffff !important;
+    font-size: 0.875rem !important;
+    cursor: pointer !important;
+    transition: all 150ms ease-out !important;
+}
+
+.cv-container.cv-fullscreen-preview .cv-fullscreen-exit-btn:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.cv-container.cv-fullscreen-preview .cv-fullscreen-exit-btn:focus {
+    outline: 2px solid rgba(255, 255, 255, 0.5) !important;
+    outline-offset: 2px !important;
+}
+
+/* Grid Layout - Explicit columns per breakpoint for predictable behavior */
+.cv-grid {
+    display: grid;
+    gap: 10px;
+    background: #000;
+    padding: 0.75rem;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+}
+
+/* Very small devices (<480px): 1 column */
+@media (max-width: 479px) {
+    .cv-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Small phones (480-767px): 2 columns */
+@media (min-width: 480px) and (max-width: 767px) {
+    .cv-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Tablets (768-1023px): 3 columns */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .cv-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Desktop and up (1024px+): 4 columns */
+@media (min-width: 1024px) {
+    .cv-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Ensure cv-grid takes full width and shows dark background */
+.cv-cards .cv-grid {
+    display: grid;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+}
+
+/* Remove padding from cv-cards and ensure dark background shows */
+.cv-cards {
+    padding: 0 !important;
+    background: #000000 !important;
+    overflow: visible;
+    width: 100%;
+    max-width: 100%;
+}
+
+/* Ensure parent panel doesn't constrain width */
+.cv-output-panel {
+    background: transparent !important;
+    width: 100%;
+    max-width: 100%;
+}
+
+.cv-output-panel .cv-cards {
+    background: #000000 !important;
+    width: 100%;
+    max-width: 100%;
+}
+
+/* Ensure layout doesn't constrain width */
+.cv-layout {
+    width: 100%;
+    max-width: 100%;
+}
+
+.cv-grid-card {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06) inset;
+    border-radius: 6px;
+    padding: 1.25rem;
+    cursor: pointer;
+    transition: all 150ms ease-out;
+    aspect-ratio: 4/5;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    min-height: 200px;
+}
+
+
+.cv-grid-card:hover {
+    /* Keep borders same color, use shadow for hover effect */
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+    transform: translateY(-2px);
+    z-index: 1; /* Bring hovered card above neighbors */
+}
+
+.cv-grid-card:focus {
+    outline: 2px solid #6366f1;
+    outline-offset: 2px;
+}
+
+.cv-grid-card-number {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: rgba(0, 0, 0, 0.08) !important;
+    color: #6b7280 !important;
+    min-width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem !important; /* Small badge size */
+    font-weight: 500 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    opacity: 0.7;
+    transition: opacity 150ms ease-out;
+}
+
+.cv-grid-card:hover .cv-grid-card-number,
+.cv-grid-card:focus .cv-grid-card-number {
+    opacity: 1;
+}
+
+.cv-grid-card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Vertically center content */
+    min-height: 0; /* Allow flex shrinking */
+}
+
+.cv-grid-card-snippet {
+    font-size: 1rem !important; /* Heading size - consistent typography */
+    line-height: 1.5 !important;
+    color: #1f2937 !important; /* Dark text for readability */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+}
+
+/* Bold first phrase/sentence as title */
+.cv-grid-card-snippet-bold-start {
+    font-weight: 600 !important;
+    color: #1f2937 !important;
+    font-size: 1rem !important; /* Same size as snippet - consistent heading size */
+}
+
+/* Metadata line for large screens */
+.cv-grid-card-meta {
+    display: none; /* Hidden by default */
+    font-size: 0.875rem !important; /* Slightly smaller for metadata */
+    line-height: 1.4 !important;
+    color: #9ca3af !important;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e5e7eb;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+}
+
+@media (min-width: 960px) {
+    .cv-grid-card-meta {
+        display: block; /* Show on desktop and up */
+    }
+}
+
+/* Overlay */
+.cv-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    display: none;
+    opacity: 0;
+    transition: opacity 200ms ease-out;
+    touch-action: none; /* Prevent native scroll conflicts */
+}
+
+.cv-overlay.cv-overlay-open {
+    display: flex;
+    opacity: 1;
+}
+
+.cv-overlay-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #000000; /* Fully black background */
+    backdrop-filter: blur(4px);
+}
+
+.cv-overlay-content {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    z-index: 1;
+    overflow: visible; /* Allow peek cards to extend to screen edges */
+}
+
+/* Overlay Header */
+.cv-overlay-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(8px);
+}
+
+.cv-overlay-close {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 150ms ease-out;
+}
+
+.cv-overlay-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
+.cv-overlay-indicator {
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+/* Overlay Main Content */
+.cv-overlay-main {
+    flex: 1;
+    display: flex;
+    align-items: stretch;
+    overflow: hidden; /* Base: hidden for mobile */
+    position: relative;
+}
+
+/* Constrain main container on desktop to allow shell max-width to work */
+@media (min-width: 768px) {
+    .cv-overlay-main {
+        max-width: 100%;
+        width: 100%;
+        display: flex;
+        justify-content: center; /* Center the shell */
+        padding: 2rem 100px; /* Horizontal padding to ensure card doesn't overlap peek cards (80px peek + 20px margin) */
+        box-sizing: border-box;
+        position: relative; /* Positioning context for peek cards at screen edges */
+        overflow: visible !important; /* CRITICAL: Allow peek cards to extend outside main's padding */
+    }
+}
+
+/* Card Container */
+.cv-overlay-card-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    /* touch-action: none allows manual handling of both directions
+       We manually allow vertical scrolling by NOT calling preventDefault() for vertical movements
+       We manually handle horizontal swipes by calling preventDefault() for horizontal movements */
+    touch-action: none;
+}
+
+@media (min-width: 768px) {
+    .cv-overlay-card-container {
+        position: relative;
+        align-items: stretch;
+        padding: 0;
+        overflow-y: auto;
+        overflow-x: visible;
+    }
+}
+
+.cv-overlay-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 800px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    transition: opacity 200ms ease-out, transform 200ms ease-out;
+}
+
+@media (min-width: 768px) {
+    .cv-overlay-card {
+        max-width: 1200px;
+        width: 100%;
+        height: auto;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+        padding: 0;
+        position: relative;
+        z-index: 2;
+    }
+    
+    /* Override for cards inside shell structure */
+    .cv-overlay-shell .cv-overlay-card {
+        max-width: 1100px !important;
+    }
+}
+
+/* Initial card slide-in */
+.cv-overlay-card-container:first-child .cv-overlay-card {
+    animation: cardSlideIn 200ms ease-out;
+}
+
+/* Direction-aware card transitions */
+.cv-overlay-card.cv-card-slide-next {
+    animation: cardSlideInFromRight 200ms ease-out;
+}
+
+.cv-overlay-card.cv-card-slide-prev {
+    animation: cardSlideInFromLeft 200ms ease-out;
+}
+
+@keyframes cardSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes cardSlideInFromRight {
+    from {
+        opacity: 0;
+        transform: translateX(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes cardSlideInFromLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.cv-overlay-card-header {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 1.5rem;
+    line-height: 1.3;
+}
+
+.cv-overlay-card-body {
+    font-size: 1rem;
+    line-height: 1.7;
+    color: #374151;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.cv-overlay-card-body pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 1rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1rem 0;
+}
+
+.cv-overlay-card-body code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    background: #f3f4f6;
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.cv-overlay-card-body pre code {
+    background: transparent;
+    padding: 0;
+    color: inherit;
+}
+
+/* Card Footer (Mobile Comments Toggle) */
+.cv-overlay-card-footer {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+    display: none; /* Hidden on desktop */
+}
+
+@media (max-width: 768px) {
+    .cv-overlay-card-footer {
+        display: block;
+    }
+}
+
+/* Mobile Layout (<768px) */
+@media (max-width: 767px) {
+    .cv-overlay-card-container {
+        width: 100%;
+        padding: 1rem;
+        overflow-y: auto;
+        overflow-x: hidden; /* Prevent horizontal scroll */
+    }
+    
+    .cv-overlay-card {
+        max-width: 100%;
+        width: 100%;
+    }
+    
+    .cv-overlay-card-peek {
+        display: none !important; /* No peek on mobile */
+    }
+    
+    .cv-overlay-nav-side {
+        display: none !important; /* Hide side nav on mobile */
+    }
+    
+    .cv-overlay-nav {
+        display: flex; /* Show bottom nav on mobile */
+    }
+}
+
+.cv-overlay-comments-toggle-btn {
+    width: 100%;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    transition: all 150ms ease-out;
+}
+
+.cv-overlay-comments-toggle-btn:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+}
+
+.cv-overlay-comments-toggle-btn i {
+    width: 18px;
+    height: 18px;
+}
+
+.cv-overlay-comments-toggle-count {
+    background: #6366f1;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.125rem 0.5rem;
+    border-radius: 12px;
+    min-width: 20px;
+    text-align: center;
+}
+
+/* Peek Cards */
+.cv-overlay-card-peek {
+    display: none; /* Hidden by default, shown on desktop */
+    position: fixed; /* Fixed to viewport, not relative to parent */
+    top: 15%; /* Adjusted for 65% height */
+    height: 65%; /* Reduced from 80% for subtler appearance */
+    width: 56px; /* Reduced from 80px for subtler appearance */
+    max-width: 56px;
+    opacity: 0.3; /* Reduced opacity for subtle hint effect */
+    pointer-events: none; /* Not clickable */
+    z-index: 3; /* Above shell (1), below nav buttons (4) */
+    transition: opacity 200ms ease-out;
+    background: rgba(255, 255, 255, 0.95) !important; /* Ensure background is visible */
+    border: 1px solid rgba(0, 0, 0, 0.1); /* Add border for visibility */
+    border-radius: 16px; /* Match card border-radius */
+    overflow: hidden; /* Clip content to rounded corners */
+}
+
+@media (min-width: 768px) {
+    .cv-overlay-card-peek {
+        display: block !important; /* Show on desktop - force visibility */
+        visibility: visible !important;
+    }
+    
+    /* Position peeks fixed to viewport, with small negative offset to sit in gutter */
+    /* Using position: fixed so they're positioned relative to viewport, not parent */
+    .cv-overlay-main .cv-overlay-card-peek-prev {
+        left: -16px !important; /* Small negative offset to sit in gutter */
+        right: auto !important;
+        transform: none !important;
+        z-index: 3 !important; /* Above shell (1), below nav (4) */
+        display: block !important;
+        visibility: visible !important;
+        opacity: 0.3 !important; /* Subtle hint */
+        background: rgba(255, 255, 255, 0.95) !important;
+    }
+    
+    .cv-overlay-main .cv-overlay-card-peek-next {
+        right: -16px !important; /* Small negative offset to sit in gutter */
+        left: auto !important;
+        transform: none !important;
+        z-index: 3 !important; /* Above shell (1), below nav (4) */
+        display: block !important;
+        visibility: visible !important;
+        opacity: 0.3 !important; /* Subtle hint */
+        background: rgba(255, 255, 255, 0.95) !important;
+    }
+}
+
+/* Hide peeks when explicitly hidden via class */
+.cv-peek-hidden {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* Hide peeks on mobile */
+@media (max-width: 767px) {
+    .cv-overlay-card-peek {
+        display: none !important;
+    }
+}
+
+@media (max-width: 767px) {
+    .cv-overlay-card-peek {
+        display: none !important;
+    }
+}
+
+/* Hide peek cards when only one card exists */
+.cv-overlay-card-container:has(.cv-overlay-card:only-child) .cv-overlay-card-peek {
+    display: none !important;
+}
+
+/* Peek Card Content */
+.cv-overlay-card-peek-content {
+    background: rgba(255, 255, 255, 0.95) !important; /* Force white background */
+    backdrop-filter: blur(4px);
+    border-radius: 16px; /* Match peek container border-radius */
+    padding: 1rem;
+    height: 100%;
+    overflow: hidden; /* Already set, but ensure it's here */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(0, 0, 0, 0.1); /* Add border for visibility */
+}
+
+.cv-overlay-card-peek-header {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cv-overlay-card-peek-body {
+    font-size: 0.75rem;
+    color: #6b7280;
+    line-height: 1.5;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+/* Comments Pane (Desktop) */
+.cv-overlay-comments-pane {
+    width: 40%;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+@media (min-width: 768px) {
+    .cv-overlay-comments-pane {
+        width: 420px;
+        min-width: 420px;
+        flex-shrink: 0;
+        height: auto;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+        display: flex;
+        flex-direction: column;
+        z-index: 3;
+    }
+}
+
+@media (max-width: 767px) {
+    .cv-overlay-comments-pane {
+        display: none;
+    }
+}
+
+/* Max width on entire carousel content - now handled in desktop media query above */
+
+.cv-overlay-comments-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.cv-overlay-comments-header h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+}
+
+.cv-overlay-comments-count {
+    background: #6366f1;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+}
+
+.cv-overlay-comments-list {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 1rem;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    min-height: 0; /* Allow flex shrinking */
+}
+
+/* Smooth scrollbar styling */
+.cv-overlay-comments-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.cv-overlay-comments-list::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+.cv-overlay-comments-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.cv-overlay-comments-list::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.cv-overlay-comments-empty {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #9ca3af;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+}
+
+.cv-overlay-comments-empty i {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 1rem;
+    opacity: 0.4;
+    color: #cbd5e1;
+}
+
+.cv-overlay-comments-empty p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #94a3b8;
+}
+
+.cv-overlay-comment {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    transition: all 150ms ease-out;
+}
+
+.cv-overlay-comment:hover {
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* User comment styling */
+.cv-overlay-comment-user {
+    border-left: 3px solid #6366f1;
+}
+
+/* AI comment styling */
+.cv-overlay-comment-ai {
+    background: #f5f3ff;
+    border-left: 3px solid #8b5cf6;
+}
+
+.cv-overlay-comment-ai:hover {
+    background: #ede9fe;
+}
+
+.cv-overlay-comment-author {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #1f2937;
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.cv-comment-ai-icon {
+    width: 14px;
+    height: 14px;
+    color: #8b5cf6;
+}
+
+.cv-overlay-comment-text {
+    font-size: 0.875rem;
+    color: #374151;
+    line-height: 1.5;
+    margin-bottom: 0.5rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.cv-overlay-comment-ai .cv-overlay-comment-text {
+    color: #4c1d95;
+}
+
+.cv-overlay-comment-time {
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+.cv-overlay-comments-composer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e5e7eb;
+    background: white;
+}
+
+.cv-overlay-comment-input {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-size: 0.875rem;
+    font-family: inherit;
+    resize: none;
+    margin-bottom: 0.75rem;
+    min-height: 60px;
+    max-height: 200px;
+    overflow-y: auto;
+    transition: all 150ms ease-out;
+    line-height: 1.5;
+}
+
+.cv-overlay-comment-input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.cv-overlay-comment-input::placeholder {
+    color: #9ca3af;
+}
+
+/* Scrollbar for textarea */
+.cv-overlay-comment-input::-webkit-scrollbar {
+    width: 6px;
+}
+
+.cv-overlay-comment-input::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+.cv-overlay-comment-input::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.cv-overlay-comments-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.cv-overlay-comment-submit,
+.cv-overlay-ai-reply-btn {
+    background: #6366f1;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 150ms ease-out;
+}
+
+.cv-overlay-comment-submit:hover,
+.cv-overlay-ai-reply-btn:hover {
+    background: #4f46e5;
+    transform: translateY(-1px);
+}
+
+.cv-overlay-ai-reply-btn {
+    background: #8b5cf6;
+}
+
+.cv-overlay-ai-reply-btn:hover {
+    background: #7c3aed;
+}
+
+/* Navigation Controls */
+/* Side Navigation Buttons (Desktop/Tablet) */
+.cv-overlay-nav-side {
+    display: none; /* Hidden on mobile */
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 4;
+    width: 56px;
+    height: 56px;
+    background: #111;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    color: #fff;
+    opacity: 1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 200ms ease-out;
+}
+
+@media (min-width: 768px) {
+    .cv-overlay-nav-side {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .cv-overlay-nav-side-prev {
+        left: 1rem;
+    }
+    
+    .cv-overlay-nav-side-next {
+        right: 1rem;
+    }
+}
+
+.cv-overlay-nav-side:hover:not(:disabled),
+.cv-overlay-nav-side:focus {
+    background: #222;
+    border-color: rgba(255, 255, 255, 0.6);
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    outline: 2px solid rgba(255, 255, 255, 0.5);
+    outline-offset: 2px;
+}
+
+.cv-overlay-nav-side:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* Hide side nav when only one card */
+.cv-overlay:has(.cv-overlay-card-container:has(.cv-overlay-card:only-child)) .cv-overlay-nav-side {
+    display: none;
+}
+
+/* Bottom Navigation (Mobile) */
+.cv-overlay-nav {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(8px);
+}
+
+@media (min-width: 768px) {
+    .cv-overlay-nav {
+        display: none !important; /* CRITICAL: Hide bottom nav on desktop */
+    }
+}
+
+.cv-overlay-nav-btn {
+    background: #111;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    color: #fff;
+    opacity: 1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 150ms ease-out;
+}
+
+.cv-overlay-nav-btn:hover:not(:disabled) {
+    background: #222;
+    border-color: rgba(255, 255, 255, 0.6);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    transform: scale(1.1);
+}
+
+.cv-overlay-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* Comments Sheet (Mobile) */
+.cv-overlay-comments-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 20px 20px 0 0;
+    max-height: 60vh;
+    height: auto;
+    transform: translateY(100%);
+    transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+    will-change: transform;
+    touch-action: pan-y; /* Allow vertical scroll in sheet, but prevent horizontal */
+}
+
+@media (min-width: 769px) {
+    .cv-overlay-comments-sheet {
+        display: none;
+    }
+}
+
+.cv-overlay-comments-sheet-open {
+    transform: translateY(0);
+}
+
+.cv-overlay-comments-sheet-header {
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    touch-action: none; /* Prevent native scroll on header for swipe gestures */
+}
+
+.cv-overlay-comments-sheet-drag-handle {
+    position: absolute;
+    top: 0.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 4px;
+    background: #d1d5db;
+    border-radius: 2px;
+    cursor: grab;
+    touch-action: none; /* Prevent native scroll on drag handle */
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.cv-overlay-comments-sheet-drag-handle:active {
+    cursor: grabbing;
+    background: #9ca3af;
+}
+
+.cv-overlay-comments-sheet-header h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+    flex: 1;
+    text-align: center;
+}
+
+.cv-overlay-comments-sheet-header .cv-overlay-comments-count {
+    background: #6366f1;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.125rem 0.5rem;
+    border-radius: 12px;
+    margin-left: 0.5rem;
+}
+
+.cv-overlay-comments-sheet-close {
+    background: transparent;
+    border: none;
+    color: #6b7280;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: all 150ms ease-out;
+}
+
+.cv-overlay-comments-sheet-close:hover {
+    background: #f3f4f6;
+    color: #1f2937;
+}
+
+.cv-overlay-comments-sheet-list {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 1rem;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    min-height: 0; /* Allow flex shrinking */
+}
+
+/* Smooth scrollbar styling for mobile sheet */
+.cv-overlay-comments-sheet-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.cv-overlay-comments-sheet-list::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+.cv-overlay-comments-sheet-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.cv-overlay-comments-sheet-list::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.cv-overlay-comments-sheet-composer {
+    padding: 1rem;
+    border-top: 1px solid #e5e7eb;
+    background: white;
+}
+
+/* Comments Loading Skeleton */
+.cv-overlay-comments-loading {
+    padding: 1rem;
+}
+
+.cv-comment-skeleton {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.cv-skeleton-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+    flex-shrink: 0;
+}
+
+.cv-skeleton-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.cv-skeleton-line {
+    height: 12px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+.cv-skeleton-line-short {
+    width: 60%;
+}
+
+.cv-comment-skeleton-inline {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.cv-overlay-comment-loading {
+    opacity: 0.7;
+}
+
+@keyframes skeleton-shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* Dark mode support - Grid cards excluded (always use white/light borders) */
+@media (prefers-color-scheme: dark) {
+    /* Grid cards are NOT styled here - they use the final override rule at end of file */
+    /* This ensures borders are always visible against the black grid background */
+    
+    /* Overlay cards can still use dark theme */
+    .cv-overlay-card {
+        background: #1f2937;
+        color: #f9fafb;
+    }
+    
+    .cv-overlay-card-header {
+        color: #f9fafb;
+    }
+    
+    .cv-overlay-card-body {
+        color: #d1d5db;
+    }
+    
+    .cv-skeleton-avatar,
+    .cv-skeleton-line {
+        background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+        background-size: 200% 100%;
+    }
+}
+
+/* ============================================================================
+ * FINAL ENFORCED STYLES
+ * Single source of truth - enforces grid and card styles regardless of
+ * dark mode, media queries, or other CSS. Must be at end of file.
+ * ============================================================================ */
+/* Neutralize .cv-cards grid - it should be a block container, not a grid */
+.cv-cards {
+    display: block !important;
+    grid-template-columns: none !important;
+    gap: 0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    width: 100% !important;
+}
+
+.cv-grid {
+    gap: 10px !important;
+    background: #000 !important;
+}
+
+.cv-grid-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    background: #fff !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06) inset !important;
+}
+
+/* ============================================================================
+ * SHELL WRAPPER: Make card + comments a single surface
+ * Add at end to override all other styles
+ * Desktop only - mobile uses full-screen card
+ * ============================================================================ */
+@media (min-width: 768px) {
+    .cv-overlay-shell {
+        display: flex;
+        align-items: stretch;
+        /* gap removed - splitter provides spacing */
+        background: #fff;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        padding: 24px; /* Standard padding - peeks are now positioned relative to main, not shell */
+        max-width: 1450px !important; /* Force max-width constraint */
+        width: auto !important; /* Let shell size naturally, not 100% */
+        height: 100%;
+        position: relative; /* For internal positioning */
+        z-index: 1;
+        margin: 0 auto;
+        box-sizing: border-box; /* Include padding in width calculation */
+        flex-shrink: 1; /* Allow shell to shrink below max-width if needed */
+    }
+    
+    .cv-overlay-card-column {
+        /* No position: relative - peeks are now positioned relative to shell */
+        /* flex-basis will be set via inline style by JS */
+        min-width: 0;
+        overflow: visible; /* Allow peek cards to extend outside */
+        display: flex;
+        flex-direction: column;
+        padding: 0 24px; /* Reduced padding since peeks are outside */
+        box-sizing: border-box; /* Include padding in width calculation */
+        width: auto; /* Size based on content, not flex growth */
+    }
+    
+    .cv-overlay-card-column .cv-overlay-card-container {
+        flex: 1;
+        display: flex;
+        align-items: stretch;
+        justify-content: flex-start; /* Align card to start, not center */
+        overflow-y: auto;
+        overflow-x: visible; /* Allow peek cards to extend */
+        padding: 0; /* Remove any padding */
+        /* NO position: relative - peeks positioned relative to card-column parent */
+    }
+    
+    .cv-overlay-card-column .cv-overlay-card {
+        max-width: 1100px !important; /* Force max-width constraint */
+        width: 100%;
+        height: auto;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+        padding: 0;
+        flex-shrink: 1; /* Allow card to shrink if needed */
+    }
+    
+    .cv-overlay-comments-pane {
+        /* width and flex-basis will be set via inline style by JS */
+        min-width: 320px; /* Minimum width guardrail */
+        flex-shrink: 0;
+        height: auto;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+    }
+    
+    /* Splitter styles */
+    .cv-overlay-splitter {
+        flex: 0 0 12px; /* Fixed width */
+        height: 100%;
+        cursor: col-resize;
+        background: transparent;
+        position: relative;
+        z-index: 2; /* Above shell (1), below nav (4) and peeks (3) */
+        transition: background-color 150ms ease-out;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+    
+    .cv-overlay-splitter:hover {
+        background: rgba(0, 0, 0, 0.05);
+    }
+    
+    .cv-overlay-splitter:focus {
+        outline: 2px solid rgba(59, 130, 246, 0.5);
+        outline-offset: -2px;
+        background: rgba(0, 0, 0, 0.05);
+    }
+    
+    .cv-overlay-splitter.dragging {
+        background: rgba(59, 130, 246, 0.1);
+        cursor: col-resize;
+    }
+    
+    /* Hide splitter on mobile */
+    @media (max-width: 767px) {
+        .cv-overlay-splitter {
+            display: none !important;
+        }
+    }
+}
+
+@media (max-width: 767px) {
+    .cv-overlay-shell {
+        display: block;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+        padding: 0;
+    }
+}
+
+/* Card column and comments pane styles moved to media query above */
+
+/* ============================================================================
+ * NAV BUTTONS: Make visible and high-contrast
+ * Add at end to override all other styles
+ * ============================================================================ */
+.cv-overlay-nav-side {
+    background: #111 !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    color: #fff !important;
+    opacity: 1 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    z-index: 4 !important; /* Above peeks (1), card (2), comments (3) */
+}
+
+.cv-overlay-nav-side:hover:not(:disabled),
+.cv-overlay-nav-side:focus {
+    background: #222 !important;
+    border-color: rgba(255, 255, 255, 0.6) !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4) !important;
+}
+
+.cv-overlay-nav-btn {
+    background: #111 !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    color: #fff !important;
+    opacity: 1 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    z-index: 4 !important; /* Above peeks (1), card (2), comments (3) */
+}
+
+.cv-overlay-nav-btn:hover:not(:disabled) {
+    background: #222 !important;
+    border-color: rgba(255, 255, 255, 0.6) !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4) !important;
+}
+
