@@ -46,24 +46,6 @@
     overscroll-behavior: contain;
     touch-action: pan-y;
   }
-  /* Pin toggle buttons inherit font/color for consistent styling */
-  .pin-toggle {
-    background: none;
-    border: none;
-    padding: 0;
-    font-size: 0.75rem;     /* Match text-xs */
-    display: inline-flex;
-    align-items: center;
-    gap: 0.2rem;
-    opacity: 1 !important;         /* Override parent .message-timestamp opacity: 0.7 */
-    font-weight: 600 !important;   /* Match footer links, force override */
-    transition: color 0.15s ease;
-    /* Let text-muted-foreground set color instead of inherit */
-  }
-  .pin-toggle:hover,
-  .pin-toggle:focus-visible {
-    color: inherit;
-  }
 </style>
 {% endblock %}
 
@@ -129,7 +111,6 @@
                         {% if chat.mode in modes %}
                             {{ modes[chat.mode].prompt }}
                         {% else %}
-                            <em>Mode: {{ chat.mode }}</em><br><br>
                             You are a collaborative AI assistant helping with {{ chat.mode.lower() }}. 
                             I'll guide you through the learning process by asking thoughtful questions 
                             and helping you develop your skills step by step.
@@ -201,55 +182,6 @@
                     
                     <!-- 4. Tone & Critique Card (injected via base.html) -->
                     <div id="tone-critique-mount"></div>
-                    <!-- 5. Library Tool Card -->
-                    <section class="tool-card" id="library-card">
-                        <div class="tool-card__header">
-                            <div class="tool-card__title">
-                                <i data-lucide="book-open" class="w-4 h-4"></i>
-                                Library
-                            </div>
-                            <button type="button" class="tool-card__chevron" aria-expanded="false" aria-controls="library-body" onclick="toggleToolCard(this, 'library-body')">
-                                <i data-lucide="chevron-down" class="w-4 h-4"></i>
-                            </button>
-                        </div>
-                        <div class="tool-card__body" id="library-body" hidden>
-                            <div class="space-y-4">
-                                <div class="space-y-2">
-                                    <label class="text-xs font-medium text-muted-foreground">Storage</label>
-                                    <div class="relative h-10 bg-white/80 dark:bg-gray-800/80 rounded-full overflow-hidden border border-border/30" style="backdrop-filter: blur(4px);">
-                                        <div id="storage-bar" class="absolute inset-y-0 left-0 rounded-full transition-all duration-500" style="width: 0%; background: #b4e380;"></div>
-                                        <div class="absolute inset-0 flex items-center px-4">
-                                            <span id="storage-percentage" class="text-lg font-bold text-foreground relative z-10">0%</span>
-                                        </div>
-                                    </div>
-                                    <div id="storage-warning" class="hidden text-xs text-red-600 font-medium">⚠️ Storage full! Remove documents to free up space.</div>
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="text-xs font-medium text-muted-foreground">Upload Document</label>
-                                    <div class="flex gap-2">
-                                        <input type="file" id="library-file-input" accept=".pdf,.docx,.txt" class="hidden">
-                                        <button onclick="document.getElementById('library-file-input').click()" class="flex-1 px-3 py-2 text-xs font-bold bg-primary/10 text-primary rounded hover:bg-primary/20 transition-colors flex items-center justify-center gap-2">
-                                            <i data-lucide="upload" class="w-3 h-3"></i>
-                                            Choose File
-                                        </button>
-                                    </div>
-                                    <div id="library-upload-status" class="text-xs text-muted-foreground hidden"></div>
-                                </div>
-                                <div class="space-y-2">
-                                    <div class="flex items-center justify-between">
-                                        <label class="text-xs font-medium text-muted-foreground">Uploaded Documents</label>
-                                        <button onclick="refreshLibraryDocuments()" class="text-xs text-primary hover:text-primary/80">
-                                            <i data-lucide="refresh-cw" class="w-3 h-3"></i>
-                                        </button>
-                                    </div>
-                                    <div id="library-documents-list" class="space-y-2">
-                                        <p class="text-xs text-muted-foreground">No documents uploaded yet.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-                    
                 </div>
             </div>
         </details>
@@ -311,7 +243,7 @@
                 <i data-lucide="chevron-down" class="w-4 h-4 chevron"></i>
             </summary>
             <div class="sidebar-panel">
-                <!-- Pin Chat CTA (when ≥3 shared pins) -->
+                <!-- Pin Chat CTA (prominent when ≥3 shared pins) -->
                 {% if shared_pins|length >= 3 %}
                 <div class="pin-chat-cta-prominent mb-4 p-3 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg shadow-md">
                     <div class="flex items-center justify-between">
@@ -330,7 +262,7 @@
                 </div>
                 {% endif %}
                 
-                <!-- Chat List -->
+                <!-- Chat List (if multiple chats) -->
                 <div class="overflow-y-auto">
                     <h4 class="text-sm font-medium mb-3">Other Chats</h4>
                     {% if other_chats %}
@@ -343,7 +275,7 @@
                         {% endif %}
                     {% endfor %}
                     
-                    {# Check if there are regular chats #}
+                    {# Regular Chats (not pin-based) #}
                     {% set has_regular = namespace(value=false) %}
                     {% for other_chat in other_chats %}
                         {% if other_chat.id not in pin_chat_ids %}
@@ -351,7 +283,6 @@
                         {% endif %}
                     {% endfor %}
                     
-                    {# Regular Chats #}
                     {% if has_regular.value %}
                     <div class="chat-list space-y-2 mb-4">
                         {% for other_chat in other_chats %}
@@ -391,13 +322,15 @@
                                class="block p-3 rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50/50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors">
                                 <div class="flex items-center justify-between">
                                     <div class="flex-1 min-w-0">
-                                        <h5 class="font-medium text-sm truncate">{{ other_chat.title }}</h5>
+                                        <div class="flex items-center gap-2">
+                                            <h5 class="font-medium text-sm truncate">{{ other_chat.title }}</h5>
+                                        </div>
                                         <div class="flex items-center gap-2 mt-1">
                                             <span class="inline-flex items-center gap-1 px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-800 text-indigo-700 dark:text-indigo-300 rounded text-xs">
                                                 <i data-lucide="pin" class="w-3 h-3"></i>
                                                 {{ pin_info.get('pin_count', '?') }} pins
                                             </span>
-                                            <span class="text-xs text-muted-foreground">{{ other_chat.created_at.strftime('%b %d') }}</span>
+                                            <p class="text-xs text-muted-foreground">{{ other_chat.created_at.strftime('%b %d') }}</p>
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-1">
@@ -434,16 +367,7 @@
                         <i data-lucide="panel-left" class="w-5 h-5"></i>
                     </button>
                     <div>
-                        <div class="flex items-center gap-2">
-                            <h1 class="text-lg font-medium">{{ chat.title }}</h1>
-                            {% if chat.id in pin_chat_ids %}
-                            {% set current_pin_info = pin_chat_info.get(chat.id, {}) %}
-                            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-medium" title="This chat was created from {{ current_pin_info.get('pin_count', '?') }} shared pins">
-                                <i data-lucide="pin" class="w-3 h-3"></i>
-                                {{ current_pin_info.get('pin_count', '?') }} pins
-                            </span>
-                            {% endif %}
-                        </div>
+                        <h1 class="text-lg font-medium">{{ chat.title }}</h1>
                         <p class="text-sm text-muted-foreground">
                             {{ chat.created_at.strftime('%B %d, %Y') }}
                         </p>
@@ -476,8 +400,10 @@
             </div>
             {% endif %}
             {% for message in messages %}
-            <div class="flex {% if message.role == 'user' %}justify-end{% else %}justify-start{% endif %}" id="message-{{ message.id }}" data-message-id="{{ message.id }}">
-                <div class="message-bubble {% if message.role == 'user' %}user{% else %}assistant{% endif %}" 
+            <div class="flex {% if message.role == 'user' %}justify-end{% else %}justify-start{% endif %}" 
+                 id="message-{{ message.id }}" 
+                 data-message-id="{{ message.id }}">
+                <div class="message-bubble {% if message.role == 'user' %}user{% else %}assistant{% endif %}"
                      {% if message.role == 'assistant' %}data-truncated="{{ 'true' if message.is_truncated else 'false' }}"{% endif %}>
                     {% if message.role == 'assistant' %}
                     <div class="flex items-start gap-3">
@@ -494,7 +420,7 @@
                                         💬 Add Comment
                                     </button>
                                     <button type="button" 
-                                            class="text-xs ml-2 pin-toggle" 
+                                            class="text-xs text-muted-foreground hover:text-foreground ml-2 pin-toggle" 
                                             data-pin-message="{{ message.id }}"
                                             data-pinned="{{ 'true' if message.id in pinned_message_ids else 'false' }}">
                                         {% if message.id in pinned_message_ids %}
@@ -520,7 +446,7 @@
                                         💬 Add Comment
                                     </button>
                                     <button type="button" 
-                                            class="text-xs ml-2 pin-toggle" 
+                                            class="text-xs text-muted-foreground hover:text-foreground ml-2 pin-toggle" 
                                             data-pin-message="{{ message.id }}"
                                             data-pinned="{{ 'true' if message.id in pinned_message_ids else 'false' }}">
                                         {% if message.id in pinned_message_ids %}
@@ -570,7 +496,7 @@
                                 {{ comment.timestamp.strftime('%I:%M %p') }}
                                 {% if user %}
                                 <button type="button" 
-                                        class="text-xs ml-2 pin-toggle" 
+                                        class="text-xs text-muted-foreground hover:text-foreground ml-2 pin-toggle" 
                                         data-pin-comment="{{ comment.id }}"
                                         data-pinned="{{ 'true' if comment.id in pinned_comment_ids else 'false' }}">
                                     {% if comment.id in pinned_comment_ids %}
@@ -664,6 +590,4 @@
     <script src="{{ url_for('static', filename='js/chat-view.js') }}?v=2025-10-28"></script>
     <script src="{{ url_for('static', filename='js/pin-toggle.js') }}?v=2025-12-04-inplace"></script>
     <script src="{{ url_for('static', filename='js/pin-chat.js') }}?v=2025-12-04"></script>
-    <script src="{{ url_for('static', filename='js/library-tool.js') }}"></script>
 {% endblock %}
-<!-- PIN OPACITY FIX DEPLOYED 2025-12-01T03:15Z -->
