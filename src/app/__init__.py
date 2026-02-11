@@ -195,12 +195,6 @@ def create_app(config_name=None):
     
     # Library Tool integration (document upload and search)
     from src.app.library import library
-    
-    # Educational tools integration
-    from src.app.quiz import quiz
-    from src.app.flashcards import flashcards
-    from src.app.mindmap import mindmap
-    from src.app.narrative import narrative
 
     app.register_blueprint(auth, url_prefix="/auth")
     app.register_blueprint(chat, url_prefix="/chat")
@@ -217,12 +211,6 @@ def create_app(config_name=None):
     
     # Library Tool endpoints
     app.register_blueprint(library, url_prefix="/api/library")
-    
-    # Educational tool endpoints
-    app.register_blueprint(quiz, url_prefix="/api/quiz")
-    app.register_blueprint(flashcards, url_prefix="/api/flashcards")
-    app.register_blueprint(mindmap, url_prefix="/api/mindmap")
-    app.register_blueprint(narrative, url_prefix="/api/narrative")
     
     # Dev API (experimental endpoints)
     app.register_blueprint(card_view_api)  # url_prefix set in blueprint

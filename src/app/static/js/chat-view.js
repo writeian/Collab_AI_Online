@@ -390,40 +390,21 @@
             ro.observe(inputBar);
         }
         
-        // Chat Sidebar Toggle functionality (desktop and mobile)
+        // Chat Sidebar Toggle functionality (mobile only)
         const chatSidebarToggle = document.getElementById('chat-sidebar-toggle');
         const chatSidebar = document.querySelector('.chat-sidebar');
-        const chatMain = document.querySelector('.chat-main');
         
         if (chatSidebarToggle && chatSidebar) {
-            chatSidebarToggle.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const isMobile = window.innerWidth <= 768;
-
-                if (isMobile) {
-                    chatSidebar.classList.toggle('open');
-                } else {
-                    chatSidebar.classList.toggle('collapsed');
-                    if (chatMain) {
-                        chatMain.classList.toggle('sidebar-collapsed');
-                    }
-                }
+            chatSidebarToggle.addEventListener('click', function() {
+                chatSidebar.classList.toggle('open');
                 
                 // Update the icon
                 const icon = chatSidebarToggle.querySelector('i');
                 if (icon) {
-                    if (isMobile) {
-                        if (chatSidebar.classList.contains('open')) {
-                            icon.setAttribute('data-lucide', 'x');
-                        } else {
-                            icon.setAttribute('data-lucide', 'panel-left');
-                        }
+                    if (chatSidebar.classList.contains('open')) {
+                        icon.setAttribute('data-lucide', 'x');
                     } else {
-                        if (chatSidebar.classList.contains('collapsed')) {
-                            icon.setAttribute('data-lucide', 'panel-right');
-                        } else {
-                            icon.setAttribute('data-lucide', 'panel-left');
-                        }
+                        icon.setAttribute('data-lucide', 'panel-left');
                     }
                     
                     // Reinitialize Lucide icons

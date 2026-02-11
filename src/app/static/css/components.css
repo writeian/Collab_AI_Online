@@ -157,23 +157,11 @@
   -webkit-overflow-scrolling: touch;  /* Smooth scrolling on iOS */
 }
 
-.chat-sidebar.collapsed {
-  width: 0 !important;
-  min-width: 0 !important;
-  padding: 0 !important;
-  overflow: hidden;
-  border-right: none;
-}
-
 .chat-main {
   background: hsl(var(--background));
   position: relative;
   display: flex;
   flex-direction: column;
-}
-
-.chat-main.sidebar-collapsed {
-  width: 100%;
 }
 
 .chat-header {
@@ -686,122 +674,6 @@
 
 .send-button:disabled #loading-icon {
   animation: spin 1s linear infinite;
-}
-
-/* Tools Menu */
-.tools-menu-button {
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 9999px;
-  width: 2.5rem;
-  height: 2.5rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  color: #374151;
-  flex-shrink: 0;
-  position: relative;
-  z-index: 100002;
-}
-
-.tools-menu-button:hover {
-  background: #fff;
-  transform: scale(1.05);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-.tools-menu-button:active {
-  transform: scale(0.95);
-}
-
-.tools-menu-button[aria-expanded="true"] {
-  background: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
-  border-color: hsl(var(--primary));
-}
-
-.tools-menu-popup {
-  position: fixed;
-  background: #fff;
-  border-radius: 0.75rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
-  padding: 0.5rem;
-  min-width: 180px;
-  z-index: 100001;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  animation: toolsMenuFadeIn 0.15s ease-out;
-}
-
-@keyframes toolsMenuFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.tools-menu-popup.hidden {
-  display: none !important;
-  visibility: hidden !important;
-}
-
-.tools-menu-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.625rem 0.875rem;
-  border-radius: 0.5rem;
-  border: none;
-  background: transparent;
-  color: #374151;
-  font-size: 0.9375rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  text-align: left;
-  width: 100%;
-}
-
-.tools-menu-item:hover {
-  background: #f3f4f6;
-  color: #111827;
-}
-
-.tools-menu-item i {
-  flex-shrink: 0;
-  color: #6b7280;
-}
-
-.tools-menu-item:hover i {
-  color: #374151;
-}
-
-.dark .tools-menu-button {
-  background: rgba(39, 39, 42, 0.9);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #e5e7eb;
-}
-
-.dark .tools-menu-popup {
-  background: #1f2937;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
-}
-
-.dark .tools-menu-item {
-  color: #e5e7eb;
-}
-
-.dark .tools-menu-item:hover {
-  background: #374151;
-  color: #f9fafb;
 }
 
 /* Responsive Design */
