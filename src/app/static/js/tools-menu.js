@@ -122,8 +122,9 @@
         popup.style.maxHeight = '';
         popup.style.overflowY = '';
 
-        // Ensure fixed positioning and visibility for measurement
+        // Ensure fixed positioning and visibility for measurement (z-index above chat input)
         popup.style.position = 'fixed';
+        popup.style.zIndex = '10001';
         popup.style.display = 'flex';
         popup.classList.remove('hidden');
         popup.style.visibility = 'hidden';
