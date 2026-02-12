@@ -391,8 +391,8 @@
 /* Modern Input Area */
 .chat-input-container {
   /* Liquid glass bar inspired by iOS 18 "glass" effect */
-  /* Sticky positioning keeps it visible while scrolling (hovering UX) */
-  /* Focus mode will override with position: fixed !important for full-width overlay */
+  /* flex-shrink: 0 = never collapse; always visible within viewport */
+  flex-shrink: 0;
   position: sticky;
   bottom: 0;
   margin: 0 16px 16px 16px;
@@ -1777,19 +1777,17 @@
     /* Disable scroll snap on mobile - can interfere with free scrolling */
     scroll-snap-type: none;
     position: relative;
-    /* Ensure the message scroller can grow enough to clear sticky/flow input */
-    min-height: 200px;
+    /* min-height: 0 allows flex child to shrink so chat-input-container stays visible */
+    min-height: 0;
     flex: 1 1 auto;
     /* Safe fallback: never 0px. JS sets --chat-input-h via ResizeObserver */
     padding-bottom: var(--chat-input-h, calc(env(safe-area-inset-bottom, 16px) + 88px));
 }
 
-/* Mobile-specific improvements (removed aggressive height constraints) */
+/* Mobile-specific improvements */
 @media (max-width: 768px) {
     #chat-messages {
-        /* Gentle minimum height - don't force full viewport */
-        min-height: 300px;
-        /* Ensure flex grows properly on mobile */
+        min-height: 0;
         flex: 1 1 auto;
     }
 }

@@ -32,11 +32,6 @@ body.chat-page .chat-main {
 
 /* Mobile-specific improvements */
 @media (max-width: 768px) {
-    .chat-input-container {
-        left: 0.5rem;
-        right: 0.5rem;
-        bottom: 0.5rem;
-    }
     
     /* Prevent background scroll without nuking iOS scrolling */
     body.focus-mode {

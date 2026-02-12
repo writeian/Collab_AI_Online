@@ -541,7 +541,7 @@
             {% endfor %}
         </div>
 
-        <div class="p-4 border-t border-border chat-input-container">
+        <div class="p-4 border-t border-border chat-input-container flex-shrink-0">
         <form method="POST" action="{{ url_for('chat.view_chat', chat_id=chat.id) }}" class="flex flex-col gap-3" id="message-form">
             <!-- AI Response Toggle -->
             <div class="flex items-center gap-2 mb-3">
