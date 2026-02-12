@@ -7,47 +7,53 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mindmap-panel.css') }}?v=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/narrative-panel.css') }}?v=1.0">
 <style>
-  /* Minimal Focus Mode: hides chrome to maximize chat space */
-  body.focus-mode > header, body.focus-mode header { display: none !important; }
-  body.focus-mode .navigation-breadcrumb { display: none !important; }
+  /* ============================================ */
+  /* PERMANENT LAYOUT (always on chat pages)      */
+  /* Header, footer, nav, system-instructions hidden - NOT tied to focus mode */
+  /* ============================================ */
+  body.chat-page > header,
+  body.chat-page > footer { display: none !important; }
+  body.chat-page .navigation-breadcrumb { display: none !important; }
+  body.chat-page .system-instructions { display: none !important; }
+  body.chat-page main { padding: 0 !important; margin: 0 !important; }
+  body.chat-page, body.chat-page html { height: 100%; }
+  body.chat-page .chat-layout,
+  body.chat-page .chat-container,
+  body.chat-page .chat-main { height: 100vh !important; }
+  body.chat-page .chat-container { width: 100% !important; }
+  body.chat-page .chat-main { width: 100% !important; margin-left: 0 !important; }
+
+  /* ============================================ */
+  /* FOCUS MODE: ONLY sidebar collapses           */
+  /* Nothing else changes. Layout already full.   */
+  /* ============================================ */
   body.focus-mode .chat-sidebar { display: none !important; }
-  body.focus-mode .system-instructions { display: none !important; }
-  body.focus-mode .chat-header { padding-top: 6px; padding-bottom: 6px; }
-  /* Strengthen focus mode to reclaim full viewport */
-  body.focus-mode > footer, body.focus-mode footer { display: none !important; }
-  body.focus-mode main { padding: 0 !important; margin: 0 !important; }
-  body.focus-mode, body.focus-mode html { height: 100%; }
-  body.focus-mode .chat-layout, body.focus-mode .chat-container, body.focus-mode .chat-main { height: 100vh !important; }
-  /* Expand chat main and container to full width when sidebar is hidden in focus mode */
-  body.focus-mode .chat-container { width: 100% !important; }
-  body.focus-mode .chat-main { margin-left: 0 !important; width: 100% !important; }
-  /* Ensure input is visible in focus mode on desktop */
-  body.focus-mode .chat-input-container { position: fixed !important; left: 0; right: 0; bottom: 0; z-index: 10000; display: block !important; }
-  /* Padding for #chat-messages in focus mode is handled dynamically via JS */
 
   /* Chat input glass effect handled by components.css; template no longer overrides styling */
 
   /* ============================================ */
-  /* SAFE HARDENING - No behavior change          */
+  /* SIDEBAR: Desktop=always visible; Mobile=overlay */
   /* ============================================ */
-  /* Prevent hidden overlays from eating taps */
-  /* Sidebar interaction management */
-  /* Desktop: sidebar always visible and interactive */
-  .chat-sidebar { 
-    pointer-events: auto;  /* Default: interactive */
-  }
+  .chat-sidebar { pointer-events: auto; }
   
-  /* Mobile: sidebar hidden by default, only interactive when .open */
+  /* Mobile: hidden by default; overlay when .open */
   @media (max-width: 768px) {
-    .chat-sidebar:not(.open) { 
-      pointer-events: none;  /* Hidden sidebar cannot capture touches */
+    .chat-sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      z-index: 9999;
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      box-shadow: 4px 0 12px rgba(0,0,0,0.15);
     }
-    .chat-sidebar.open { 
-      pointer-events: auto;  /* Open sidebar is interactive */
+    .chat-sidebar.open {
+      transform: translateX(0);
+      pointer-events: auto;
     }
+    .chat-sidebar:not(.open) { pointer-events: none; }
   }
-  /* Padding now managed by ResizeObserver via --chat-input-h CSS variable */
-  /* See components.css:1741 for the CSS variable fallback andfor JS */
   #chat-messages {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;

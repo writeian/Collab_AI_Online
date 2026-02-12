@@ -1780,9 +1780,8 @@
     /* Ensure the message scroller can grow enough to clear sticky/flow input */
     min-height: 200px;
     flex: 1 1 auto;
-    /* Normal mode: flexbox handles spacing (composer is in flow) */
-    /* Focus mode: JS sets --chat-input-h when composer becomes fixed */
-    padding-bottom: 1.25rem;
+    /* Safe fallback: never 0px. JS sets --chat-input-h via ResizeObserver */
+    padding-bottom: var(--chat-input-h, calc(env(safe-area-inset-bottom, 16px) + 88px));
 }
 
 /* Mobile-specific improvements (removed aggressive height constraints) */

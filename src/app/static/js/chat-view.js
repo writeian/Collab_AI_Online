@@ -344,7 +344,6 @@
         const inputBar = document.querySelector('.chat-input-container');
         // Bottom spacer buffers
         function getNonFocusBufferPx() { return (window.innerWidth <= 768) ? 10 : 12; }
-        function getFocusBufferPx() { return (window.innerWidth <= 768) ? 16 : 20; }
 
         function isNearBottom(el) {
             if (!el) return false;
@@ -357,12 +356,11 @@
 
         function applyBottomPadding(nudgeScroll) {
             if (!chatMessagesRef || !inputBar) return;
-            const spacer = document.getElementById('chat-bottom-spacer');
             const wasNearBottom = isNearBottom(chatMessagesRef);
             const inputHeight = inputBar.offsetHeight || 0;
-            const isFocus = document.body.classList.contains('focus-mode');
-            const buffer = isFocus ? getFocusBufferPx() : getNonFocusBufferPx();
-            const spacerHeight = Math.max(0, inputHeight + buffer);
+            const buffer = getNonFocusBufferPx();
+            const safeArea = 16; /* env(safe-area-inset-bottom) fallback */
+            const spacerHeight = Math.max(88, inputHeight + buffer + safeArea);
             // Spacer removed - if (spacer) spacer.style.height = spacerHeight + 'px';
             // Remove direct padding-bottom manipulations to avoid conflicts
             chatMessagesRef.style.removeProperty('padding-bottom');
@@ -443,27 +441,8 @@
             }
         }
         function enforceFocusModeLayout() {
-            try {
-                const inputBarEl = document.querySelector('.chat-input-container');
-                const messagesEl = document.getElementById('chat-messages');
-                if (!inputBarEl || !messagesEl) return;
-                if (document.body.classList.contains('focus-mode')) {
-                    inputBarEl.style.position = 'fixed';
-                    inputBarEl.style.left = '0';
-                    inputBarEl.style.right = '0';
-                    inputBarEl.style.bottom = '0';
-                    inputBarEl.style.zIndex = '10000';
-                    // Do not set padding here; spacer handles bottom clearance
-                    applyBottomPadding(true);
-                } else {
-                    inputBarEl.style.position = '';
-                    inputBarEl.style.left = '';
-                    inputBarEl.style.right = '';
-                    inputBarEl.style.bottom = '';
-                    inputBarEl.style.zIndex = '';
-                    applyBottomPadding(true);
-                }
-            } catch (_) {}
+            /* Focus mode: ONLY sidebar collapses (CSS). Composer stays sticky. */
+            applyBottomPadding(true);
         }
         try {
             const saved = localStorage.getItem(FOCUS_KEY);

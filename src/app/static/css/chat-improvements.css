@@ -1,25 +1,14 @@
 /* Chat Page Improvements - Reduced !important usage */
 
-/* Better viewport height for mobile browsers */
-body.focus-mode .chat-layout,
-body.focus-mode .chat-container,
-body.focus-mode .chat-main { 
+/* Better viewport height for mobile browsers (chat-page permanent layout) */
+body.chat-page .chat-layout,
+body.chat-page .chat-container,
+body.chat-page .chat-main { 
     height: 100dvh; /* Dynamic viewport height - accounts for mobile browser chrome */
 }
 
-/* Focus mode input positioning - overrides normal flow */
-body.focus-mode .chat-input-container { 
-    position: fixed !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    margin: 0 !important; /* Remove normal-flow margins in focus mode */
-    z-index: 10000;
-    display: block;
-}
-
-/* Normal mode: Let flexbox handle positioning (no fixed rules here) */
-/* Composer is now a child of .chat-main flex container */
+/* Composer: position sticky, inside .chat-main flex container (components.css) */
+/* Focus mode: ONLY sidebar collapses - no composer position change */
 
 /* Screen reader only class */
 .sr-only {

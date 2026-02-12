@@ -1,0 +1,171 @@
+<!-- Card Overlay Template -->
+<!-- Included in card_preview.html for grid + carousel overlay -->
+
+<div id="card-overlay" class="cv-overlay" role="dialog" aria-label="Card carousel" aria-hidden="true">
+    <!-- Backdrop -->
+    <div class="cv-overlay-backdrop" onclick="CardOverlay.close()"></div>
+    
+    <!-- Overlay Content -->
+    <div class="cv-overlay-content">
+        <!-- Header -->
+        <div class="cv-overlay-header">
+            <button class="cv-overlay-close" onclick="CardOverlay.close()" aria-label="Close overlay">
+                <i data-lucide="x"></i>
+            </button>
+            <div class="cv-overlay-indicator">
+                <span id="cv-overlay-indicator-text">Card 1 of 1</span>
+            </div>
+        </div>
+        
+        <!-- Main Content Area -->
+        <div class="cv-overlay-main">
+            <!-- Previous card peek (desktop only) - positioned relative to main (screen edges) -->
+            <div class="cv-overlay-card-peek cv-overlay-card-peek-prev" id="cv-overlay-card-prev">
+                <!-- Previous card content rendered here -->
+            </div>
+            
+            <!-- Shell wrapper for card + comments as single surface -->
+            <div class="cv-overlay-shell">
+                <!-- Card Column -->
+                <div class="cv-overlay-card-column">
+                    <!-- Card Container -->
+                    <div class="cv-overlay-card-container">
+                        <!-- Current card -->
+                        <div id="cv-overlay-card" class="cv-overlay-card">
+                            <!-- Card content will be injected here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Splitter (Desktop only) -->
+                <div class="cv-overlay-splitter" 
+                     id="cv-overlay-splitter"
+                     role="separator"
+                     aria-orientation="vertical"
+                     aria-label="Resize card and comments panes"
+                     tabindex="0">
+                </div>
+                
+                <!-- Comments Pane (Desktop) -->
+                <div class="cv-overlay-comments-pane" id="cv-overlay-comments-pane">
+                <div class="cv-overlay-comments-header">
+                    <h3>Comments</h3>
+                    <span class="cv-overlay-comments-count" id="cv-overlay-comments-count">0</span>
+                </div>
+                <div class="cv-overlay-comments-list" id="cv-overlay-comments-list">
+                    <!-- Comments will be loaded here -->
+                </div>
+                <div class="cv-overlay-comments-composer">
+                    <textarea 
+                        id="cv-overlay-comment-input" 
+                        class="cv-overlay-comment-input" 
+                        placeholder="Add a comment..."
+                        rows="2"
+                    ></textarea>
+                    <div class="cv-overlay-comments-actions">
+                        <button 
+                            class="cv-overlay-comment-submit" 
+                            onclick="CardOverlay.addComment()"
+                            aria-label="Submit comment"
+                        >
+                            <i data-lucide="send"></i>
+                        </button>
+                        <button 
+                            class="cv-overlay-ai-reply-btn" 
+                            onclick="CardOverlay.requestAiReply()"
+                            aria-label="Generate AI reply"
+                        >
+                            <i data-lucide="sparkles"></i>
+                            <span>AI</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            </div>
+            
+            <!-- Next card peek (desktop only) - positioned relative to main (screen edges) -->
+            <div class="cv-overlay-card-peek cv-overlay-card-peek-next" id="cv-overlay-card-next">
+                <!-- Next card content rendered here -->
+            </div>
+        </div>
+        
+        <!-- Side Navigation (Desktop/Tablet) -->
+        <button 
+            class="cv-overlay-nav-side cv-overlay-nav-side-prev" 
+            onclick="CardOverlay.previousCard()"
+            aria-label="Previous card"
+            id="cv-overlay-nav-side-prev"
+        >
+            <i data-lucide="chevron-left"></i>
+        </button>
+        <button 
+            class="cv-overlay-nav-side cv-overlay-nav-side-next"
+            onclick="CardOverlay.nextCard()"
+            aria-label="Next card"
+            id="cv-overlay-nav-side-next"
+        >
+            <i data-lucide="chevron-right"></i>
+        </button>
+        
+        <!-- Bottom Navigation Controls (Mobile) -->
+        <div class="cv-overlay-nav">
+            <button 
+                class="cv-overlay-nav-btn cv-overlay-nav-prev" 
+                onclick="CardOverlay.previousCard()"
+                aria-label="Previous card"
+                id="cv-overlay-nav-prev"
+            >
+                <i data-lucide="chevron-left"></i>
+            </button>
+            <button 
+                class="cv-overlay-nav-btn cv-overlay-nav-next" 
+                onclick="CardOverlay.nextCard()"
+                aria-label="Next card"
+                id="cv-overlay-nav-next"
+            >
+                <i data-lucide="chevron-right"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Comments Sheet (Mobile) -->
+    <div class="cv-overlay-comments-sheet" id="cv-overlay-comments-sheet">
+        <div class="cv-overlay-comments-sheet-header">
+            <div class="cv-overlay-comments-sheet-drag-handle"></div>
+            <h3>Comments</h3>
+            <span class="cv-overlay-comments-count" id="cv-overlay-comments-sheet-count">0</span>
+            <button class="cv-overlay-comments-sheet-close" onclick="CardOverlay.toggleCommentsSheet()" aria-label="Close comments sheet">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="cv-overlay-comments-sheet-list" id="cv-overlay-comments-sheet-list">
+            <!-- Comments will be loaded here -->
+        </div>
+        <div class="cv-overlay-comments-sheet-composer">
+            <textarea 
+                id="cv-overlay-comment-input-mobile" 
+                class="cv-overlay-comment-input" 
+                placeholder="Add a comment..."
+                rows="2"
+            ></textarea>
+            <div class="cv-overlay-comments-actions">
+                <button 
+                    class="cv-overlay-comment-submit" 
+                    onclick="CardOverlay.addComment(true)"
+                    aria-label="Submit comment"
+                >
+                    <i data-lucide="send"></i>
+                </button>
+                <button 
+                    class="cv-overlay-ai-reply-btn" 
+                    onclick="CardOverlay.requestAiReply(true)"
+                    aria-label="Generate AI reply"
+                >
+                    <i data-lucide="sparkles"></i>
+                    <span>AI</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
