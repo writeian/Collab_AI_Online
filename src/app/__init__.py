@@ -16,9 +16,18 @@ import re
 db = SQLAlchemy()
 # Create CSRF protection instance
 csrf = CSRFProtect()
+# Custom key function that exempts static files
+def rate_limit_key_func():
+    """Rate limit key function that exempts static files."""
+    from flask import request
+    # Exempt static files from rate limiting
+    if request.endpoint == 'static' or request.path.startswith('/static/') or request.path.startswith('/assets/'):
+        return None  # None key means no rate limiting
+    return get_remote_address()
+
 # Create rate limiter instance
 limiter = Limiter(
-    key_func=get_remote_address,
+    key_func=rate_limit_key_func,
     default_limits=["200 per day", "50 per hour"],
     storage_uri=None  # Will be configured per environment
 )
@@ -77,6 +86,95 @@ def create_app(config_name=None):
     with app.app_context():
         try:
             db.create_all()
+            
+            # Manually create document tables if they don't exist (SQLite compatibility)
+            try:
+                from src.models import Document, DocumentChunk
+                Document.query.first()  # Test if table exists
+            except Exception:
+                # Table doesn't exist, create it manually
+                try:
+                    is_postgres = 'postgresql' in str(db.engine.url)
+                    with db.engine.connect() as conn:
+                        # Create document table
+                        if is_postgres:
+                            conn.execute(db.text("""
+                                CREATE TABLE IF NOT EXISTS document (
+                                    id SERIAL PRIMARY KEY,
+                                    file_id VARCHAR(255) NOT NULL,
+                                    name VARCHAR(500) NOT NULL,
+                                    full_text TEXT,
+                                    file_size INTEGER NOT NULL DEFAULT 0,
+                                    room_id INTEGER NOT NULL REFERENCES room(id) ON DELETE CASCADE,
+                                    uploaded_by INTEGER REFERENCES "user"(id) ON DELETE SET NULL,
+                                    uploaded_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                    summary TEXT
+                                )
+                            """))
+                        else:
+                            conn.execute(db.text("""
+                                CREATE TABLE IF NOT EXISTS document (
+                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    file_id VARCHAR(255) NOT NULL,
+                                    name VARCHAR(500) NOT NULL,
+                                    full_text TEXT,
+                                    file_size INTEGER NOT NULL DEFAULT 0,
+                                    room_id INTEGER NOT NULL REFERENCES room(id) ON DELETE CASCADE,
+                                    uploaded_by INTEGER REFERENCES user(id) ON DELETE SET NULL,
+                                    uploaded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                    summary TEXT
+                                )
+                            """))
+                        conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_document_file_id ON document(file_id)"))
+                        conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_document_room_id ON document(room_id)"))
+                        conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_document_uploaded_at ON document(uploaded_at)"))
+                        conn.execute(db.text("CREATE UNIQUE INDEX IF NOT EXISTS ix_document_room_file_unique ON document(room_id, file_id)"))
+                        conn.commit()
+                    
+                    # Create document_chunk table
+                    try:
+                        DocumentChunk.query.first()
+                    except Exception:
+                        with db.engine.connect() as conn:
+                            if is_postgres:
+                                conn.execute(db.text("""
+                                    CREATE TABLE IF NOT EXISTS document_chunk (
+                                        id SERIAL PRIMARY KEY,
+                                        document_id INTEGER NOT NULL REFERENCES document(id) ON DELETE CASCADE,
+                                        chunk_index INTEGER NOT NULL,
+                                        chunk_text TEXT NOT NULL,
+                                        start_char INTEGER,
+                                        end_char INTEGER,
+                                        token_count INTEGER,
+                                        search_vector TSVECTOR,
+                                        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                        UNIQUE(document_id, chunk_index)
+                                    )
+                                """))
+                                try:
+                                    conn.execute(db.text("CREATE INDEX IF NOT EXISTS idx_chunk_search_vector ON document_chunk USING gin(search_vector)"))
+                                except:
+                                    pass
+                            else:
+                                conn.execute(db.text("""
+                                    CREATE TABLE IF NOT EXISTS document_chunk (
+                                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                        document_id INTEGER NOT NULL REFERENCES document(id) ON DELETE CASCADE,
+                                        chunk_index INTEGER NOT NULL,
+                                        chunk_text TEXT NOT NULL,
+                                        start_char INTEGER,
+                                        end_char INTEGER,
+                                        token_count INTEGER,
+                                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                        UNIQUE(document_id, chunk_index)
+                                    )
+                                """))
+                            conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_document_chunk_document_id ON document_chunk(document_id)"))
+                            conn.execute(db.text("CREATE INDEX IF NOT EXISTS ix_document_chunk_doc_created_at ON document_chunk(document_id, created_at)"))
+                            conn.commit()
+                except Exception as doc_error:
+                    app.logger.warning(f"Could not create document tables: {doc_error}")
+            
             app.config["DB_INIT_STATUS"] = "success"
             app.logger.info("✅ Database tables initialized successfully")
         except Exception as e:
@@ -110,6 +208,7 @@ def create_app(config_name=None):
         # Development: Use in-memory storage (faster for development)
         limiter.init_app(app)
     
+    
     # Add security headers
     @app.after_request
     def add_security_headers(response):
@@ -127,7 +226,7 @@ def create_app(config_name=None):
             pass
 
         # CSP configuration that allows CDN resources
-        response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; img-src 'self' data:; connect-src 'self';"
+        response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; img-src 'self' data:; connect-src 'self' https://cdn.tailwindcss.com https://unpkg.com;"
         if not app.config.get('TESTING', False) and not app.debug:
             response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
         return response
@@ -195,6 +294,18 @@ def create_app(config_name=None):
     
     # Library Tool integration (document upload and search)
     from src.app.library import library
+    
+    # Quiz Tool integration
+    from src.app.quiz import quiz
+    
+    # Flashcards Tool integration
+    from src.app.flashcards import flashcards
+    
+    # Mind Map Tool integration
+    from src.app.mindmap import mindmap
+    
+    # Narrative Tool integration
+    from src.app.narrative import narrative
 
     app.register_blueprint(auth, url_prefix="/auth")
     app.register_blueprint(chat, url_prefix="/chat")
@@ -211,6 +322,18 @@ def create_app(config_name=None):
     
     # Library Tool endpoints
     app.register_blueprint(library, url_prefix="/api/library")
+    
+    # Quiz Tool endpoints
+    app.register_blueprint(quiz, url_prefix="/api/quiz")
+    
+    # Flashcards Tool endpoints
+    app.register_blueprint(flashcards, url_prefix="/api/flashcards")
+    
+    # Mind Map Tool endpoints
+    app.register_blueprint(mindmap, url_prefix="/api/mindmap")
+    
+    # Narrative Tool endpoints
+    app.register_blueprint(narrative, url_prefix="/api/narrative")
     
     # Dev API (experimental endpoints)
     app.register_blueprint(card_view_api)  # url_prefix set in blueprint
@@ -350,6 +473,7 @@ def create_app(config_name=None):
     # Targeted fallback route to serve CSS from the configured Static/css directory
     # This guards against case/path mismatches causing 404s on /static/css/* in production
     @app.route("/static/css/<path:filename>")
+    @limiter.exempt
     def __static_css_fallback(filename: str):
         try:
             from flask import send_from_directory
@@ -361,6 +485,7 @@ def create_app(config_name=None):
 
     # Non-conflicting assets route we fully control (bypasses Flask's built-in static rule)
     @app.route("/assets/css/<path:filename>")
+    @limiter.exempt
     def assets_css(filename: str):
         try:
             from flask import send_from_directory

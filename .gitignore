@@ -97,6 +97,7 @@ scripts/check_*.py
 *_fix_log.json
 
 # Case sensitivity protection (prevent Templates/ on case-sensitive systems)
-# Use exact path to avoid matching templates/ on case-insensitive systems
+# /Templates/ would match templates/ on case-insensitive macOS; explicitly allow templates/
 /Templates/
+!/templates/
 .venv/bin/
