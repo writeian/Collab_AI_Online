@@ -558,6 +558,10 @@ def generate_narrative():
                 narrative_data = None
                 last_error = None
                 
+                # Mode-specific timeouts: Challenge needs ~3x output of Explanation
+                NARRATIVE_TIMEOUTS = {'explanation': 30, 'simulation': 60, 'challenge': 120}
+                api_timeout = NARRATIVE_TIMEOUTS.get(complexity, 30)
+
                 for attempt in range(max_retries + 1):
                     try:
                         # Call AI
@@ -587,7 +591,8 @@ Step 4: Verify all requirements are met (character count, node count, references
 Step 5: Return ONLY the JSON object - no other text
 
 Return ONLY valid JSON that passes these validation checks. Double-check all requirements before responding.""",
-                            max_tokens=8192  # Maximum supported by current Claude models (claude-3-5-sonnet/haiku)
+                            max_tokens=8192,  # Maximum supported by current Claude models (claude-3-5-sonnet/haiku)
+                            timeout=api_timeout
                         )
                         
                         if not text_content or not text_content.strip():

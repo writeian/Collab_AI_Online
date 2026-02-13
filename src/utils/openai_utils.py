@@ -546,7 +546,7 @@ Building on all these insights from your learning journey, let's continue with t
     return base_prompt
 
 
-def call_anthropic_api(messages: List[Dict[str, str]], system_prompt: str = "", max_tokens: int = 300) -> Tuple[str, bool]:
+def call_anthropic_api(messages: List[Dict[str, str]], system_prompt: str = "", max_tokens: int = 300, timeout: int = 30) -> Tuple[str, bool]:
     """Call Anthropic API with the given messages."""
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
@@ -592,7 +592,7 @@ def call_anthropic_api(messages: List[Dict[str, str]], system_prompt: str = "", 
                 "https://api.anthropic.com/v1/messages", 
                 headers=headers, 
                 json=data,
-                timeout=30
+                timeout=timeout
             )
             response.raise_for_status()
 
