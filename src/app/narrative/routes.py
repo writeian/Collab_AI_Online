@@ -341,9 +341,9 @@ NODE REFERENCE VALIDATION:
 - The "startNodeId" must match one of the node IDs in your "nodes" array
 
 CRITICAL - NO LOOPS:
-- NEVER have any choice's "nextNode" point back to "start". The story must progress forward only.
-- Each choice must lead to a NEW node (further in the story) or to an ending. Never create cycles.
-- The learner should never be sent back to the beginning—every path must eventually reach an ending.
+- NEVER have any choice's "nextNode" point to "start" or to any node already visited on the path from start.
+- The graph must be a DAG: each choice leads only to NEW nodes or endings. No cycles (e.g. A→B→A).
+- Every path from start must eventually reach an ending with no backtracking.
 
 OUTPUT FORMAT (JSON):
 {{
@@ -379,7 +379,7 @@ OUTPUT FORMAT (JSON):
 VALIDATION CHECKLIST (verify before responding):
 1. All node IDs are unique
 2. Every "nextNode" in choices references an existing node ID
-3. NO choice points back to "start" (no loops—story must progress forward only)
+3. NO cycles: no choice may point to "start" or to any node already on the path from start
 4. "startNodeId" exists in the nodes array
 5. Total number of nodes is at least {constraints['min_nodes']}
 6. All non-ending nodes have exactly {constraints['choices_per_node']} choices
@@ -583,7 +583,7 @@ CRITICAL OUTPUT REQUIREMENT:
 CRITICAL VALIDATION REQUIREMENTS:
 1. FIRST: Create ALL nodes with unique IDs before writing any choices
 2. THEN: Write choices, ensuring every "nextNode" references an EXISTING node ID from your nodes list
-3. NO LOOPS: NEVER have any choice point back to "start". The story must progress forward only—each choice leads to a new node or ending, never back to the beginning
+3. NO LOOPS: No choice may point to "start" or to any node already visited on the path. Each choice leads only to new nodes or endings—never create cycles
 4. VERIFY: Before responding, check that every "nextNode" in every choice matches an actual node "id" exactly
 5. The "startNodeId" must match one of your node IDs exactly
 6. CRITICAL: Total content must be at least {constraints['min_chars']} characters across ALL nodes (acceptable minimum: {int(constraints['min_chars'] * 0.75)})
@@ -797,6 +797,14 @@ Return ONLY valid JSON that passes these validation checks. Double-check all req
                                         )
                                         choice['nextNode'] = fallback_node_id
                         
+                        # Detect any cycles (not just back to start)
+                        has_cycle, cycle_msg = _narrative_has_cycle(narrative_data)
+                        if has_cycle:
+                            raise ValueError(
+                                f"Invalid narrative: {cycle_msg}. "
+                                "The story must progress forward only—every path must eventually reach an ending with no loops."
+                            )
+                        
                         # If we got here, validation passed - break out of retry loop
                         break
                         
@@ -816,7 +824,7 @@ Return ONLY valid JSON that passes these validation checks. Double-check all req
                             prompt += "5. Then create the nodes array with those exact IDs and substantial content\n"
                             prompt += "6. When writing choices, reference ONLY the node IDs from step 4\n"
                             prompt += "7. Double-check every 'nextNode' value matches an existing node 'id' exactly\n"
-                            prompt += "8. CRITICAL: NEVER have any choice point back to 'start'—no loops, story must progress forward only\n"
+                            prompt += "8. CRITICAL: NO LOOPS—no choice may point to 'start' or to any node already visited on the path from start. Every path must reach an ending.\n"
                             prompt += "9. Start your response immediately with { and end with } - no other text\n"
                             if complexity == 'challenge':
                                 prompt += "10. For Challenge level: Ensure at least 3-4 decision points (non-ending nodes) before reaching any ending\n"
@@ -855,6 +863,36 @@ Return ONLY valid JSON that passes these validation checks. Double-check all req
 def _sse_event(data: dict) -> str:
     """Format a dict as an SSE data line."""
     return f"data: {json.dumps(data)}\n\n"
+
+
+def _narrative_has_cycle(narrative_data: dict) -> tuple:
+    """
+    Detect any cycle in the narrative graph (DFS from start).
+    Returns (True, error_message) if cycle found, (False, None) otherwise.
+    """
+    nodes_by_id = {n["id"]: n for n in narrative_data["nodes"]}
+    start_id = narrative_data.get("startNodeId")
+    if not start_id or start_id not in nodes_by_id:
+        return False, None
+
+    def dfs(node_id: str, path: set) -> tuple:
+        if node_id in path:
+            return True, f"Cycle detected: path leads back to node '{node_id}'"
+        node = nodes_by_id.get(node_id)
+        if not node or node.get("isEnding"):
+            return False, None
+        path.add(node_id)
+        for choice in node.get("choices", []):
+            next_id = choice.get("nextNode")
+            if next_id and next_id in nodes_by_id:
+                has_cycle, msg = dfs(next_id, path)
+                if has_cycle:
+                    path.discard(node_id)
+                    return True, msg
+        path.discard(node_id)
+        return False, None
+
+    return dfs(start_id, set())
 
 
 def _validate_interactive_narrative_from_text(text_content: str, constraints: dict, complexity: str) -> tuple:
@@ -940,6 +978,9 @@ def _validate_interactive_narrative_from_text(text_content: str, constraints: di
                     return None, "Invalid loop: a choice points back to 'start'"
                 if choice['nextNode'] not in node_ids:
                     return None, f"Choice references non-existent node '{choice['nextNode']}'"
+    has_cycle, cycle_msg = _narrative_has_cycle(narrative_data)
+    if has_cycle:
+        return None, f"Invalid narrative: {cycle_msg}. The story must progress forward only—no loops."
     return narrative_data, None
 
 
@@ -1035,7 +1076,7 @@ def generate_narrative_stream():
             prompt = generate_interactive_narrative_prompt(context_parts, context_mode, complexity, instructions)
             sys_prompt = f"""You are an expert at creating interactive educational narratives.
 CRITICAL: Return ONLY valid JSON. Start with {{ and end with }}. No text before or after.
-NO LOOPS: Never have any choice point back to "start".
+NO LOOPS: No choice may point to "start" or to any node already on the path from start. Each choice leads only to new nodes or endings.
 Create at least {constraints['min_nodes']} nodes, {constraints['min_chars']} characters total.
 Each node: id, content, choices, isEnding. Each choice: id, text, nextNode."""
             accumulated = []
