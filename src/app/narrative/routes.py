@@ -1058,11 +1058,20 @@ Each node: id, content, choices, isEnding. Each choice: id, text, nextNode."""
             except Exception as e:
                 yield _sse_event({"t": "done", "success": False, "error": str(e)})
         except Exception as e:
-            current_app.logger.error(f"Narrative stream error: {e}")
+            current_app.logger.exception("Narrative stream error")
+            yield _sse_event({"t": "done", "success": False, "error": str(e)})
+
+    def safe_generate():
+        """Wrap generator to catch any exception before first yield and return error as SSE."""
+        try:
+            for event in generate():
+                yield event
+        except Exception as e:
+            current_app.logger.exception("Narrative stream fatal error")
             yield _sse_event({"t": "done", "success": False, "error": str(e)})
 
     return Response(
-        generate(),
+        safe_generate(),
         mimetype='text/event-stream',
         headers={
             'Cache-Control': 'no-cache',

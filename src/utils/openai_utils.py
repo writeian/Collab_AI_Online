@@ -670,13 +670,15 @@ def call_anthropic_api_stream(messages: List[Dict[str, str]], system_prompt: str
     try:
         from anthropic import Anthropic
         client = Anthropic(api_key=api_key)
-        with client.messages.stream(
-            model=model,
-            max_tokens=max_tokens,
-            messages=[{"role": "user", "content": user_content}],
-            system=system_prompt if system_prompt else None,
-            timeout=timeout,
-        ) as stream:
+        stream_kwargs = {
+            "model": model,
+            "max_tokens": max_tokens,
+            "messages": [{"role": "user", "content": user_content}],
+            "timeout": timeout,
+        }
+        if system_prompt:
+            stream_kwargs["system"] = system_prompt
+        with client.messages.stream(**stream_kwargs) as stream:
             full_text = []
             for chunk in stream.text_stream:
                 full_text.append(chunk)

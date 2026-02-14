@@ -404,27 +404,61 @@
         // Show loading
         showLoading('Generating narrative...');
 
-        try {
+        const requestBody = JSON.stringify({
+            chat_id: chatId,
+            context_mode: contextMode,
+            library_doc_ids: libraryDocIds,
+            narrative_type: narrativeType,
+            complexity: complexity,
+            instructions: instructions
+        });
+
+        async function tryStreaming() {
             const fetchFn = typeof jsonFetch === 'function' ? jsonFetch : fetch;
-            const response = await fetchFn('/api/narrative/generate-stream', {
+            return fetchFn('/api/narrative/generate-stream', {
                 method: 'POST',
                 credentials: 'same-origin',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    chat_id: chatId,
-                    context_mode: contextMode,
-                    library_doc_ids: libraryDocIds,
-                    narrative_type: narrativeType,
-                    complexity: complexity,
-                    instructions: instructions
-                })
+                headers: { 'Content-Type': 'application/json' },
+                body: requestBody
             });
+        }
 
+        async function tryNonStreaming() {
+            const fetchFn = typeof jsonFetch === 'function' ? jsonFetch : fetch;
+            const response = await fetchFn('/api/narrative/generate', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: requestBody
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Failed to generate narrative');
+            if (!data.success) throw new Error(data.error || 'Narrative generation failed');
+            return data;
+        }
+
+        try {
+            let response = await tryStreaming();
             if (!response.ok) {
-                const errData = await response.json().catch(() => ({}));
-                throw new Error(errData.error || 'Failed to generate narrative');
+                console.warn('Streaming failed (status ' + response.status + '), falling back to non-streaming');
+                const data = await tryNonStreaming();
+                currentNarrative = data.narrative;
+                currentNarrativeType = data.narrative_type;
+                currentComplexity = data.complexity || null;
+                currentContextParts = { chat: null, library: null };
+                if (currentNarrativeType === 'interactive') {
+                    if (!currentNarrative?.nodes?.length || !currentNarrative.startNodeId) {
+                        throw new Error('Invalid interactive narrative structure');
+                    }
+                    const startNodeExists = currentNarrative.nodes.some(n => n.id === currentNarrative.startNodeId);
+                    if (!startNodeExists) throw new Error(`Start node "${currentNarrative.startNodeId}" not found`);
+                }
+                if (currentNarrativeType === 'linear') {
+                    displayLinearNarrative(currentNarrative);
+                } else {
+                    displayInteractiveNarrative(currentNarrative);
+                }
+                return;
             }
 
             const reader = response.body.getReader();
