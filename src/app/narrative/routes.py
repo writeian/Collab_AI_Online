@@ -797,13 +797,16 @@ Return ONLY valid JSON that passes these validation checks. Double-check all req
                                         )
                                         choice['nextNode'] = fallback_node_id
                         
-                        # Detect any cycles (not just back to start)
-                        has_cycle, cycle_msg = _narrative_has_cycle(narrative_data)
+                        # Detect any cycles; attempt repair before rejecting
+                        has_cycle, cycle_msg, _ = _narrative_has_cycle(narrative_data)
                         if has_cycle:
-                            raise ValueError(
-                                f"Invalid narrative: {cycle_msg}. "
-                                "The story must progress forward only—every path must eventually reach an ending with no loops."
-                            )
+                            _repair_cycle(narrative_data)
+                            has_cycle2, _, _ = _narrative_has_cycle(narrative_data)
+                            if has_cycle2:
+                                raise ValueError(
+                                    f"Invalid narrative: {cycle_msg}. "
+                                    "The story must progress forward only—every path must eventually reach an ending with no loops."
+                                )
                         
                         # If we got here, validation passed - break out of retry loop
                         break
@@ -868,31 +871,73 @@ def _sse_event(data: dict) -> str:
 def _narrative_has_cycle(narrative_data: dict) -> tuple:
     """
     Detect any cycle in the narrative graph (DFS from start).
-    Returns (True, error_message) if cycle found, (False, None) otherwise.
+    Returns (True, error_message, (source_node_id, target_node_id)) if cycle found,
+    (False, None, None) otherwise. target_node_id is the node we're cycling back to.
     """
     nodes_by_id = {n["id"]: n for n in narrative_data["nodes"]}
     start_id = narrative_data.get("startNodeId")
     if not start_id or start_id not in nodes_by_id:
-        return False, None
+        return False, None, None
 
-    def dfs(node_id: str, path: set) -> tuple:
+    def dfs(node_id: str, path: set, path_order: list) -> tuple:
         if node_id in path:
-            return True, f"Cycle detected: path leads back to node '{node_id}'"
+            return True, f"Cycle detected: path leads back to node '{node_id}'", (path_order[-1] if path_order else None, node_id)
         node = nodes_by_id.get(node_id)
         if not node or node.get("isEnding"):
-            return False, None
+            return False, None, None
         path.add(node_id)
+        path_order.append(node_id)
         for choice in node.get("choices", []):
             next_id = choice.get("nextNode")
             if next_id and next_id in nodes_by_id:
-                has_cycle, msg = dfs(next_id, path)
+                has_cycle, msg, cycle_info = dfs(next_id, path, path_order)
                 if has_cycle:
                     path.discard(node_id)
-                    return True, msg
+                    path_order.pop()
+                    return True, msg, cycle_info
         path.discard(node_id)
-        return False, None
+        path_order.pop()
+        return False, None, None
 
-    return dfs(start_id, set())
+    has_cycle, msg, cycle_info = dfs(start_id, set(), [])
+    return has_cycle, msg, cycle_info
+
+
+def _repair_cycle(narrative_data: dict) -> bool:
+    """
+    Attempt to repair cycles by rewiring choices that create them to an ending.
+    Repeats until no cycles remain or repair fails. Returns True if all cycles repaired.
+    """
+    endings = [n["id"] for n in narrative_data["nodes"] if n.get("isEnding")]
+    if not endings:
+        return False
+
+    repaired_any = False
+    for _ in range(20):  # Limit iterations to avoid infinite loop
+        has_cycle, _, cycle_info = _narrative_has_cycle(narrative_data)
+        if not has_cycle or not cycle_info:
+            return repaired_any
+
+        source_node_id, cycle_target = cycle_info
+        nodes_by_id = {n["id"]: n for n in narrative_data["nodes"]}
+        source_node = nodes_by_id.get(source_node_id)
+        if not source_node:
+            return False
+
+        fixed = False
+        for choice in source_node.get("choices", []):
+            if choice.get("nextNode") == cycle_target:
+                choice["nextNode"] = endings[0]
+                current_app.logger.info(
+                    "Repaired narrative cycle: rewired %s -> %s to -> %s",
+                    source_node_id, cycle_target, endings[0]
+                )
+                fixed = True
+                repaired_any = True
+                break
+        if not fixed:
+            return False
+    return repaired_any
 
 
 def _validate_interactive_narrative_from_text(text_content: str, constraints: dict, complexity: str) -> tuple:
@@ -978,9 +1023,12 @@ def _validate_interactive_narrative_from_text(text_content: str, constraints: di
                     return None, "Invalid loop: a choice points back to 'start'"
                 if choice['nextNode'] not in node_ids:
                     return None, f"Choice references non-existent node '{choice['nextNode']}'"
-    has_cycle, cycle_msg = _narrative_has_cycle(narrative_data)
+    has_cycle, cycle_msg, _ = _narrative_has_cycle(narrative_data)
     if has_cycle:
-        return None, f"Invalid narrative: {cycle_msg}. The story must progress forward only—no loops."
+        _repair_cycle(narrative_data)
+        has_cycle2, _, _ = _narrative_has_cycle(narrative_data)
+        if has_cycle2:
+            return None, f"Invalid narrative: {cycle_msg}. The story must progress forward only—no loops."
     return narrative_data, None
 
 
@@ -1044,7 +1092,7 @@ def generate_narrative_stream():
             if narrative_type == 'linear':
                 prompt = generate_linear_narrative_prompt(context_parts, context_mode, instructions)
                 sys_prompt = "You are an expert at creating educational narratives. Follow all instructions strictly and return only the narrative text."
-                accumulated = []
+                yield _sse_event({"t": "started"})  # Establish stream immediately
                 try:
                     for item in call_anthropic_api_stream(
                         messages=[{"role": "user", "content": prompt}],
@@ -1079,7 +1127,7 @@ CRITICAL: Return ONLY valid JSON. Start with {{ and end with }}. No text before 
 NO LOOPS: No choice may point to "start" or to any node already on the path from start. Each choice leads only to new nodes or endings.
 Create at least {constraints['min_nodes']} nodes, {constraints['min_chars']} characters total.
 Each node: id, content, choices, isEnding. Each choice: id, text, nextNode."""
-            accumulated = []
+            yield _sse_event({"t": "started"})  # Establish stream immediately
             try:
                 for item in call_anthropic_api_stream(
                     messages=[{"role": "user", "content": prompt}],

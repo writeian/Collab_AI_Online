@@ -461,6 +461,7 @@
                 return;
             }
 
+            console.log('Streaming narrative generation...');
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let buffer = '';
@@ -480,7 +481,9 @@
                     if (line.startsWith('data: ')) {
                         try {
                             const data = JSON.parse(line.slice(6));
-                            if (data.t === 'chunk') {
+                            if (data.t === 'started') {
+                                if (loadingText) loadingText.textContent = 'Receiving your story...';
+                            } else if (data.t === 'chunk') {
                                 accumulatedText += data.text || '';
                                 if (narrativeType === 'linear' && linearContent) {
                                     const formatted = accumulatedText.split('\n\n').map(para =>
@@ -491,8 +494,9 @@
                                     interactiveContainer.classList.add('hidden');
                                     showStep(NARRATIVE_STEPS.DISPLAY);
                                     hideLoading();
+                                    linearContent.scrollTop = linearContent.scrollHeight;
                                 } else if (narrativeType === 'interactive' && loadingText) {
-                                    loadingText.textContent = `Generating your story... ${accumulatedText.length} characters`;
+                                    loadingText.textContent = `Building your story... ${accumulatedText.length} characters`;
                                 }
                             } else if (data.t === 'done') {
                                 if (data.success) {
