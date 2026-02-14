@@ -649,6 +649,50 @@ def call_anthropic_api(messages: List[Dict[str, str]], system_prompt: str = "", 
             raise Exception(f"Anthropic API call failed: {str(e)}")
 
 
+def call_anthropic_api_stream(messages: List[Dict[str, str]], system_prompt: str = "", max_tokens: int = 300, timeout: int = 30):
+    """
+    Call Anthropic API with streaming. Yields text chunks as they arrive.
+    Yields: str for each chunk, then (full_text, is_truncated) as final yield.
+    On error, raises Exception.
+    """
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise Exception("ANTHROPIC_API_KEY not found in environment variables")
+
+    user_messages = []
+    for msg in messages:
+        if msg.get("role") != "system":
+            user_messages.append(msg.get("content", ""))
+    user_content = "\n\n".join(user_messages)
+
+    model = os.getenv("ANTHROPIC_MODEL", "claude-3-opus-20240229")
+
+    try:
+        from anthropic import Anthropic
+        client = Anthropic(api_key=api_key)
+        with client.messages.stream(
+            model=model,
+            max_tokens=max_tokens,
+            messages=[{"role": "user", "content": user_content}],
+            system=system_prompt if system_prompt else None,
+            timeout=timeout,
+        ) as stream:
+            full_text = []
+            for chunk in stream.text_stream:
+                full_text.append(chunk)
+                yield chunk
+            result_text = "".join(full_text)
+            try:
+                final_msg = stream.get_final_message()
+                stop_reason = getattr(final_msg, "stop_reason", None) or ""
+                is_truncated = stop_reason == "max_tokens"
+            except Exception:
+                is_truncated = False
+            yield (result_text, is_truncated)
+    except Exception as e:
+        raise Exception(f"Anthropic API call failed: {str(e)}")
+
+
 def _get_pin_chat_system_prompt(chat: Any) -> str:
     """
     Build system prompt for a pin-seeded chat.

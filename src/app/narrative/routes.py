@@ -3,7 +3,7 @@ Narrative Tool API Routes
 Handles narrative generation with Linear and Interactive modes
 """
 
-from flask import request, jsonify, current_app, session
+from flask import request, jsonify, current_app, session, Response
 from functools import wraps
 from src.app import db, limiter
 from src.app.narrative import narrative
@@ -12,7 +12,7 @@ from src.models.document import Document
 from src.models.room import Room
 from src.app.access_control import get_current_user, can_access_room
 from src.models.user import User
-from src.utils.openai_utils import call_anthropic_api
+from src.utils.openai_utils import call_anthropic_api, call_anthropic_api_stream
 from typing import Dict, List, Optional
 from datetime import datetime, timezone
 import json
@@ -340,6 +340,11 @@ NODE REFERENCE VALIDATION:
 - All node IDs must be unique strings (use descriptive names like "node1", "ending1", "path_a", etc.)
 - The "startNodeId" must match one of the node IDs in your "nodes" array
 
+CRITICAL - NO LOOPS:
+- NEVER have any choice's "nextNode" point back to "start". The story must progress forward only.
+- Each choice must lead to a NEW node (further in the story) or to an ending. Never create cycles.
+- The learner should never be sent back to the beginning—every path must eventually reach an ending.
+
 OUTPUT FORMAT (JSON):
 {{
   "nodes": [
@@ -374,14 +379,15 @@ OUTPUT FORMAT (JSON):
 VALIDATION CHECKLIST (verify before responding):
 1. All node IDs are unique
 2. Every "nextNode" in choices references an existing node ID
-3. "startNodeId" exists in the nodes array
-4. Total number of nodes is at least {constraints['min_nodes']}
-5. All non-ending nodes have exactly {constraints['choices_per_node']} choices
-6. All ending nodes have empty choices arrays and isEnding: true
-7. Each node's content is at least {constraints['min_chars_per_node']} characters
-8. Total content length meets minimum of {constraints['min_chars']} characters across all nodes
-9. For Challenge level: There are at least 3-4 decision points (non-ending nodes) before reaching any ending
-10. Multiple endings exist (3-4 for Challenge, 2-3 for Simulation, 2 for Explanation)
+3. NO choice points back to "start" (no loops—story must progress forward only)
+4. "startNodeId" exists in the nodes array
+5. Total number of nodes is at least {constraints['min_nodes']}
+6. All non-ending nodes have exactly {constraints['choices_per_node']} choices
+7. All ending nodes have empty choices arrays and isEnding: true
+8. Each node's content is at least {constraints['min_chars_per_node']} characters
+9. Total content length meets minimum of {constraints['min_chars']} characters across all nodes
+10. For Challenge level: There are at least 3-4 decision points (non-ending nodes) before reaching any ending
+11. Multiple endings exist (3-4 for Challenge, 2-3 for Simulation, 2 for Explanation)
 
 CRITICAL OUTPUT REQUIREMENT:
 Return ONLY valid JSON. Do NOT include any explanatory text, comments, discussion, or other content.
@@ -577,11 +583,12 @@ CRITICAL OUTPUT REQUIREMENT:
 CRITICAL VALIDATION REQUIREMENTS:
 1. FIRST: Create ALL nodes with unique IDs before writing any choices
 2. THEN: Write choices, ensuring every "nextNode" references an EXISTING node ID from your nodes list
-3. VERIFY: Before responding, check that every "nextNode" in every choice matches an actual node "id" exactly
-4. The "startNodeId" must match one of your node IDs exactly
-5. CRITICAL: Total content must be at least {constraints['min_chars']} characters across ALL nodes (acceptable minimum: {int(constraints['min_chars'] * 0.75)})
-6. CRITICAL: You must create at least {constraints['min_nodes']} total nodes (acceptable minimum: {max(3, int(constraints['min_nodes'] * 0.7))})
-7. Each node must have at least {constraints['min_chars_per_node']} characters of content (acceptable minimum: {int(constraints['min_chars_per_node'] * 0.7)})
+3. NO LOOPS: NEVER have any choice point back to "start". The story must progress forward only—each choice leads to a new node or ending, never back to the beginning
+4. VERIFY: Before responding, check that every "nextNode" in every choice matches an actual node "id" exactly
+5. The "startNodeId" must match one of your node IDs exactly
+6. CRITICAL: Total content must be at least {constraints['min_chars']} characters across ALL nodes (acceptable minimum: {int(constraints['min_chars'] * 0.75)})
+7. CRITICAL: You must create at least {constraints['min_nodes']} total nodes (acceptable minimum: {max(3, int(constraints['min_nodes'] * 0.7))})
+8. Each node must have at least {constraints['min_chars_per_node']} characters of content (acceptable minimum: {int(constraints['min_chars_per_node'] * 0.7)})
 
 STEP-BY-STEP PROCESS:
 Step 1: Plan your narrative structure to meet ALL requirements (nodes, character counts, complexity)
@@ -764,6 +771,13 @@ Return ONLY valid JSON that passes these validation checks. Double-check all req
                                 for choice in choices:
                                     if 'id' not in choice or 'text' not in choice or 'nextNode' not in choice:
                                         raise ValueError(f"Invalid choice structure in node {node['id']}")
+                                    # Reject loops: no choice may point back to start
+                                    next_node_val = str(choice.get('nextNode', '')).strip()
+                                    if next_node_val.lower() == 'start':
+                                        raise ValueError(
+                                            f"Invalid loop: Node '{node['id']}' has a choice pointing back to 'start'. "
+                                            "The story must progress forward only—never send the learner back to the beginning."
+                                        )
                                     # Now validate that nextNode exists (all node IDs are collected)
                                     if choice['nextNode'] not in node_ids:
                                         if attempt < max_retries:
@@ -802,11 +816,12 @@ Return ONLY valid JSON that passes these validation checks. Double-check all req
                             prompt += "5. Then create the nodes array with those exact IDs and substantial content\n"
                             prompt += "6. When writing choices, reference ONLY the node IDs from step 4\n"
                             prompt += "7. Double-check every 'nextNode' value matches an existing node 'id' exactly\n"
-                            prompt += "8. Start your response immediately with { and end with } - no other text\n"
+                            prompt += "8. CRITICAL: NEVER have any choice point back to 'start'—no loops, story must progress forward only\n"
+                            prompt += "9. Start your response immediately with { and end with } - no other text\n"
                             if complexity == 'challenge':
-                                prompt += "9. For Challenge level: Ensure at least 3-4 decision points (non-ending nodes) before reaching any ending\n"
-                                prompt += "10. For Challenge level: Create at least 3-4 different endings\n"
-                                prompt += "11. For Challenge level: Make choices present conflicting goals with meaningful trade-offs"
+                                prompt += "10. For Challenge level: Ensure at least 3-4 decision points (non-ending nodes) before reaching any ending\n"
+                                prompt += "11. For Challenge level: Create at least 3-4 different endings\n"
+                                prompt += "12. For Challenge level: Make choices present conflicting goals with meaningful trade-offs"
                         else:
                             # Last attempt failed, re-raise the error
                             raise
@@ -835,6 +850,226 @@ Return ONLY valid JSON that passes these validation checks. Double-check all req
         current_app.logger.error(f"Narrative generation error: {e}")
         db.session.rollback()
         return jsonify({'error': f'Failed to generate narrative: {str(e)}'}), 500
+
+
+def _sse_event(data: dict) -> str:
+    """Format a dict as an SSE data line."""
+    return f"data: {json.dumps(data)}\n\n"
+
+
+def _validate_interactive_narrative_from_text(text_content: str, constraints: dict, complexity: str) -> tuple:
+    """
+    Parse and validate interactive narrative JSON. Returns (narrative_data, None) on success
+    or (None, error_message) on failure.
+    """
+    import re
+    json_start = text_content.find('{')
+    if json_start == -1:
+        return None, "No JSON found in response"
+    brace_count = 0
+    json_end = json_start
+    for i in range(json_start, len(text_content)):
+        if text_content[i] == '{':
+            brace_count += 1
+        elif text_content[i] == '}':
+            brace_count -= 1
+            if brace_count == 0:
+                json_end = i + 1
+                break
+    if brace_count != 0:
+        json_end = text_content.rfind('}') + 1
+        if json_end == 0:
+            return None, "No valid JSON found in response"
+    json_text = text_content[json_start:json_end]
+    try:
+        narrative_data = json.loads(json_text)
+    except json.JSONDecodeError as e:
+        return None, f"Failed to parse JSON: {str(e)}"
+    if 'nodes' not in narrative_data:
+        return None, "Missing 'nodes' in response"
+    if 'startNodeId' not in narrative_data:
+        return None, "Missing 'startNodeId' in response"
+    node_ids = set()
+    ending_node_ids = set()
+    for node in narrative_data['nodes']:
+        if 'id' not in node:
+            return None, "Node missing 'id' field"
+        if 'content' not in node:
+            return None, f"Node {node.get('id')} missing 'content' field"
+        if 'choices' not in node:
+            return None, f"Node {node.get('id')} missing 'choices' field"
+        if 'isEnding' not in node:
+            return None, f"Node {node.get('id')} missing 'isEnding' field"
+        node_ids.add(node['id'])
+        if node.get('isEnding'):
+            ending_node_ids.add(node['id'])
+    if narrative_data['startNodeId'] not in node_ids:
+        return None, f"Start node '{narrative_data['startNodeId']}' not found"
+    min_nodes_threshold = max(3, int(constraints['min_nodes'] * 0.7))
+    if len(narrative_data['nodes']) < min_nodes_threshold:
+        return None, f"Narrative has {len(narrative_data['nodes'])} nodes, minimum is {constraints['min_nodes']}"
+    total_chars = 0
+    for node in narrative_data['nodes']:
+        node_chars = len(str(node.get('content', '')))
+        total_chars += node_chars
+        min_chars_per_node_threshold = int(constraints['min_chars_per_node'] * 0.7)
+        if node_chars < min_chars_per_node_threshold:
+            return None, f"Node '{node.get('id')}' has only {node_chars} characters, minimum is {constraints['min_chars_per_node']}"
+    threshold_multiplier = 0.75 if complexity == 'challenge' else 0.8
+    min_chars_threshold = int(constraints['min_chars'] * threshold_multiplier)
+    if total_chars < min_chars_threshold:
+        return None, f"Total length is {total_chars} characters, minimum is {constraints['min_chars']}"
+    if complexity == 'challenge':
+        decision_points = [n for n in narrative_data['nodes'] if not n.get('isEnding', False)]
+        if len(decision_points) < 3:
+            return None, "Challenge level requires at least 3 decision points"
+        ending_nodes = [n for n in narrative_data['nodes'] if n.get('isEnding', False)]
+        if len(ending_nodes) < 3:
+            return None, "Challenge level requires at least 3 different endings"
+    for node in narrative_data['nodes']:
+        if not node.get('isEnding'):
+            choices = node.get('choices', [])
+            expected_choices = 2 if complexity == 'explanation' else (3 if complexity == 'simulation' else 4)
+            if len(choices) != expected_choices:
+                return None, f"Node {node['id']} has {len(choices)} choices, expected {expected_choices}"
+            for choice in choices:
+                if 'id' not in choice or 'text' not in choice or 'nextNode' not in choice:
+                    return None, f"Invalid choice structure in node {node['id']}"
+                next_node_val = str(choice.get('nextNode', '')).strip()
+                if next_node_val.lower() == 'start':
+                    return None, "Invalid loop: a choice points back to 'start'"
+                if choice['nextNode'] not in node_ids:
+                    return None, f"Choice references non-existent node '{choice['nextNode']}'"
+    return narrative_data, None
+
+
+@narrative.route('/generate-stream', methods=['POST'])
+@login_required
+@limiter.limit("10 per minute; 50 per hour")
+def generate_narrative_stream():
+    """Generate narrative with streaming for all modes (explanation, simulation, challenge)."""
+    def generate():
+        try:
+            user = get_current_user()
+            if not user:
+                yield _sse_event({"t": "done", "success": False, "error": "Authentication required"})
+                return
+            data = request.get_json() or {}
+            chat_id = data.get('chat_id')
+            narrative_type = data.get('narrative_type')
+            context_mode = data.get('context_mode', 'chat')
+            library_doc_ids = data.get('library_doc_ids', [])
+            instructions = data.get('instructions', '').strip()
+            complexity = data.get('complexity')
+            if not chat_id:
+                yield _sse_event({"t": "done", "success": False, "error": "chat_id is required"})
+                return
+            if not narrative_type or narrative_type not in ('linear', 'interactive'):
+                yield _sse_event({"t": "done", "success": False, "error": "narrative_type must be linear or interactive"})
+                return
+            if context_mode not in ('chat', 'library', 'both'):
+                yield _sse_event({"t": "done", "success": False, "error": "Invalid context_mode"})
+                return
+            if narrative_type == 'interactive':
+                if not complexity or complexity not in ('explanation', 'simulation', 'challenge'):
+                    yield _sse_event({"t": "done", "success": False, "error": "complexity is required for interactive"})
+                    return
+            chat_obj = Chat.query.get(chat_id)
+            if not chat_obj:
+                yield _sse_event({"t": "done", "success": False, "error": "Chat not found"})
+                return
+            room_obj = Room.query.get(chat_obj.room_id)
+            if not room_obj:
+                yield _sse_event({"t": "done", "success": False, "error": "Room not found"})
+                return
+            if not can_access_room(user, room_obj):
+                yield _sse_event({"t": "done", "success": False, "error": "Access denied"})
+                return
+            if context_mode in ('library', 'both') and library_doc_ids:
+                docs = Document.query.filter(Document.id.in_(library_doc_ids), Document.room_id == chat_obj.room_id).all()
+                if len(docs) != len(library_doc_ids):
+                    yield _sse_event({"t": "done", "success": False, "error": "Document access denied"})
+                    return
+            context_parts = assemble_narrative_context(context_mode, chat_id, library_doc_ids)
+            has_context = (
+                (context_mode == 'chat' and context_parts.get('chat')) or
+                (context_mode == 'library' and context_parts.get('library')) or
+                (context_mode == 'both' and (context_parts.get('chat') or context_parts.get('library')))
+            )
+            if not has_context:
+                yield _sse_event({"t": "done", "success": False, "error": "No context available"})
+                return
+
+            if narrative_type == 'linear':
+                prompt = generate_linear_narrative_prompt(context_parts, context_mode, instructions)
+                sys_prompt = "You are an expert at creating educational narratives. Follow all instructions strictly and return only the narrative text."
+                accumulated = []
+                try:
+                    for item in call_anthropic_api_stream(
+                        messages=[{"role": "user", "content": prompt}],
+                        system_prompt=sys_prompt,
+                        max_tokens=4000,
+                        timeout=60
+                    ):
+                        if isinstance(item, tuple):
+                            text_content, _ = item
+                            if not text_content or not text_content.strip():
+                                yield _sse_event({"t": "done", "success": False, "error": "Empty response from AI"})
+                                return
+                            yield _sse_event({"t": "done", "success": True, "narrative": text_content.strip(), "narrative_type": "linear"})
+                        else:
+                            yield _sse_event({"t": "chunk", "text": item})
+                except Exception as e:
+                    yield _sse_event({"t": "done", "success": False, "error": str(e)})
+                return
+
+            # Interactive
+            complexity_constraints = {
+                'explanation': {'choices_per_node': 2, 'min_chars': 2000, 'min_nodes': 5, 'min_chars_per_node': 200},
+                'simulation': {'choices_per_node': 3, 'min_chars': 4000, 'min_nodes': 8, 'min_chars_per_node': 300},
+                'challenge': {'choices_per_node': 4, 'min_chars': 6000, 'min_nodes': 12, 'min_chars_per_node': 400},
+            }
+            constraints = complexity_constraints.get(complexity, complexity_constraints['explanation'])
+            NARRATIVE_TIMEOUTS = {'explanation': 30, 'simulation': 60, 'challenge': 120}
+            api_timeout = NARRATIVE_TIMEOUTS.get(complexity, 30)
+            prompt = generate_interactive_narrative_prompt(context_parts, context_mode, complexity, instructions)
+            sys_prompt = f"""You are an expert at creating interactive educational narratives.
+CRITICAL: Return ONLY valid JSON. Start with {{ and end with }}. No text before or after.
+NO LOOPS: Never have any choice point back to "start".
+Create at least {constraints['min_nodes']} nodes, {constraints['min_chars']} characters total.
+Each node: id, content, choices, isEnding. Each choice: id, text, nextNode."""
+            accumulated = []
+            try:
+                for item in call_anthropic_api_stream(
+                    messages=[{"role": "user", "content": prompt}],
+                    system_prompt=sys_prompt,
+                    max_tokens=8192,
+                    timeout=api_timeout
+                ):
+                    if isinstance(item, tuple):
+                        text_content, _ = item
+                        narrative_data, err = _validate_interactive_narrative_from_text(text_content, constraints, complexity)
+                        if err:
+                            yield _sse_event({"t": "done", "success": False, "error": err})
+                            return
+                        yield _sse_event({"t": "done", "success": True, "narrative": narrative_data, "narrative_type": "interactive", "complexity": complexity})
+                    else:
+                        yield _sse_event({"t": "chunk", "text": item})
+            except Exception as e:
+                yield _sse_event({"t": "done", "success": False, "error": str(e)})
+        except Exception as e:
+            current_app.logger.error(f"Narrative stream error: {e}")
+            yield _sse_event({"t": "done", "success": False, "error": str(e)})
+
+    return Response(
+        generate(),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'X-Accel-Buffering': 'no',
+            'Connection': 'keep-alive',
+        }
+    )
 
 
 @narrative.route('/feedback', methods=['POST'])

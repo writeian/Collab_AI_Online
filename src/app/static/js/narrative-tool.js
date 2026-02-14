@@ -405,8 +405,10 @@
         showLoading('Generating narrative...');
 
         try {
-            const response = await (typeof jsonFetch === 'function' ? jsonFetch : fetch)('/api/narrative/generate', {
+            const fetchFn = typeof jsonFetch === 'function' ? jsonFetch : fetch;
+            const response = await fetchFn('/api/narrative/generate-stream', {
                 method: 'POST',
+                credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -420,61 +422,96 @@
                 })
             });
 
-            const data = await response.json();
-
             if (!response.ok) {
-                throw new Error(data.error || 'Failed to generate narrative');
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.error || 'Failed to generate narrative');
             }
 
-            if (!data.success) {
-                throw new Error(data.error || 'Narrative generation failed');
-            }
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let accumulatedText = '';
+            const linearContent = document.getElementById('narrative-linear-content');
+            const linearContainer = document.getElementById('narrative-linear-container');
+            const interactiveContainer = document.getElementById('narrative-interactive-container');
+            const loadingText = document.getElementById('narrative-loading-text');
 
-            // Store narrative data
-            currentNarrative = data.narrative;
-            currentNarrativeType = data.narrative_type;
-            currentComplexity = data.complexity || null;
-            
-            // Validate interactive narrative structure
-            if (currentNarrativeType === 'interactive') {
-                if (!currentNarrative || !currentNarrative.nodes || !Array.isArray(currentNarrative.nodes)) {
-                    throw new Error('Invalid interactive narrative structure: missing nodes array');
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n\n');
+                buffer = lines.pop() || '';
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.slice(6));
+                            if (data.t === 'chunk') {
+                                accumulatedText += data.text || '';
+                                if (narrativeType === 'linear' && linearContent) {
+                                    const formatted = accumulatedText.split('\n\n').map(para =>
+                                        `<p>${para.replace(/\n/g, '<br>')}</p>`
+                                    ).join('');
+                                    linearContent.innerHTML = formatted;
+                                    linearContainer.classList.remove('hidden');
+                                    interactiveContainer.classList.add('hidden');
+                                    showStep(NARRATIVE_STEPS.DISPLAY);
+                                    hideLoading();
+                                } else if (narrativeType === 'interactive' && loadingText) {
+                                    loadingText.textContent = `Generating your story... ${accumulatedText.length} characters`;
+                                }
+                            } else if (data.t === 'done') {
+                                if (data.success) {
+                                    currentNarrative = data.narrative;
+                                    currentNarrativeType = data.narrative_type;
+                                    currentComplexity = data.complexity || null;
+                                    currentContextParts = { chat: null, library: null };
+                                    if (currentNarrativeType === 'interactive') {
+                                        if (!currentNarrative?.nodes?.length || !currentNarrative.startNodeId) {
+                                            throw new Error('Invalid interactive narrative structure');
+                                        }
+                                        const startNodeExists = currentNarrative.nodes.some(n => n.id === currentNarrative.startNodeId);
+                                        if (!startNodeExists) {
+                                            throw new Error(`Start node "${currentNarrative.startNodeId}" not found`);
+                                        }
+                                        console.log('Interactive narrative loaded:', {
+                                            nodeCount: currentNarrative.nodes.length,
+                                            nodeIds: currentNarrative.nodes.map(n => n.id),
+                                            startNodeId: currentNarrative.startNodeId
+                                        });
+                                    }
+                                    if (currentNarrativeType === 'linear') {
+                                        displayLinearNarrative(currentNarrative);
+                                    } else {
+                                        displayInteractiveNarrative(currentNarrative);
+                                    }
+                                } else {
+                                    throw new Error(data.error || 'Narrative generation failed');
+                                }
+                                return;
+                            }
+                        } catch (parseErr) {
+                            if (parseErr instanceof SyntaxError) continue;
+                            throw parseErr;
+                        }
+                    }
                 }
-                if (!currentNarrative.startNodeId) {
-                    throw new Error('Invalid interactive narrative structure: missing startNodeId');
-                }
-                // Verify start node exists
-                const startNodeExists = currentNarrative.nodes.some(n => n.id === currentNarrative.startNodeId);
-                if (!startNodeExists) {
-                    console.error('Start node validation failed:', {
-                        startNodeId: currentNarrative.startNodeId,
-                        availableNodes: currentNarrative.nodes.map(n => n.id)
-                    });
-                    throw new Error(`Invalid interactive narrative: start node "${currentNarrative.startNodeId}" not found in nodes`);
-                }
-                // Log for debugging
-                console.log('Interactive narrative loaded:', {
-                    nodeCount: currentNarrative.nodes.length,
-                    nodeIds: currentNarrative.nodes.map(n => n.id),
-                    startNodeId: currentNarrative.startNodeId
-                });
             }
-            
-            // Store context parts for feedback generation
-            currentContextParts = {
-                chat: null,
-                library: null
-            };
-            // Note: We'd need to fetch context parts separately if needed for feedback
-            // For now, we'll pass what we have
-
-            // Display narrative
-            if (currentNarrativeType === 'linear') {
-                displayLinearNarrative(currentNarrative);
-            } else {
-                displayInteractiveNarrative(currentNarrative);
+            if (buffer.startsWith('data: ')) {
+                try {
+                    const data = JSON.parse(buffer.slice(6));
+                    if (data.t === 'done' && !data.success) {
+                        throw new Error(data.error || 'Narrative generation failed');
+                    }
+                } catch (parseErr) {
+                    if (parseErr instanceof Error && parseErr.message !== 'Narrative generation failed') {
+                        throw parseErr;
+                    }
+                }
             }
-            
+            if (!currentNarrative) {
+                throw new Error('No narrative received');
+            }
         } catch (error) {
             console.error('Narrative generation error:', error);
             showError(error.message || 'Failed to generate narrative. Please try again.');
