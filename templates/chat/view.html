@@ -183,10 +183,10 @@
                     <i data-lucide="message-circle" class="w-5 h-5"></i>
                     {{ room.name }}
                 </h2>
-                <a href="{{ url_for('room.room_crud.view_room', room_id=room.id) }}" 
-                   id="back-to-room-btn"
+                <a href="{{ url_for('room.room_crud.index') }}" 
+                   id="home-btn"
                    class="text-muted-foreground hover:text-foreground transition-colors text-sm px-2 py-1 rounded-md hover:bg-muted inline-block">
-                    Back to Room
+                    Home
                 </a>
             </div>
             
@@ -407,6 +407,11 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
+                    <a href="{{ url_for('room.room_crud.view_room', room_id=room.id) }}" 
+                       id="back-to-room-btn"
+                       class="text-muted-foreground hover:text-foreground transition-colors text-sm px-2 py-1 rounded-md hover:bg-muted inline-block">
+                        Back to Room
+                    </a>
                     <button id="focus-mode-toggle"
                             class="text-muted-foreground hover:text-foreground transition-colors text-sm px-2 py-1 rounded-md hover:bg-muted"
                             title="Toggle Focus Mode">Focus</button>
