@@ -140,6 +140,47 @@
   .dark .tools-menu-item:hover {
     background: rgba(255,255,255,0.08);
   }
+  /* Invite modal - matches educational tools (quiz, flashcards, etc.) */
+  .invite-modal {
+    position: fixed; inset: 0; z-index: 10002;
+    display: flex; align-items: center; justify-content: center;
+    padding: 1rem;
+  }
+  .invite-modal.hidden { display: none !important; }
+  .invite-modal-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: invite-modal-fade-in 0.2s ease-out;
+  }
+  .invite-modal-content {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 28rem;
+    padding: 1.5rem;
+    background: #ffffff;
+    border: 1px solid var(--border, rgba(0,0,0,0.1));
+    border-radius: 1rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    animation: invite-modal-slide-up 0.3s ease-out;
+  }
+  .dark .invite-modal-content {
+    background: #1a1a1a;
+    border-color: var(--border);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  }
+  @keyframes invite-modal-fade-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes invite-modal-slide-up { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .invite-modal-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;
+  }
+  .invite-modal-close {
+    padding: 0.25rem; color: var(--muted-foreground);
+    background: none; border: none; border-radius: 0.25rem;
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+  }
+  .invite-modal-close:hover { color: var(--foreground); background: var(--muted); }
 </style>
 <script>
   // Add body class for chat page styling
@@ -351,6 +392,15 @@
                     <p class="text-sm text-muted-foreground">No members found.</p>
                     {% endif %}
                 </div>
+                {% if can_invite %}
+                <div class="mt-3 pt-3 border-t border-border">
+                    <button type="button" id="invite-modal-open-btn"
+                            class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium bg-primary/10 text-primary rounded-md hover:bg-primary/20 transition-colors">
+                        <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
+                        Invite to Room
+                    </button>
+                </div>
+                {% endif %}
             </div>
         </details>
         
@@ -649,6 +699,60 @@
     </div>
 </div>
 
+{% if can_invite %}
+<!-- Invite Modal -->
+<div id="invite-modal" class="invite-modal hidden" role="dialog" aria-modal="true" aria-labelledby="invite-modal-title">
+    <div class="invite-modal-backdrop" data-invite-modal-close></div>
+    <div class="invite-modal-content">
+        <div class="invite-modal-header">
+            <h2 id="invite-modal-title" class="text-lg font-semibold text-foreground">Invite to Room</h2>
+            <button type="button" class="invite-modal-close" data-invite-modal-close aria-label="Close">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <p class="text-sm text-muted-foreground mb-4">Invite collaborators to join <strong>{{ room.name }}</strong>. Enter email or username.</p>
+        <form id="invite-modal-form" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="invite-email" class="block text-sm font-medium text-foreground mb-1">Email</label>
+                    <input type="email" id="invite-email" name="email" placeholder="name@example.com"
+                           class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                </div>
+                <div>
+                    <label for="invite-username" class="block text-sm font-medium text-foreground mb-1">Username</label>
+                    <input type="text" id="invite-username" name="username" placeholder="existing_username"
+                           class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                </div>
+            </div>
+            <div>
+                <label for="invite-display-name" class="block text-sm font-medium text-foreground mb-1">Display Name (optional)</label>
+                <input type="text" id="invite-display-name" name="display_name" placeholder="e.g., Jane Doe"
+                       class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="flex items-center gap-3 text-sm cursor-pointer">
+                    <input type="checkbox" name="can_create_chats" class="h-4 w-4" checked>
+                    <span>Allow creating chats in this room</span>
+                </label>
+                <label class="flex items-center gap-3 text-sm cursor-pointer">
+                    <input type="checkbox" name="can_invite_members" class="h-4 w-4">
+                    <span>Allow inviting other members</span>
+                </label>
+            </div>
+            <div id="invite-modal-message" class="hidden text-sm rounded-md p-3"></div>
+            <div class="flex items-center gap-3 pt-2">
+                <button type="submit" id="invite-modal-submit" class="btn btn-primary inline-flex items-center justify-center gap-2">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                    Send Invitation
+                </button>
+                <button type="button" class="btn btn-secondary" data-invite-modal-close>Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
 <!-- Quiz Panel Component -->
 {% include 'components/quiz/quiz_panel.html' %}
 
@@ -666,6 +770,104 @@
 {% block extra_js %}
     {{ super() }}
     <script src="{{ url_for('static', filename='js/chat-view.js') }}?v=2025-10-28"></script>
+    {% if can_invite %}
+    <script>
+    (function() {
+        const roomId = {{ room.id }};
+        const inviteUrl = "{{ url_for('room.room_invitations.invite_members', room_id=room.id) }}";
+        const modal = document.getElementById('invite-modal');
+        const openBtn = document.getElementById('invite-modal-open-btn');
+        const form = document.getElementById('invite-modal-form');
+        const submitBtn = document.getElementById('invite-modal-submit');
+        const messageEl = document.getElementById('invite-modal-message');
+
+        function getCsrfToken() {
+            return document.querySelector('meta[name="csrf-token"]')?.content
+                || document.cookie.match(/csrf_token=([^;]+)/)?.[1]?.replace(/^"(.*)"$/, '$1') || '';
+        }
+
+        function showMessage(text, isError) {
+            messageEl.textContent = text;
+            messageEl.className = 'text-sm rounded-md p-3 ' + (isError ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200' : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200');
+            messageEl.hidden = false;
+        }
+
+        function hideMessage() {
+            messageEl.hidden = true;
+            messageEl.textContent = '';
+        }
+
+        function openModal() {
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                hideMessage();
+                form.reset();
+                try { lucide.createIcons(); } catch (_) {}
+                modal.querySelector('#invite-email')?.focus();
+            }
+        }
+
+        function closeModal() {
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        }
+
+        if (openBtn) openBtn.addEventListener('click', openModal);
+        modal?.querySelectorAll('[data-invite-modal-close]').forEach(el => el.addEventListener('click', closeModal));
+        modal?.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
+        document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) closeModal(); });
+
+        if (form && submitBtn) {
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const email = form.querySelector('[name="email"]').value.trim();
+                const username = form.querySelector('[name="username"]').value.trim();
+                if (!email && !username) {
+                    showMessage('Please enter an email or a username.', true);
+                    form.querySelector('[name="email"]').focus();
+                    return;
+                }
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Sending...';
+                try { lucide.createIcons(); } catch (_) {}
+                hideMessage();
+
+                const formData = new FormData(form);
+                const headers = { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' };
+                const token = getCsrfToken();
+                if (token) headers['X-CSRFToken'] = token;
+
+                try {
+                    const res = await fetch(inviteUrl, {
+                        method: 'POST',
+                        body: formData,
+                        headers: headers,
+                        credentials: 'same-origin'
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (res.ok && data.success) {
+                        showMessage(data.message || 'Invitation sent!', false);
+                        form.reset();
+                        setTimeout(() => { closeModal(); }, 1200);
+                    } else {
+                        showMessage(data.error || 'Something went wrong. Please try again.', true);
+                    }
+                } catch (err) {
+                    showMessage('Network error. Please try again.', true);
+                }
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> Send Invitation';
+                try { lucide.createIcons(); } catch (_) {}
+            });
+        }
+    })();
+    </script>
+    {% endif %}
     <script src="{{ url_for('static', filename='js/pin-toggle.js') }}?v=2025-12-04-inplace"></script>
     <script src="{{ url_for('static', filename='js/pin-chat.js') }}?v=2025-12-04"></script>
     <script src="{{ url_for('static', filename='js/library-tool.js') }}"></script>

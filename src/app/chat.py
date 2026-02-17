@@ -378,9 +378,10 @@ def view_chat(chat_id: int) -> Any:
         }
 
         # Get invitation count for navigation
-        from src.app.room.utils.room_utils import get_invitation_count
+        from src.app.room.utils.room_utils import get_invitation_count, can_user_invite_to_room
 
         invitation_count = get_invitation_count(user)
+        can_invite = can_user_invite_to_room(chat_obj.room, user)
 
         # Extract one-time suggestion payload from session (if present)
         suggestion = None
@@ -433,6 +434,7 @@ def view_chat(chat_id: int) -> Any:
             is_room_owner=is_room_owner,
             pin_chat_ids=pin_chat_ids,
             pin_chat_info=pin_chat_info,
+            can_invite=can_invite,
         )
     except Exception as e:
         # Log exception with full traceback

@@ -15,6 +15,13 @@ from src.app.access_control import get_current_user, require_login, require_room
 
 invitations_bp = Blueprint('room_invitations', __name__)
 
+
+def _wants_json_response(req) -> bool:
+    """True if the client expects a JSON response (e.g. AJAX/fetch)."""
+    accept = req.headers.get("Accept") or ""
+    return "application/json" in accept or req.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+
 @invitations_bp.route("/invite", methods=["GET", "POST"])
 @require_room_access
 def invite_members(room_id: int) -> Any:
@@ -42,7 +49,10 @@ def invite_members(room_id: int) -> Any:
 
             # Require at least one identifier
             if not invitee_email and not invitee_username:
-                flash("Please enter an email or a username to invite.", "error")
+                err = "Please enter an email or a username to invite."
+                if _wants_json_response(request):
+                    return jsonify({"success": False, "error": err}), 400
+                flash(err, "error")
                 return redirect(url_for('room.room_invitations.invite_members', room_id=room_id))
 
             # Resolve invitee by email first, then by username
@@ -64,7 +74,10 @@ def invite_members(room_id: int) -> Any:
                 ).first()
                 
                 if existing_member:
-                    flash("User is already a member of this room.", "warning")
+                    err = "User is already a member of this room."
+                    if _wants_json_response(request):
+                        return jsonify({"success": False, "error": err}), 400
+                    flash(err, "warning")
                     return redirect(url_for('room.room_invitations.invite_members', room_id=room_id))
                 
                 # Create room membership
@@ -93,15 +106,21 @@ def invite_members(room_id: int) -> Any:
                         send_email(invitee.email, f"Invitation to join '{room.name}'", html, f"Join the room: {room_link}")
                     except Exception as _e:
                         current_app.logger.warning(f"[email] Failed to send invitation email: {_e}")
-                flash(f"Invitation sent to {who}!", "success")
+                msg = f"Invitation sent to {who}!"
+                if _wants_json_response(request):
+                    return jsonify({"success": True, "message": msg})
+                flash(msg, "success")
+                return redirect(url_for('room.room_invitations.invite_members', room_id=room_id))
                 
             else:
                 if invitee_username:
-                    flash(f"No user found with username '@{invitee_username}'. Please check the spelling and try again.", "error")
+                    err = f"No user found with username '@{invitee_username}'. Please check the spelling and try again."
                 else:
-                    flash("User not found. They need to register first.", "error")
-            
-            return redirect(url_for('room.room_invitations.invite_members', room_id=room_id))
+                    err = "User not found. They need to register first."
+                if _wants_json_response(request):
+                    return jsonify({"success": False, "error": err}), 400
+                flash(err, "error")
+                return redirect(url_for('room.room_invitations.invite_members', room_id=room_id))
         
         # GET request - show invite form
         members = RoomService.get_room_members(room, user)
