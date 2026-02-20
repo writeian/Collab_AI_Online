@@ -547,17 +547,10 @@ Building on all these insights from your learning journey, let's continue with t
 
 
 def call_anthropic_api(messages: List[Dict[str, str]], system_prompt: str = "", max_tokens: int = 300, timeout: int = 30) -> Tuple[str, bool]:
-    """Call Anthropic API with the given messages."""
+    """Call Anthropic API with the given messages. Uses official SDK for correct endpoint/headers."""
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
         raise Exception("ANTHROPIC_API_KEY not found in environment variables")
-
-    headers = {
-        "Content-Type": "application/json",
-        "x-api-key": api_key,
-        "anthropic-version": "2023-06-01",
-        "anthropic-beta": "messages-2023-12-15",
-    }
 
     # Convert messages to Anthropic format
     user_messages = []
@@ -565,88 +558,67 @@ def call_anthropic_api(messages: List[Dict[str, str]], system_prompt: str = "", 
         if msg.get("role") != "system":
             user_messages.append(msg.get("content", ""))
 
-    # Combine user messages
     user_content = "\n\n".join(user_messages)
 
     def _get_anthropic_model() -> str:
-        # Default to claude-3-opus-20240229 (verified working model)
-        # User can override with ANTHROPIC_MODEL env var
-        return os.getenv("ANTHROPIC_MODEL", "claude-3-opus-20240229")
+        # claude-3-5-sonnet-20241022 was retired; use current model
+        model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
+        if "/" in model:
+            model = model.split("/", 1)[-1]
+        return model.strip()
 
-    data = {
-        "model": _get_anthropic_model(),
-        "max_tokens": max_tokens,
-        "messages": [{"role": "user", "content": user_content}],
-    }
-
-    if system_prompt:
-        data["system"] = system_prompt
-
-    # Retry logic for transient errors
     import random
     max_retries = 2
-    
+
     for attempt in range(max_retries):
         try:
-            response = requests.post(
-                "https://api.anthropic.com/v1/messages", 
-                headers=headers, 
-                json=data,
-                timeout=timeout
-            )
-            response.raise_for_status()
+            from anthropic import Anthropic
+            client = Anthropic(api_key=api_key)
+            create_kwargs = {
+                "model": _get_anthropic_model(),
+                "max_tokens": max_tokens,
+                "messages": [{"role": "user", "content": user_content}],
+                "timeout": timeout,
+            }
+            if system_prompt:
+                create_kwargs["system"] = system_prompt
 
-            result = response.json()
-            
-            # Detect truncation: Anthropic returns stop_reason
-            # Values: "end_turn" (natural), "max_tokens" (truncated), "stop_sequence"
-            stop_reason = result.get("stop_reason", "")
+            message = client.messages.create(**create_kwargs)
+
+            stop_reason = getattr(message, "stop_reason", "") or ""
             is_truncated = stop_reason == "max_tokens"
-            
-            response_text = result["content"][0]["text"]
-            
+            response_text = ""
+            if message.content:
+                first_block = message.content[0]
+                response_text = getattr(first_block, "text", str(first_block))
+
             if is_truncated:
                 try:
                     current_app.logger.info(f"⚠️ Response truncated at {max_tokens} tokens")
-                except:
+                except Exception:
                     pass
-            
+
             return response_text, is_truncated
 
-        except requests.exceptions.HTTPError as e:
-            status_code = e.response.status_code if hasattr(e, 'response') else 0
-            
-            # Retry on transient errors (rate limit, server errors)
+        except Exception as e:
+            err_str = str(e)
+            status_code = getattr(getattr(e, "response", None), "status_code", None) or 0
+            if "404" in err_str:
+                status_code = 404
+
             if status_code in (429, 500, 502, 503, 504) and attempt < max_retries - 1:
-                # Exponential backoff with jitter: 200-500ms base, doubles each retry
                 jitter = random.uniform(0.2, 0.5)
                 backoff = jitter * (2 ** attempt)
                 try:
                     current_app.logger.warning(
                         f"⚠️ Anthropic API error {status_code}, retrying in {backoff:.2f}s (attempt {attempt + 1}/{max_retries})"
                     )
-                except:
+                except Exception:
                     pass
                 time.sleep(backoff)
                 continue
-            
-            # Non-retryable error or max retries reached
-            raise Exception(f"Anthropic API call failed: {str(e)}")
-            
-        except requests.exceptions.RequestException as e:
-            # Network errors - retry once
-            if attempt < max_retries - 1:
-                jitter = random.uniform(0.2, 0.5)
-                try:
-                    current_app.logger.warning(f"⚠️ Network error, retrying in {jitter:.2f}s")
-                except:
-                    pass
-                time.sleep(jitter)
-                continue
-            raise Exception(f"Anthropic API call failed: {str(e)}")
-        
-        except Exception as e:
-            raise Exception(f"Anthropic API call failed: {str(e)}")
+
+            raise Exception(f"Anthropic API call failed: {err_str}")
 
 
 def call_anthropic_api_stream(messages: List[Dict[str, str]], system_prompt: str = "", max_tokens: int = 300, timeout: int = 30):
@@ -665,7 +637,10 @@ def call_anthropic_api_stream(messages: List[Dict[str, str]], system_prompt: str
             user_messages.append(msg.get("content", ""))
     user_content = "\n\n".join(user_messages)
 
-    model = os.getenv("ANTHROPIC_MODEL", "claude-3-opus-20240229")
+    model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
+    if "/" in model:
+        model = model.split("/", 1)[-1]
+    model = model.strip()
 
     try:
         from anthropic import Anthropic

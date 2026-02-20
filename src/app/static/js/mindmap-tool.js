@@ -1446,9 +1446,9 @@ console.log('[Mind Map] Script loading...');
 
     /**
      * Show connection anchors on node hover
+     * When connecting, still show anchors on target nodes so user can see drop targets
      */
     function showConnectionAnchors(node) {
-        if (isConnecting) return;
         keepAnchorsVisible(node);
     }
 
@@ -1460,7 +1460,7 @@ console.log('[Mind Map] Script loading...');
         const anchors = node.querySelectorAll('.mindmap-anchor');
         anchors.forEach(anchor => {
             anchor.classList.remove('mindmap-anchor--visible');
-            anchor.removeEventListener('click', handleAnchorClick);
+            anchor.removeEventListener('mousedown', handleAnchorMouseDown);
         });
     }
 
@@ -1475,8 +1475,8 @@ console.log('[Mind Map] Script loading...');
         const anchors = node.querySelectorAll('.mindmap-anchor');
         anchors.forEach(anchor => {
             anchor.classList.add('mindmap-anchor--visible');
-            anchor.removeEventListener('click', handleAnchorClick);
-            anchor.addEventListener('click', handleAnchorClick);
+            anchor.removeEventListener('mousedown', handleAnchorMouseDown);
+            anchor.addEventListener('mousedown', handleAnchorMouseDown);
         });
     }
 
@@ -1553,20 +1553,15 @@ console.log('[Mind Map] Script loading...');
     }
 
     /**
-     * Handle anchor click to start connection
+     * Handle anchor mousedown to start connection (click-and-drag)
      */
-    function handleAnchorClick(e) {
+    function handleAnchorMouseDown(e) {
         e.stopPropagation();
+        e.preventDefault();
         
         const anchor = e.currentTarget;
         const nodeId = anchor.getAttribute('data-node-id');
         const anchorSide = anchor.getAttribute('data-anchor-side');
-        
-        // If already connecting, treat this as the target anchor
-        if (isConnecting && connectionSource && nodeId !== connectionSource) {
-            completeConnection(nodeId, anchorSide);
-            return;
-        }
         
         startConnection(nodeId, anchorSide);
     }
@@ -1689,8 +1684,9 @@ console.log('[Mind Map] Script loading...');
         connectionSource = nodeId;
         connectionSourceAnchor = anchorSide;
         
-        // Change cursor
+        // Change cursor and prevent text selection during drag
         document.body.style.cursor = 'crosshair';
+        document.body.style.userSelect = 'none';
 
         // Keep source anchors visible so user can start additional lines without re-hover
         keepAnchorsVisible(nodeId);
@@ -1710,9 +1706,9 @@ console.log('[Mind Map] Script loading...');
         connectionPreviewLine.setAttribute('stroke-width', '2');
         svg.appendChild(connectionPreviewLine);
         
-        // Add mouse move and click handlers
+        // Add mouse move and mouseup handlers (click-and-drag: complete on release)
         container.addEventListener('mousemove', drawConnectionPreview);
-        container.addEventListener('click', handleConnectionTargetClick);
+        document.addEventListener('mouseup', handleConnectionTargetMouseUp);
         container.addEventListener('mouseleave', cancelConnectionDrawing);
         
         // Add ESC key handler
@@ -1782,61 +1778,54 @@ console.log('[Mind Map] Script loading...');
     }
 
     /**
-     * Handle click on target node to complete connection
+     * Handle mouseup on target node to complete connection (click-and-drag)
      */
-    function handleConnectionTargetClick(e) {
+    function handleConnectionTargetMouseUp(e) {
         if (!isConnecting) return;
         
-        // If clicking directly on an anchor, use that anchor as the target
-        const targetAnchorEl = e.target.classList?.contains('mindmap-anchor') ? e.target : null;
-        const targetNode = targetAnchorEl ? targetAnchorEl.closest('[data-node-id]') : e.target.closest('[data-node-id]');
+        // Use element under cursor at release point (user may have dragged)
+        const targetEl = document.elementFromPoint(e.clientX, e.clientY);
+        const targetAnchorEl = targetEl?.classList?.contains('mindmap-anchor') ? targetEl : null;
+        const targetNode = targetAnchorEl ? targetAnchorEl.closest('[data-node-id]') : targetEl?.closest('[data-node-id]');
         if (!targetNode) {
-            // Clicked outside, cancel
             cancelConnectionDrawing();
             return;
         }
         
         const targetNodeId = targetNode.getAttribute('data-node-id');
         if (targetNodeId === connectionSource) {
-            // Can't connect to self
             cancelConnectionDrawing();
             return;
         }
         
-        // Determine target anchor based on relative position from source anchor
         const container = document.getElementById('mindmap-display-container');
         if (!container) {
             cancelConnectionDrawing();
             return;
         }
         
-        // Get source anchor position
         const sourceAnchorPos = getAnchorPosition(connectionSource, connectionSourceAnchor);
         if (!sourceAnchorPos) {
             cancelConnectionDrawing();
             return;
         }
         
-        // If an anchor was clicked, use that anchor side; otherwise choose closest anchor to the click
         let targetAnchor = targetAnchorEl?.getAttribute('data-anchor-side');
         if (!targetAnchor) {
-            const targetRect = targetNode.getBoundingClientRect();
             const containerRect = container.getBoundingClientRect();
-            const clickScreenX = e.clientX - containerRect.left;
-            const clickScreenY = e.clientY - containerRect.top;
-            const clickWorld = screenToWorld(clickScreenX, clickScreenY);
+            const releaseScreenX = e.clientX - containerRect.left;
+            const releaseScreenY = e.clientY - containerRect.top;
+            const releaseWorld = screenToWorld(releaseScreenX, releaseScreenY);
+            const releaseX = releaseWorld.x;
+            const releaseY = releaseWorld.y;
             
-            const clickX = clickWorld.x;
-            const clickY = clickWorld.y;
-            
-            // Choose anchor based on closest distance to click point
             const anchorSides = ['left', 'right', 'top', 'bottom'];
             let closestSide = 'left';
             let closestDist = Infinity;
             anchorSides.forEach(side => {
                 const pos = getAnchorPosition(targetNodeId, side);
                 if (!pos) return;
-                const dist = Math.hypot(pos.x - clickX, pos.y - clickY);
+                const dist = Math.hypot(pos.x - releaseX, pos.y - releaseY);
                 if (dist < closestDist) {
                     closestDist = dist;
                     closestSide = side;
@@ -2695,14 +2684,15 @@ console.log('[Mind Map] Script loading...');
         }
         
         document.body.style.cursor = '';
+        document.body.style.userSelect = '';
         
         // Remove event listeners
         const container = document.getElementById('mindmap-display-container');
         if (container) {
             container.removeEventListener('mousemove', drawConnectionPreview);
-            container.removeEventListener('click', handleConnectionTargetClick);
             container.removeEventListener('mouseleave', cancelConnectionDrawing);
         }
+        document.removeEventListener('mouseup', handleConnectionTargetMouseUp);
         document.removeEventListener('keydown', handleConnectionKeyDown);
         
         // Remove drop target highlights
