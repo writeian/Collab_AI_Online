@@ -438,9 +438,17 @@
         }
 
         try {
-            let response = await tryStreaming();
+            const loadingTextEl = document.getElementById('narrative-loading-text');
+            // Use non-streaming for interactive narratives - streaming has been unreliable and
+            // interactive generation can take 1-2 min; streaming fallback doubles the wait
+            const useStreaming = narrativeType === 'linear';
+            let response = useStreaming ? await tryStreaming() : { ok: false };
             if (!response.ok) {
-                console.warn('Streaming failed (status ' + response.status + '), falling back to non-streaming');
+                if (!useStreaming) {
+                    if (loadingTextEl) loadingTextEl.textContent = 'Generating your story... (this may take 1–2 minutes)';
+                } else {
+                    console.warn('Streaming failed (status ' + response.status + '), falling back to non-streaming');
+                }
                 const data = await tryNonStreaming();
                 currentNarrative = data.narrative;
                 currentNarrativeType = data.narrative_type;
@@ -466,10 +474,11 @@
             const decoder = new TextDecoder();
             let buffer = '';
             let accumulatedText = '';
+            let streamedNodeCount = 0;
             const linearContent = document.getElementById('narrative-linear-content');
             const linearContainer = document.getElementById('narrative-linear-container');
             const interactiveContainer = document.getElementById('narrative-interactive-container');
-            const loadingText = document.getElementById('narrative-loading-text');
+            const loadingText = loadingTextEl;
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -483,6 +492,13 @@
                             const data = JSON.parse(line.slice(6));
                             if (data.t === 'started') {
                                 if (loadingText) loadingText.textContent = 'Receiving your story...';
+                            } else if (data.t === 'meta') {
+                                if (loadingText) loadingText.textContent = 'Building your story...';
+                            } else if (data.t === 'node') {
+                                if (loadingText && data.node) {
+                                    streamedNodeCount++;
+                                    loadingText.textContent = `Building your story... ${streamedNodeCount} node${streamedNodeCount !== 1 ? 's' : ''} received`;
+                                }
                             } else if (data.t === 'chunk') {
                                 accumulatedText += data.text || '';
                                 if (narrativeType === 'linear' && linearContent) {
@@ -495,7 +511,7 @@
                                     showStep(NARRATIVE_STEPS.DISPLAY);
                                     hideLoading();
                                     linearContent.scrollTop = linearContent.scrollHeight;
-                                } else if (narrativeType === 'interactive' && loadingText) {
+                                } else if (narrativeType === 'interactive' && loadingText && !data.node) {
                                     loadingText.textContent = `Building your story... ${accumulatedText.length} characters`;
                                 }
                             } else if (data.t === 'done') {
@@ -538,8 +554,23 @@
             if (buffer.startsWith('data: ')) {
                 try {
                     const data = JSON.parse(buffer.slice(6));
-                    if (data.t === 'done' && !data.success) {
-                        throw new Error(data.error || 'Narrative generation failed');
+                    if (data.t === 'done') {
+                        if (!data.success) {
+                            throw new Error(data.error || 'Narrative generation failed');
+                        }
+                        currentNarrative = data.narrative;
+                        currentNarrativeType = data.narrative_type;
+                        currentComplexity = data.complexity || null;
+                        currentContextParts = { chat: null, library: null };
+                        if (currentNarrativeType === 'interactive' && currentNarrative?.nodes?.length) {
+                            const startExists = currentNarrative.nodes.some(n => n.id === currentNarrative.startNodeId);
+                            if (!startExists) throw new Error(`Start node "${currentNarrative.startNodeId}" not found`);
+                        }
+                        if (currentNarrativeType === 'linear') {
+                            displayLinearNarrative(currentNarrative);
+                        } else {
+                            displayInteractiveNarrative(currentNarrative);
+                        }
                     }
                 } catch (parseErr) {
                     if (parseErr instanceof Error && parseErr.message !== 'Narrative generation failed') {
@@ -548,7 +579,25 @@
                 }
             }
             if (!currentNarrative) {
-                throw new Error('No narrative received');
+                console.warn('Streaming completed without narrative, falling back to non-streaming API');
+                try {
+                    const data = await tryNonStreaming();
+                    currentNarrative = data.narrative;
+                    currentNarrativeType = data.narrative_type;
+                    currentComplexity = data.complexity || null;
+                    currentContextParts = { chat: null, library: null };
+                    if (currentNarrativeType === 'interactive' && currentNarrative?.nodes?.length) {
+                        const startExists = currentNarrative.nodes.some(n => n.id === currentNarrative.startNodeId);
+                        if (!startExists) throw new Error(`Start node "${currentNarrative.startNodeId}" not found`);
+                    }
+                    if (currentNarrativeType === 'linear') {
+                        displayLinearNarrative(currentNarrative);
+                    } else {
+                        displayInteractiveNarrative(currentNarrative);
+                    }
+                } catch (fallbackErr) {
+                    throw new Error('No narrative received');
+                }
             }
         } catch (error) {
             console.error('Narrative generation error:', error);

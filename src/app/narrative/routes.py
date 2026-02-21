@@ -402,6 +402,30 @@ Return ONLY valid JSON, no additional text before or after"""
     return base_prompt
 
 
+def generate_interactive_narrative_prompt_streaming(context_parts: Dict[str, Optional[str]], context_mode: str, complexity: str, instructions: Optional[str] = None) -> str:
+    """
+    Generate prompt for interactive narrative with STREAMING (NDJSON) output format.
+    AI outputs one JSON object per line: first line has startNodeId, then one node per line.
+    """
+    base = generate_interactive_narrative_prompt(context_parts, context_mode, complexity, instructions)
+    # Replace the JSON output section with NDJSON instructions
+    streaming_addendum = """
+
+STREAMING OUTPUT - USE NDJSON (replaces single-JSON format above):
+Output newline-delimited JSON. One complete JSON object per line. No other text.
+
+Line 1: {"startNodeId": "start"}
+Line 2+: One node per line: {"id": "start", "content": "...", "choices": [...], "isEnding": false}
+
+Example:
+{"startNodeId": "start"}
+{"id": "start", "content": "Story...", "choices": [{"id":"c1","text":"Choice 1","nextNode":"node1"}], "isEnding": false}
+{"id": "node1", "content": "More...", "choices": [], "isEnding": true}
+
+Output each node on its own line as soon as it is complete. Each line = one valid JSON object."""
+    return base + streaming_addendum
+
+
 @narrative.route('/generate', methods=['POST'])
 @login_required
 @limiter.limit("10 per minute; 50 per hour")
@@ -564,16 +588,11 @@ def generate_narrative():
                 narrative_data = None
                 last_error = None
                 
-                # Mode-specific timeouts: Challenge needs ~3x output of Explanation
-                NARRATIVE_TIMEOUTS = {'explanation': 30, 'simulation': 60, 'challenge': 120}
-                api_timeout = NARRATIVE_TIMEOUTS.get(complexity, 30)
+                # Mode-specific timeouts: simulation/challenge need more time for large JSON output
+                NARRATIVE_TIMEOUTS = {'explanation': 45, 'simulation': 90, 'challenge': 150}
+                api_timeout = NARRATIVE_TIMEOUTS.get(complexity, 45)
 
-                for attempt in range(max_retries + 1):
-                    try:
-                        # Call AI
-                        text_content, is_truncated = call_anthropic_api(
-                            messages=[{"role": "user", "content": prompt}],
-                            system_prompt=f"""You are an expert at creating interactive educational narratives. 
+                sys_prompt_interactive = f"""You are an expert at creating interactive educational narratives.
 
 CRITICAL OUTPUT REQUIREMENT:
 - You MUST return ONLY valid JSON. Do NOT include any explanatory text, comments, or discussion before or after the JSON.
@@ -597,11 +616,24 @@ Step 3: Add choices to each node, referencing ONLY existing node IDs
 Step 4: Verify all requirements are met (character count, node count, references)
 Step 5: Return ONLY the JSON object - no other text
 
-Return ONLY valid JSON that passes these validation checks. Double-check all requirements before responding.""",
-                            max_tokens=8192,  # Maximum supported by current Claude models (claude-3-5-sonnet/haiku)
+Return ONLY valid JSON that passes these validation checks. Double-check all requirements before responding."""
+
+                for attempt in range(max_retries + 1):
+                    try:
+                        # Use streaming API: keeps connection alive during long generation and avoids timeouts
+                        # (Anthropic recommends streaming for large max_tokens; we collect full response)
+                        text_content, is_truncated = None, False
+                        for item in call_anthropic_api_stream(
+                            messages=[{"role": "user", "content": prompt}],
+                            system_prompt=sys_prompt_interactive,
+                            max_tokens=8192,
                             timeout=api_timeout
-                        )
-                        
+                        ):
+                            if isinstance(item, tuple):
+                                text_content, is_truncated = item
+                            else:
+                                pass  # discard chunks, we only need final result
+
                         if not text_content or not text_content.strip():
                             raise ValueError("Empty response from AI")
                         
@@ -1112,22 +1144,22 @@ def generate_narrative_stream():
                     yield _sse_event({"t": "done", "success": False, "error": str(e)})
                 return
 
-            # Interactive
+            # Interactive - stream chunks, then parse full JSON at end (original working flow)
             complexity_constraints = {
                 'explanation': {'choices_per_node': 2, 'min_chars': 2000, 'min_nodes': 5, 'min_chars_per_node': 200},
                 'simulation': {'choices_per_node': 3, 'min_chars': 4000, 'min_nodes': 8, 'min_chars_per_node': 300},
                 'challenge': {'choices_per_node': 4, 'min_chars': 6000, 'min_nodes': 12, 'min_chars_per_node': 400},
             }
             constraints = complexity_constraints.get(complexity, complexity_constraints['explanation'])
-            NARRATIVE_TIMEOUTS = {'explanation': 30, 'simulation': 60, 'challenge': 120}
-            api_timeout = NARRATIVE_TIMEOUTS.get(complexity, 30)
+            NARRATIVE_TIMEOUTS = {'explanation': 45, 'simulation': 90, 'challenge': 150}
+            api_timeout = NARRATIVE_TIMEOUTS.get(complexity, 45)
             prompt = generate_interactive_narrative_prompt(context_parts, context_mode, complexity, instructions)
             sys_prompt = f"""You are an expert at creating interactive educational narratives.
 CRITICAL: Return ONLY valid JSON. Start with {{ and end with }}. No text before or after.
 NO LOOPS: No choice may point to "start" or to any node already on the path from start. Each choice leads only to new nodes or endings.
 Create at least {constraints['min_nodes']} nodes, {constraints['min_chars']} characters total.
 Each node: id, content, choices, isEnding. Each choice: id, text, nextNode."""
-            yield _sse_event({"t": "started"})  # Establish stream immediately
+            yield _sse_event({"t": "started"})
             try:
                 for item in call_anthropic_api_stream(
                     messages=[{"role": "user", "content": prompt}],
