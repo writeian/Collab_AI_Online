@@ -2612,8 +2612,19 @@ console.log('[Mind Map] Script loading...');
         const loadingEl = document.getElementById('mindmap-loading');
         const loadingText = document.getElementById('mindmap-loading-text');
         
-        if (loadingEl) loadingEl.classList.remove('hidden');
-        if (loadingText) loadingText.textContent = text;
+        if (loadingEl) {
+            loadingEl.classList.remove('hidden');
+            if (loadingText) loadingText.textContent = text;
+        }
+        
+        // Hide all steps so loading is the only visible content (like narrative tool)
+        Object.values(MINDMAP_STEPS).forEach(step => {
+            const stepEl = document.getElementById(step);
+            if (stepEl) {
+                stepEl.classList.remove('mindmap-step--active');
+                stepEl.classList.add('mindmap-step--hidden');
+            }
+        });
     }
 
     /**

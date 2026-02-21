@@ -327,6 +327,14 @@
   margin-bottom: 2rem;
 }
 
+.flashcards-grid-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
 .flashcards-grid-container[data-grid="1x2"] {
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: repeat(1, 1fr);

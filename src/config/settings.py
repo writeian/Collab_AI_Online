@@ -21,9 +21,14 @@ class Config:
     """Base configuration class"""
 
     SECRET_KEY = os.environ.get("SECRET_KEY") or "dev-secret-key-change-in-production"
+    # SQLite fallback: use project instance folder (works on Mac/Linux/Windows)
+    _config_dir = os.path.dirname(os.path.abspath(__file__))
+    _project_root = os.path.abspath(os.path.join(_config_dir, "..", ".."))
+    _instance_dir = os.path.join(_project_root, "instance")
+    _sqlite_path = os.path.join(_instance_dir, "ai_collab.db")
     SQLALCHEMY_DATABASE_URI = (
         os.environ.get("DATABASE_URL")
-        or "sqlite:///C:/Users/write/Projects/AI_Collab_Online/instance/ai_collab.db"
+        or f"sqlite:///{_sqlite_path}"
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     

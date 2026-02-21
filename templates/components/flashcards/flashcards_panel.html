@@ -37,12 +37,13 @@
 
                 <div id="flashcards-grid-size-field" class="flashcards-config-field">
                     <label for="flashcards-grid-size" class="flashcards-config-label">
-                        Grid size (cards per row)
+                        Grid size
                     </label>
                     <select id="flashcards-grid-size" name="grid_size" class="flashcards-config-select">
-                        <option value="2">2</option>
-                        <option value="3" selected>3</option>
-                        <option value="4">4</option>
+                        <option value="1x2">1×2 (2 cards)</option>
+                        <option value="2x2">2×2 (4 cards)</option>
+                        <option value="2x3" selected>2×3 (6 cards)</option>
+                        <option value="3x3">3×3 (9 cards)</option>
                     </select>
                 </div>
 
@@ -87,14 +88,11 @@
 
         <!-- Step 2: Grid View -->
         <div id="flashcards-step-grid" class="flashcards-step flashcards-step--hidden">
-            <div class="flashcards-grid-header">
-                <span id="flashcards-grid-counter">0 cards</span>
+            <div id="flashcards-grid-container" class="flashcards-grid-container"></div>
+            <div class="flashcards-grid-actions">
                 <button type="button" class="flashcards-btn flashcards-btn--secondary" id="flashcards-generate-more-btn">
                     Generate More
                 </button>
-            </div>
-            <div id="flashcards-grid-container" class="flashcards-grid-container"></div>
-            <div class="flashcards-grid-actions">
                 <button type="button" class="flashcards-btn flashcards-btn--primary" id="flashcards-close-btn">
                     Close
                 </button>

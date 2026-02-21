@@ -884,14 +884,25 @@
     }
 
     /**
-     * Show loading state
+     * Show loading state (switches to loading page, hiding all steps like narrative tool)
      */
     function showLoading(text = 'Loading...') {
         const loadingEl = document.getElementById('flashcards-loading');
         const loadingText = document.getElementById('flashcards-loading-text');
         
-        if (loadingEl) loadingEl.classList.remove('hidden');
-        if (loadingText) loadingText.textContent = text;
+        if (loadingEl) {
+            loadingEl.classList.remove('hidden');
+            if (loadingText) loadingText.textContent = text;
+        }
+        
+        // Hide all steps so loading is the only visible content
+        Object.values(FLASHCARDS_STEPS).forEach(step => {
+            const stepEl = document.getElementById(step);
+            if (stepEl) {
+                stepEl.classList.remove('flashcards-step--active');
+                stepEl.classList.add('flashcards-step--hidden');
+            }
+        });
     }
 
     /**
