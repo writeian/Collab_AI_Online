@@ -546,6 +546,19 @@ Building on all these insights from your learning journey, let's continue with t
     return base_prompt
 
 
+def _anthropic_supports_cache_control() -> bool:
+    """Check if installed Anthropic SDK supports cache_control (added in 0.83.0)."""
+    try:
+        import anthropic
+        v = getattr(anthropic, "__version__", "0.0.0")
+        parts = v.split(".")
+        major = int(parts[0]) if len(parts) > 0 else 0
+        minor = int(parts[1]) if len(parts) > 1 else 0
+        return (major > 0) or (major == 0 and minor >= 83)
+    except Exception:
+        return False
+
+
 def call_anthropic_api(messages: List[Dict[str, str]], system_prompt: str = "", max_tokens: int = 300, timeout: int = 30, cache_control: Optional[Dict] = None) -> Tuple[str, bool]:
     """Call Anthropic API with the given messages. Uses official SDK for correct endpoint/headers."""
     api_key = os.getenv("ANTHROPIC_API_KEY")
@@ -582,7 +595,7 @@ def call_anthropic_api(messages: List[Dict[str, str]], system_prompt: str = "", 
             }
             if system_prompt:
                 create_kwargs["system"] = system_prompt
-            if cache_control is not None:
+            if cache_control is not None and _anthropic_supports_cache_control():
                 create_kwargs["cache_control"] = cache_control
 
             message = client.messages.create(**create_kwargs)
@@ -655,7 +668,7 @@ def call_anthropic_api_stream(messages: List[Dict[str, str]], system_prompt: str
         }
         if system_prompt:
             stream_kwargs["system"] = system_prompt
-        if cache_control is not None:
+        if cache_control is not None and _anthropic_supports_cache_control():
             stream_kwargs["cache_control"] = cache_control
         with client.messages.stream(**stream_kwargs) as stream:
             full_text = []
