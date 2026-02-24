@@ -546,7 +546,7 @@ Building on all these insights from your learning journey, let's continue with t
     return base_prompt
 
 
-def call_anthropic_api(messages: List[Dict[str, str]], system_prompt: str = "", max_tokens: int = 300, timeout: int = 30) -> Tuple[str, bool]:
+def call_anthropic_api(messages: List[Dict[str, str]], system_prompt: str = "", max_tokens: int = 300, timeout: int = 30, cache_control: Optional[Dict] = None) -> Tuple[str, bool]:
     """Call Anthropic API with the given messages. Uses official SDK for correct endpoint/headers."""
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
@@ -582,6 +582,8 @@ def call_anthropic_api(messages: List[Dict[str, str]], system_prompt: str = "", 
             }
             if system_prompt:
                 create_kwargs["system"] = system_prompt
+            if cache_control is not None:
+                create_kwargs["cache_control"] = cache_control
 
             message = client.messages.create(**create_kwargs)
 
@@ -621,7 +623,7 @@ def call_anthropic_api(messages: List[Dict[str, str]], system_prompt: str = "", 
             raise Exception(f"Anthropic API call failed: {err_str}")
 
 
-def call_anthropic_api_stream(messages: List[Dict[str, str]], system_prompt: str = "", max_tokens: int = 300, timeout: int = 30):
+def call_anthropic_api_stream(messages: List[Dict[str, str]], system_prompt: str = "", max_tokens: int = 300, timeout: int = 30, cache_control: Optional[Dict] = None):
     """
     Call Anthropic API with streaming. Yields text chunks as they arrive.
     Yields: str for each chunk, then (full_text, is_truncated) as final yield.
@@ -653,6 +655,8 @@ def call_anthropic_api_stream(messages: List[Dict[str, str]], system_prompt: str
         }
         if system_prompt:
             stream_kwargs["system"] = system_prompt
+        if cache_control is not None:
+            stream_kwargs["cache_control"] = cache_control
         with client.messages.stream(**stream_kwargs) as stream:
             full_text = []
             for chunk in stream.text_stream:

@@ -219,23 +219,23 @@ def generate_interactive_narrative_prompt(context_parts: Dict[str, Optional[str]
     complexity_constraints = {
         'explanation': {
             'choices_per_node': 2,
-            'min_chars': 2000,
-            'min_nodes': 5,
-            'min_chars_per_node': 200,
+            'min_chars': 1500,
+            'min_nodes': 4,
+            'min_chars_per_node': 150,
             'description': 'Few choices, explicit explanations'
         },
         'simulation': {
             'choices_per_node': 3,
-            'min_chars': 4000,
-            'min_nodes': 8,
-            'min_chars_per_node': 300,
+            'min_chars': 3000,
+            'min_nodes': 6,
+            'min_chars_per_node': 200,
             'description': 'Multiple trade-offs, delayed consequences'
         },
         'challenge': {
             'choices_per_node': 4,
-            'min_chars': 6000,
-            'min_nodes': 12,
-            'min_chars_per_node': 400,
+            'min_chars': 5000,
+            'min_nodes': 8,
+            'min_chars_per_node': 300,
             'description': 'Conflicting goals, minimal guidance'
         }
     }
@@ -464,23 +464,23 @@ def generate_narrative():
             complexity_constraints = {
                 'explanation': {
                     'choices_per_node': 2,
-                    'min_chars': 2000,
-                    'min_nodes': 5,
-                    'min_chars_per_node': 200,
+                    'min_chars': 1500,
+                    'min_nodes': 4,
+                    'min_chars_per_node': 150,
                     'description': 'Few choices, explicit explanations'
                 },
                 'simulation': {
                     'choices_per_node': 3,
-                    'min_chars': 4000,
-                    'min_nodes': 8,
-                    'min_chars_per_node': 300,
+                    'min_chars': 3000,
+                    'min_nodes': 6,
+                    'min_chars_per_node': 200,
                     'description': 'Multiple trade-offs, delayed consequences'
                 },
                 'challenge': {
                     'choices_per_node': 4,
-                    'min_chars': 6000,
-                    'min_nodes': 12,
-                    'min_chars_per_node': 400,
+                    'min_chars': 5000,
+                    'min_nodes': 8,
+                    'min_chars_per_node': 300,
                     'description': 'Conflicting goals, minimal guidance'
                 }
             }
@@ -539,7 +539,8 @@ def generate_narrative():
                 text_content, is_truncated = call_anthropic_api(
                     messages=[{"role": "user", "content": prompt}],
                     system_prompt="You are an expert at creating educational narratives. Follow all instructions strictly and return only the narrative text.",
-                    max_tokens=4000
+                    max_tokens=4000,
+                    cache_control={"type": "ephemeral"}
                 )
                 
                 if not text_content or not text_content.strip():
@@ -557,23 +558,23 @@ def generate_narrative():
                 complexity_constraints = {
                     'explanation': {
                         'choices_per_node': 2,
-                        'min_chars': 2000,
-                        'min_nodes': 5,
-                        'min_chars_per_node': 200,
+                        'min_chars': 1500,
+                        'min_nodes': 4,
+                        'min_chars_per_node': 150,
                         'description': 'Few choices, explicit explanations'
                     },
                     'simulation': {
                         'choices_per_node': 3,
-                        'min_chars': 4000,
-                        'min_nodes': 8,
-                        'min_chars_per_node': 300,
+                        'min_chars': 3000,
+                        'min_nodes': 6,
+                        'min_chars_per_node': 200,
                         'description': 'Multiple trade-offs, delayed consequences'
                     },
                     'challenge': {
                         'choices_per_node': 4,
-                        'min_chars': 6000,
-                        'min_nodes': 12,
-                        'min_chars_per_node': 400,
+                        'min_chars': 5000,
+                        'min_nodes': 8,
+                        'min_chars_per_node': 300,
                         'description': 'Conflicting goals, minimal guidance'
                     }
                 }
@@ -627,7 +628,8 @@ Return ONLY valid JSON that passes these validation checks. Double-check all req
                             messages=[{"role": "user", "content": prompt}],
                             system_prompt=sys_prompt_interactive,
                             max_tokens=8192,
-                            timeout=api_timeout
+                            timeout=api_timeout,
+                            cache_control={"type": "ephemeral"}
                         ):
                             if isinstance(item, tuple):
                                 text_content, is_truncated = item
@@ -1130,7 +1132,8 @@ def generate_narrative_stream():
                         messages=[{"role": "user", "content": prompt}],
                         system_prompt=sys_prompt,
                         max_tokens=4000,
-                        timeout=60
+                        timeout=60,
+                        cache_control={"type": "ephemeral"}
                     ):
                         if isinstance(item, tuple):
                             text_content, _ = item
@@ -1146,9 +1149,9 @@ def generate_narrative_stream():
 
             # Interactive - stream chunks, then parse full JSON at end (original working flow)
             complexity_constraints = {
-                'explanation': {'choices_per_node': 2, 'min_chars': 2000, 'min_nodes': 5, 'min_chars_per_node': 200},
-                'simulation': {'choices_per_node': 3, 'min_chars': 4000, 'min_nodes': 8, 'min_chars_per_node': 300},
-                'challenge': {'choices_per_node': 4, 'min_chars': 6000, 'min_nodes': 12, 'min_chars_per_node': 400},
+                'explanation': {'choices_per_node': 2, 'min_chars': 1500, 'min_nodes': 4, 'min_chars_per_node': 150},
+                'simulation': {'choices_per_node': 3, 'min_chars': 3000, 'min_nodes': 6, 'min_chars_per_node': 200},
+                'challenge': {'choices_per_node': 4, 'min_chars': 5000, 'min_nodes': 8, 'min_chars_per_node': 300},
             }
             constraints = complexity_constraints.get(complexity, complexity_constraints['explanation'])
             NARRATIVE_TIMEOUTS = {'explanation': 45, 'simulation': 90, 'challenge': 150}
@@ -1165,7 +1168,8 @@ Each node: id, content, choices, isEnding. Each choice: id, text, nextNode."""
                     messages=[{"role": "user", "content": prompt}],
                     system_prompt=sys_prompt,
                     max_tokens=8192,
-                    timeout=api_timeout
+                    timeout=api_timeout,
+                    cache_control={"type": "ephemeral"}
                 ):
                     if isinstance(item, tuple):
                         text_content, _ = item
