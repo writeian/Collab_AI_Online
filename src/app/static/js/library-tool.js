@@ -405,7 +405,11 @@ function displayDocumentsList(documents) {
                         </div>
                     </div>
                     <button 
-                        onclick="deleteDocument('${doc.file_id}', '${escapeHtml(doc.name)}', ${roomId})"
+                        data-doc-id="${doc.id}"
+                        data-file-id="${escapeHtml(doc.file_id || '')}"
+                        data-doc-name="${escapeHtml(doc.name)}"
+                        data-room-id="${roomId}"
+                        onclick="deleteDocument(this)"
                         class="opacity-0 group-hover:opacity-100 transition-opacity text-red-600 hover:text-red-800 p-1"
                         title="Delete document"
                     >
@@ -424,31 +428,42 @@ function displayDocumentsList(documents) {
     }
 }
 
-async function deleteDocument(fileId, fileName, roomId) {
-    if (!confirm(`Are you sure you want to delete "${fileName}"?`)) {
+async function deleteDocument(btnOrId, fileNameOrUndefined, roomIdOrUndefined) {
+    const docId = btnOrId?.dataset?.docId ?? btnOrId;
+    const fileId = btnOrId?.dataset?.fileId;
+    const fileName = btnOrId?.dataset?.docName ?? fileNameOrUndefined;
+    const roomId = btnOrId?.dataset?.roomId ?? roomIdOrUndefined;
+    if (!docId || !roomId) return;
+    if (!confirm(`Are you sure you want to delete "${fileName || 'this document'}"?`)) {
         return;
     }
+    console.debug('[LibraryTool] Delete requested', { docId, fileId, roomId, fileName });
     
     try {
-        const response = await fetch('/api/library/clear', {
+        const payload = {
+            doc_id: parseInt(docId, 10),
+            file_id: fileId || null,
+            room_id: parseInt(roomId, 10)
+        };
+        console.debug('[LibraryTool] Delete fetch', { url: '/api/library/key-documents/delete', payload });
+        const response = await fetch('/api/library/key-documents/delete', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                ids: [fileId],
-                room_id: roomId
-            })
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify(payload)
         });
         
+        const body = await response.json().catch(() => ({}));
+        console.debug('[LibraryTool] Delete response', { ok: response.ok, status: response.status, body });
         if (!response.ok) {
-            throw new Error('Delete failed');
+            throw new Error(body.error || 'Delete failed');
+        }
+        if (body.deleted_count === 0) {
+            throw new Error(body.error || 'Document could not be deleted');
         }
         
-        // Refresh the list and update storage
         refreshLibraryDocuments();
         updateStorageIndicator();
-        
     } catch (error) {
         alert(`Failed to delete document: ${error.message}`);
         console.error('Delete error:', error);
@@ -464,4 +479,3 @@ function escapeHtml(text) {
 // Export functions for inline onclick handlers
 window.refreshLibraryDocuments = refreshLibraryDocuments;
 window.deleteDocument = deleteDocument;
-
