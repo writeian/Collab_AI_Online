@@ -598,6 +598,7 @@ def delete_key_document_by_type(room_id: int, key_document_type: str) -> bool:
         file_id = doc.file_id
         return delete_document_and_chunks(file_id, room_id=room_id)
     except Exception as e:
+        db.session.rollback()
         current_app.logger.error(f"Delete key document by type error: {e}")
         return False
 

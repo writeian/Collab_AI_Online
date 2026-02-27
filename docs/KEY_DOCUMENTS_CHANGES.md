@@ -81,6 +81,18 @@ Raw SQL avoids ORM cascade and model-specific column loading that could break on
 
 ---
 
+### 7. Upload Failing: `InFailedSqlTransaction` During Indexing
+
+**Problem:** Document upload failed with `psycopg2.errors.InFailedSqlTransaction: current transaction is aborted, commands ignored until end of transaction block` when inserting into the `document` table.
+
+**Cause:** An earlier DB operation (e.g. `delete_key_document_by_type` or `get_key_document_by_type`) failed and left the PostgreSQL transaction aborted. Subsequent operations (INSERT) were ignored until the transaction was rolled back.
+
+**Fix:**
+- Added `db.session.rollback()` in exception handlers of `get_document_by_file_id`, `get_key_document_by_type`, `get_room_storage_usage`, and `delete_key_document_by_type` so failures are properly cleaned up.
+- In upload flow: call `db.session.rollback()` after `delete_key_document_by_type` and before indexing to ensure a clean transaction before the document INSERT.
+
+---
+
 ## Summary of Code Changes
 
 ### Backend
@@ -89,8 +101,9 @@ Raw SQL avoids ORM cascade and model-specific column loading that could break on
 |------|--------|
 | `src/app/library/storage.py` | New `/api/library/key-documents/delete` endpoint; uses `delete_document_by_id`; CSRF exempt |
 | `src/app/__init__.py` | `csrf.exempt(library)` for the library blueprint |
-| `src/utils/documents/indexer.py` | New `delete_document_by_id()` with raw SQL chunk deletion; `delete_document_and_chunks` now delegates to it |
-| `src/utils/documents/database.py` | New `get_document_by_id()` helper |
+| `src/utils/documents/indexer.py` | New `delete_document_by_id()` with raw SQL chunk deletion; rollback in `delete_key_document_by_type` exception handler |
+| `src/utils/documents/database.py` | New `get_document_by_id()` helper; rollback in `get_document_by_file_id`, `get_key_document_by_type`, `get_room_storage_usage` exception handlers |
+| `src/app/library/upload.py` | `db.session.rollback()` after delete and before indexing to ensure clean transaction |
 | `src/app/library/storage.py` (list) | `Cache-Control: no-store` on documents API response |
 
 ### Frontend – Key Documents Modal (`templates/room/view_mountain_simple.html`)
@@ -144,7 +157,7 @@ Deletes a document by database primary key.
 
 ## Testing Checklist
 
-- [ ] Upload to Syllabus – progress bar shows
+- [ ] Upload to Syllabus – progress bar shows, no `InFailedSqlTransaction` error
 - [ ] Upload to Evaluation Rubric – progress bar shows  
 - [ ] Upload to Other Key Documents – progress bar shows
 - [ ] Delete from Key Documents modal – document disappears and stays deleted

@@ -49,8 +49,7 @@ def get_document_by_file_id(file_id: str, room_id: Optional[int] = None) -> Opti
             query = query.filter_by(room_id=room_id)
         return query.first()
     except Exception as e:
-        # Tables don't exist (migration not run) - return None
-        from flask import current_app
+        db.session.rollback()
         current_app.logger.warning(f"Document tables not found (migration not run): {e}")
         return None
 
@@ -72,6 +71,7 @@ def get_key_document_by_type(room_id: int, key_document_type: str) -> Optional[D
             key_document_type=key_document_type
         ).first()
     except Exception as e:
+        db.session.rollback()
         current_app.logger.warning(f"Document tables/column issue (migration not run): {e}")
         return None
 
@@ -119,8 +119,7 @@ def get_room_storage_usage(room_id: int) -> dict:
         total_bytes = int(result.total_bytes or 0)
         file_count = int(result.file_count or 0)
     except Exception as e:
-        # Tables don't exist (migration not run) - return empty stats
-        from flask import current_app
+        db.session.rollback()
         current_app.logger.warning(f"Document tables not found (migration not run): {e}")
         total_bytes = 0
         file_count = 0

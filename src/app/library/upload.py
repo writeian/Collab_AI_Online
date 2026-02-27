@@ -85,6 +85,8 @@ def upload_file():
             # Replace existing syllabus or evaluation_rubric before indexing
             if key_document_type in ('syllabus', 'evaluation_rubric'):
                 delete_key_document_by_type(room_id, key_document_type)
+            from src.app import db
+            db.session.rollback()  # Ensure clean transaction before index (fixes InFailedSqlTransaction)
         
         # Check if file is present
         if 'file' not in request.files:
