@@ -468,6 +468,39 @@ def run_production_migrations(app):
                         print("✓ card_comment table created manually")
                     except Exception as create_error:
                         print(f"❌ Failed to create card_comment table: {create_error}")
+
+                # PHASE F: Add key_document_type to document table (Key Documents: syllabus, rubric, other)
+                try:
+                    is_postgres = 'postgresql' in str(db.engine.url)
+                    with db.engine.connect() as conn:
+                        if is_postgres:
+                            result = conn.execute(db.text(
+                                "SELECT column_name FROM information_schema.columns "
+                                "WHERE table_schema='public' AND table_name='document' AND column_name='key_document_type'"
+                            ))
+                            has_col = result.fetchone() is not None
+                        else:
+                            result = conn.execute(db.text("PRAGMA table_info(document)"))
+                            cols = [row[1] for row in result.fetchall()]
+                            has_col = 'key_document_type' in cols
+
+                        if not has_col:
+                            conn.execute(db.text(
+                                "ALTER TABLE document ADD COLUMN key_document_type VARCHAR(50)"
+                            ))
+                            try:
+                                conn.execute(db.text(
+                                    "CREATE INDEX ix_document_key_type_room ON document (room_id, key_document_type)"
+                                ))
+                            except Exception:
+                                pass  # Index may already exist
+                            conn.commit()
+                            print("✓ Added key_document_type column to document")
+                        else:
+                            print("✓ key_document_type column exists on document")
+                except Exception as key_doc_err:
+                    print(f"⚠️ Could not add key_document_type to document: {key_doc_err}")
+
         except Exception as e:
             print(f"Table creation warning: {e}")
             print("Continuing with app startup...")

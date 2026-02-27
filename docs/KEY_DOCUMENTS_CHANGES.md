@@ -81,7 +81,17 @@ Raw SQL avoids ORM cascade and model-specific column loading that could break on
 
 ---
 
-### 7. Upload Failing: `InFailedSqlTransaction` During Indexing
+### 7. Upload Failing: `UndefinedColumn` – Missing `key_document_type`
+
+**Problem:** Document upload failed with `psycopg2.errors.UndefinedColumn: column "key_document_type" of relation "document" does not exist`.
+
+**Cause:** The `key_document_type` column was added in a migration (`add_key_document_type_to_document`), but on Railway production the migration had not run (e.g. deploy before migration was merged, or migration system skipped it).
+
+**Fix:** Added a startup fallback in `main.py` (PHASE F): at app startup, if the `document` table exists but lacks the `key_document_type` column, it is added via `ALTER TABLE`. This mirrors the existing pattern for `chat_notes`, `pinned_items`, etc.
+
+---
+
+### 8. Upload Failing: `InFailedSqlTransaction` During Indexing
 
 **Problem:** Document upload failed with `psycopg2.errors.InFailedSqlTransaction: current transaction is aborted, commands ignored until end of transaction block` when inserting into the `document` table.
 
@@ -104,6 +114,7 @@ Raw SQL avoids ORM cascade and model-specific column loading that could break on
 | `src/utils/documents/indexer.py` | New `delete_document_by_id()` with raw SQL chunk deletion; rollback in `delete_key_document_by_type` exception handler |
 | `src/utils/documents/database.py` | New `get_document_by_id()` helper; rollback in `get_document_by_file_id`, `get_key_document_by_type`, `get_room_storage_usage` exception handlers |
 | `src/app/library/upload.py` | `db.session.rollback()` after delete and before indexing to ensure clean transaction |
+| `src/main.py` | PHASE F: Add `key_document_type` column to `document` at startup if missing |
 | `src/app/library/storage.py` (list) | `Cache-Control: no-store` on documents API response |
 
 ### Frontend – Key Documents Modal (`templates/room/view_mountain_simple.html`)
