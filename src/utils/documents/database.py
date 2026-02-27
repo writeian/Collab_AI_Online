@@ -16,6 +16,22 @@ SYNTHESIS_CHUNK_TEXT_LIMIT = 400
 SYNTHESIS_TOKEN_BUDGET = 1000
 
 
+def get_document_by_id(doc_id, room_id: Optional[int] = None) -> Optional[Document]:
+    """
+    Get document by primary key id, optionally scoped to room.
+    """
+    try:
+        doc_id = int(doc_id) if doc_id is not None else None
+        if doc_id is None:
+            return None
+        doc = Document.query.get(doc_id)
+        if not doc or (room_id is not None and doc.room_id != room_id):
+            return None
+        return doc
+    except (ValueError, TypeError):
+        return None
+
+
 def get_document_by_file_id(file_id: str, room_id: Optional[int] = None) -> Optional[Document]:
     """
     Get document by file_id, optionally scoped to room.
@@ -36,6 +52,27 @@ def get_document_by_file_id(file_id: str, room_id: Optional[int] = None) -> Opti
         # Tables don't exist (migration not run) - return None
         from flask import current_app
         current_app.logger.warning(f"Document tables not found (migration not run): {e}")
+        return None
+
+
+def get_key_document_by_type(room_id: int, key_document_type: str) -> Optional[Document]:
+    """
+    Get the key document of a given type in a room (syllabus or evaluation_rubric - at most one each).
+    
+    Args:
+        room_id: Room ID
+        key_document_type: One of 'syllabus', 'evaluation_rubric'
+        
+    Returns:
+        Document or None if not found
+    """
+    try:
+        return Document.query.filter_by(
+            room_id=room_id,
+            key_document_type=key_document_type
+        ).first()
+    except Exception as e:
+        current_app.logger.warning(f"Document tables/column issue (migration not run): {e}")
         return None
 
 

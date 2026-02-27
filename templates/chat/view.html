@@ -213,6 +213,8 @@
 <div class="flex bg-background chat-container h-full"
      data-chat-id="{{ chat.id }}"
      data-room-id="{{ room.id }}"
+     data-room-owner-id="{{ room.owner_id }}"
+     data-user-id="{{ user.id if user else '' }}"
      data-chat-mode="{{ chat.mode }}"
      data-mode-order='{{ mode_order|tojson }}'
      data-mode-labels='{{ mode_labels|tojson }}'

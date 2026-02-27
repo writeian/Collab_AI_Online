@@ -288,7 +288,7 @@
     }
 
     /**
-     * Show library document list
+     * Show library document list (regular docs first, then Key Documents section)
      */
     function showLibraryList(documents) {
         const emptyEl = document.getElementById('quiz-library-empty');
@@ -299,7 +299,15 @@
             listEl.classList.remove('hidden');
             listEl.innerHTML = '';
             
-            documents.forEach(doc => {
+            const chatContainer = document.querySelector('.chat-container');
+            const roomOwnerId = chatContainer ? parseInt(chatContainer.dataset.roomOwnerId || '0', 10) : 0;
+            const userId = chatContainer ? parseInt(chatContainer.dataset.userId || '0', 10) : 0;
+            const isInstructor = roomOwnerId && userId && roomOwnerId === userId;
+
+            const regularDocs = documents.filter(d => !d.key_document_type);
+            const keyDocs = documents.filter(d => d.key_document_type);
+
+            function appendDoc(doc, showLock) {
                 const item = document.createElement('div');
                 item.className = 'quiz-library-item';
                 
@@ -313,6 +321,13 @@
                 label.className = 'quiz-library-item-label';
                 label.htmlFor = `quiz-doc-${doc.id}`;
                 label.textContent = doc.name;
+                if (showLock) {
+                    const lockIcon = document.createElement('i');
+                    lockIcon.setAttribute('data-lucide', 'lock');
+                    lockIcon.className = 'w-3 h-3 inline-block ml-1 text-gray-400';
+                    lockIcon.title = 'Key document (instructor only)';
+                    label.appendChild(lockIcon);
+                }
                 
                 const meta = document.createElement('span');
                 meta.className = 'quiz-library-item-meta';
@@ -324,7 +339,17 @@
                 item.appendChild(label);
                 item.appendChild(meta);
                 listEl.appendChild(item);
-            });
+            }
+
+            regularDocs.forEach(doc => appendDoc(doc, false));
+            if (keyDocs.length > 0) {
+                const sep = document.createElement('div');
+                sep.className = 'quiz-library-separator text-xs font-medium text-gray-500 mt-3 mb-1 pt-2 border-t border-gray-200';
+                sep.textContent = 'Key Documents';
+                listEl.appendChild(sep);
+                keyDocs.forEach(doc => appendDoc(doc, !isInstructor));
+            }
+            if (window.lucide) lucide.createIcons();
         }
     }
 

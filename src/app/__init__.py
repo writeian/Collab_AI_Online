@@ -320,8 +320,9 @@ def create_app(config_name=None):
     app.register_blueprint(analytics, url_prefix="/analytics")
     app.register_blueprint(documents, url_prefix="/documents")
     
-    # Library Tool endpoints
+    # Library Tool endpoints (CSRF exempt - uses session auth via login_required)
     app.register_blueprint(library, url_prefix="/api/library")
+    csrf.exempt(library)
     
     # Quiz Tool endpoints
     app.register_blueprint(quiz, url_prefix="/api/quiz")

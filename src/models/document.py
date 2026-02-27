@@ -46,6 +46,7 @@ class Document(db.Model):
         index=True
     )
     summary = db.Column(db.Text, nullable=True)
+    key_document_type = db.Column(db.String(50), nullable=True, index=True)  # syllabus, evaluation_rubric, other
 
     # Relationships
     room = db.relationship("Room", backref="documents")

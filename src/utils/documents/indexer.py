@@ -30,7 +30,8 @@ def index_document_railway(
     chunk_size: int = 1000,
     overlap: int = 200,
     file_size_bytes: int = None,
-    summary: str = None
+    summary: str = None,
+    key_document_type: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Index a document using SQLAlchemy and Railway PostgreSQL.
@@ -74,7 +75,8 @@ def index_document_railway(
             file_size=file_size_bytes if file_size_bytes else len(full_text),
             room_id=room_id,
             uploaded_by=uploaded_by,
-            summary=summary
+            summary=summary,
+            key_document_type=key_document_type
         )
         
         db.session.add(document)
@@ -350,7 +352,8 @@ def index_document(
     chunk_size: int = 1000,
     overlap: int = 200,
     file_size_bytes: int = None,
-    summary: str = None
+    summary: str = None,
+    key_document_type: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Index a document with feature flag support.
@@ -368,7 +371,8 @@ def index_document(
             chunk_size=chunk_size,
             overlap=overlap,
             file_size_bytes=file_size_bytes,
-            summary=summary
+            summary=summary,
+            key_document_type=key_document_type
         )
     else:
         # Railway disabled - Supabase not available in this codebase
@@ -559,7 +563,8 @@ def get_all_documents(room_id: int = None) -> List[Dict[str, Any]]:
                 'uploaded_at': doc.uploaded_at.isoformat() if doc.uploaded_at else None,
                 'chunk_count': chunk_count,
                 'summary': doc.summary or '',
-                'file_size': doc.file_size
+                'file_size': doc.file_size,
+                'key_document_type': getattr(doc, 'key_document_type', None)
             })
         
         return result
@@ -570,6 +575,55 @@ def get_all_documents(room_id: int = None) -> List[Dict[str, Any]]:
             "Set USE_RAILWAY_DOCUMENTS=true to enable Library Tool."
         )
         return []
+
+
+def delete_key_document_by_type(room_id: int, key_document_type: str) -> bool:
+    """
+    Delete the existing key document of a given type (for syllabus/rubric replacement).
+    
+    Args:
+        room_id: Room ID
+        key_document_type: One of 'syllabus', 'evaluation_rubric'
+        
+    Returns:
+        True if a document was deleted, False otherwise
+    """
+    if not USE_RAILWAY_DOCUMENTS:
+        return False
+    try:
+        from src.utils.documents.database import get_key_document_by_type
+        doc = get_key_document_by_type(room_id, key_document_type)
+        if not doc:
+            return False
+        file_id = doc.file_id
+        return delete_document_and_chunks(file_id, room_id=room_id)
+    except Exception as e:
+        current_app.logger.error(f"Delete key document by type error: {e}")
+        return False
+
+
+def delete_document_by_id(doc_id: int) -> bool:
+    """
+    Delete document and chunks by document id (primary key).
+    Deletes chunks via raw SQL first to avoid ORM/cascade issues (e.g. SQLite vs PostgreSQL).
+    """
+    if not USE_RAILWAY_DOCUMENTS:
+        return False
+    try:
+        doc_id = int(doc_id)
+        document = Document.query.get(doc_id)
+        if not document:
+            return False
+        file_id = document.file_id
+        db.session.execute(text("DELETE FROM document_chunk WHERE document_id = :doc_id"), {"doc_id": doc_id})
+        db.session.delete(document)
+        db.session.commit()
+        current_app.logger.info(f"Deleted document id={doc_id} file_id={file_id}")
+        return True
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Delete by id error: {e}")
+        return False
 
 
 def delete_document_and_chunks(file_id: str, room_id: int = None) -> bool:
@@ -589,11 +643,7 @@ def delete_document_and_chunks(file_id: str, room_id: int = None) -> bool:
             document = get_document_by_file_id(file_id, room_id)
             if not document:
                 return False
-            
-            db.session.delete(document)  # Chunks cascade automatically
-            db.session.commit()
-            current_app.logger.info(f"Railway: Deleted document {file_id}")
-            return True
+            return delete_document_by_id(document.id)
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Railway delete error: {e}")

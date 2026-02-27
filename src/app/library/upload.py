@@ -8,11 +8,14 @@ from functools import wraps
 
 from . import library
 from src.utils.documents.extract_text import extract_text
-from src.utils.documents.indexer import index_document
+from src.utils.documents.indexer import index_document, delete_key_document_by_type
 from src.utils.documents.database import get_room_storage_usage
 from src.app.access_control import get_current_user
+from src.models.room import Room
 
 from .access_control import can_access_room_for_library as can_access_room
+
+VALID_KEY_DOCUMENT_TYPES = ('syllabus', 'evaluation_rubric', 'other')
 
 
 def login_required(f):
@@ -68,6 +71,20 @@ def upload_file():
             return jsonify({
                 'error': 'You do not have access to this room.'
             }), 403
+        
+        # Key document upload: instructor only
+        key_document_type = request.args.get('key_document_type', type=str)
+        if key_document_type:
+            if key_document_type not in VALID_KEY_DOCUMENT_TYPES:
+                return jsonify({'error': 'Invalid key_document_type'}), 400
+            room = Room.query.get(room_id)
+            if not room or user.id != room.owner_id:
+                return jsonify({
+                    'error': 'Only the room instructor can add key documents.'
+                }), 403
+            # Replace existing syllabus or evaluation_rubric before indexing
+            if key_document_type in ('syllabus', 'evaluation_rubric'):
+                delete_key_document_by_type(room_id, key_document_type)
         
         # Check if file is present
         if 'file' not in request.files:
@@ -146,7 +163,8 @@ def upload_file():
                 chunk_size=1000,
                 overlap=200,
                 file_size_bytes=file_size_bytes,
-                summary=summary
+                summary=summary,
+                key_document_type=key_document_type if key_document_type else None
             )
             chunk_count = index_result['chunk_count']
             current_app.logger.info(f"✓ Indexed {chunk_count} chunks for {file_name} in room {room_id}")
