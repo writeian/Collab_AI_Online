@@ -369,6 +369,50 @@ async function refreshLibraryDocuments() {
     }
 }
 
+function getKeyDocumentTypeLabel(keyType) {
+    const labels = { syllabus: 'Syllabus', evaluation_rubric: 'Evaluation Rubric', other: 'Other' };
+    return labels[keyType] || keyType;
+}
+
+function buildDocumentCard(doc, roomId, isKeyDoc = false) {
+    const uploadDate = new Date(doc.uploaded_at);
+    const formattedDate = uploadDate.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: uploadDate.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+    });
+    const typeBadge = isKeyDoc && doc.key_document_type
+        ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-primary/15 text-primary mr-1">${escapeHtml(getKeyDocumentTypeLabel(doc.key_document_type))}</span>`
+        : '';
+    return `
+        <div class="p-2 bg-muted rounded text-xs border border-border hover:border-primary transition-colors group">
+            <div class="flex items-start justify-between gap-2">
+                <div class="flex-1 min-w-0">
+                    <div class="font-medium text-foreground truncate flex items-center gap-1" title="${escapeHtml(doc.name)}">
+                        ${typeBadge}
+                        <i data-lucide="file-text" class="w-3 h-3 flex-shrink-0"></i>
+                        <span class="truncate">${escapeHtml(doc.name)}</span>
+                    </div>
+                    <div class="text-muted-foreground mt-1">
+                        <span>${formattedDate}</span>
+                    </div>
+                </div>
+                <button 
+                    data-doc-id="${doc.id}"
+                    data-file-id="${escapeHtml(doc.file_id || '')}"
+                    data-doc-name="${escapeHtml(doc.name)}"
+                    data-room-id="${roomId}"
+                    onclick="deleteDocument(this)"
+                    class="opacity-0 group-hover:opacity-100 transition-opacity text-red-600 hover:text-red-800 p-1"
+                    title="Delete document"
+                >
+                    <i data-lucide="trash-2" class="w-3 h-3"></i>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
 function displayDocumentsList(documents) {
     const listDiv = document.getElementById('library-documents-list');
     
@@ -383,45 +427,44 @@ function displayDocumentsList(documents) {
     }
     
     const roomId = getRoomId();
-    
-    const documentsHTML = documents.map(doc => {
-        const uploadDate = new Date(doc.uploaded_at);
-        const formattedDate = uploadDate.toLocaleDateString('en-US', { 
-            month: 'short', 
-            day: 'numeric',
-            year: uploadDate.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
-        });
-        
-        return `
-            <div class="p-2 bg-muted rounded text-xs border border-border hover:border-primary transition-colors group">
-                <div class="flex items-start justify-between gap-2">
-                    <div class="flex-1 min-w-0">
-                        <div class="font-medium text-foreground truncate" title="${escapeHtml(doc.name)}">
-                            <i data-lucide="file-text" class="w-3 h-3 inline mr-1"></i>
-                            ${escapeHtml(doc.name)}
-                        </div>
-                        <div class="text-muted-foreground mt-1">
-                            <span>${formattedDate}</span>
-                        </div>
-                    </div>
-                    <button 
-                        data-doc-id="${doc.id}"
-                        data-file-id="${escapeHtml(doc.file_id || '')}"
-                        data-doc-name="${escapeHtml(doc.name)}"
-                        data-room-id="${roomId}"
-                        onclick="deleteDocument(this)"
-                        class="opacity-0 group-hover:opacity-100 transition-opacity text-red-600 hover:text-red-800 p-1"
-                        title="Delete document"
-                    >
-                        <i data-lucide="trash-2" class="w-3 h-3"></i>
-                    </button>
+    const keyDocs = documents.filter(d => d.key_document_type);
+    const regularDocs = documents.filter(d => !d.key_document_type);
+
+    let html = '';
+
+    if (regularDocs.length > 0) {
+        html += `
+            <div class="space-y-2">
+                <label class="text-xs font-medium text-muted-foreground block">Uploaded Documents</label>
+                <div class="space-y-2">
+                    ${regularDocs.map(doc => buildDocumentCard(doc, roomId, false)).join('')}
                 </div>
             </div>
         `;
-    }).join('');
-    
-    listDiv.innerHTML = documentsHTML;
-    
+    }
+
+    if (keyDocs.length > 0) {
+        html += `
+            <div class="space-y-2${regularDocs.length > 0 ? ' mt-4 pt-3 border-t border-border' : ''}">
+                <label class="text-xs font-medium text-muted-foreground block">Key Documents</label>
+                <div class="space-y-2">
+                    ${keyDocs.map(doc => buildDocumentCard(doc, roomId, true)).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    if (keyDocs.length === 0 && regularDocs.length === 0) {
+        html = `
+            <div class="text-xs text-muted-foreground p-2">
+                💡 No documents uploaded yet.<br>
+                Upload a document to get started!
+            </div>
+        `;
+    }
+
+    listDiv.innerHTML = html;
+
     // Re-initialize lucide icons for the new content
     if (window.lucide) {
         window.lucide.createIcons();

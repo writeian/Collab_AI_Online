@@ -135,6 +135,7 @@ Raw SQL avoids ORM cascade and model-specific column loading that could break on
 | Delete API | Calls `/api/library/key-documents/delete` with `doc_id` and `room_id` |
 | `deleteDocument` | Accepts button or legacy args; reads from `dataset` when available |
 | Error handling | Parses response JSON and surfaces server error messages |
+| **Key vs regular separation** | Documents split into "Key Documents" and "Uploaded Documents" sections; key docs show type badge (Syllabus, Evaluation Rubric, Other); visible to all users (instructors and non-instructors) |
 
 ---
 
@@ -175,3 +176,4 @@ Deletes a document by database primary key.
 - [ ] Delete from Library tool (chat page) – document disappears and stays deleted
 - [ ] Delete as non-instructor – key documents show permission error
 - [ ] Refresh after delete – document does not reappear
+- [ ] Library tool (chat page) – Key Documents and Uploaded Documents appear in separate sections for all users
