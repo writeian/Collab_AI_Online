@@ -501,6 +501,31 @@ def run_production_migrations(app):
                 except Exception as key_doc_err:
                     print(f"⚠️ Could not add key_document_type to document: {key_doc_err}")
 
+                # PHASE G: Add tutorial_completed_at to user table (onboarding tutorial)
+                try:
+                    is_postgres = 'postgresql' in str(db.engine.url)
+                    with db.engine.connect() as conn:
+                        if is_postgres:
+                            result = conn.execute(db.text(
+                                "SELECT column_name FROM information_schema.columns "
+                                "WHERE table_schema='public' AND table_name='user' AND column_name='tutorial_completed_at'"
+                            ))
+                            has_col = result.fetchone() is not None
+                        else:
+                            result = conn.execute(db.text("PRAGMA table_info(user)"))
+                            cols = [row[1] for row in result.fetchall()]
+                            has_col = 'tutorial_completed_at' in cols
+
+                        if not has_col:
+                            tbl = '"user"' if is_postgres else 'user'
+                            conn.execute(db.text(f"ALTER TABLE {tbl} ADD COLUMN tutorial_completed_at TIMESTAMP"))
+                            conn.commit()
+                            print("✓ Added tutorial_completed_at column to user")
+                        else:
+                            print("✓ tutorial_completed_at column exists on user")
+                except Exception as tut_err:
+                    print(f"⚠️ Could not add tutorial_completed_at to user: {tut_err}")
+
         except Exception as e:
             print(f"Table creation warning: {e}")
             print("Continuing with app startup...")
@@ -545,6 +570,33 @@ try:
 except Exception as e:
     print(f"⚠️ Migration error (non-critical): {e}")
     # Don't crash - app can still serve health checks
+
+# Local dev: ensure tutorial_completed_at exists on user table (SQLite often skips Alembic)
+try:
+    is_production = os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("FLASK_ENV") == "production"
+    if not is_production:
+        with app.app_context():
+            from src.app import db
+            is_postgres = 'postgresql' in str(db.engine.url)
+            with db.engine.connect() as conn:
+                if is_postgres:
+                    result = conn.execute(db.text(
+                        "SELECT column_name FROM information_schema.columns "
+                        "WHERE table_schema='public' AND table_name='user' AND column_name='tutorial_completed_at'"
+                    ))
+                    has_col = result.fetchone() is not None
+                else:
+                    result = conn.execute(db.text("PRAGMA table_info(user)"))
+                    cols = [row[1] for row in result.fetchall()]
+                    has_col = 'tutorial_completed_at' in cols
+
+                if not has_col:
+                    tbl = '"user"' if is_postgres else 'user'
+                    conn.execute(db.text(f"ALTER TABLE {tbl} ADD COLUMN tutorial_completed_at TIMESTAMP"))
+                    conn.commit()
+                    print("✓ Added tutorial_completed_at column to user (local dev)")
+except Exception as e:
+    print(f"⚠️ Local dev schema sync: {e}")
 
 
 # Readiness check - Is the app ready to serve traffic?

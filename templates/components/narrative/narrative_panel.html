@@ -5,9 +5,15 @@
 <div id="narrative-panel" class="narrative-panel hidden" role="dialog" aria-labelledby="narrative-panel-title" aria-modal="false">
     <div class="narrative-panel__header">
         <h2 id="narrative-panel-title" class="narrative-panel__title">Create your Narrative</h2>
-        <button type="button" class="narrative-panel__close" id="narrative-panel-close" aria-label="Close narrative panel">
-            <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+        <div class="narrative-panel__header-actions">
+            <button type="button" class="narrative-panel__tutorial" onclick="TutorialManager && TutorialManager.startNarrativeToolTour()" aria-label="Show Narrative tutorial">
+                <span class="panel-tutorial-icon" aria-hidden="true">🚀</span>
+                <span>Tutorial</span>
+            </button>
+            <button type="button" class="narrative-panel__close" id="narrative-panel-close" aria-label="Close narrative panel">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
     </div>
     
     <div class="narrative-panel__content" id="narrative-panel-content">

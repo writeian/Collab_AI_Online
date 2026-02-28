@@ -226,7 +226,7 @@ def create_app(config_name=None):
             pass
 
         # CSP configuration that allows CDN resources
-        response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; img-src 'self' data:; connect-src 'self' https://cdn.tailwindcss.com https://unpkg.com;"
+        response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net; img-src 'self' data:; connect-src 'self' https://cdn.tailwindcss.com https://unpkg.com https://cdn.jsdelivr.net;"
         if not app.config.get('TESTING', False) and not app.debug:
             response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
         return response
@@ -307,6 +307,9 @@ def create_app(config_name=None):
     # Narrative Tool integration
     from src.app.narrative import narrative
 
+    # Tutorial API (onboarding completion)
+    from src.app.tutorial import tutorial_bp
+
     app.register_blueprint(auth, url_prefix="/auth")
     app.register_blueprint(chat, url_prefix="/chat")
     app.register_blueprint(room, url_prefix="/room")
@@ -335,6 +338,9 @@ def create_app(config_name=None):
     
     # Narrative Tool endpoints
     app.register_blueprint(narrative, url_prefix="/api/narrative")
+    
+    # Tutorial API
+    app.register_blueprint(tutorial_bp)
     
     # Dev API (experimental endpoints)
     app.register_blueprint(card_view_api)  # url_prefix set in blueprint

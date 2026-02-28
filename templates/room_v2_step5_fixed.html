@@ -1,11 +1,15 @@
 {% extends "base.html" %}
 {% block title %}AI Collab - Enhanced Home{% endblock %}
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+     data-show-tutorial-modal="{{ 'true' if show_tutorial_modal else 'false' }}"
+     data-just-registered="{{ 'true' if just_registered else 'false' }}"
+     data-tutorial-completed="{{ 'true' if tutorial_completed else 'false' }}"
+     data-has-rooms="{{ 'true' if sorted_rooms else 'false' }}">
   
   <!-- Welcome Section with Action Buttons -->
   <div class="mb-8">
-    <h2 class="text-3xl font-bold text-foreground mb-4">Welcome, {{ user.username }}!</h2>
+    <h2 id="tutorial-welcome" class="text-3xl font-bold text-foreground mb-4">Welcome, {{ user.username }}!</h2>
     <div class="flex flex-col sm:flex-row gap-4">
       <a href="{{ url_for('room.room_crud.create_room') }}" class="inline-flex items-center px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors">
         <i data-lucide="plus" class="w-5 h-5 mr-2"></i>
@@ -14,6 +18,10 @@
       <button onclick="showTemplateWizards()" class="inline-flex items-center px-6 py-3 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-gray-100 transition-colors">
         <i data-lucide="zap" class="w-5 h-5 mr-2"></i>
         Use Template
+      </button>
+      <button type="button" id="tutorial-launcher-btn" class="inline-flex items-center px-6 py-3 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 transition-colors">
+        <span aria-hidden="true">🚀</span>
+        <span class="ml-2">Tutorial</span>
       </button>
     </div>
   </div>
@@ -150,7 +158,7 @@
       <div class="bg-white border border-gray-200 rounded-lg transition-all duration-200 cursor-pointer room-card
                   hover:bg-gradient-to-r hover:from-amber-50 hover:to-yellow-50 hover:border-amber-200 hover:shadow-lg hover:-translate-y-1
                   {% if stats.has_unread %}ring-2 ring-red-200 bg-red-50/30{% endif %}"
-           data-room-card data-room-id="{{ room.id }}" data-room-index="{{ loop.index0 }}">
+           data-room-card data-room-id="{{ room.id }}" data-room-index="{{ loop.index0 }}"{% if loop.first %} data-tutorial="room-card"{% endif %}>
         
         <!-- Collapsible Header -->
         <div class="flex items-start justify-between gap-3 mb-3 room-card__header">
@@ -342,7 +350,7 @@
     <p class="text-muted-foreground mb-8 max-w-md mx-auto">
       Create your first learning space and start your educational journey with AI-guided collaboration.
     </p>
-    <a href="{{ url_for('room.room_crud.create_room') }}" 
+    <a id="tutorial-create-first-room" href="{{ url_for('room.room_crud.create_room') }}" 
        class="inline-flex items-center px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 shadow-lg">
       <i data-lucide="plus" class="w-5 h-5 mr-2"></i>
       Create Learning Space

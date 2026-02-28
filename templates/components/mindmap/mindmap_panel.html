@@ -5,9 +5,15 @@
 <div id="mindmap-panel" class="mindmap-panel hidden" role="dialog" aria-labelledby="mindmap-panel-title" aria-modal="false">
     <div class="mindmap-panel__header">
         <h2 id="mindmap-panel-title" class="mindmap-panel__title">Create your Mind Map</h2>
-        <button type="button" class="mindmap-panel__close" id="mindmap-panel-close" aria-label="Close mind map panel">
-            <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+        <div class="mindmap-panel__header-actions">
+            <button type="button" class="mindmap-panel__tutorial" onclick="TutorialManager && TutorialManager.startMindmapToolTour()" aria-label="Show Mind Map tutorial">
+                <span class="panel-tutorial-icon" aria-hidden="true">🚀</span>
+                <span>Tutorial</span>
+            </button>
+            <button type="button" class="mindmap-panel__close" id="mindmap-panel-close" aria-label="Close mind map panel">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
     </div>
     
     <div class="mindmap-panel__content" id="mindmap-panel-content">

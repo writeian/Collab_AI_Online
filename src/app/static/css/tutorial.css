@@ -1,0 +1,206 @@
+/**
+ * Tutorial - Shepherd.js overrides for light/dark mode
+ */
+
+/* Light mode (default) */
+.shepherd-element {
+  --shepherd-theme-primary: hsl(var(--primary) / 1);
+  --shepherd-theme-secondary: hsl(var(--secondary) / 1);
+}
+
+/* Tutorial must appear above educational tool modals (quiz, flashcards, etc. use z-index 100001–100002) */
+.shepherd-modal-overlay-container.shepherd-modal-is-visible {
+  z-index: 100003 !important;
+  opacity: 0.7;
+}
+
+.shepherd-element {
+  z-index: 100003 !important;
+}
+
+.shepherd-text {
+  color: hsl(var(--foreground) / 1);
+}
+
+.shepherd-cancel-icon {
+  color: hsl(var(--muted-foreground) / 1);
+}
+
+.shepherd-cancel-icon:hover {
+  color: hsl(var(--foreground) / 1);
+}
+
+/* Tutorial step buttons - ensure white text for visibility on dark/colored backgrounds */
+.shepherd-element .shepherd-button {
+  color: white !important;
+}
+
+.shepherd-element .shepherd-button:not(:disabled):hover {
+  color: white !important;
+}
+
+/* Secondary (Skip) button - use dark background for contrast, keep white text */
+.shepherd-element .shepherd-button.shepherd-button-secondary {
+  background: rgb(55, 65, 81); /* gray-700, dark enough for white text */
+  color: white !important;
+}
+
+.shepherd-element .shepherd-button.shepherd-button-secondary:not(:disabled):hover {
+  background: rgb(75, 85, 99);
+  color: white !important;
+}
+
+/* Dark mode - respect system preference and .dark class */
+@media (prefers-color-scheme: dark) {
+  .shepherd-element {
+    background-color: hsl(var(--card) / 1);
+    border-color: hsl(var(--border) / 1);
+  }
+}
+
+.dark .shepherd-element,
+html.dark .shepherd-element {
+  background-color: hsl(var(--card) / 1);
+  border-color: hsl(var(--border) / 1);
+}
+
+.dark .shepherd-text,
+html.dark .shepherd-text {
+  color: hsl(var(--foreground) / 1);
+}
+
+.dark .shepherd-cancel-icon,
+html.dark .shepherd-cancel-icon {
+  color: hsl(var(--muted-foreground) / 1);
+}
+
+/* Tutorial options modal - white background, black buttons */
+.tutorial-options-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.85);
+}
+
+.tutorial-options-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+}
+
+.tutorial-options-modal-content {
+  position: relative;
+  z-index: 1;
+}
+
+.tutorial-options-modal.hidden {
+  display: none !important;
+}
+
+.tutorial-options-modal-content {
+  background-color: white;
+  border: 1px solid rgb(220, 220, 220);
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 400px;
+  width: 90%;
+  color: rgb(0, 0, 0);
+}
+
+.tutorial-options-modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: rgb(0, 0, 0);
+}
+
+.tutorial-options-modal-content p {
+  color: rgb(0, 0, 0);
+}
+
+.tutorial-options-btn {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  background: rgb(50, 136, 230);
+  color: white;
+  border: 1px solid rgb(50, 136, 230);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.tutorial-options-btn:hover {
+  background: rgb(25, 111, 204);
+  color: white;
+}
+
+.tutorial-options-close {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: rgb(0, 0, 0);
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.tutorial-options-close:hover {
+  color: rgb(40, 40, 40);
+}
+
+/* Tutorial buttons in educational tool panel headers - match home page style for visibility */
+.quiz-panel__tutorial,
+.flashcards-panel__tutorial,
+.mindmap-panel__tutorial,
+.narrative-panel__tutorial {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background: rgb(17, 24, 39); /* gray-900 */
+  color: white;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.quiz-panel__tutorial:hover,
+.flashcards-panel__tutorial:hover,
+.mindmap-panel__tutorial:hover,
+.narrative-panel__tutorial:hover {
+  background: rgb(31, 41, 55); /* gray-800 */
+  color: white;
+}
+
+.quiz-panel__tutorial .panel-tutorial-icon,
+.flashcards-panel__tutorial .panel-tutorial-icon,
+.mindmap-panel__tutorial .panel-tutorial-icon,
+.narrative-panel__tutorial .panel-tutorial-icon {
+  margin-right: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Group Tutorial + Close on the right; Tutorial to the left of X */
+.quiz-panel__header-actions,
+.flashcards-panel__header-actions,
+.mindmap-panel__header-actions,
+.narrative-panel__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Chat tour: keep chat input behind Shepherd popup so all tutorial steps stay visible */
+body.tutorial-chat-tour .chat-input-container {
+  position: relative;
+  z-index: 1;
+}

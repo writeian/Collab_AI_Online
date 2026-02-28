@@ -5,9 +5,15 @@
 <div id="quiz-panel" class="quiz-panel hidden" role="dialog" aria-labelledby="quiz-panel-title" aria-modal="false">
     <div class="quiz-panel__header">
         <h2 id="quiz-panel-title" class="quiz-panel__title">Create your Quiz</h2>
-        <button type="button" class="quiz-panel__close" id="quiz-panel-close" aria-label="Close quiz panel">
-            <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+        <div class="quiz-panel__header-actions">
+            <button type="button" class="quiz-panel__tutorial" onclick="TutorialManager && TutorialManager.startQuizToolTour(false)" aria-label="Show Quiz tutorial">
+                <span class="panel-tutorial-icon" aria-hidden="true">🚀</span>
+                <span>Tutorial</span>
+            </button>
+            <button type="button" class="quiz-panel__close" id="quiz-panel-close" aria-label="Close quiz panel">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
     </div>
     
     <div class="quiz-panel__content" id="quiz-panel-content">

@@ -5,9 +5,15 @@
 <div id="flashcards-panel" class="flashcards-panel hidden" role="dialog" aria-labelledby="flashcards-panel-title" aria-modal="false">
     <div class="flashcards-panel__header">
         <h2 id="flashcards-panel-title" class="flashcards-panel__title">Create your Flashcards</h2>
-        <button type="button" class="flashcards-panel__close" id="flashcards-panel-close" aria-label="Close flashcards panel">
-            <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+        <div class="flashcards-panel__header-actions">
+            <button type="button" class="flashcards-panel__tutorial" onclick="TutorialManager && TutorialManager.startFlashcardsToolTour()" aria-label="Show Flashcards tutorial">
+                <span class="panel-tutorial-icon" aria-hidden="true">🚀</span>
+                <span>Tutorial</span>
+            </button>
+            <button type="button" class="flashcards-panel__close" id="flashcards-panel-close" aria-label="Close flashcards panel">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
     </div>
 
     <div class="flashcards-panel__content" id="flashcards-panel-content">

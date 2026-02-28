@@ -2,7 +2,7 @@
 {% block title %}{% if is_editing %}Edit Learning Steps - {{ room.name }}{% else %}Create New Room{% endif %}{% endblock %}
 {% block content %}
   <!-- Main Content Container -->
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" data-tutorial-room-create="{{ 'true' if not is_editing else 'false' }}">
     <!-- Navigation Breadcrumb -->
     {% if is_editing %}
     <div class="navigation-breadcrumb mb-6">
@@ -70,7 +70,7 @@
 
           <!-- Template Selector -->
           {% if not is_editing and available_templates %}
-          <div class="form-group mt-8 p-6 bg-muted/20 rounded-lg border border-border shadow-sm">
+          <div id="tutorial-template-section" class="form-group mt-8 p-6 bg-muted/20 rounded-lg border border-border shadow-sm">
             <label for="template-select" class="block text-sm font-medium text-foreground mb-3">Use a Template (Optional)</label>
             <select id="template-select" name="template" 
                     class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
@@ -147,7 +147,7 @@
         <div class="mb-6">
           <div class="flex items-center gap-3 mb-4">
             <div class="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">2</div>
-            <h2 class="text-xl font-semibold text-foreground">
+            <h2 id="tutorial-ai-proposal" class="text-xl font-semibold text-foreground">
               {% if is_editing %}Learning Steps Management{% else %}AI Room Proposal{% endif %}
             </h2>
           </div>
@@ -203,7 +203,7 @@
         </div>
 
         <!-- Refinement Chat -->
-        <div class="mb-8">
+        <div id="tutorial-refine-section" class="mb-8">
           <h3 class="text-lg font-semibold text-foreground mb-4">Refine Your Learning Steps</h3>
           <p class="text-muted-foreground mb-4">Not quite right? Chat with me to improve the title, description, or learning steps:</p>
           
@@ -453,6 +453,15 @@
               
               // Add initial AI message
               addChatMessage('AI', result.ai_message);
+              
+              // Run proposal tour when coming from tutorial (create mode only)
+              if (!isEditing && sessionStorage.getItem('tutorial_after_room_creation') === '1') {
+                setTimeout(function() {
+                  if (window.TutorialManager && typeof window.TutorialManager.startRoomProposalTour === 'function') {
+                    window.TutorialManager.startRoomProposalTour();
+                  }
+                }, 800);
+              }
             } else {
               alert('Error: ' + result.error);
             }

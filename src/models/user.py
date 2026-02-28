@@ -49,6 +49,9 @@ class User(db.Model):
     reset_token = db.Column(db.String(100), nullable=True)
     reset_token_expiry = db.Column(db.DateTime, nullable=True)
 
+    # Onboarding tutorial completion
+    tutorial_completed_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
     # Relationships
     owned_rooms = db.relationship(
         "Room", backref="owner", lazy=True, foreign_keys="Room.owner_id"

@@ -3,7 +3,7 @@ Room V2 - Clean Enhanced Dashboard Implementation
 Step 1: Basic route with room links and activity sorting
 """
 
-from flask import Blueprint, render_template, current_app
+from flask import Blueprint, render_template, current_app, session
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 from src.app import db
@@ -168,12 +168,20 @@ def index() -> Any:
             goals_info = f", has goals" if room.goals else ", no goals"
             current_app.logger.info(f"🚀 V2 #{i+1}: '{display_title}' (was: {room.name[:20]}...) - {stats['total_chats']} chats, {stats['total_messages']} messages{unread_info}{goals_info} (Score: {stats['activity_score']})")
         
+        # Show tutorial modal for users who haven't completed it
+        tutorial_completed = getattr(user, "tutorial_completed_at", None) is not None
+        just_registered = session.pop("just_registered", False)
+        show_tutorial_modal = not tutorial_completed or just_registered
+        
         return render_template(
             "room_v2_step5_fixed.html",
             sorted_rooms=all_rooms,
             user=user,
             total_rooms=len(all_rooms),
-            get_display_title=get_display_title  # Make function available in template
+            get_display_title=get_display_title,
+            show_tutorial_modal=show_tutorial_modal,
+            just_registered=just_registered,
+            tutorial_completed=tutorial_completed,
         )
         
     except Exception as e:
