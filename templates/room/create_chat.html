@@ -69,7 +69,12 @@
   <script>
     document.getElementById('createChatForm').addEventListener('submit', function(e) {
       const button = document.getElementById('createButton');
-      loadingManager.setLoading(button, 'Creating Chat...');
+      if (typeof window.loadingManager !== 'undefined') {
+        window.loadingManager.setLoading(button, 'Creating Chat...');
+      } else {
+        button.disabled = true;
+        button.textContent = 'Creating Chat...';
+      }
     });
 
     // Auto-populate chat title with selected mode

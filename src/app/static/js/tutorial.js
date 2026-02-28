@@ -681,6 +681,13 @@
       const url = new URL(location.href);
       url.searchParams.delete('start_chat_tutorial');
       window.history.replaceState({}, '', url.pathname + url.search);
+      // Ensure any lingering Shepherd overlay from previous tour is removed so form is clickable
+      if (typeof Shepherd !== 'undefined') {
+        document.querySelectorAll('.shepherd-modal-overlay-container').forEach(function(el) {
+          el.classList.remove('shepherd-modal-is-visible');
+          el.style.pointerEvents = 'none';
+        });
+      }
     }
     // Chat view: run tour if we have the param or the pending flag (set from chat create page)
     else if ((location.search.includes('start_chat_tutorial=1') || sessionStorage.getItem(STORAGE_KEY_PENDING_CHAT) === '1') && /\/chat\/\d+/.test(location.pathname)) {
