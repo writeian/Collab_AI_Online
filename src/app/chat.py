@@ -25,7 +25,21 @@ from flask import (
 from datetime import datetime
 from src.app import db, markdown_filter, limiter
 from typing import Any, Dict, List
-from src.models import Chat, Message, User, PromptRecord, Room, Comment, RoomMember
+from src.models import (
+    Chat,
+    Message,
+    User,
+    PromptRecord,
+    Room,
+    Comment,
+    RoomMember,
+    MindMap,
+    Quiz,
+    FlashcardSet,
+    PinnedItem,
+    PinChatMetadata,
+    CardComment,
+)
 from src.utils.openai_utils import get_ai_response, get_modes_for_room, BASE_MODES
 from src.utils.progression import compute_suggestion, should_show_with_exponential_cooldown
 from src.models.analytics import ProgressSuggestionState, ProgressSuggestionEvent
@@ -612,15 +626,22 @@ def delete_chat(chat_id: int) -> Any:
 
     if request.method == "POST":
         try:
-            # Delete related records that lack ON DELETE CASCADE before deleting the chat
+            # Explicitly delete all chat-related records before deleting the chat.
+            # ORM relationships can trigger SET NULL on delete; explicit deletes avoid that.
             from src.models.learning import ChatNotes
 
             ChatNotes.query.filter_by(chat_id=chat_id).delete()
             ProgressSuggestionState.query.filter_by(chat_id=chat_id).delete()
             ProgressSuggestionEvent.query.filter_by(chat_id=chat_id).delete()
             PromptRecord.query.filter_by(chat_id=chat_id).delete()
-            db.session.flush()  # Execute deletes before main chat delete
-            # Delete the chat (messages, comments deleted via cascade)
+            MindMap.query.filter_by(chat_id=chat_id).delete()
+            Quiz.query.filter_by(chat_id=chat_id).delete()
+            FlashcardSet.query.filter_by(chat_id=chat_id).delete()
+            PinnedItem.query.filter_by(chat_id=chat_id).delete()
+            PinChatMetadata.query.filter_by(chat_id=chat_id).delete()
+            CardComment.query.filter_by(chat_id=chat_id).delete()
+            db.session.flush()
+            # Delete the chat (messages, comments deleted via ORM cascade)
             db.session.delete(chat_obj)
             db.session.commit()
             flash("Chat deleted successfully.")
