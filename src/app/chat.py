@@ -611,11 +611,23 @@ def delete_chat(chat_id: int) -> Any:
     room_id = chat_obj.room_id
 
     if request.method == "POST":
-        # Delete the chat (messages will be deleted due to cascade)
-        db.session.delete(chat_obj)
-        db.session.commit()
-        flash("Chat deleted successfully.")
-        return redirect(url_for("room.room_crud.view_room", room_id=room_id))
+        try:
+            # Delete related records that lack ON DELETE CASCADE before deleting the chat
+            from src.models.learning import ChatNotes
+
+            ChatNotes.query.filter_by(chat_id=chat_id).delete()
+            ProgressSuggestionState.query.filter_by(chat_id=chat_id).delete()
+            ProgressSuggestionEvent.query.filter_by(chat_id=chat_id).delete()
+            # Delete the chat (messages, prompt_records, comments deleted via cascade)
+            db.session.delete(chat_obj)
+            db.session.commit()
+            flash("Chat deleted successfully.")
+            return redirect(url_for("room.room_crud.view_room", room_id=room_id))
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.exception("Failed to delete chat %s: %s", chat_id, e)
+            flash("Failed to delete chat. Please try again.", "error")
+            return redirect(url_for("chat.view_chat", chat_id=chat_id))
 
     # Get invitation count for navigation
     from src.app.room.utils.room_utils import get_invitation_count
