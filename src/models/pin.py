@@ -82,10 +82,10 @@ class PinnedItem(db.Model):
         nullable=False
     )
 
-    # Relationships
+    # Relationships (passive_deletes on chat: let DB CASCADE handle deletes)
     user = db.relationship('User', backref='pinned_items')
     room = db.relationship('Room', backref='pinned_items')
-    chat = db.relationship('Chat', backref='pinned_items')
+    chat = db.relationship('Chat', backref='pinned_items', passive_deletes=True)
     message = db.relationship('Message', backref='pins', foreign_keys=[message_id])
     comment = db.relationship('Comment', backref='pins', foreign_keys=[comment_id])
 
@@ -161,8 +161,8 @@ class PinChatMetadata(db.Model):
         nullable=False
     )
 
-    # Relationship
-    chat = db.relationship('Chat', backref=db.backref('pin_metadata', uselist=False))
+    # Relationship (passive_deletes: let DB CASCADE handle deletes)
+    chat = db.relationship('Chat', backref=db.backref('pin_metadata', uselist=False), passive_deletes=True)
 
     def __repr__(self) -> str:
         return f'<PinChatMetadata chat_id={self.chat_id} option={self.option}>'

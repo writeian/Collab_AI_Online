@@ -87,9 +87,9 @@ class CardComment(db.Model):
     # Soft delete
     deleted_at = db.Column(db.DateTime, nullable=True)
     
-    # Relationships
+    # Relationships (passive_deletes on chat: let DB CASCADE handle deletes)
     user = db.relationship("User", backref=db.backref("card_comments", lazy="dynamic"))
-    chat = db.relationship("Chat", backref=db.backref("card_comments", lazy="dynamic"))
+    chat = db.relationship("Chat", backref=db.backref("card_comments", lazy="dynamic"), passive_deletes=True)
     room = db.relationship("Room", backref=db.backref("card_comments", lazy="dynamic"))
     message = db.relationship("Message", backref=db.backref("card_comments", lazy="dynamic"))
     

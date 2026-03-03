@@ -58,8 +58,8 @@ class MindMap(db.Model):
     )
     completed_at = db.Column(db.DateTime(timezone=True), nullable=True)
     
-    # Relationships
-    chat = db.relationship("Chat", backref="mind_maps")
+    # Relationships (passive_deletes: let DB CASCADE handle deletes; avoids ORM trying to SET NULL)
+    chat = db.relationship("Chat", backref="mind_maps", passive_deletes=True)
     room = db.relationship("Room", backref="mind_maps")
     creator = db.relationship("User", foreign_keys=[created_by])
     

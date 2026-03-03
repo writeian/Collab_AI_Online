@@ -618,7 +618,9 @@ def delete_chat(chat_id: int) -> Any:
             ChatNotes.query.filter_by(chat_id=chat_id).delete()
             ProgressSuggestionState.query.filter_by(chat_id=chat_id).delete()
             ProgressSuggestionEvent.query.filter_by(chat_id=chat_id).delete()
-            # Delete the chat (messages, prompt_records, comments deleted via cascade)
+            PromptRecord.query.filter_by(chat_id=chat_id).delete()
+            db.session.flush()  # Execute deletes before main chat delete
+            # Delete the chat (messages, comments deleted via cascade)
             db.session.delete(chat_obj)
             db.session.commit()
             flash("Chat deleted successfully.")

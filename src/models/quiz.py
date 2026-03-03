@@ -58,8 +58,8 @@ class Quiz(db.Model):
     )
     completed_at = db.Column(db.DateTime(timezone=True), nullable=True)
     
-    # Relationships
-    chat = db.relationship("Chat", backref="quizzes")
+    # Relationships (passive_deletes: let DB CASCADE handle deletes)
+    chat = db.relationship("Chat", backref="quizzes", passive_deletes=True)
     room = db.relationship("Room", backref="quizzes")
     creator = db.relationship("User", foreign_keys=[created_by])
     answers = db.relationship(

@@ -59,8 +59,8 @@ class FlashcardSet(db.Model):
     )
     completed_at = db.Column(db.DateTime(timezone=True), nullable=True)
     
-    # Relationships
-    chat = db.relationship("Chat", backref="flashcard_sets")
+    # Relationships (passive_deletes: let DB CASCADE handle deletes)
+    chat = db.relationship("Chat", backref="flashcard_sets", passive_deletes=True)
     room = db.relationship("Room", backref="flashcard_sets")
     creator = db.relationship("User", foreign_keys=[created_by])
     sessions = db.relationship(
