@@ -55,7 +55,7 @@
       };
       return [
         skipButton(tour),
-        { text: 'Done', action: doneAction }
+        { text: 'Next', action: doneAction }
       ];
     }
     return [
