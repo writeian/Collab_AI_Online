@@ -662,18 +662,14 @@
     });
     document.getElementById('tutorial-option-chat')?.addEventListener('click', startChatPagesTour);
 
-    const container = document.querySelector('[data-show-tutorial-modal]');
-    const showModal = container?.getAttribute('data-show-tutorial-modal') === 'true';
-    const justRegistered = container?.getAttribute('data-just-registered') === 'true';
-    const tutorialCompleted = container?.getAttribute('data-tutorial-completed') === 'true';
-
-    if (showModal && !tutorialCompleted) {
-      if (justRegistered) {
-        startFullTour();
-      } else {
-        showOptionsModal();
-      }
-    }
+    // Auto-open tutorial disabled - was causing app to hang. Users can still click Tutorial button.
+    // const container = document.querySelector('[data-show-tutorial-modal]');
+    // const showModal = container?.getAttribute('data-show-tutorial-modal') === 'true';
+    // const justRegistered = container?.getAttribute('data-just-registered') === 'true';
+    // const tutorialCompleted = container?.getAttribute('data-tutorial-completed') === 'true';
+    // if (showModal && !tutorialCompleted) {
+    //   if (justRegistered) { startFullTour(); } else { showOptionsModal(); }
+    // }
 
     // Chat create form: set flag so chat tour runs after user creates chat and lands on chat view
     if (location.search.includes('start_chat_tutorial=1') && /\/room\/\d+\/chat\/create/.test(location.pathname)) {
