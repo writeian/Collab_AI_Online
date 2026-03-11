@@ -325,10 +325,12 @@ def generate_quiz():
         
         try:
             # call_anthropic_api returns (text, is_truncated) tuple
+            # timeout=90: quiz generation can be slow with large context + 4000 tokens
             text_content, is_truncated = call_anthropic_api(
                 messages=[{"role": "user", "content": prompt}],
                 system_prompt="You are an expert educator creating multiple-choice questions for assessment.",
-                max_tokens=4000
+                max_tokens=4000,
+                timeout=90,
             )
             
             if not text_content or not text_content.strip():

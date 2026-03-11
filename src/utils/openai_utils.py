@@ -574,8 +574,8 @@ def call_anthropic_api(messages: List[Dict[str, str]], system_prompt: str = "", 
     user_content = "\n\n".join(user_messages)
 
     def _get_anthropic_model() -> str:
-        # claude-3-5-sonnet-20241022 was retired; use current model
-        model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
+        # Default to Haiku 4.5 (fastest); override with ANTHROPIC_MODEL for Sonnet etc.
+        model = os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5")
         if "/" in model:
             model = model.split("/", 1)[-1]
         return model.strip()
@@ -652,7 +652,7 @@ def call_anthropic_api_stream(messages: List[Dict[str, str]], system_prompt: str
             user_messages.append(msg.get("content", ""))
     user_content = "\n\n".join(user_messages)
 
-    model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
+    model = os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5")
     if "/" in model:
         model = model.split("/", 1)[-1]
     model = model.strip()
