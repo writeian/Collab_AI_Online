@@ -4,7 +4,7 @@ builder = "nixpacks"
 [deploy]
 startCommand = "/opt/venv/bin/gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2 --timeout 180"
 healthcheckPath = "/health"
-healthcheckTimeout = 60
+healthcheckTimeout = 180
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
 
