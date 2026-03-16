@@ -260,7 +260,7 @@ def generate_room_modes(room: Any, template_name: Optional[str] = None) -> Dict[
     1. A clear and concise title for this learning room (no longer than five words)
     2. 8-10 learning steps that follow a logical progression for achieving these goals
     
-    Each step should be specific to the learning objectives, not generic academic writing steps.
+    Each step MUST be specific to the stated learning goals and topic. Do NOT use generic steps like "Explore & evaluate significance" or "Plan study sessions". For scientific or technical topics (e.g. sulfate reduction, chemistry, lab analysis), create steps that directly address that subject matter.
     
     Return as JSON with this exact format:
     {{
@@ -335,7 +335,7 @@ def generate_room_modes(room: Any, template_name: Optional[str] = None) -> Dict[
         if provider == "anthropic":
             for i in range(attempts):
                 try:
-                    response, _ = call_anthropic_api([{"role": "user", "content": prompt}], max_tokens=1000)
+                    response, _ = call_anthropic_api([{"role": "user", "content": prompt}], max_tokens=2000)
                     title, modes = _parse_enhanced_response(response)
                     
                     # Store title for room creation (temporary global variable)
@@ -358,7 +358,7 @@ def generate_room_modes(room: Any, template_name: Optional[str] = None) -> Dict[
         elif provider == "openai":
             for i in range(attempts):
                 try:
-                    response, _ = call_openai_api([{"role": "user", "content": prompt}], max_tokens=1000)
+                    response, _ = call_openai_api([{"role": "user", "content": prompt}], max_tokens=2000)
                     title, modes = _parse_enhanced_response(response)
                     if modes:
                         return modes
@@ -374,11 +374,18 @@ def generate_room_modes(room: Any, template_name: Optional[str] = None) -> Dict[
 
         elif provider == "templates":
             try:
+                # Prefer explicit template_name (e.g. from Learning Lab creation) over inference
+                if template_name and template_name in BASE_TEMPLATES:
+                    try:
+                        current_app.logger.info(f"Falling back to explicit template '{template_name}' for modes")
+                    except Exception:
+                        pass
+                    return BASE_TEMPLATES[template_name]["modes"]
                 from src.app.room.utils.room_utils import infer_template_type_from_room as _infer
                 inferred = _infer(room)
                 if inferred and inferred in BASE_TEMPLATES:
                     try:
-                        current_app.logger.info(f"Falling back to base template '{inferred}' for modes")
+                        current_app.logger.info(f"Falling back to inferred template '{inferred}' for modes")
                     except Exception:
                         pass
                     return BASE_TEMPLATES[inferred]["modes"]

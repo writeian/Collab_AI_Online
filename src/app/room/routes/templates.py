@@ -286,7 +286,7 @@ def create_template_room(template_type: str) -> Any:
         
         # Generate modes based on goals
         try:
-            from src.utils.openai_utils import generate_room_modes
+            from src.utils.openai_utils import generate_room_modes, BASE_TEMPLATES
             modes = generate_room_modes(room, template_name=template_type)
             
             # Save generated modes as custom prompts
@@ -300,10 +300,40 @@ def create_template_room(template_type: str) -> Any:
                         created_by=user.id,
                     )
                     db.session.add(custom_prompt)
+            else:
+                # AI returned empty modes - fall back to template
+                if template_type in BASE_TEMPLATES:
+                    modes = BASE_TEMPLATES[template_type]["modes"]
+                    for mode_key, mode_info in modes.items():
+                        custom_prompt = CustomPrompt(
+                            mode_key=mode_key,
+                            label=mode_info.label,
+                            prompt=mode_info.prompt,
+                            room_id=room.id,
+                            created_by=user.id,
+                        )
+                        db.session.add(custom_prompt)
+                    current_app.logger.info(f"Used template '{template_type}' modes for room {room.id} (AI returned empty)")
             
         except Exception as mode_error:
             current_app.logger.warning(f"Mode generation failed for room {room.id}: {mode_error}")
-            # Continue without modes - room will still be created
+            # Fall back to template modes so room has usable steps (not wrong inferred template)
+            try:
+                from src.utils.openai_utils import BASE_TEMPLATES
+                if template_type in BASE_TEMPLATES:
+                    modes = BASE_TEMPLATES[template_type]["modes"]
+                    for mode_key, mode_info in modes.items():
+                        custom_prompt = CustomPrompt(
+                            mode_key=mode_key,
+                            label=mode_info.label,
+                            prompt=mode_info.prompt,
+                            room_id=room.id,
+                            created_by=user.id,
+                        )
+                        db.session.add(custom_prompt)
+                    current_app.logger.info(f"Saved template '{template_type}' modes after AI failure for room {room.id}")
+            except Exception as fallback_err:
+                current_app.logger.warning(f"Template fallback also failed for room {room.id}: {fallback_err}")
         
         db.session.commit()
         
