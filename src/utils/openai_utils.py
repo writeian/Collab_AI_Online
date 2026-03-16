@@ -234,13 +234,14 @@ MODES = BASE_MODES.copy()
 
 def generate_room_modes(room: Any, template_name: Optional[str] = None) -> Dict[str, Any]:
     """Generate contextual writing modes based on room goals with provider failover."""
-    # If a specific template is requested, use it
-    if template_name and template_name in BASE_TEMPLATES:
-        return BASE_TEMPLATES[template_name]["modes"]
+    goals = (getattr(room, 'goals', None) or "").strip()
 
-    # Otherwise, use AI to generate contextual modes based on room goals
-    if not getattr(room, 'goals', None):
-        # If no goals, fall back to inferred or academic_essay base modes
+    # When room has goals (including custom "Add Your Own Goals"), use AI to generate
+    # tailored modes. Template modes are only used when goals are empty.
+    if not goals:
+        # No goals: use template or inferred fallback
+        if template_name and template_name in BASE_TEMPLATES:
+            return BASE_TEMPLATES[template_name]["modes"]
         try:
             from src.app.room.utils.room_utils import infer_template_type_from_room as _infer
             inferred = _infer(room)
@@ -251,8 +252,9 @@ def generate_room_modes(room: Any, template_name: Optional[str] = None) -> Dict[
         return BASE_TEMPLATES["academic_essay"]["modes"]
 
     # Build common prompt for all providers (enhanced with title generation)
+    template_hint = f" This room uses the {template_name.replace('-', ' ')} template." if template_name and template_name in BASE_TEMPLATES else ""
     prompt = f"""
-    Based on these learning goals: "{room.goals}"
+    Based on these learning goals: "{goals}"{template_hint}
     
     Please provide:
     1. A clear and concise title for this learning room (no longer than five words)
