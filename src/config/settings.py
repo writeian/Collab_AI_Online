@@ -34,11 +34,16 @@ class Config:
     
     # Database connection pooling for better performance (PostgreSQL only)
     if os.environ.get("DATABASE_URL") and "postgresql" in os.environ.get("DATABASE_URL", ""):
+        # Per-process pool (each Gunicorn worker has its own engine). With gthread, many
+        # concurrent requests share this pool. Total worst-case connections ≈
+        # GUNICORN_WORKERS * (DB_POOL_SIZE + DB_POOL_MAX_OVERFLOW)—keep under Postgres max_connections.
+        _pool = int(os.environ.get("DB_POOL_SIZE", "10"))
+        _overflow = int(os.environ.get("DB_POOL_MAX_OVERFLOW", "12"))
         SQLALCHEMY_ENGINE_OPTIONS = {
-            'pool_size': 10,
+            'pool_size': _pool,
             'pool_recycle': 300,
             'pool_pre_ping': True,
-            'max_overflow': 20
+            'max_overflow': _overflow,
         }
     else:
         # SQLite configuration (no pooling needed)
