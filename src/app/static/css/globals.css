@@ -52,6 +52,18 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 
+  /* User message bubble fill (quotes use avatar hues below) */
+  --chat-user-bubble-color: #8047A7;
+
+  /* User avatar / reply-quote tint (leading stop of each gradient; must match view rounding user.id % 6 + 1) */
+  --avatar-reply-hue-1: #10b981;
+  --avatar-reply-hue-2: #f59e0b;
+  --avatar-reply-hue-3: #ef4444;
+  --avatar-reply-hue-4: #8b5cf6;
+  --avatar-reply-hue-5: #06b6d4;
+  --avatar-reply-hue-6: #f472b6;
+  --avatar-reply-hue-ai: #6b7280;
+
   /* Semantic Action Colors - Industry Standard Design Tokens */
   --success-50: #f0fdf4;
   --success-100: #dcfce7;

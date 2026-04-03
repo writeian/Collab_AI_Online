@@ -140,6 +140,130 @@
   .dark .tools-menu-item:hover {
     background: rgba(255,255,255,0.08);
   }
+  /* ChatGPT-style reply context (assistant referencing a prior message) */
+  .message-reply-context {
+    display: flex;
+    gap: 0.35rem;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+    padding: 0;
+    max-width: 100%;
+  }
+  .message-reply-icon {
+    flex-shrink: 0;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    color: var(--muted-foreground, #6b7280);
+    opacity: 0.85;
+    margin-top: 0.05rem;
+  }
+  .message-reply-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+    font-size: 0.78rem;
+    line-height: 1.35;
+    color: var(--muted-foreground, #6b7280);
+    border-left: 2px solid var(--border, rgba(0,0,0,0.12));
+    padding-left: 0.5rem;
+  }
+  .message-reply-author {
+    font-weight: 600;
+    color: var(--foreground, #111);
+    opacity: 0.8;
+  }
+  .dark .message-reply-author {
+    color: var(--foreground, #f3f4f6);
+  }
+  .message-reply-snippet {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
+    opacity: 0.92;
+  }
+  /* AI queue: glass bubble above composer */
+  @keyframes ai-queue-shimmer {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+  @keyframes ai-queue-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary, #22c55e) 22%, transparent); }
+    50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--primary, #22c55e) 0%, transparent); }
+  }
+  .ai-queue-notice {
+    margin-bottom: 0.75rem;
+    border-radius: 1rem;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.52);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+    animation: ai-queue-pulse 2.4s ease-out infinite;
+  }
+  .dark .ai-queue-notice {
+    background: rgba(30, 30, 36, 0.55);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+  }
+  .ai-queue-notice.hidden {
+    display: none !important;
+  }
+  .ai-queue-bubble-track {
+    height: 3px;
+    width: 100%;
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--primary, #22c55e) 18%, transparent) 0%,
+      color-mix(in srgb, var(--primary, #22c55e) 65%, transparent) 50%,
+      color-mix(in srgb, var(--primary, #22c55e) 18%, transparent) 100%
+    );
+    background-size: 200% 100%;
+    animation: ai-queue-shimmer 1.4s linear infinite;
+  }
+  .ai-queue-bubble-body {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 0.65rem 0.85rem 0.75rem;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: var(--foreground, #1a1a1a);
+  }
+  .dark .ai-queue-bubble-body {
+    color: var(--foreground, #f3f4f6);
+  }
+  .ai-queue-bubble-spinner {
+    flex-shrink: 0;
+    width: 1.1rem;
+    height: 1.1rem;
+    margin-top: 0.15rem;
+    border: 2px solid color-mix(in srgb, var(--primary, #22c55e) 22%, transparent);
+    border-top-color: color-mix(in srgb, var(--primary, #22c55e) 88%, #fff);
+    border-radius: 50%;
+    animation: ai-queue-spin 0.75s linear infinite;
+  }
+  @keyframes ai-queue-spin {
+    to { transform: rotate(360deg); }
+  }
+  .ai-queue-bubble-copy {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  .ai-queue-bubble-line-primary {
+    font-weight: 600;
+    font-size: 0.875rem;
+  }
+  .ai-queue-bubble-line-detail {
+    font-size: 0.8125rem;
+    opacity: 0.88;
+  }
   /* Invite modal - matches educational tools (quiz, flashcards, etc.) */
   .invite-modal {
     position: fixed; inset: 0; z-index: 10002;
@@ -218,7 +342,8 @@
      data-chat-mode="{{ chat.mode }}"
      data-mode-order='{{ mode_order|tojson }}'
      data-mode-labels='{{ mode_labels|tojson }}'
-     data-mode-map='{{ room_chat_map|tojson }}'>
+     data-mode-map='{{ room_chat_map|tojson }}'
+     {% if ai_async_available %}data-ai-async="1"{% endif %}>
     <!-- Sidebar -->
     <div class="w-80 chat-sidebar flex flex-col h-full max-h-full">
         <!-- Header -->
@@ -501,6 +626,16 @@
                             AI
                         </div>
                         <div class="flex-1">
+                            {% set rc = message|reply_context %}
+                            {% if rc %}
+                            <div class="message-reply-context {% if rc.avatar_slot %}reply-tint-{{ rc.avatar_slot }}{% else %}reply-tint-assistant{% endif %}" role="note" aria-label="Replying to {{ rc.author_label }}">
+                                <span class="message-reply-icon" aria-hidden="true">↳</span>
+                                <div class="message-reply-text">
+                                    <span class="message-reply-author">{{ rc.author_label|e }}</span>
+                                    <span class="message-reply-snippet">{{ rc.preview|e }}</span>
+                                </div>
+                            </div>
+                            {% endif %}
                             <div class="message-content">
                                 <p>{{ message.content|markdown|safe }}</p>
                                 <p class="message-timestamp">
@@ -627,7 +762,18 @@
         </div>
 
         <div class="p-4 border-t border-border chat-input-container flex-shrink-0">
+        <div id="ai-queue-notice" class="ai-queue-notice hidden" role="status" aria-live="polite">
+            <div class="ai-queue-bubble-track" aria-hidden="true"></div>
+            <div class="ai-queue-bubble-body">
+                <div class="ai-queue-bubble-spinner" aria-hidden="true"></div>
+                <div class="ai-queue-bubble-copy">
+                    <div class="ai-queue-bubble-line-primary"></div>
+                    <div class="ai-queue-bubble-line-detail"></div>
+                </div>
+            </div>
+        </div>
         <form method="POST" action="{{ url_for('chat.view_chat', chat_id=chat.id) }}" class="flex flex-col gap-3" id="message-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <!-- AI Response Toggle -->
             <div class="flex items-center gap-2 mb-3">
                 <input type="hidden" name="ai_response" value="0">
@@ -682,7 +828,7 @@
                         class="send-button"
                         id="send-button">
                     <i data-lucide="send" class="w-4 h-4" id="send-icon"></i>
-                    <i data-lucide="loader-2" class="w-4 h-4 animate-spin hidden" id="loading-icon"></i>
+                    <i data-lucide="hourglass" class="w-4 h-4 animate-spin hidden" id="loading-icon" aria-hidden="true"></i>
                 </button>
             </div>
         </form>
@@ -771,7 +917,7 @@
 
 {% block extra_js %}
     {{ super() }}
-    <script src="{{ url_for('static', filename='js/chat-view.js') }}?v=2025-10-28"></script>
+    <script src="{{ url_for('static', filename='js/chat-view.js') }}?v=2026-04-04-stream-dedupe"></script>
     {% if can_invite %}
     <script>
     (function() {
@@ -835,7 +981,7 @@
                     return;
                 }
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Sending...';
+                submitBtn.innerHTML = '<i data-lucide="hourglass" class="w-4 h-4 animate-spin" aria-hidden="true"></i> Sending...';
                 try { lucide.createIcons(); } catch (_) {}
                 hideMessage();
 

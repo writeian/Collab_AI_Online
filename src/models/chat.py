@@ -80,6 +80,11 @@ class Message(db.Model):
 
     # Relationship
     user = db.relationship("User", backref="messages")
+    parent = db.relationship(
+        "Message",
+        remote_side=[id],
+        foreign_keys=[parent_message_id],
+    )
 
     def __repr__(self) -> str:
         return f"<Message {self.id} role={self.role}>"

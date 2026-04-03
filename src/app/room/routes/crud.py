@@ -496,6 +496,7 @@ def create_chat(room_id: int) -> Any:
     from src.utils.openai_utils import get_modes_for_room
     from src.app.google_docs import validate_google_docs_url, get_document_content
     from src.utils.openai_utils import get_ai_response, generate_chat_introduction
+    from src.utils.ai_load_tracker import room_ai_begin
     from ..utils.room_utils import infer_template_type_from_room
     
     room = Room.query.get_or_404(room_id)
@@ -581,13 +582,14 @@ def create_chat(room_id: int) -> Any:
             current_app.logger.info(f"🔍 Chat introduction params: template_type={template_type}, learning_step={learning_step}, room_id={chat_obj.room.id}, chat_id={chat_obj.id}")
             current_app.logger.info(f"🔍 Room goals: {chat_obj.room.goals[:100]}...")
             
-            introduction = generate_chat_introduction(
-                chat_obj.room.goals, 
-                template_type=template_type, 
-                learning_step=learning_step, 
-                room_id=chat_obj.room.id,
-                chat_id=chat_obj.id  # Pass chat_id for context loading
-            )
+            with room_ai_begin(chat_obj.room.id):
+                introduction = generate_chat_introduction(
+                    chat_obj.room.goals,
+                    template_type=template_type,
+                    learning_step=learning_step,
+                    room_id=chat_obj.room.id,
+                    chat_id=chat_obj.id,  # Pass chat_id for context loading
+                )
             
             current_app.logger.info(f"✅ Introduction generated successfully, length: {len(introduction)} chars")
 
@@ -630,11 +632,19 @@ def create_chat(room_id: int) -> Any:
                     content=f"[Google Doc Content]\n\n{content}",
                 )
                 db.session.add(doc_message)
+                db.session.flush()
 
                 # Get AI response to the imported content
-                ai_content = get_ai_response(chat_obj)
+                with room_ai_begin(chat_obj.room_id):
+                    ai_content, _ai_trunc = get_ai_response(
+                        chat_obj, through_message=doc_message
+                    )
                 ai_msg = Message(
-                    chat_id=chat_obj.id, role="assistant", content=ai_content
+                    chat_id=chat_obj.id,
+                    role="assistant",
+                    content=ai_content,
+                    is_truncated=_ai_trunc,
+                    parent_message_id=doc_message.id,
                 )
                 db.session.add(ai_msg)
                 db.session.commit()

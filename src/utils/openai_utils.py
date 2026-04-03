@@ -497,13 +497,12 @@ def get_mode_system_prompt(mode: str, room_id: Optional[int] = None, chat_id: Op
         try:
             from src.models import Message, Chat
             from src.utils.learning.context_manager import get_learning_context_for_room
-            
-            # Get current chat message count
+
+            chat_obj = Chat.query.get(chat_id)
             current_message_count = Message.query.filter_by(chat_id=chat_id).count()
-            
+
             # If current chat has 5+ messages, use its own context (existing behavior)
             if current_message_count >= 5:
-                chat_obj = Chat.query.get(chat_id)
                 if chat_obj:
                     messages = Message.query.filter_by(chat_id=chat_id).order_by(Message.timestamp).all()
                     
@@ -525,17 +524,22 @@ Building on these insights from your previous exploration, let's now focus on th
             elif current_message_count < 5:
                 current_app.logger.info(f"🔍 New chat detected (chat_id={chat_id}, {current_message_count} msgs), looking for learning context in room {room_id}")
                 
-                learning_context = get_learning_context_for_room(room_id, exclude_chat_id=chat_id)
+                owner_id = chat_obj.created_by if chat_obj else None
+                learning_context = get_learning_context_for_room(
+                    room_id,
+                    exclude_chat_id=chat_id,
+                    created_by_user_id=owner_id,
+                )
                 
                 if learning_context:
                     current_app.logger.info(f"✅ Found learning context for room {room_id}, length: {len(learning_context)} chars")
                     # Enhance prompt with cumulative learning context
                     enhanced_prompt = f"""{base_prompt}
 
-LEARNING CONTEXT FROM YOUR PREVIOUS DISCUSSIONS:
+LEARNING CONTEXT FROM YOUR OWN EARLIER CHATS IN THIS ROOM (not other members' threads):
 {learning_context}
 
-Building on all these insights from your learning journey, let's continue with this next step.
+Building on these insights from your own prior work in this room, continue this next step. If the user's latest question is a new topic, focus on that question rather than repeating earlier themes unless they connect them.
 """
                     current_app.logger.info(f"🧠 Enhanced prompt created with learning context")
                     return enhanced_prompt
@@ -754,15 +758,71 @@ def get_ai_response(
     temperature: float = 0.7,  # Ignored for Anthropic
     max_tokens: Optional[int] = None,
     extra_system: Optional[str] = None,
+    through_message: Optional[Any] = None,
 ) -> Tuple[str, bool]:
     """
     Return the assistant's reply text and truncation status for a given Chat row.
-    
+
+    through_message:
+        If set (a Message with an id), only messages with id <= through_message.id are
+        included. This prevents concurrent posts from other users from replacing the
+        "latest" user turn while this reply is being generated.
+
     Configurable via environment variables:
     - AI_MAX_TOKENS: Maximum tokens for AI response (default 400)
     - AI_MAX_HISTORY: Number of conversation turns to include (default 8)
     - AI_MAX_TOKENS_{MODE}: Optional per-mode override (e.g., AI_MAX_TOKENS_DRAFT=500)
     """
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        return (
+            "⚠️ No AI API key configured. Please set ANTHROPIC_API_KEY environment variable.",
+            False,
+        )
+    messages_payload, system_prompt, mt = _prepare_anthropic_completion(
+        chat,
+        max_tokens=max_tokens,
+        extra_system=extra_system,
+        through_message=through_message,
+    )
+    return call_anthropic_api(messages_payload, system_prompt, mt)
+
+
+def get_ai_response_streaming(
+    chat: Any,
+    *,
+    max_tokens: Optional[int] = None,
+    extra_system: Optional[str] = None,
+    through_message: Optional[Any] = None,
+    on_text_chunk: Optional[Any] = None,
+) -> Tuple[str, bool]:
+    """Stream tokens from Anthropic; on_text_chunk receives each text delta. Returns (full_text, is_truncated)."""
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        return (
+            "⚠️ No AI API key configured. Please set ANTHROPIC_API_KEY environment variable.",
+            False,
+        )
+    messages_payload, system_prompt, mt = _prepare_anthropic_completion(
+        chat,
+        max_tokens=max_tokens,
+        extra_system=extra_system,
+        through_message=through_message,
+    )
+    for ev in call_anthropic_api_stream(messages_payload, system_prompt, mt):
+        if isinstance(ev, tuple):
+            return str(ev[0]), bool(ev[1])
+        if on_text_chunk:
+            on_text_chunk(ev)
+    return "", False
+
+
+def _prepare_anthropic_completion(
+    chat: Any,
+    *,
+    max_tokens: Optional[int] = None,
+    extra_system: Optional[str] = None,
+    through_message: Optional[Any] = None,
+) -> Tuple[List[Dict[str, str]], str, int]:
+    """Build messages list, system prompt, and max_tokens (shared by sync and streaming paths)."""
     # Read configuration from environment
     DEFAULT_MAX_TOKENS = int(os.getenv("AI_MAX_TOKENS", "400"))
     MAX_HISTORY_TURNS = int(os.getenv("AI_MAX_HISTORY", "8"))
@@ -781,14 +841,6 @@ def get_ai_response(
                 max_tokens = DEFAULT_MAX_TOKENS
         else:
             max_tokens = DEFAULT_MAX_TOKENS
-    
-    # Check for API key first
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
-        return (
-            "⚠️ No AI API key configured. Please set ANTHROPIC_API_KEY environment variable.",
-            False,
-        )
 
     # Check if this is a pin-seeded chat (mode starts with "pins_")
     is_pin_chat = chat.mode and chat.mode.startswith("pins_")
@@ -807,12 +859,21 @@ def get_ai_response(
     # Import here to avoid circular imports
     from src.models import Message
 
-    # Fetch all messages for this chat
+    anchor_id = None
+    if through_message is not None:
+        anchor_id = getattr(through_message, "id", None)
+    q = Message.query.filter_by(chat_id=chat.id)
+    if anchor_id is not None:
+        q = q.filter(Message.id <= int(anchor_id))
+        try:
+            current_app.logger.info(
+                f"📎 AI context scoped to message id <= {anchor_id} (chat {chat.id})"
+            )
+        except Exception:
+            pass
     all_messages = [
         {"role": m.role, "content": m.content}
-        for m in Message.query.filter_by(chat_id=chat.id)
-        .order_by(Message.timestamp)
-        .all()
+        for m in q.order_by(Message.id).all()
     ]
     
     # Cap message history to last N turns (user + assistant pairs)
@@ -828,6 +889,35 @@ def get_ai_response(
             pass
     else:
         messages_payload = all_messages
+
+    if (
+        through_message is not None
+        and getattr(through_message, "role", None) == "user"
+        and messages_payload
+    ):
+        last = messages_payload[-1]
+        if last.get("role") != "user":
+            try:
+                current_app.logger.error(
+                    "get_ai_response: scoped history must end with user "
+                    "(chat=%s anchor_id=%s)",
+                    getattr(chat, "id", None),
+                    getattr(through_message, "id", None),
+                )
+            except Exception:
+                pass
+        elif (last.get("content") or "").strip() != (
+            through_message.content or ""
+        ).strip():
+            try:
+                current_app.logger.warning(
+                    "get_ai_response: aligning last user turn to anchor message "
+                    "(chat=%s)",
+                    getattr(chat, "id", None),
+                )
+            except Exception:
+                pass
+            messages_payload[-1]["content"] = through_message.content
 
     # NEW: Search Library Tool documents for relevant context (with room_id scoping)
     try:
@@ -963,9 +1053,12 @@ def get_ai_response(
                             )
                         else:
                             instruction = (
-                                f"IMPORTANT: The user has uploaded documents to their Library. "
-                                f"Use the document context above to answer their question. "
-                                f"If the question is about their uploaded documents, reference specific content from the documents.\n\n"
+                                "IMPORTANT: The user may have documents in their Library. "
+                                "Use the excerpts below ONLY if they clearly match the user's question "
+                                "(same topic, place, subject, or document). If excerpts are about a "
+                                "different country, class, source, or subject than the user asked about, "
+                                "ignore them and answer from general knowledge. When excerpts are "
+                                "relevant, reference specific content from them.\n\n"
                             )
                         
                         messages_payload[-1]["content"] = (
@@ -984,8 +1077,21 @@ def get_ai_response(
     # Rebuild system_prompt to include any extra_system modifications (e.g., synthesis disabled note)
     if extra_system:
         system_prompt = f"{base_system_prompt}\n\nADDITIONAL STYLE: {extra_system}"
+    else:
+        system_prompt = base_system_prompt
 
-    return call_anthropic_api(messages_payload, system_prompt, max_tokens)
+    if (
+        through_message is not None
+        and getattr(through_message, "role", None) == "user"
+        and (through_message.content or "").strip()
+    ):
+        system_prompt = (
+            f"{system_prompt}\n\n"
+            "CURRENT TURN: Address the user's latest message in the conversation below. "
+            "If it asks something new or changes topic, answer that—not a previous thread—unless the user explicitly connects topics."
+        )
+
+    return messages_payload, system_prompt, max_tokens
 
 
 def assess_learning_progression(chat: Any, target_mode: Optional[str] = None) -> Dict[str, Any]:
@@ -1290,8 +1396,15 @@ def generate_chat_introduction(room_goals: str, template_type: str = None, learn
     learning_context = None
     if room_id and chat_id:
         try:
+            from src.models import Chat as _Chat
             from src.utils.learning.context_manager import get_learning_context_for_room
-            learning_context = get_learning_context_for_room(room_id, exclude_chat_id=chat_id)
+
+            _c = _Chat.query.get(chat_id)
+            learning_context = get_learning_context_for_room(
+                room_id,
+                exclude_chat_id=chat_id,
+                created_by_user_id=(_c.created_by if _c else None),
+            )
             if learning_context:
                 print(f"=== FOUND LEARNING CONTEXT: {len(learning_context)} chars ===")
             else:

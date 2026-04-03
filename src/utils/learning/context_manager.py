@@ -8,6 +8,7 @@ learning progression across multiple chats within a room.
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 import logging
+import os
 
 from flask import current_app
 from src.app import db
@@ -187,31 +188,44 @@ def get_chat_notes(chat_id: int) -> Optional[str]:
         return None
 
 
-def get_learning_context_for_room(room_id: int, exclude_chat_id: Optional[int] = None) -> Optional[str]:
+def get_learning_context_for_room(
+    room_id: int,
+    exclude_chat_id: Optional[int] = None,
+    created_by_user_id: Optional[int] = None,
+) -> Optional[str]:
     """
-    Get cumulative learning context from all completed chats in a room.
-    
-    This combines notes from all chats with stored notes, providing rich
-    context for new chats to build upon previous discussions.
+    Get cumulative learning context from completed chats in a room.
+
+    By default (when ``created_by_user_id`` is set), only notes from chats
+    created by that user are included so collaborators do not inherit each
+    other's conversation summaries. Set env ``ROOM_LEARNING_CONTEXT_ALL_USERS=true``
+    to restore the legacy room-wide aggregate for all users.
     
     Args:
         room_id: The room to get context for
         exclude_chat_id: Optional chat ID to exclude (e.g., current chat)
-        
+        created_by_user_id: If set, only chats with this creator (unless env override)
+
     Returns:
         Combined notes content or None if no completed chats found
     """
     try:
-        from src.models import ChatNotes
-        
-        # Get notes for all chats in this room (one note record per chat)
-        from src.models import ChatNotes
-        
+        from src.models import ChatNotes, Chat
+
+        include_all_users = os.getenv(
+            "ROOM_LEARNING_CONTEXT_ALL_USERS", "false"
+        ).lower() in ("1", "true", "yes")
+
         query = ChatNotes.query.filter_by(room_id=room_id)
-        
+
         if exclude_chat_id:
             query = query.filter(ChatNotes.chat_id != exclude_chat_id)
-            
+
+        if created_by_user_id is not None and not include_all_users:
+            query = query.join(Chat, Chat.id == ChatNotes.chat_id).filter(
+                Chat.created_by == created_by_user_id
+            )
+
         completed_chats = query.order_by(ChatNotes.generated_at).all()
         
         if not completed_chats:

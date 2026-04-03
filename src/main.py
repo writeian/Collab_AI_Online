@@ -544,6 +544,15 @@ except Exception as e:
     app = Flask(__name__)
     app.config['ERROR_STATUS'] = str(e)
 
+    @app.route("/")
+    def _fallback_index():
+        from flask import jsonify
+        return jsonify(
+            error="application failed to start",
+            detail=str(e)[:2000],
+            hint="Fix the error above, then restart. /health still works for process probes.",
+        ), 503
+
 # Liveness check - Is the process alive? (Register early for healthchecks)
 @app.route("/health")
 def health():

@@ -42,6 +42,8 @@ from src.models import (
 )
 from src.utils.openai_utils import get_ai_response, get_modes_for_room, BASE_MODES
 from src.utils.progression import compute_suggestion, should_show_with_exponential_cooldown
+from src.utils.ai_load_tracker import room_ai_begin, snapshot_room
+from src.utils.message_display import reply_context_dict
 from src.models.analytics import ProgressSuggestionState, ProgressSuggestionEvent
 import os
 from src.app.access_control import (
@@ -56,8 +58,57 @@ from src.app.access_control import (
 from src.app.google_docs import validate_google_docs_url, get_document_content
 from src.app.achievements import track_mode_usage
 from sqlalchemy.orm import joinedload
+import json
+import secrets
+
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 
 chat = Blueprint("chat", __name__)
+
+_SSE_INREQUEST_SALT = "ai-inrequest-sse-v2"
+_SSE_INREQUEST_MAX_AGE = 300
+
+
+def _inrequest_sse_serializer() -> URLSafeTimedSerializer:
+    sk = current_app.secret_key
+    if not sk:
+        raise RuntimeError("SECRET_KEY is required for streaming auth tokens")
+    return URLSafeTimedSerializer(sk, salt=_SSE_INREQUEST_SALT)
+
+
+def _ai_async_configured() -> bool:
+    return bool(os.getenv("REDIS_URL")) and os.getenv(
+        "AI_ASYNC_ENABLED", "true"
+    ).lower() not in ("0", "false", "no")
+
+
+def _stream_in_request_enabled() -> bool:
+    """Stream AI over SSE on a follow-up GET (after POST returns 202), without Redis/RQ.
+
+    Browsers often deliver an empty fetch() body for SSE on POST; we use EventSource
+    on GET instead (same pattern as the Redis worker path).
+
+    On by default in development. Set AI_STREAM_IN_REQUEST=0 to force sync.
+    Set AI_STREAM_IN_REQUEST=1 in production if you accept long-held HTTP connections.
+    """
+    if os.getenv("AI_STREAM_IN_REQUEST", "").lower() in ("0", "false", "no"):
+        return False
+    if os.getenv("AI_STREAM_IN_REQUEST", "").lower() in ("1", "true", "yes"):
+        return True
+    return os.getenv("FLASK_ENV", "development").lower() == "development"
+
+
+def _streaming_ui_enabled() -> bool:
+    """Expose streaming UX (fetch + SSE) when Redis async or in-request SSE is available."""
+    if _ai_async_configured():
+        return True
+    return _stream_in_request_enabled()
+
+
+@chat.app_template_filter("reply_context")
+def _reply_context_filter(m: Any) -> Any:
+    return reply_context_dict(m) if m else None
+
 
 # Chat routes are now handled within room context
 # See room.py for room-based chat creation and management
@@ -151,7 +202,6 @@ def view_chat(chat_id: int) -> Any:
                     current_app.logger.info(
                         f"Duplicate message detected and ignored: '{content}'"
                     )
-                    flash("Message sent successfully! (Duplicate prevented)")
                     return redirect(
                         url_for("chat.view_chat", chat_id=chat_obj.id), code=303
                     )
@@ -197,18 +247,131 @@ def view_chat(chat_id: int) -> Any:
 
                 # Only get AI response if toggle is enabled
                 if ai_response_enabled:
-                    # ask GPT‑4o and store assistant reply
-                    try:
-                        # Check for critique instructions (now available for all rooms)
-                        critique_instructions = request.form.get("room81_critique_instructions", "")
-                        
-                        if critique_instructions:
-                            ai_content, is_truncated = get_ai_response(
-                                chat_obj, 
-                                extra_system=critique_instructions
+                    critique_instructions = request.form.get(
+                        "room81_critique_instructions", ""
+                    )
+
+                    # Client requests streaming when header X-AI-Async: 1 is set.
+                    # IMPORTANT: use separate `if` blocks, not if/elif. If REDIS_URL is set but
+                    # the meta write fails, we must still try in-request SSE — with elif the
+                    # second branch was skipped whenever the first condition was true, forcing
+                    # sync get_ai_response() and blocking the POST until the full model reply
+                    # (fetch() appears hung; no incremental UI).
+                    want_ai_stream_http = (
+                        request.headers.get("X-AI-Async", "").strip() == "1"
+                    )
+
+                    # Async + SSE path (worker streams chunks; job starts when client opens SSE)
+                    if want_ai_stream_http and _ai_async_configured():
+                        try:
+                            stream_token = secrets.token_urlsafe(32)
+                            redis_url = os.getenv("REDIS_URL")
+                            if redis_url:
+                                from redis import Redis
+
+                                r = Redis.from_url(
+                                    redis_url,
+                                    decode_responses=True,
+                                    socket_connect_timeout=2.5,
+                                    socket_timeout=2.5,
+                                )
+                                r.setex(
+                                    f"ai_stream_meta:{stream_token}",
+                                    900,
+                                    json.dumps(
+                                        {
+                                            "chat_id": chat_obj.id,
+                                            "user_message_id": user_msg.id,
+                                            "user_id": user.id,
+                                            "critique_instructions": critique_instructions,
+                                        }
+                                    ),
+                                )
+                                return (
+                                    jsonify(
+                                        {
+                                            "success": True,
+                                            "async": True,
+                                            "user_message_id": user_msg.id,
+                                            "stream_url": url_for(
+                                                "chat.chat_ai_stream",
+                                                chat_id=chat_obj.id,
+                                                token=stream_token,
+                                            ),
+                                            "chat_url": url_for(
+                                                "chat.view_chat",
+                                                chat_id=chat_obj.id,
+                                            ),
+                                        }
+                                    ),
+                                    202,
+                                )
+                        except Exception as _async_ex:
+                            current_app.logger.warning(
+                                "AI async: meta/redis failed, will try in-request SSE or sync: %s",
+                                _async_ex,
+                            )
+
+                    # In-request SSE via follow-up GET (202 + stream_url). POST bodies are often
+                    # not exposed as a readable stream for text/event-stream in browsers.
+                    if want_ai_stream_http and _stream_in_request_enabled():
+                        extra_crit = (critique_instructions or "").strip() or None
+                        prep_key = secrets.token_urlsafe(24)
+                        session[f"ai_sse_prep:{prep_key}"] = {
+                            "user_message_id": user_msg.id,
+                            "critique": extra_crit,
+                        }
+                        session.modified = True
+                        try:
+                            signed = _inrequest_sse_serializer().dumps(
+                                {
+                                    "v": 1,
+                                    "chat_id": chat_obj.id,
+                                    "user_id": user.id,
+                                    "prep": prep_key,
+                                }
+                            )
+                        except Exception as _tok_ex:
+                            session.pop(f"ai_sse_prep:{prep_key}", None)
+                            current_app.logger.warning(
+                                "AI in-request: could not build stream token: %s",
+                                _tok_ex,
                             )
                         else:
-                            ai_content, is_truncated = get_ai_response(chat_obj)
+                            return (
+                                jsonify(
+                                    {
+                                        "success": True,
+                                        "async": True,
+                                        "user_message_id": user_msg.id,
+                                        "stream_url": url_for(
+                                            "chat.chat_inrequest_sse",
+                                            chat_id=chat_obj.id,
+                                            token=signed,
+                                        ),
+                                        "chat_url": url_for(
+                                            "chat.view_chat",
+                                            chat_id=chat_obj.id,
+                                        ),
+                                    }
+                                ),
+                                202,
+                            )
+
+                    # Synchronous AI reply (default or fallback)
+                    try:
+                        with room_ai_begin(chat_obj.room_id):
+                            if critique_instructions:
+                                ai_content, is_truncated = get_ai_response(
+                                    chat_obj,
+                                    extra_system=critique_instructions,
+                                    through_message=user_msg,
+                                )
+                            else:
+                                ai_content, is_truncated = get_ai_response(
+                                    chat_obj,
+                                    through_message=user_msg,
+                                )
                     except Exception as e:
                         # If AI response fails, provide a helpful message
                         ai_content = "Hello! I'm here to help you with your research. What would you like to explore today?"
@@ -220,7 +383,7 @@ def view_chat(chat_id: int) -> Any:
                         role="assistant",
                         content=ai_content,
                         is_truncated=is_truncated,
-                        parent_message_id=None,
+                        parent_message_id=user_msg.id,
                     )
                     db.session.add(ai_msg)
                     db.session.commit()
@@ -262,7 +425,8 @@ def view_chat(chat_id: int) -> Any:
                             db.session.commit()
 
                             if should_show:
-                                suggest = compute_suggestion(chat_obj)
+                                with room_ai_begin(chat_obj.room_id):
+                                    suggest = compute_suggestion(chat_obj)
                                 if suggest:
                                     state.last_confidence = float(suggest.get("confidence", 0.0))
                                     state.last_shown_message_id = ai_msg.id
@@ -291,10 +455,8 @@ def view_chat(chat_id: int) -> Any:
                                     session.modified = True
                     except Exception as _e:
                         current_app.logger.warning(f"[mode_suggest] skipped due to error: {_e}")
-                    flash("Message sent successfully!")
                 else:
                     # No AI response requested
-                    flash("Message sent successfully! (No AI response)")
                     current_app.logger.info(
                         f"User message sent without AI response: '{content}'"
                     )
@@ -307,7 +469,10 @@ def view_chat(chat_id: int) -> Any:
             return redirect(url_for("chat.view_chat", chat_id=chat_obj.id), code=303)
 
         messages = (
-            Message.query.options(joinedload(Message.user))
+            Message.query.options(
+                joinedload(Message.user),
+                joinedload(Message.parent).joinedload(Message.user),
+            )
             .filter_by(chat_id=chat_obj.id)
             .order_by(Message.timestamp)
             .all()
@@ -449,6 +614,7 @@ def view_chat(chat_id: int) -> Any:
             pin_chat_ids=pin_chat_ids,
             pin_chat_info=pin_chat_info,
             can_invite=can_invite,
+            ai_async_available=_streaming_ui_enabled(),
         )
     except Exception as e:
         # Log exception with full traceback
@@ -569,6 +735,215 @@ def edit_chat(chat_id: int) -> Any:
     )
 
 
+@chat.route("/<int:chat_id>/queue-status", methods=["GET"])
+@limiter.limit("120 per minute")
+@require_chat_access
+def chat_queue_status(chat_id: int) -> Any:
+    """Lightweight queue snapshot for this chat's room (LLM load estimate)."""
+    chat_obj = Chat.query.get_or_404(chat_id)
+    data = snapshot_room(chat_obj.room_id)
+    return jsonify({"success": True, **data})
+
+
+@chat.route("/<int:chat_id>/ai-stream", methods=["GET"])
+@require_chat_access
+@limiter.limit("60 per minute")
+def chat_ai_stream(chat_id: int) -> Any:
+    """SSE fan-out for async AI generation (subscribe before worker publishes)."""
+    from flask import Response, stream_with_context
+    from redis import Redis
+
+    token = request.args.get("token", type=str)
+    if not token:
+        abort(400)
+    redis_url = os.getenv("REDIS_URL")
+    if not redis_url:
+        abort(503)
+    user = get_current_user()
+    if not user:
+        abort(401)
+
+    r = Redis.from_url(redis_url, decode_responses=True)
+    raw = r.get(f"ai_stream_meta:{token}")
+    if not raw:
+        abort(404)
+    try:
+        meta = json.loads(raw)
+    except json.JSONDecodeError:
+        abort(404)
+    if int(meta.get("chat_id", 0)) != chat_id or int(meta.get("user_id", 0)) != user.id:
+        abort(403)
+
+    critique = (meta.get("critique_instructions") or "").strip()
+    user_message_id = int(meta["user_message_id"])
+
+    if r.set(f"ai_stream_enqueued:{token}", "1", nx=True, ex=900):
+        from src.workers.ai_reply_job import enqueue_ai_reply_job
+
+        ok = enqueue_ai_reply_job(
+            chat_id, user_message_id, token, critique
+        )
+        if not ok:
+            r.delete(f"ai_stream_enqueued:{token}")
+            abort(503)
+
+    channel = f"ai_stream:{token}"
+
+    @stream_with_context
+    def event_stream():
+        pubsub = r.pubsub(ignore_subscribe_messages=True)
+        pubsub.subscribe(channel)
+        yield f"data: {json.dumps({'type': 'connected'})}\n\n"
+        try:
+            for message in pubsub.listen():
+                if message.get("type") != "message":
+                    continue
+                payload = message.get("data")
+                if not payload:
+                    continue
+                yield f"data: {payload}\n\n"
+                try:
+                    d = json.loads(payload)
+                    if d.get("type") in ("done", "error"):
+                        break
+                except json.JSONDecodeError:
+                    pass
+        finally:
+            try:
+                pubsub.unsubscribe(channel)
+                pubsub.close()
+            except Exception:
+                pass
+
+    return Response(
+        event_stream(),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
+
+
+@chat.route("/<int:chat_id>/ai-reply-sse", methods=["GET"])
+@require_chat_access
+@limiter.limit("60 per minute")
+def chat_inrequest_sse(chat_id: int) -> Any:
+    """SSE for in-process Anthropic streaming (no Redis). GET + EventSource — reliable in browsers."""
+    from flask import Response, stream_with_context
+    from src.utils.openai_utils import (
+        _prepare_anthropic_completion,
+        call_anthropic_api_stream,
+    )
+
+    token = request.args.get("token", type=str)
+    if not token:
+        abort(400)
+    user = get_current_user()
+    if not user:
+        abort(401)
+    try:
+        payload = _inrequest_sse_serializer().loads(
+            token, max_age=_SSE_INREQUEST_MAX_AGE
+        )
+    except SignatureExpired:
+        abort(403)
+    except BadSignature:
+        abort(403)
+    if int(payload.get("v", 0)) != 1:
+        abort(400)
+    if int(payload.get("chat_id", 0)) != chat_id or int(payload.get("user_id", 0)) != user.id:
+        abort(403)
+    prep_key = payload.get("prep")
+    if not prep_key or not isinstance(prep_key, str):
+        abort(400)
+    prep = session.get(f"ai_sse_prep:{prep_key}")
+    if not prep or int(prep.get("user_message_id", 0)) < 1:
+        abort(403)
+    user_message_id = int(prep["user_message_id"])
+    extra_crit = prep.get("critique")
+    if extra_crit is not None and not isinstance(extra_crit, str):
+        extra_crit = None
+    session.pop(f"ai_sse_prep:{prep_key}", None)
+    session.modified = True
+
+    chat_obj = Chat.query.get_or_404(chat_id)
+    user_msg = db.session.get(Message, user_message_id)
+    if (
+        not user_msg
+        or user_msg.chat_id != chat_id
+        or user_msg.role != "user"
+    ):
+        abort(404)
+
+    extra_system = (extra_crit or "").strip() or None
+
+    @stream_with_context
+    def generate():
+        yield f"data: {json.dumps({'type': 'connected'})}\n\n"
+        yield f"data: {json.dumps({'type': 'start', 'user_message_id': user_msg.id})}\n\n"
+        ai_content = ""
+        is_truncated = False
+        try:
+            with room_ai_begin(chat_obj.room_id):
+                (
+                    messages_payload,
+                    system_prompt,
+                    mt,
+                ) = _prepare_anthropic_completion(
+                    chat_obj,
+                    extra_system=extra_system,
+                    through_message=user_msg,
+                )
+                for ev in call_anthropic_api_stream(
+                    messages_payload, system_prompt, mt
+                ):
+                    if isinstance(ev, tuple):
+                        ai_content = str(ev[0])
+                        is_truncated = bool(ev[1])
+                        break
+                    yield f"data: {json.dumps({'type': 'chunk', 'text': ev})}\n\n"
+        except Exception as ex:
+            current_app.logger.exception("AI in-request GET stream failed")
+            yield f"data: {json.dumps({'type': 'error', 'message': str(ex)})}\n\n"
+            return
+
+        try:
+            ai_msg_s = Message(
+                chat_id=chat_obj.id,
+                role="assistant",
+                content=ai_content,
+                is_truncated=is_truncated,
+                parent_message_id=user_msg.id,
+            )
+            db.session.add(ai_msg_s)
+            db.session.commit()
+        except Exception as db_ex:
+            current_app.logger.exception("AI stream persist failed")
+            yield f"data: {json.dumps({'type': 'error', 'message': str(db_ex)})}\n\n"
+            return
+
+        try:
+            from src.utils.learning.triggers import trigger_auto_note_generation
+
+            trigger_auto_note_generation(ai_msg_s)
+        except Exception:
+            pass
+
+        yield f"data: {json.dumps({'type': 'done', 'message_id': ai_msg_s.id, 'is_truncated': bool(is_truncated)})}\n\n"
+
+    return Response(
+        generate(),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
+
+
 @chat.route("/<int:chat_id>/messages", methods=["GET"])
 @limiter.limit("60 per minute; 1000 per hour")
 @require_chat_access
@@ -588,7 +963,13 @@ def get_new_messages(chat_id: int) -> Any:
             
         after_id = request.args.get("after_id", type=int)
 
-        q = Message.query.options(joinedload(Message.user)).filter_by(chat_id=chat_obj.id)
+        q = (
+            Message.query.options(
+                joinedload(Message.user),
+                joinedload(Message.parent).joinedload(Message.user),
+            )
+            .filter_by(chat_id=chat_obj.id)
+        )
         if after_id:
             q = q.filter(Message.id > after_id)
         q = q.order_by(Message.id.asc()).limit(50)
@@ -596,12 +977,15 @@ def get_new_messages(chat_id: int) -> Any:
         new_messages = q.all()
 
         def to_payload(m: Message) -> dict:
+            ctx = reply_context_dict(m)
             return {
                 "id": m.id,
                 "role": m.role,
                 "content": m.content,
                 "timestamp": m.timestamp.isoformat(),
                 "rendered_html": markdown_filter(m.content or ""),
+                "reply_context": ctx,
+                "is_truncated": bool(m.is_truncated),
                 "user": {
                     "id": m.user.id if m.user else None,
                     "display_name": m.user.display_name if m.user else None,
@@ -701,10 +1085,12 @@ def continue_message(chat_id: int, message_id: int) -> Any:
     )
     
     # Get AI response with continuation context
-    ai_content, is_truncated = get_ai_response(
-        chat_obj,
-        extra_system=continuation_prompt
-    )
+    with room_ai_begin(chat_obj.room_id):
+        ai_content, is_truncated = get_ai_response(
+            chat_obj,
+            extra_system=continuation_prompt,
+            through_message=prev_msg,
+        )
     
     current_app.logger.info(
         f"Continuation generated: {len(ai_content)} chars, truncated={is_truncated}"
@@ -745,8 +1131,8 @@ def assess_progression(chat_id: int) -> Any:
     try:
         from src.utils.openai_utils import get_progression_recommendation_with_rubric as get_progression_recommendation
 
-        # Get progression recommendation
-        recommendation = get_progression_recommendation(chat_obj)
+        with room_ai_begin(chat_obj.room_id):
+            recommendation = get_progression_recommendation(chat_obj)
 
         return jsonify({"success": True, "recommendation": recommendation})
 

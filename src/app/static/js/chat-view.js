@@ -272,6 +272,8 @@
 
     // Initialize touch optimization when DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
+        let queueStatusIntervalId = null;
+
         // Delegate clicks for Add Comment toggles (avoids inline handlers in HTML lints)
         document.body.addEventListener('click', function(ev) {
             const btn = ev.target.closest('[data-toggle-comment]');
@@ -479,20 +481,14 @@
                         e.preventDefault();
                         const form = document.getElementById('message-form');
                         if (form && typeof form.requestSubmit === 'function') {
-                            form.requestSubmit(); // triggers submit event -> spinner
+                            form.requestSubmit(); // triggers submit handler (proxy + clear + native submit)
                         } else if (form) {
-                            // Fallback: manually toggle spinner then submit
-                            try {
-                                const btn = document.getElementById('send-button');
-                                if (btn) {
-                                    btn.classList.add('sending-state');
-                                    const sendIcon = btn.querySelector('#send-icon');
-                                    const loadingIcon = btn.querySelector('#loading-icon');
-                                    if (sendIcon) sendIcon.style.display = 'none';
-                                    if (loadingIcon) loadingIcon.classList.remove('hidden');
-                                }
-                            } catch(_) {}
-                            form.submit();
+                            const notCanceled = form.dispatchEvent(
+                                new Event('submit', { cancelable: true, bubbles: true })
+                            );
+                            if (notCanceled) {
+                                form.submit();
+                            }
                         }
                     }
                 });
@@ -643,30 +639,296 @@
             console.error('Could not find chat messages container');
         }
         
-        // Simple submission UX: show sending state without disabling submit on iOS
+        function escapeHtml(s) {
+            if (s == null || s === '') return '';
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        function renderReplyContext(rc) {
+            if (!rc || !rc.preview) return '';
+            const tintCls = rc.avatar_slot
+                ? ('reply-tint-' + rc.avatar_slot)
+                : 'reply-tint-assistant';
+            return (
+                '<div class="message-reply-context ' + tintCls + '" role="note">' +
+                '<span class="message-reply-icon" aria-hidden="true">↳</span>' +
+                '<div class="message-reply-text">' +
+                '<span class="message-reply-author">' + escapeHtml(rc.author_label) + '</span>' +
+                '<span class="message-reply-snippet">' + escapeHtml(rc.preview) + '</span>' +
+                '</div></div>'
+            );
+        }
+
+        function appendMessageEntries(list) {
+            if (!list || !list.length) return;
+            const container = document.getElementById('chat-messages');
+            if (!container) return;
+            const wasNearBottom = isNearBottom(container);
+            const wasNearTop = isNearTop(container);
+            list.forEach(msg => {
+                const mid = String(msg.id);
+                if (container.querySelector(`[data-message-id="${mid}"]`)) {
+                    return;
+                }
+                const wrapper = document.createElement('div');
+                wrapper.className = `flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`;
+                wrapper.setAttribute('data-message-id', mid);
+                const truncAttr = msg.role === 'assistant' ? ` data-truncated="${msg.is_truncated ? 'true' : 'false'}"` : '';
+                const replyBlock = msg.role === 'assistant' ? renderReplyContext(msg.reply_context) : '';
+                wrapper.innerHTML = `
+                      <div class="message-bubble ${msg.role === 'user' ? 'user' : 'assistant'}"${truncAttr}>
+                        ${msg.role === 'assistant' ? `
+                        <div class="flex items-start gap-3">
+                          <div class="ai-avatar">AI</div>
+                          <div class="flex-1">${replyBlock}<div class="message-content">${msg.rendered_html || `<p>${escapeHtml(msg.content)}</p>`}
+                          <p class="message-timestamp"><time class=\"msg-time\" data-ts=\"${Math.floor(new Date(msg.timestamp).getTime()/1000)}\"></time></p>
+                          </div></div>
+                        </div>` : `
+                        <div class="flex items-start gap-3">
+                          <div class="flex-1"><div class="message-content text-right">${msg.rendered_html || `<p>${msg.content}</p>`}
+                          <p class="message-timestamp"><time class=\"msg-time\" data-ts=\"${Math.floor(new Date(msg.timestamp).getTime()/1000)}\"></time></p>
+                          </div></div>
+                          ${getUserAvatarHtml(msg.user)}
+                        </div>`}
+                      </div>`;
+                container.appendChild(wrapper);
+            });
+            if (typeof lucide !== 'undefined') { try { lucide.createIcons(); } catch (e) {} }
+            try { formatAllMessageTimes(container); } catch (e) {}
+            try { applyBottomPadding(false); } catch (e) {}
+            const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            if (wasNearBottom && !wasNearTop) {
+                if (isMobile) {
+                    updateScrollButton();
+                } else {
+                    container.scrollTop = container.scrollHeight;
+                }
+            } else {
+                updateScrollButton();
+            }
+        }
+
+        async function fetchAndAppendMessagesAfter(afterId) {
+            let chatId = window.location.pathname.match(/\/chat\/(\d+)/)?.[1];
+            if (!chatId) {
+                const chatContainer = document.querySelector('.chat-container');
+                chatId = chatContainer?.dataset.chatId;
+            }
+            if (!chatId) return null;
+            const resp = await fetch(`/chat/${chatId}/messages?after_id=${afterId}`);
+            const data = await resp.json();
+            if (!data.success) return null;
+            const list = data.messages || [];
+            if (list.length) {
+                appendMessageEntries(list);
+            }
+            if (data.last_id != null && data.last_id !== '') {
+                const nid = parseInt(String(data.last_id), 10) || 0;
+                const cur = getLastMessageId();
+                if (nid > cur) {
+                    setLastMessageId(nid);
+                }
+            }
+            return data;
+        }
+
+        function removeStreamingAssistantBubble() {
+            document.getElementById('streaming-assistant-bubble')?.remove();
+        }
+
+        function ensureStreamingAssistantBubble() {
+            removeStreamingAssistantBubble();
+            const container = document.getElementById('chat-messages');
+            if (!container) return null;
+            const wrap = document.createElement('div');
+            wrap.id = 'streaming-assistant-bubble';
+            wrap.className = 'flex justify-start';
+            wrap.innerHTML = `
+                <div class="message-bubble assistant" data-streaming="true">
+                  <div class="flex items-start gap-3">
+                    <div class="ai-avatar">AI</div>
+                    <div class="flex-1">
+                      <div class="message-content streaming-assistant-chunk"><p></p></div>
+                      <p class="message-timestamp text-xs text-muted-foreground streaming-writing-label">Writing…</p>
+                    </div>
+                  </div>
+                </div>`;
+            container.appendChild(wrap);
+            try { applyBottomPadding(false); } catch (e) {}
+            const msgEl = document.getElementById('chat-messages');
+            if (msgEl) {
+                smartScrollToBottom(msgEl);
+            }
+            return wrap;
+        }
+
+        /** Re-append the streaming row so it sits after the latest user message (fetch adds user after bubble otherwise). */
+        function moveStreamingBubbleBelowMessages(streamWrap) {
+            if (!streamWrap || !streamWrap.id) return;
+            const container = document.getElementById('chat-messages');
+            if (!container || !document.getElementById('streaming-assistant-bubble')) return;
+            container.appendChild(streamWrap);
+            try { applyBottomPadding(false); } catch (e) {}
+            try { smartScrollToBottom(container); } catch (e) {}
+        }
+
+        function hideQueueNotice() {
+            const el = document.getElementById('ai-queue-notice');
+            if (el) el.classList.add('hidden');
+        }
+
+        function applyQueueNoticeFromPayload(j) {
+            const el = document.getElementById('ai-queue-notice');
+            if (!el || !j || !j.success) return;
+            if (!j.show_notice) {
+                hideQueueNotice();
+                return;
+            }
+            const p = el.querySelector('.ai-queue-bubble-line-primary');
+            const d = el.querySelector('.ai-queue-bubble-line-detail');
+            if (p) p.textContent = j.primary_line || (j.queue_position ? ('You are #' + j.queue_position + ' in the queue.') : '');
+            if (d) d.textContent = j.detail_line || j.message || '';
+            el.classList.remove('hidden');
+        }
+
+        function stopQueueStatusPolling() {
+            if (queueStatusIntervalId != null) {
+                clearInterval(queueStatusIntervalId);
+                queueStatusIntervalId = null;
+            }
+        }
+
+        function isWaitingForAssistantAtBottom() {
+            const container = document.getElementById('chat-messages');
+            if (!container) return false;
+            const rows = container.querySelectorAll('[data-message-id]');
+            if (!rows.length) return false;
+            const last = rows[rows.length - 1];
+            return !!last.querySelector('.message-bubble.user');
+        }
+
+        function fetchQueueStatusJson() {
+            let chatId = window.location.pathname.match(/\/chat\/(\d+)/)?.[1];
+            if (!chatId) {
+                const chatContainer = document.querySelector('.chat-container');
+                chatId = chatContainer?.dataset.chatId;
+            }
+            if (!chatId) return Promise.resolve(null);
+            return fetch('/chat/' + chatId + '/queue-status').then(function(r) { return r.json(); });
+        }
+
+        async function queueStatusPollTick() {
+            if (!isWaitingForAssistantAtBottom()) {
+                stopQueueStatusPolling();
+                hideQueueNotice();
+                return;
+            }
+            try {
+                const j = await fetchQueueStatusJson();
+                if (j && j.success && j.show_notice) {
+                    applyQueueNoticeFromPayload(j);
+                } else {
+                    hideQueueNotice();
+                }
+            } catch (_) { /* ignore */ }
+        }
+
+        function startQueueStatusPolling() {
+            stopQueueStatusPolling();
+            queueStatusPollTick();
+            queueStatusIntervalId = setInterval(queueStatusPollTick, 2500);
+        }
+
+        /** Token streaming uses the Anthropic streaming API on the server; the browser must use fetch+SSE or EventSource (not a plain form POST). */
+        function aiStreamDebugVerbose() {
+            try {
+                return (
+                    localStorage.getItem('collab_ai_stream_debug') === '1' ||
+                    new URLSearchParams(window.location.search).get('debug_stream') === '1'
+                );
+            } catch (_) {
+                return false;
+            }
+        }
+
+        function aiStreamLogVerbose() {
+            if (!aiStreamDebugVerbose()) return;
+            var args = Array.prototype.slice.call(arguments);
+            args.unshift('[AI stream debug]');
+            console.info.apply(console, args);
+        }
+
+        // Submit: clear textarea immediately via hidden proxy field (native submit reads DOM);
+        // optional queue notice before AI round-trip.
         const form = document.getElementById('message-form');
         if (form) {
-            form.addEventListener('submit', function(e) {
+            form.addEventListener('submit', async function(e) {
                 const btn = document.getElementById('send-button');
                 const input = document.getElementById('message-input');
                 const aiToggle = document.getElementById('ai-response-toggle');
                 markUserActivity();
-                
-                // Get the message content
+
                 const messageContent = input ? input.value.trim() : '';
-                
-                // Only proceed if there's actual content
+
                 if (!messageContent) {
                     e.preventDefault();
                     console.log('Empty message prevented');
                     return false;
                 }
-                
-                // Log AI response status
+
+                e.preventDefault();
+
                 const aiEnabled = aiToggle ? aiToggle.checked : true;
-                console.log('Sending message with AI response:', aiEnabled ? 'enabled' : 'disabled');
-                
-                // Show non-blocking sending state (do not disable to avoid iOS submission issues)
+                const chatContainer = document.querySelector('.chat-container');
+                const chatId = chatContainer ? chatContainer.dataset.chatId : null;
+                const useAiAsync = !!(
+                    chatContainer &&
+                    chatContainer.dataset.aiAsync === '1' &&
+                    aiEnabled &&
+                    chatId
+                );
+
+                if (aiEnabled && chatId && !useAiAsync) {
+                    console.warn(
+                        '[AI stream] Streaming path disabled: chat container is missing data-ai-async="1". ' +
+                            'Server must set ai_async_available (e.g. FLASK_ENV=development, or REDIS_URL+worker, or AI_STREAM_IN_REQUEST=1). ' +
+                            'Without it, the form does a full submit and the reply appears only after the full response.'
+                    );
+                }
+
+                function resetSendUi() {
+                    if (btn) {
+                        btn.classList.remove('sending-state');
+                        const sendIcon = btn.querySelector('#send-icon');
+                        const loadingIcon = btn.querySelector('#loading-icon');
+                        if (sendIcon) sendIcon.style.display = '';
+                        if (loadingIcon) loadingIcon.classList.add('hidden');
+                    }
+                    if (input && !input.getAttribute('name')) {
+                        input.setAttribute('name', 'content');
+                    }
+                }
+
+                let proxy = form.querySelector('input[name="content"][data-send-proxy="1"]');
+                if (!proxy) {
+                    proxy = document.createElement('input');
+                    proxy.type = 'hidden';
+                    proxy.name = 'content';
+                    proxy.setAttribute('data-send-proxy', '1');
+                    form.appendChild(proxy);
+                }
+                proxy.value = messageContent;
+                if (input) {
+                    input.value = '';
+                    input.style.height = 'auto';
+                    try {
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                    } catch (_) {}
+                    input.removeAttribute('name');
+                }
+
                 if (btn) {
                     btn.classList.add('sending-state');
                     const sendIcon = btn.querySelector('#send-icon');
@@ -674,8 +936,343 @@
                     if (sendIcon) sendIcon.style.display = 'none';
                     if (loadingIcon) loadingIcon.classList.remove('hidden');
                 }
-                
-                console.log('Form submitted with content:', messageContent);
+
+                if (aiEnabled && chatId) {
+                    try {
+                        const r = await fetch('/chat/' + chatId + '/queue-status');
+                        const j = await r.json();
+                        if (j.success) {
+                            applyQueueNoticeFromPayload(j);
+                        }
+                    } catch (_) { /* still send */ }
+                }
+
+                if (useAiAsync) {
+                    console.info('[AI stream] Using fetch + X-AI-Async (token streaming path). Verbose:', aiStreamDebugVerbose(), '(add ?debug_stream=1 or localStorage collab_ai_stream_debug=1)');
+                    try {
+                        const csrf =
+                            form.querySelector('input[name="csrf_token"]')?.value || '';
+                        const res = await fetch(form.action, {
+                            method: 'POST',
+                            body: new FormData(form),
+                            credentials: 'same-origin',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-AI-Async': '1',
+                                Accept: 'application/json, text/event-stream',
+                                'X-CSRFToken': csrf,
+                            },
+                        });
+                        const ct = (res.headers.get('content-type') || '').toLowerCase();
+                        console.info('[AI stream] POST reply', {
+                            status: res.status,
+                            ok: res.ok,
+                            contentType: ct || '(none)',
+                            redirected: res.redirected,
+                        });
+
+                        function applySseData(d, chunkEl, streamUserMsgIdRef) {
+                            if (d.type === 'start' && d.user_message_id) {
+                                streamUserMsgIdRef.id = d.user_message_id;
+                                aiStreamLogVerbose('event', d.type, { user_message_id: d.user_message_id });
+                            }
+                            if (
+                                d.type === 'chunk' &&
+                                typeof d.text === 'string' &&
+                                chunkEl
+                            ) {
+                                const p = chunkEl.querySelector('p');
+                                if (p) {
+                                    p.textContent = (p.textContent || '') + d.text;
+                                }
+                                const wrapFlex = chunkEl.parentElement;
+                                const lbl = wrapFlex && wrapFlex.querySelector('.streaming-writing-label');
+                                if (lbl) {
+                                    lbl.classList.add('hidden');
+                                }
+                                const cm = document.getElementById('chat-messages');
+                                if (cm) {
+                                    smartScrollToBottom(cm);
+                                }
+                                return 'chunk';
+                            }
+                            if (d.type === 'error') {
+                                aiStreamLogVerbose('event', d.type, d);
+                                return 'error';
+                            }
+                            if (d.type === 'done') {
+                                aiStreamLogVerbose('event', d.type, {
+                                    message_id: d.message_id,
+                                    is_truncated: d.is_truncated,
+                                });
+                                return 'done';
+                            }
+                            if (d.type === 'connected') {
+                                aiStreamLogVerbose('event', d.type);
+                                return null;
+                            }
+                            aiStreamLogVerbose('unhandled SSE payload', d);
+                            return null;
+                        }
+
+                        async function consumeSseFromFetch(fetchRes, fallbackUserMsgId) {
+                            console.info('[AI stream] Consuming in-request SSE (same POST body).');
+                            const priorLastId = getLastMessageId();
+                            stopQueueStatusPolling();
+                            hideQueueNotice();
+                            // Must not await this before reading the response body: the server
+                            // holds the same connection for in-request SSE; if we delay
+                            // getReader(), the socket buffer fills, Flask blocks on write, and
+                            // chunks arrive all at once after this fetch completes.
+                            const appendPromise = fetchAndAppendMessagesAfter(priorLastId).catch(
+                                function() {
+                                    return null;
+                                }
+                            );
+                            const streamWrap = ensureStreamingAssistantBubble();
+                            appendPromise.finally(function() {
+                                moveStreamingBubbleBelowMessages(streamWrap);
+                            });
+                            const chunkEl = streamWrap
+                                ? streamWrap.querySelector('.streaming-assistant-chunk')
+                                : null;
+                            const streamUserMsgIdRef = { id: fallbackUserMsgId || null };
+                            const reader = fetchRes.body.getReader();
+                            const dec = new TextDecoder();
+                            let buf = '';
+                            let streamSettled = false;
+                            let chunkEvents = 0;
+                            let rawReads = 0;
+                            /* eslint-disable no-await-in-loop */
+                            while (true) {
+                                const { done, value } = await reader.read();
+                                if (done) {
+                                    aiStreamLogVerbose('body read done', {
+                                        rawReads: rawReads,
+                                        chunkEvents: chunkEvents,
+                                        streamSettled: streamSettled,
+                                    });
+                                    break;
+                                }
+                                rawReads += 1;
+                                buf += dec.decode(value, { stream: true });
+                                let sep;
+                                while ((sep = buf.indexOf('\n\n')) >= 0) {
+                                    const frame = buf.slice(0, sep);
+                                    buf = buf.slice(sep + 2);
+                                    const lines = frame.split('\n');
+                                    for (let li = 0; li < lines.length; li++) {
+                                        const line = lines[li];
+                                        if (line.startsWith('data:')) {
+                                            const jsonPart = line.slice(5).trimStart();
+                                            try {
+                                                const d = JSON.parse(jsonPart);
+                                                const r = applySseData(d, chunkEl, streamUserMsgIdRef);
+                                                if (r === 'chunk') {
+                                                    chunkEvents += 1;
+                                                    if (chunkEvents <= 5 || aiStreamDebugVerbose()) {
+                                                        aiStreamLogVerbose('chunk #' + chunkEvents, {
+                                                            textLen: (d.text && d.text.length) || 0,
+                                                            preview:
+                                                                d.text &&
+                                                                d.text.slice
+                                                                    ? JSON.stringify(d.text.slice(0, 80))
+                                                                    : '',
+                                                        });
+                                                    }
+                                                }
+                                                if (r === 'error') {
+                                                    streamSettled = true;
+                                                    removeStreamingAssistantBubble();
+                                                    resetSendUi();
+                                                    console.error(d.message || 'AI stream error');
+                                                    appendPromise
+                                                        .finally(function() {
+                                                            return fetchAndAppendMessagesAfter(
+                                                                streamUserMsgIdRef.id ||
+                                                                    fallbackUserMsgId
+                                                            );
+                                                        })
+                                                        .catch(function() {});
+                                                    return;
+                                                }
+                                                if (r === 'done') {
+                                                    streamSettled = true;
+                                                    removeStreamingAssistantBubble();
+                                                    const uid =
+                                                        streamUserMsgIdRef.id || fallbackUserMsgId;
+                                                    appendPromise
+                                                        .then(function() {
+                                                            return fetchAndAppendMessagesAfter(uid);
+                                                        })
+                                                        .catch(function() {
+                                                            return fetchAndAppendMessagesAfter(uid);
+                                                        })
+                                                        .finally(function() {
+                                                            removeStreamingAssistantBubble();
+                                                            resetSendUi();
+                                                            markUserActivity();
+                                                        });
+                                                    return;
+                                                }
+                                            } catch (parseErr) {
+                                                aiStreamLogVerbose(
+                                                    'non-JSON SSE line',
+                                                    jsonPart.slice(0, 200),
+                                                    parseErr
+                                                );
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            /* eslint-enable no-await-in-loop */
+                            if (!streamSettled) {
+                                console.warn('[AI stream] Stream ended without done/error; check server logs.', {
+                                    chunkEvents: chunkEvents,
+                                    rawReads: rawReads,
+                                });
+                                removeStreamingAssistantBubble();
+                                resetSendUi();
+                                try {
+                                    await appendPromise;
+                                } catch (_) {
+                                    /* ignore */
+                                }
+                                fetchAndAppendMessagesAfter(
+                                    streamUserMsgIdRef.id || fallbackUserMsgId
+                                );
+                            } else if (aiStreamDebugVerbose()) {
+                                console.info('[AI stream] Stream settled OK', {
+                                    chunkEvents: chunkEvents,
+                                    rawReads: rawReads,
+                                });
+                            }
+                        }
+
+                        if (res.ok && ct.includes('text/event-stream')) {
+                            console.info('[AI stream] Branch: in-request SSE (200).');
+                            await consumeSseFromFetch(res, null);
+                            return false;
+                        }
+                        if (res.status === 202) {
+                            console.info('[AI stream] Branch: async Queue + EventSource (202).');
+                            const payload = await res.json();
+                            if (!payload.success || !payload.stream_url) {
+                                throw new Error('async payload invalid');
+                            }
+                            aiStreamLogVerbose('stream_url', payload.stream_url);
+                            const priorLastId = getLastMessageId();
+                            stopQueueStatusPolling();
+                            hideQueueNotice();
+                            const appendPromise = fetchAndAppendMessagesAfter(priorLastId).catch(
+                                function() {
+                                    return null;
+                                }
+                            );
+                            const streamWrap = ensureStreamingAssistantBubble();
+                            appendPromise.finally(function() {
+                                moveStreamingBubbleBelowMessages(streamWrap);
+                            });
+                            const chunkEl = streamWrap
+                                ? streamWrap.querySelector('.streaming-assistant-chunk')
+                                : null;
+                            const es = new EventSource(payload.stream_url);
+                            let streamSettled = false;
+                            let esChunkCount = 0;
+                            const streamUserMsgIdRef = { id: payload.user_message_id };
+                            es.onopen = function() {
+                                aiStreamLogVerbose('EventSource open');
+                            };
+                            es.onmessage = function(ev) {
+                                try {
+                                    const d = JSON.parse(ev.data);
+                                    const r = applySseData(d, chunkEl, streamUserMsgIdRef);
+                                    if (r === 'chunk') {
+                                        esChunkCount += 1;
+                                        if (esChunkCount <= 5 || aiStreamDebugVerbose()) {
+                                            aiStreamLogVerbose('EventSource chunk #' + esChunkCount);
+                                        }
+                                    }
+                                    if (r === 'error') {
+                                        streamSettled = true;
+                                        es.close();
+                                        removeStreamingAssistantBubble();
+                                        resetSendUi();
+                                        console.error(d.message || 'AI stream error');
+                                        appendPromise
+                                            .finally(function() {
+                                                return fetchAndAppendMessagesAfter(
+                                                    streamUserMsgIdRef.id ||
+                                                        payload.user_message_id
+                                                );
+                                            })
+                                            .catch(function() {});
+                                    } else if (r === 'done') {
+                                        streamSettled = true;
+                                        es.close();
+                                        removeStreamingAssistantBubble();
+                                        const uid =
+                                            streamUserMsgIdRef.id || payload.user_message_id;
+                                        appendPromise
+                                            .then(function() {
+                                                return fetchAndAppendMessagesAfter(uid);
+                                            })
+                                            .catch(function() {
+                                                return fetchAndAppendMessagesAfter(uid);
+                                            })
+                                            .finally(function() {
+                                                removeStreamingAssistantBubble();
+                                                resetSendUi();
+                                                markUserActivity();
+                                            });
+                                    }
+                                } catch (_) { /* ignore bad frame */ }
+                            };
+                            es.onerror = function() {
+                                if (streamSettled) return;
+                                console.warn(
+                                    '[AI stream] EventSource error (worker down, wrong token, or network). Chunks received:',
+                                    esChunkCount
+                                );
+                                streamSettled = true;
+                                es.close();
+                                removeStreamingAssistantBubble();
+                                resetSendUi();
+                                appendPromise
+                                    .finally(function() {
+                                        return fetchAndAppendMessagesAfter(
+                                            streamUserMsgIdRef.id || payload.user_message_id
+                                        );
+                                    })
+                                    .catch(function() {});
+                            };
+                            return false;
+                        }
+                        if (res.redirected && res.url) {
+                            console.info('[AI stream] Branch: HTTP redirect — full navigation', res.url);
+                            window.location.assign(res.url);
+                            return false;
+                        }
+                        console.warn(
+                            '[AI stream] Unexpected response — not running native submit (avoid duplicate message).',
+                            { status: res.status, contentType: ct }
+                        );
+                        resetSendUi();
+                        return false;
+                    } catch (err) {
+                        console.warn('[AI stream] Fetch failed, falling back to full submit', err);
+                    }
+                }
+
+                console.info(
+                    '[AI stream] Native form submit (full page). AI:',
+                    aiEnabled ? 'on' : 'off',
+                    'useAiAsync:',
+                    useAiAsync
+                );
+                HTMLFormElement.prototype.submit.call(form);
+                return false;
             });
         }
 
@@ -762,55 +1359,19 @@
                     scheduleNextPoll(Math.max(backoff, getCurrentPollInterval()));
                     return;
                 }
+                if (list.some(function(m) { return m.role === 'assistant'; })) {
+                    stopQueueStatusPolling();
+                    hideQueueNotice();
+                }
                 // New content arrived – treat as fresh activity so we stay on the fast cadence
                 markUserActivity();
-                const container = document.getElementById('chat-messages');
-                const wasNearBottom = isNearBottom(container);
-                const wasNearTop = isNearTop(container);
-                list.forEach(msg => {
-                    const wrapper = document.createElement('div');
-                    wrapper.className = `flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`;
-                    wrapper.setAttribute('data-message-id', String(msg.id));
-                    wrapper.innerHTML = `
-                      <div class="message-bubble ${msg.role === 'user' ? 'user' : 'assistant'}">
-                        ${msg.role === 'assistant' ? `
-                        <div class="flex items-start gap-3">
-                          <div class="ai-avatar">AI</div>
-                          <div class="flex-1"><div class="message-content">${msg.rendered_html || `<p>${msg.content}</p>`}
-                          <p class="message-timestamp"><time class=\"msg-time\" data-ts=\"${Math.floor(new Date(msg.timestamp).getTime()/1000)}\"></time></p>
-                          </div></div>
-                        </div>` : `
-                        <div class="flex items-start gap-3">
-                          <div class="flex-1"><div class="message-content text-right">${msg.rendered_html || `<p>${msg.content}</p>`}
-                          <p class="message-timestamp"><time class=\"msg-time\" data-ts=\"${Math.floor(new Date(msg.timestamp).getTime()/1000)}\"></time></p>
-                          </div></div>
-                          ${getUserAvatarHtml(msg.user)}
-                        </div>`}
-                      </div>`;
-                    container.appendChild(wrapper);
-                });
-                if (typeof lucide !== 'undefined') { try { lucide.createIcons(); } catch (e) {} }
-                // Format timestamps for newly appended nodes
-                try { formatAllMessageTimes(container); } catch(e){}
-                setLastMessageId(data.last_id || getLastMessageId());
-                // Recompute padding now that input/messages may have shifted
-                try { applyBottomPadding(false); } catch (e) {}
-                // Mobile-aware auto-scroll with user scroll detection
-                const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                
-                if (wasNearBottom && !wasNearTop) {
-                    if (isMobile) {
-                        // Mobile: NEVER auto-scroll during polling - always use manual scroll button
-                        // This prevents the "scroll trap" behavior where users can't scroll up
-                        console.log('📱 Mobile polling - showing scroll button instead of auto-scroll');
-                        updateScrollButton();
-                    } else {
-                        // Desktop: Standard auto-scroll behavior
-                        container.scrollTop = container.scrollHeight;
+                appendMessageEntries(list);
+                if (data.last_id != null && data.last_id !== '') {
+                    const nid = parseInt(String(data.last_id), 10) || 0;
+                    const cur = getLastMessageId();
+                    if (nid > cur) {
+                        setLastMessageId(nid);
                     }
-                } else {
-                    // reveal scroll-to-bottom chip
-                    updateScrollButton();
                 }
                 backoff = ACTIVE_POLL_MS; // reset after success
             } catch (e) {
@@ -834,6 +1395,9 @@
 
         // kick off
         startPolling();
+        if (isWaitingForAssistantAtBottom()) {
+            startQueueStatusPolling();
+        }
     });
     
     // Learning Progress Assessment Functions

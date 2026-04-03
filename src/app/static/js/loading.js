@@ -107,10 +107,18 @@ class LoadingManager {
 // Global instance
 const loadingManager = new LoadingManager();
 
+/** Chat uses its own send-button UX (icon + spinner inside the round button). */
+function isMessageForm(form) {
+    return form && form.id === 'message-form';
+}
+
 // Auto-disable forms on submit
 document.addEventListener('DOMContentLoaded', function() {
     // Handle all forms with loading states
     document.querySelectorAll('form').forEach(form => {
+        if (isMessageForm(form)) {
+            return;
+        }
         form.addEventListener('submit', function(e) {
             // Set loading state but allow form to submit
             loadingManager.setFormLoading(form);
@@ -120,6 +128,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle individual buttons that might not be in forms
     document.querySelectorAll('button[type="submit"], .btn-primary, .btn-secondary').forEach(button => {
         button.addEventListener('click', function(e) {
+            if (this.closest && this.closest('#message-form')) {
+                return;
+            }
             // If this is a submit button, set loading state
             if (this.type === 'submit' || this.classList.contains('btn-primary')) {
                 loadingManager.setLoading(this);

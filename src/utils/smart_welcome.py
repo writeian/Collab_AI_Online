@@ -389,8 +389,15 @@ def generate_smart_chat_introduction(room_goals: str, template_type: str, learni
     learning_context = None
     if room_id and chat_id:
         try:
+            from src.models import Chat as _Chat
             from src.utils.learning.context_manager import get_learning_context_for_room
-            learning_context = get_learning_context_for_room(room_id, exclude_chat_id=chat_id)
+
+            _c = _Chat.query.get(chat_id)
+            learning_context = get_learning_context_for_room(
+                room_id,
+                exclude_chat_id=chat_id,
+                created_by_user_id=(_c.created_by if _c else None),
+            )
             if learning_context:
                 try:
                     current_app.logger.info(f"✅ Retrieved learning context, length: {len(learning_context)} chars")
