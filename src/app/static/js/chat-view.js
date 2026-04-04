@@ -273,6 +273,58 @@
     // Initialize touch optimization when DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
         let queueStatusIntervalId = null;
+        let activeEventSource = null;
+        let activeStreamFetchController = null;
+
+        function releaseActiveEventSource(es) {
+            if (activeEventSource === es) activeEventSource = null;
+        }
+
+        function releaseActiveFetchController(controller) {
+            if (activeStreamFetchController === controller) activeStreamFetchController = null;
+        }
+
+        function closeActiveEventSource(reason) {
+            if (!activeEventSource) return;
+            try {
+                activeEventSource.close();
+            } catch (_) {}
+            if (aiStreamDebugVerbose()) {
+                aiStreamLogVerbose('closed existing EventSource', reason || 'cleanup');
+            }
+            activeEventSource = null;
+        }
+
+        function abortActiveFetchStream(reason) {
+            if (!activeStreamFetchController) return;
+            try {
+                activeStreamFetchController.abort();
+            } catch (_) {}
+            if (aiStreamDebugVerbose()) {
+                aiStreamLogVerbose('aborted existing fetch stream', reason || 'cleanup');
+            }
+            activeStreamFetchController = null;
+        }
+
+        function logTransportProtocolHint() {
+            try {
+                const nav = performance.getEntriesByType('navigation');
+                const proto = nav && nav[0] ? nav[0].nextHopProtocol : '';
+                if (proto && !/^h2|h3|http\/2$/i.test(proto)) {
+                    console.warn(
+                        '[AI stream] Connection protocol appears to be',
+                        proto,
+                        '- HTTP/2 or HTTP/3 is recommended for many concurrent browser streams.'
+                    );
+                }
+            } catch (_) {}
+        }
+        logTransportProtocolHint();
+
+        window.addEventListener('beforeunload', function() {
+            closeActiveEventSource('page-unload');
+            abortActiveFetchStream('page-unload');
+        });
 
         // Delegate clicks for Add Comment toggles (avoids inline handlers in HTML lints)
         document.body.addEventListener('click', function(ev) {
@@ -891,6 +943,11 @@
 
                 e.preventDefault();
 
+                if (activeEventSource || activeStreamFetchController) {
+                    console.warn('[AI stream] A reply is already streaming; waiting for it to finish.');
+                    return false;
+                }
+
                 const aiEnabled = aiToggle ? aiToggle.checked : true;
                 const chatContainer = document.querySelector('.chat-container');
                 const chatId = chatContainer ? chatContainer.dataset.chatId : null;
@@ -960,13 +1017,17 @@
 
                 if (useAiAsync) {
                     console.info('[AI stream] Using fetch + X-AI-Async (token streaming path). Verbose:', aiStreamDebugVerbose(), '(add ?debug_stream=1 or localStorage collab_ai_stream_debug=1)');
+                    let fetchController = null;
                     try {
                         const csrf =
                             form.querySelector('input[name="csrf_token"]')?.value || '';
+                        fetchController = new AbortController();
+                        activeStreamFetchController = fetchController;
                         const res = await fetch(form.action, {
                             method: 'POST',
                             body: new FormData(form),
                             credentials: 'same-origin',
+                            signal: fetchController.signal,
                             headers: {
                                 'X-Requested-With': 'XMLHttpRequest',
                                 'X-AI-Async': '1',
@@ -1097,6 +1158,7 @@
                                                     removeStreamingAssistantBubble();
                                                     resetSendUi();
                                                     console.error(d.message || 'AI stream error');
+                                                    releaseActiveFetchController(fetchController);
                                                     appendPromise
                                                         .finally(function() {
                                                             return fetchAndAppendMessagesAfter(
@@ -1112,6 +1174,7 @@
                                                     removeStreamingAssistantBubble();
                                                     const uid =
                                                         streamUserMsgIdRef.id || fallbackUserMsgId;
+                                                    releaseActiveFetchController(fetchController);
                                                     appendPromise
                                                         .then(function() {
                                                             return fetchAndAppendMessagesAfter(uid);
@@ -1153,12 +1216,14 @@
                                 fetchAndAppendMessagesAfter(
                                     streamUserMsgIdRef.id || fallbackUserMsgId
                                 );
+                                releaseActiveFetchController(fetchController);
                             } else if (aiStreamDebugVerbose()) {
                                 console.info('[AI stream] Stream settled OK', {
                                     chunkEvents: chunkEvents,
                                     rawReads: rawReads,
                                 });
                             }
+                            releaseActiveFetchController(fetchController);
                         }
 
                         if (res.ok && ct.includes('text/event-stream')) {
@@ -1168,6 +1233,7 @@
                         }
                         if (res.status === 202) {
                             console.info('[AI stream] Branch: async Queue + EventSource (202).');
+                            releaseActiveFetchController(fetchController);
                             const payload = await res.json();
                             if (!payload.success || !payload.stream_url) {
                                 throw new Error('async payload invalid');
@@ -1189,6 +1255,7 @@
                                 ? streamWrap.querySelector('.streaming-assistant-chunk')
                                 : null;
                             const es = new EventSource(payload.stream_url);
+                            activeEventSource = es;
                             let streamSettled = false;
                             let esChunkCount = 0;
                             const streamUserMsgIdRef = { id: payload.user_message_id };
@@ -1208,6 +1275,7 @@
                                     if (r === 'error') {
                                         streamSettled = true;
                                         es.close();
+                                        releaseActiveEventSource(es);
                                         removeStreamingAssistantBubble();
                                         resetSendUi();
                                         console.error(d.message || 'AI stream error');
@@ -1222,6 +1290,7 @@
                                     } else if (r === 'done') {
                                         streamSettled = true;
                                         es.close();
+                                        releaseActiveEventSource(es);
                                         removeStreamingAssistantBubble();
                                         const uid =
                                             streamUserMsgIdRef.id || payload.user_message_id;
@@ -1248,6 +1317,7 @@
                                 );
                                 streamSettled = true;
                                 es.close();
+                                releaseActiveEventSource(es);
                                 removeStreamingAssistantBubble();
                                 resetSendUi();
                                 appendPromise
@@ -1262,6 +1332,7 @@
                         }
                         if (res.redirected && res.url) {
                             console.info('[AI stream] Branch: HTTP redirect — full navigation', res.url);
+                            releaseActiveFetchController(fetchController);
                             window.location.assign(res.url);
                             return false;
                         }
@@ -1270,8 +1341,10 @@
                             { status: res.status, contentType: ct }
                         );
                         resetSendUi();
+                        releaseActiveFetchController(fetchController);
                         return false;
                     } catch (err) {
+                        releaseActiveFetchController(fetchController);
                         console.warn('[AI stream] Fetch failed, falling back to full submit', err);
                     }
                 }

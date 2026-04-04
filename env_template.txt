@@ -26,6 +26,39 @@ AI_MAX_HISTORY=6
 # AI_MAX_TOKENS_POLISH=350   # Polish mode is brief
 # AI_MAX_TOKENS_EXPLORE=350  # Keep exploration concise
 
+# Latency Optimization (safe defaults)
+# Prompt caching (effective on repeated prefixes / multi-turn threads)
+AI_PROMPT_CACHE_ENABLED=1
+AI_PROMPT_CACHE_MIN_CHARS=1200
+
+# Anthropic API request shaping
+ANTHROPIC_SERVICE_TIER=auto       # auto | standard_only
+ANTHROPIC_MAX_RETRIES=1           # avoid excessive retry stacking latency
+
+# Speed routing for simple turns (4.6 models)
+AI_SPEED_ROUTING_ENABLED=1
+AI_SPEED_SIMPLE_THINKING_MODE=disabled   # disabled | adaptive_low
+AI_SPEED_SIMPLE_QUERY_MAX_CHARS=160
+
+# Retrieval gating (reduce hot-path work on normal chat turns)
+AI_DOC_RETRIEVAL_ENABLED=1
+AI_DOC_SEARCH_INTENT_ONLY=1
+AI_DOC_SEARCH_MIN_QUERY_CHARS=24
+
+# Auto-note generation off request critical path
+AI_AUTO_NOTES_ASYNC=1
+AI_AUTO_NOTES_SYNC_FALLBACK=1
+AI_AUTO_NOTES_QUEUE=ai_replies
+AI_AUTO_NOTES_JOB_TIMEOUT=300
+
+# Gunicorn tuning (stream-friendly defaults; keep gthread unless intentionally changed)
+GUNICORN_WORKER_CLASS=gthread     # gthread | gevent | eventlet
+GUNICORN_WORKERS=3
+GUNICORN_THREADS=12
+GUNICORN_TIMEOUT=300
+GUNICORN_KEEPALIVE=5
+GUNICORN_WORKER_CONNECTIONS=1000  # used by gevent/eventlet
+
 # Google Services (optional - for Google Docs integration)
 # Service account file path (default: service-account-key.json)
 GOOGLE_SERVICE_ACCOUNT_FILE=service-account-key.json

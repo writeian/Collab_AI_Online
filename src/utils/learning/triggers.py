@@ -7,11 +7,43 @@ and store notes when chats reach the 5+ message threshold.
 """
 
 import logging
+import os
 from typing import Any
 
 from flask import current_app
 
 logger = logging.getLogger(__name__)
+
+
+def _bool_env(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _enqueue_auto_note_generation(message_id: int) -> bool:
+    redis_url = os.getenv("REDIS_URL")
+    if not redis_url:
+        return False
+    try:
+        from redis import Redis
+        from rq import Queue
+        from src.workers.learning_jobs import process_auto_note_generation_job
+
+        conn = Redis.from_url(redis_url)
+        queue_name = (os.getenv("AI_AUTO_NOTES_QUEUE", "ai_replies") or "ai_replies").strip()
+        q = Queue(queue_name, connection=conn)
+        q.enqueue(
+            process_auto_note_generation_job,
+            int(message_id),
+            job_timeout=max(60, int(os.getenv("AI_AUTO_NOTES_JOB_TIMEOUT", "300"))),
+            result_ttl=300,
+        )
+        return True
+    except Exception as e:
+        logger.warning("Failed to queue auto-note generation: %s", e)
+        return False
 
 
 def trigger_auto_note_generation(message: Any) -> None:
@@ -30,6 +62,16 @@ def trigger_auto_note_generation(message: Any) -> None:
             return
             
         chat_id = message.chat_id
+
+        # Queue note-generation by default to keep user-response latency low.
+        if _bool_env("AI_AUTO_NOTES_ASYNC", default=True):
+            message_id = getattr(message, "id", None)
+            if message_id and _enqueue_auto_note_generation(int(message_id)):
+                logger.info("Queued auto-note generation for message %s (chat %s)", message_id, chat_id)
+                return
+            if not _bool_env("AI_AUTO_NOTES_SYNC_FALLBACK", default=True):
+                logger.info("Skipping sync auto-note generation (async queue unavailable)")
+                return
         
         # Import here to avoid circular imports
         from .context_manager import auto_generate_notes_if_needed

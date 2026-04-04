@@ -834,6 +834,7 @@ def chat_inrequest_sse(chat_id: int) -> Any:
     """SSE for in-process Anthropic streaming (no Redis). GET + EventSource — reliable in browsers."""
     from flask import Response, stream_with_context
     from src.utils.openai_utils import (
+        _build_chat_cache_control,
         _prepare_anthropic_completion,
         call_anthropic_api_stream,
     )
@@ -895,13 +896,19 @@ def chat_inrequest_sse(chat_id: int) -> Any:
                     messages_payload,
                     system_prompt,
                     mt,
+                    request_options,
                 ) = _prepare_anthropic_completion(
                     chat_obj,
                     extra_system=extra_system,
                     through_message=user_msg,
                 )
+                cache_control = _build_chat_cache_control(messages_payload, system_prompt)
                 for ev in call_anthropic_api_stream(
-                    messages_payload, system_prompt, mt
+                    messages_payload,
+                    system_prompt,
+                    mt,
+                    cache_control=cache_control,
+                    request_options=request_options,
                 ):
                     if isinstance(ev, tuple):
                         ai_content = str(ev[0])

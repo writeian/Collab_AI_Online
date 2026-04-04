@@ -5,10 +5,12 @@ Simplified version focusing only on Anthropic API.
 
 import os
 import requests
+import re
 import time
+import threading
 from flask import current_app
 from collections import namedtuple
-from typing import Optional, Dict, Any, Tuple, List
+from typing import Optional, Dict, Any, Tuple, List, Callable, Set
 
 
 def get_client_type() -> str:
@@ -559,20 +561,150 @@ Building on these insights from your own prior work in this room, continue this 
     return base_prompt
 
 
-def _anthropic_supports_cache_control() -> bool:
-    """Check if installed Anthropic SDK supports cache_control (added in 0.83.0)."""
+_TRUE_VALUES = {"1", "true", "yes", "on"}
+_ANTHROPIC_CLIENT = None
+_ANTHROPIC_CLIENT_API_KEY = None
+_ANTHROPIC_CLIENT_LOCK = threading.Lock()
+_OPTIONAL_ANTHROPIC_FIELDS = {
+    "cache_control",
+    "service_tier",
+    "thinking",
+    "output_config",
+    "speed",
+    "context_management",
+    "betas",
+}
+
+
+def _bool_env(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in _TRUE_VALUES
+
+
+def _int_env(name: str, default: int, minimum: int = 0) -> int:
+    raw = os.getenv(name)
     try:
-        import anthropic
-        v = getattr(anthropic, "__version__", "0.0.0")
-        parts = v.split(".")
-        major = int(parts[0]) if len(parts) > 0 else 0
-        minor = int(parts[1]) if len(parts) > 1 else 0
-        return (major > 0) or (major == 0 and minor >= 83)
-    except Exception:
-        return False
+        value = int(raw) if raw is not None else int(default)
+    except (TypeError, ValueError):
+        value = int(default)
+    return max(minimum, value)
 
 
-def call_anthropic_api(messages: List[Dict[str, str]], system_prompt: str = "", max_tokens: int = 300, timeout: int = 30, cache_control: Optional[Dict] = None) -> Tuple[str, bool]:
+def _get_anthropic_model_name() -> str:
+    # Default to Haiku 4.5 (fastest); override with ANTHROPIC_MODEL for Sonnet etc.
+    model = os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5")
+    if "/" in model:
+        model = model.split("/", 1)[-1]
+    return model.strip()
+
+
+def _anthropic_max_retries() -> int:
+    # Keep one retry by default; avoid retry stacking in app code + SDK.
+    return _int_env("ANTHROPIC_MAX_RETRIES", 1, minimum=0)
+
+
+def _anthropic_service_tier() -> Optional[str]:
+    tier = (os.getenv("ANTHROPIC_SERVICE_TIER", "auto") or "").strip().lower()
+    if tier in ("auto", "standard_only"):
+        return tier
+    return None
+
+
+def _anthropic_supports_cache_control() -> bool:
+    """Feature gate for prompt caching (fallback logic handles unsupported SDK/API fields)."""
+    return _bool_env("AI_PROMPT_CACHE_ENABLED", default=True)
+
+
+def _get_anthropic_client(api_key: str):
+    global _ANTHROPIC_CLIENT, _ANTHROPIC_CLIENT_API_KEY
+
+    with _ANTHROPIC_CLIENT_LOCK:
+        if _ANTHROPIC_CLIENT is not None and _ANTHROPIC_CLIENT_API_KEY == api_key:
+            return _ANTHROPIC_CLIENT
+
+        from anthropic import Anthropic
+
+        if _ANTHROPIC_CLIENT is not None:
+            try:
+                _ANTHROPIC_CLIENT.close()
+            except Exception:
+                pass
+        _ANTHROPIC_CLIENT = Anthropic(
+            api_key=api_key,
+            max_retries=_anthropic_max_retries(),
+        )
+        _ANTHROPIC_CLIENT_API_KEY = api_key
+        return _ANTHROPIC_CLIENT
+
+
+def _extract_unsupported_option_keys(exc: Exception, kwargs: Dict[str, Any]) -> Set[str]:
+    msg = str(exc)
+    lower = msg.lower()
+    if not any(
+        marker in lower
+        for marker in (
+            "unexpected keyword argument",
+            "unknown",
+            "unsupported",
+            "not permitted",
+            "extra inputs",
+            "additional properties",
+            "invalid",
+        )
+    ):
+        return set()
+
+    remove: Set[str] = set()
+    m = re.search(r"unexpected keyword argument ['\"]?([a-zA-Z0-9_]+)['\"]?", msg)
+    if m:
+        k = m.group(1)
+        if k in kwargs and k in _OPTIONAL_ANTHROPIC_FIELDS:
+            remove.add(k)
+
+    for key in kwargs.keys():
+        if key in _OPTIONAL_ANTHROPIC_FIELDS and key.lower() in lower:
+            remove.add(key)
+
+    return remove
+
+
+def _call_with_option_fallback(
+    fn: Callable[..., Any],
+    kwargs: Dict[str, Any],
+    *,
+    call_name: str,
+) -> Any:
+    try:
+        return fn(**kwargs)
+    except Exception as exc:
+        remove = _extract_unsupported_option_keys(exc, kwargs)
+        if not remove:
+            raise
+
+        trimmed = {k: v for k, v in kwargs.items() if k not in remove}
+        if len(trimmed) == len(kwargs):
+            raise
+        try:
+            current_app.logger.warning(
+                "Anthropic %s retrying without unsupported options: %s",
+                call_name,
+                sorted(remove),
+            )
+        except Exception:
+            pass
+        return fn(**trimmed)
+
+
+def call_anthropic_api(
+    messages: List[Dict[str, str]],
+    system_prompt: str = "",
+    max_tokens: int = 300,
+    timeout: int = 30,
+    cache_control: Optional[Dict] = None,
+    request_options: Optional[Dict[str, Any]] = None,
+) -> Tuple[str, bool]:
     """Call Anthropic API with the given messages. Uses official SDK for correct endpoint/headers."""
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
@@ -586,70 +718,61 @@ def call_anthropic_api(messages: List[Dict[str, str]], system_prompt: str = "", 
 
     user_content = "\n\n".join(user_messages)
 
-    def _get_anthropic_model() -> str:
-        # Default to Haiku 4.5 (fastest); override with ANTHROPIC_MODEL for Sonnet etc.
-        model = os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5")
-        if "/" in model:
-            model = model.split("/", 1)[-1]
-        return model.strip()
+    try:
+        client = _get_anthropic_client(api_key)
+        create_kwargs: Dict[str, Any] = {
+            "model": _get_anthropic_model_name(),
+            "max_tokens": max_tokens,
+            "messages": [{"role": "user", "content": user_content}],
+            "timeout": timeout,
+        }
+        if system_prompt:
+            create_kwargs["system"] = system_prompt
+        if cache_control is not None and _anthropic_supports_cache_control():
+            create_kwargs["cache_control"] = cache_control
+        service_tier = _anthropic_service_tier()
+        if service_tier:
+            create_kwargs["service_tier"] = service_tier
+        if request_options:
+            create_kwargs.update(request_options)
 
-    import random
-    max_retries = 2
+        message = _call_with_option_fallback(
+            client.messages.create,
+            create_kwargs,
+            call_name="messages.create",
+        )
 
-    for attempt in range(max_retries):
-        try:
-            from anthropic import Anthropic
-            client = Anthropic(api_key=api_key)
-            create_kwargs = {
-                "model": _get_anthropic_model(),
-                "max_tokens": max_tokens,
-                "messages": [{"role": "user", "content": user_content}],
-                "timeout": timeout,
-            }
-            if system_prompt:
-                create_kwargs["system"] = system_prompt
-            if cache_control is not None and _anthropic_supports_cache_control():
-                create_kwargs["cache_control"] = cache_control
+        stop_reason = getattr(message, "stop_reason", "") or ""
+        is_truncated = stop_reason == "max_tokens"
+        text_parts: List[str] = []
+        for block in (getattr(message, "content", None) or []):
+            text = getattr(block, "text", None)
+            if text:
+                text_parts.append(text)
+        response_text = "".join(text_parts)
+        if not response_text and getattr(message, "content", None):
+            first_block = message.content[0]
+            response_text = getattr(first_block, "text", str(first_block))
 
-            message = client.messages.create(**create_kwargs)
+        if is_truncated:
+            try:
+                current_app.logger.info(f"⚠️ Response truncated at {max_tokens} tokens")
+            except Exception:
+                pass
 
-            stop_reason = getattr(message, "stop_reason", "") or ""
-            is_truncated = stop_reason == "max_tokens"
-            response_text = ""
-            if message.content:
-                first_block = message.content[0]
-                response_text = getattr(first_block, "text", str(first_block))
-
-            if is_truncated:
-                try:
-                    current_app.logger.info(f"⚠️ Response truncated at {max_tokens} tokens")
-                except Exception:
-                    pass
-
-            return response_text, is_truncated
-
-        except Exception as e:
-            err_str = str(e)
-            status_code = getattr(getattr(e, "response", None), "status_code", None) or 0
-            if "404" in err_str:
-                status_code = 404
-
-            if status_code in (429, 500, 502, 503, 504) and attempt < max_retries - 1:
-                jitter = random.uniform(0.2, 0.5)
-                backoff = jitter * (2 ** attempt)
-                try:
-                    current_app.logger.warning(
-                        f"⚠️ Anthropic API error {status_code}, retrying in {backoff:.2f}s (attempt {attempt + 1}/{max_retries})"
-                    )
-                except Exception:
-                    pass
-                time.sleep(backoff)
-                continue
-
-            raise Exception(f"Anthropic API call failed: {err_str}")
+        return response_text, is_truncated
+    except Exception as e:
+        raise Exception(f"Anthropic API call failed: {str(e)}")
 
 
-def call_anthropic_api_stream(messages: List[Dict[str, str]], system_prompt: str = "", max_tokens: int = 300, timeout: int = 30, cache_control: Optional[Dict] = None):
+def call_anthropic_api_stream(
+    messages: List[Dict[str, str]],
+    system_prompt: str = "",
+    max_tokens: int = 300,
+    timeout: int = 30,
+    cache_control: Optional[Dict] = None,
+    request_options: Optional[Dict[str, Any]] = None,
+):
     """
     Call Anthropic API with streaming. Yields text chunks as they arrive.
     Yields: str for each chunk, then (full_text, is_truncated) as final yield.
@@ -665,16 +788,10 @@ def call_anthropic_api_stream(messages: List[Dict[str, str]], system_prompt: str
             user_messages.append(msg.get("content", ""))
     user_content = "\n\n".join(user_messages)
 
-    model = os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5")
-    if "/" in model:
-        model = model.split("/", 1)[-1]
-    model = model.strip()
-
     try:
-        from anthropic import Anthropic
-        client = Anthropic(api_key=api_key)
-        stream_kwargs = {
-            "model": model,
+        client = _get_anthropic_client(api_key)
+        stream_kwargs: Dict[str, Any] = {
+            "model": _get_anthropic_model_name(),
             "max_tokens": max_tokens,
             "messages": [{"role": "user", "content": user_content}],
             "timeout": timeout,
@@ -683,7 +800,18 @@ def call_anthropic_api_stream(messages: List[Dict[str, str]], system_prompt: str
             stream_kwargs["system"] = system_prompt
         if cache_control is not None and _anthropic_supports_cache_control():
             stream_kwargs["cache_control"] = cache_control
-        with client.messages.stream(**stream_kwargs) as stream:
+        service_tier = _anthropic_service_tier()
+        if service_tier:
+            stream_kwargs["service_tier"] = service_tier
+        if request_options:
+            stream_kwargs.update(request_options)
+
+        stream_cm = _call_with_option_fallback(
+            client.messages.stream,
+            stream_kwargs,
+            call_name="messages.stream",
+        )
+        with stream_cm as stream:
             full_text = []
             for chunk in stream.text_stream:
                 full_text.append(chunk)
@@ -751,6 +879,73 @@ def _get_pin_chat_system_prompt(chat: Any) -> str:
         return "You are a helpful AI assistant working with pinned content. Help the user achieve their goals."
 
 
+def _build_chat_cache_control(messages_payload: List[Dict[str, str]], system_prompt: str) -> Optional[Dict[str, str]]:
+    if not _bool_env("AI_PROMPT_CACHE_ENABLED", default=True):
+        return None
+    min_chars = _int_env("AI_PROMPT_CACHE_MIN_CHARS", 1200, minimum=0)
+    approx_chars = len(system_prompt or "") + sum(
+        len((m.get("content") or "")) for m in messages_payload
+    )
+    if approx_chars < min_chars:
+        return None
+    return {"type": "ephemeral"}
+
+
+def _latest_user_turn(messages_payload: List[Dict[str, str]]) -> str:
+    for m in reversed(messages_payload):
+        if (m.get("role") or "") == "user":
+            return (m.get("content") or "").strip()
+    return ""
+
+
+def _is_simple_latency_turn(text: str) -> bool:
+    q = (text or "").strip().lower()
+    if not q:
+        return False
+    if len(q) > _int_env("AI_SPEED_SIMPLE_QUERY_MAX_CHARS", 160, minimum=20):
+        return False
+    if q.count("\n") > 1:
+        return False
+    complex_markers = (
+        "analyze",
+        "compare",
+        "tradeoff",
+        "prove",
+        "debug",
+        "refactor",
+        "architecture",
+        "step by step",
+        "derive",
+        "implement",
+        "design",
+    )
+    return not any(marker in q for marker in complex_markers)
+
+
+def _build_chat_request_options(messages_payload: List[Dict[str, str]]) -> Dict[str, Any]:
+    if not _bool_env("AI_SPEED_ROUTING_ENABLED", default=True):
+        return {}
+
+    model = _get_anthropic_model_name()
+    # Adaptive thinking controls apply to 4.6 models.
+    if model not in {"claude-opus-4-6", "claude-sonnet-4-6"}:
+        return {}
+
+    latest = _latest_user_turn(messages_payload)
+    if not _is_simple_latency_turn(latest):
+        return {}
+
+    mode = (os.getenv("AI_SPEED_SIMPLE_THINKING_MODE", "disabled") or "").strip().lower()
+    if mode in {"adaptive_low", "low"}:
+        return {
+            "thinking": {"type": "adaptive"},
+            "output_config": {"effort": "low"},
+        }
+    if mode in {"disabled", "off", "none"}:
+        return {"thinking": {"type": "disabled"}}
+    return {}
+
+
 def get_ai_response(
     chat: Any,
     *,
@@ -778,13 +973,20 @@ def get_ai_response(
             "⚠️ No AI API key configured. Please set ANTHROPIC_API_KEY environment variable.",
             False,
         )
-    messages_payload, system_prompt, mt = _prepare_anthropic_completion(
+    messages_payload, system_prompt, mt, request_options = _prepare_anthropic_completion(
         chat,
         max_tokens=max_tokens,
         extra_system=extra_system,
         through_message=through_message,
     )
-    return call_anthropic_api(messages_payload, system_prompt, mt)
+    cache_control = _build_chat_cache_control(messages_payload, system_prompt)
+    return call_anthropic_api(
+        messages_payload,
+        system_prompt,
+        mt,
+        cache_control=cache_control,
+        request_options=request_options,
+    )
 
 
 def get_ai_response_streaming(
@@ -801,13 +1003,20 @@ def get_ai_response_streaming(
             "⚠️ No AI API key configured. Please set ANTHROPIC_API_KEY environment variable.",
             False,
         )
-    messages_payload, system_prompt, mt = _prepare_anthropic_completion(
+    messages_payload, system_prompt, mt, request_options = _prepare_anthropic_completion(
         chat,
         max_tokens=max_tokens,
         extra_system=extra_system,
         through_message=through_message,
     )
-    for ev in call_anthropic_api_stream(messages_payload, system_prompt, mt):
+    cache_control = _build_chat_cache_control(messages_payload, system_prompt)
+    for ev in call_anthropic_api_stream(
+        messages_payload,
+        system_prompt,
+        mt,
+        cache_control=cache_control,
+        request_options=request_options,
+    ):
         if isinstance(ev, tuple):
             return str(ev[0]), bool(ev[1])
         if on_text_chunk:
@@ -821,8 +1030,8 @@ def _prepare_anthropic_completion(
     max_tokens: Optional[int] = None,
     extra_system: Optional[str] = None,
     through_message: Optional[Any] = None,
-) -> Tuple[List[Dict[str, str]], str, int]:
-    """Build messages list, system prompt, and max_tokens (shared by sync and streaming paths)."""
+) -> Tuple[List[Dict[str, str]], str, int, Dict[str, Any]]:
+    """Build messages list, system prompt, max_tokens, and request options (shared by sync and streaming paths)."""
     # Read configuration from environment
     # Tunable via env; defaults favor faster TTFT / lower cost (Railway prod).
     DEFAULT_MAX_TOKENS = int(os.getenv("AI_MAX_TOKENS", "350"))
@@ -937,8 +1146,7 @@ def _prepare_anthropic_completion(
             user_messages = [m for m in messages_payload if m.get("role") == "user"]
             if user_messages:
                 latest_query = user_messages[-1].get("content", "")
-                current_app.logger.info(f"🔍 Searching documents for query: '{latest_query[:50]}...' in room {room_id}")
-            
+
                 # Detect synthesis/summarization requests with tighter matching
                 # Require explicit synthesis keywords and minimum query length to avoid false positives
                 synthesis_keywords_explicit = [
@@ -963,8 +1171,46 @@ def _prepare_anthropic_completion(
                         (any(kw in query_lower for kw in synthesis_keywords_broad) and query_length >= 20)
                     )
                 )
-            
-                if is_synthesis_request:
+
+                doc_intent_keywords = [
+                    "document",
+                    "documents",
+                    "source",
+                    "sources",
+                    "library",
+                    "file",
+                    "files",
+                    "paper",
+                    "papers",
+                    "article",
+                    "articles",
+                    "uploaded",
+                    "according to",
+                    "from my",
+                    "in my",
+                ]
+                has_doc_intent = any(kw in query_lower for kw in doc_intent_keywords)
+                retrieval_enabled = _bool_env("AI_DOC_RETRIEVAL_ENABLED", default=True)
+                intent_only = _bool_env("AI_DOC_SEARCH_INTENT_ONLY", default=True)
+                min_query_chars = _int_env("AI_DOC_SEARCH_MIN_QUERY_CHARS", 24, minimum=1)
+                should_search_documents = retrieval_enabled and (
+                    is_synthesis_request or (
+                        query_length >= min_query_chars and (has_doc_intent or not intent_only)
+                    )
+                )
+
+                if not should_search_documents:
+                    current_app.logger.info(
+                        "ℹ️ Skipping document search for chat %s (intent_only=%s, query_len=%s)",
+                        getattr(chat, "id", None),
+                        intent_only,
+                        query_length,
+                    )
+                    search_results = []
+                elif is_synthesis_request:
+                    current_app.logger.info(
+                        f"🔍 Searching documents for query: '{latest_query[:50]}...' in room {room_id}"
+                    )
                     # Synthesis mode: Get representative chunks from ALL documents
                     current_app.logger.info(f"📚 Synthesis mode detected - getting chunks from all documents")
                     from src.utils.documents.database import (
@@ -1002,6 +1248,9 @@ def _prepare_anthropic_completion(
                     
                     current_app.logger.info(f"📚 Synthesis mode: Retrieved {len(search_results)} chunks/summaries from documents")
                 else:
+                    current_app.logger.info(
+                        f"🔍 Searching documents for query: '{latest_query[:50]}...' in room {room_id}"
+                    )
                     # Normal search: Get top-ranked chunks
                     from src.utils.documents.indexer import search_indexed_chunks
                     search_results = search_indexed_chunks(query=latest_query, room_id=room_id, limit=3, min_rank=0.01)
@@ -1092,7 +1341,8 @@ def _prepare_anthropic_completion(
             "If it asks something new or changes topic, answer that—not a previous thread—unless the user explicitly connects topics."
         )
 
-    return messages_payload, system_prompt, max_tokens
+    request_options = _build_chat_request_options(messages_payload)
+    return messages_payload, system_prompt, max_tokens, request_options
 
 
 def assess_learning_progression(chat: Any, target_mode: Optional[str] = None) -> Dict[str, Any]:
