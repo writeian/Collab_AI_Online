@@ -229,13 +229,6 @@ def view_chat(chat_id: int) -> Any:
                 db.session.add(prompt_record)
                 db.session.commit()
 
-                # Trigger automatic note generation if needed
-                try:
-                    from src.utils.learning.triggers import trigger_auto_note_generation
-                    trigger_auto_note_generation(user_msg)
-                except Exception as e:
-                    current_app.logger.error(f"Auto note generation failed: {e}")
-
                 # Ensure the user message is committed before getting AI response
                 db.session.refresh(user_msg)
                 current_app.logger.info(

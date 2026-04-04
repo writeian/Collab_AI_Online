@@ -606,15 +606,30 @@ def _anthropic_max_retries() -> int:
 
 
 def _anthropic_service_tier() -> Optional[str]:
-    tier = (os.getenv("ANTHROPIC_SERVICE_TIER", "auto") or "").strip().lower()
+    raw = os.getenv("ANTHROPIC_SERVICE_TIER")
+    if raw is None or not str(raw).strip():
+        return None
+    tier = str(raw).strip().lower()
     if tier in ("auto", "standard_only"):
         return tier
     return None
 
 
 def _anthropic_supports_cache_control() -> bool:
-    """Feature gate for prompt caching (fallback logic handles unsupported SDK/API fields)."""
-    return _bool_env("AI_PROMPT_CACHE_ENABLED", default=True)
+    """Feature gate for prompt caching based on env + SDK capability."""
+    if not _bool_env("AI_PROMPT_CACHE_ENABLED", default=True):
+        return False
+    try:
+        import anthropic
+
+        v = getattr(anthropic, "__version__", "0.0.0")
+        parts = v.split(".")
+        major = int(parts[0]) if len(parts) > 0 else 0
+        minor = int(parts[1]) if len(parts) > 1 else 0
+        # cache_control support added in newer Anthropic SDKs.
+        return (major > 0) or (major == 0 and minor >= 83)
+    except Exception:
+        return False
 
 
 def _get_anthropic_client(api_key: str):
@@ -676,25 +691,30 @@ def _call_with_option_fallback(
     *,
     call_name: str,
 ) -> Any:
-    try:
-        return fn(**kwargs)
-    except Exception as exc:
-        remove = _extract_unsupported_option_keys(exc, kwargs)
-        if not remove:
-            raise
+    active_kwargs = dict(kwargs)
+    removed_any: Set[str] = set()
 
-        trimmed = {k: v for k, v in kwargs.items() if k not in remove}
-        if len(trimmed) == len(kwargs):
-            raise
+    while True:
         try:
-            current_app.logger.warning(
-                "Anthropic %s retrying without unsupported options: %s",
-                call_name,
-                sorted(remove),
-            )
-        except Exception:
-            pass
-        return fn(**trimmed)
+            return fn(**active_kwargs)
+        except Exception as exc:
+            remove = _extract_unsupported_option_keys(exc, active_kwargs)
+            if not remove:
+                raise
+            for key in remove:
+                active_kwargs.pop(key, None)
+            newly_removed = remove - removed_any
+            removed_any.update(remove)
+            if not newly_removed:
+                raise
+            try:
+                current_app.logger.warning(
+                    "Anthropic %s retrying without unsupported options: %s",
+                    call_name,
+                    sorted(newly_removed),
+                )
+            except Exception:
+                pass
 
 
 def call_anthropic_api(

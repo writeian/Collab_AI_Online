@@ -60,6 +60,13 @@ def trigger_auto_note_generation(message: Any) -> None:
         if not message or not hasattr(message, 'chat_id'):
             logger.debug("Invalid message object for auto note generation")
             return
+
+        # Keep user-facing reply latency low: by default do not trigger on user messages.
+        if (
+            getattr(message, "role", None) == "user"
+            and not _bool_env("AI_AUTO_NOTES_ON_USER_MESSAGES", default=False)
+        ):
+            return
             
         chat_id = message.chat_id
 
@@ -69,7 +76,7 @@ def trigger_auto_note_generation(message: Any) -> None:
             if message_id and _enqueue_auto_note_generation(int(message_id)):
                 logger.info("Queued auto-note generation for message %s (chat %s)", message_id, chat_id)
                 return
-            if not _bool_env("AI_AUTO_NOTES_SYNC_FALLBACK", default=True):
+            if not _bool_env("AI_AUTO_NOTES_SYNC_FALLBACK", default=False):
                 logger.info("Skipping sync auto-note generation (async queue unavailable)")
                 return
         

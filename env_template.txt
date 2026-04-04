@@ -32,7 +32,8 @@ AI_PROMPT_CACHE_ENABLED=1
 AI_PROMPT_CACHE_MIN_CHARS=1200
 
 # Anthropic API request shaping
-ANTHROPIC_SERVICE_TIER=auto       # auto | standard_only
+# Optional: set only if your SDK/backend supports it
+# ANTHROPIC_SERVICE_TIER=auto      # auto | standard_only
 ANTHROPIC_MAX_RETRIES=1           # avoid excessive retry stacking latency
 
 # Speed routing for simple turns (4.6 models)
@@ -47,7 +48,8 @@ AI_DOC_SEARCH_MIN_QUERY_CHARS=24
 
 # Auto-note generation off request critical path
 AI_AUTO_NOTES_ASYNC=1
-AI_AUTO_NOTES_SYNC_FALLBACK=1
+AI_AUTO_NOTES_SYNC_FALLBACK=0
+AI_AUTO_NOTES_ON_USER_MESSAGES=0
 AI_AUTO_NOTES_QUEUE=ai_replies
 AI_AUTO_NOTES_JOB_TIMEOUT=300
 
