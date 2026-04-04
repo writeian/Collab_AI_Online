@@ -668,6 +668,9 @@
             const wasNearBottom = isNearBottom(container);
             const wasNearTop = isNearTop(container);
             list.forEach(msg => {
+                if (msg.role === 'assistant') {
+                    removeStreamingAssistantBubble();
+                }
                 const mid = String(msg.id);
                 if (container.querySelector(`[data-message-id="${mid}"]`)) {
                     return;
@@ -735,7 +738,15 @@
         }
 
         function removeStreamingAssistantBubble() {
-            document.getElementById('streaming-assistant-bubble')?.remove();
+            const el = document.getElementById('streaming-assistant-bubble');
+            if (!el) return;
+            el.remove();
+            try {
+                applyBottomPadding(true);
+            } catch (e) { /* ignore */ }
+            try {
+                updateScrollButton();
+            } catch (e) { /* ignore */ }
         }
 
         function ensureStreamingAssistantBubble() {

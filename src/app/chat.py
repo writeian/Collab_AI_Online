@@ -794,6 +794,7 @@ def chat_ai_stream(chat_id: int) -> Any:
         pubsub = r.pubsub(ignore_subscribe_messages=True)
         pubsub.subscribe(channel)
         yield f"data: {json.dumps({'type': 'connected'})}\n\n"
+        yield ": ping\n\n"
         try:
             for message in pubsub.listen():
                 if message.get("type") != "message":
@@ -819,7 +820,7 @@ def chat_ai_stream(chat_id: int) -> Any:
         event_stream(),
         mimetype="text/event-stream",
         headers={
-            "Cache-Control": "no-cache",
+            "Cache-Control": "no-cache, no-transform",
             "X-Accel-Buffering": "no",
             "Connection": "keep-alive",
         },
@@ -882,7 +883,10 @@ def chat_inrequest_sse(chat_id: int) -> Any:
     @stream_with_context
     def generate():
         yield f"data: {json.dumps({'type': 'connected'})}\n\n"
+        # Comment frames help some proxies flush early so EventSource sees bytes sooner.
+        yield ": ping\n\n"
         yield f"data: {json.dumps({'type': 'start', 'user_message_id': user_msg.id})}\n\n"
+        yield ": ping\n\n"
         ai_content = ""
         is_truncated = False
         try:
@@ -937,7 +941,7 @@ def chat_inrequest_sse(chat_id: int) -> Any:
         generate(),
         mimetype="text/event-stream",
         headers={
-            "Cache-Control": "no-cache",
+            "Cache-Control": "no-cache, no-transform",
             "X-Accel-Buffering": "no",
             "Connection": "keep-alive",
         },

@@ -205,14 +205,27 @@
   margin-left: 0.5rem;
 }
 
-/* Live streaming placeholder: avoid collapsing to a sliver before text arrives */
+/* Live streaming: min width for “Writing…”, but never width:max-content — long tokens blow up layout */
 .message-bubble.assistant[data-streaming="true"] {
   min-width: min(100%, 14rem);
-  width: max-content;
+  width: auto;
+  max-width: calc(75% - 1rem);
+  box-sizing: border-box;
 }
 
 .message-bubble.assistant[data-streaming="true"] > .flex.items-start {
   align-items: flex-start;
+}
+
+.message-bubble.assistant[data-streaming="true"] .flex-1 {
+  min-width: 0;
+}
+
+.message-bubble.assistant[data-streaming="true"] .streaming-assistant-chunk,
+.message-bubble.assistant[data-streaming="true"] .streaming-assistant-chunk p {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
 }
 
 .message-bubble.assistant[data-streaming="true"] .streaming-writing-label {
