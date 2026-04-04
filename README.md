@@ -276,9 +276,9 @@ ENABLE_ARCHETYPE_PROMPTS=true
 AI_FAILOVER_ORDER=anthropic,openai,templates
 ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
 OPENAI_MODEL=gpt-4o-mini
-# Response configuration (defaults: 400 tokens, 8 turns)
-AI_MAX_TOKENS=400
-AI_MAX_HISTORY=8
+# Response configuration (defaults: 350 tokens, 6 turns; override as needed)
+AI_MAX_TOKENS=350
+AI_MAX_HISTORY=6
 # Per-mode overrides (optional): AI_MAX_TOKENS_DRAFT=500, AI_MAX_TOKENS_POLISH=350
 ```
 

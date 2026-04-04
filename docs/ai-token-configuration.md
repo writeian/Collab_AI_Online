@@ -10,58 +10,58 @@ Control AI response length and conversation context via environment variables.
 **Note:** These settings currently apply to the **Anthropic (Claude) path**. The OpenAI path still defaults to 300 tokens and would need the same environment handling if you switch to it in the future.
 
 ### `AI_MAX_TOKENS`
-**Default:** `400`  
+**Default:** `350`  
 **Range:** `200-2000`  
 **Purpose:** Maximum tokens for AI responses
 
 **Impact:**
-- **300 tokens** (old): ~225 words, frequent truncation
-- **400 tokens** (new): ~300 words, 60% fewer truncations
-- **500 tokens**: ~375 words, minimal truncation (higher cost)
+- **300 tokens**: ~225 words, frequent truncation
+- **350 tokens** (default): ~260 words, good balance of speed and length
+- **400+ tokens**: ~300+ words, fewer truncations (higher cost / latency)
 
 **Example:**
 ```bash
-AI_MAX_TOKENS=400  # Balanced (recommended)
+AI_MAX_TOKENS=350  # Default; balanced for most chats
 AI_MAX_TOKENS=300  # More concise, more truncation
+AI_MAX_TOKENS=400  # Longer responses when truncation is an issue
 AI_MAX_TOKENS=500  # Longer responses, higher cost
 ```
 
 **Cost Impact:**
-- 300 → 400 tokens = 33% more API cost
-- Worth it for better UX (fewer continue clicks)
+- Raising the limit increases output-token cost and time-to-first-token; tune per deployment.
 
 ---
 
 ### `AI_MAX_HISTORY`
-**Default:** `8`  
+**Default:** `6`  
 **Range:** `4-20`  
 **Purpose:** Number of conversation turns to include as context
 
 **What is a "turn"?**
 - 1 turn = 1 user message + 1 assistant response (a pair)
-- 8 turns = 16 messages (last 8 user+assistant exchanges)
+- 6 turns = 12 messages (last 6 user+assistant exchanges)
 
 **Note:** History trimming currently applies to the **Anthropic path only** in `get_ai_response()`. The OpenAI helper doesn't trim context yet.
 
 **Impact:**
 - **4 turns**: Minimal context, faster responses, might lose continuity
-- **8 turns**: Good balance (recommended)
-- **12 turns**: More context, slower responses, better for complex topics
+- **6 turns**: Default; good balance of context and prompt size
+- **8–12 turns**: More context, slower / costlier, better for complex topics
 - **20 turns**: Maximum context, expensive, rarely needed
 
 **Example:**
 ```bash
-AI_MAX_HISTORY=8   # Balanced (recommended)
-AI_MAX_HISTORY=6   # More concise, less context
+AI_MAX_HISTORY=6   # Default; balanced for most chats
+AI_MAX_HISTORY=8   # Slightly more continuity
 AI_MAX_HISTORY=12  # More context for complex discussions
 ```
 
 **Context Calculation:**
 ```
 Conversation has 20 messages
-AI_MAX_HISTORY=8
-Last 8 turns = last 16 messages sent to AI
-Messages 1-4 are not included (saves tokens)
+AI_MAX_HISTORY=6
+Last 6 turns = last 12 messages sent to AI
+Earlier messages are omitted (saves tokens)
 ```
 
 ---
@@ -73,8 +73,8 @@ Messages 1-4 are not included (saves tokens)
 ```python
 def get_ai_response(chat, max_tokens=None, ...):
     # Read config
-    DEFAULT_MAX_TOKENS = int(os.getenv("AI_MAX_TOKENS", "400"))
-    MAX_HISTORY_TURNS = int(os.getenv("AI_MAX_HISTORY", "8"))
+    DEFAULT_MAX_TOKENS = int(os.getenv("AI_MAX_TOKENS", "350"))
+    MAX_HISTORY_TURNS = int(os.getenv("AI_MAX_HISTORY", "6"))
     
     # Use provided or default
     if max_tokens is None:
@@ -191,9 +191,9 @@ AI_MAX_HISTORY=4
 
 ### **Scenario 3: Balanced Learning (Recommended)**
 ```bash
-# Good for most educational use cases
-AI_MAX_TOKENS=400
-AI_MAX_HISTORY=8
+# Matches app defaults; good for most educational use cases
+AI_MAX_TOKENS=350
+AI_MAX_HISTORY=6
 ```
 
 ---
@@ -202,7 +202,7 @@ AI_MAX_HISTORY=8
 
 ### **Token Estimation:**
 - 1 token ≈ 0.75 words (English)
-- 400 tokens ≈ 300 words ≈ 1-2 paragraphs
+- 350 tokens ≈ 260 words ≈ 1-2 short paragraphs
 
 ### **Context Window:**
 - Claude Sonnet: 200K tokens total
@@ -212,7 +212,7 @@ AI_MAX_HISTORY=8
 ### **Message History:**
 - User message: ~50-200 tokens
 - Assistant response: ~200-400 tokens
-- 8 turns: ~2000-4000 tokens context
+- 6 turns: ~1500-3500 tokens context (varies by message length)
 - System prompt: ~200-500 tokens
 - **Total sent:** ~2500-5000 tokens per request
 
@@ -259,8 +259,8 @@ STYLE GUIDANCE: {mode_concise_hint}
 For modes that need more depth, you can override the default:
 
 ```bash
-# Global default
-AI_MAX_TOKENS=400
+# Global default (matches code when env unset)
+AI_MAX_TOKENS=350
 
 # Mode-specific overrides
 AI_MAX_TOKENS_DRAFT=500      # Draft needs more room
@@ -289,7 +289,7 @@ System builds prompt:
   Concise hint: "Ask 2-3 probing questions. Keep explanations 
                  to 2-3 short paragraphs."
   +
-  Token limit: AI_MAX_TOKENS_EXPLORE (if set) or 400 (default)
+  Token limit: AI_MAX_TOKENS_EXPLORE (if set) or 350 (default)
   ↓
 AI responds with:
   - 2-3 thoughtful questions
@@ -312,7 +312,7 @@ System builds prompt:
   ↓
 AI responds with:
   - Detailed structural feedback
-  - Uses extra tokens (500 vs 400)
+  - Uses extra tokens (500 vs global default)
   - Appropriate depth for drafting stage
 ```
 

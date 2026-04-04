@@ -769,8 +769,8 @@ def get_ai_response(
         "latest" user turn while this reply is being generated.
 
     Configurable via environment variables:
-    - AI_MAX_TOKENS: Maximum tokens for AI response (default 400)
-    - AI_MAX_HISTORY: Number of conversation turns to include (default 8)
+    - AI_MAX_TOKENS: Maximum tokens for AI response (default 350)
+    - AI_MAX_HISTORY: Number of conversation turns to include (default 6)
     - AI_MAX_TOKENS_{MODE}: Optional per-mode override (e.g., AI_MAX_TOKENS_DRAFT=500)
     """
     if not os.getenv("ANTHROPIC_API_KEY"):
@@ -824,8 +824,9 @@ def _prepare_anthropic_completion(
 ) -> Tuple[List[Dict[str, str]], str, int]:
     """Build messages list, system prompt, and max_tokens (shared by sync and streaming paths)."""
     # Read configuration from environment
-    DEFAULT_MAX_TOKENS = int(os.getenv("AI_MAX_TOKENS", "400"))
-    MAX_HISTORY_TURNS = int(os.getenv("AI_MAX_HISTORY", "8"))
+    # Tunable via env; defaults favor faster TTFT / lower cost (Railway prod).
+    DEFAULT_MAX_TOKENS = int(os.getenv("AI_MAX_TOKENS", "350"))
+    MAX_HISTORY_TURNS = int(os.getenv("AI_MAX_HISTORY", "6"))
     
     # Use provided max_tokens or fall back to config
     if max_tokens is None:

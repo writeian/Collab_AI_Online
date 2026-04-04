@@ -15,10 +15,10 @@ ANTHROPIC_API_KEY=your_anthropic_api_key_here
 ANTHROPIC_MODEL=claude-sonnet-4-6
 
 # AI Response Configuration (optional - defaults are sensible)
-# Maximum tokens for AI responses (default: 400, increase if responses truncate too often)
-AI_MAX_TOKENS=400
-# Number of conversation turns to include as context (default: 8, one turn = user + assistant)
-AI_MAX_HISTORY=8
+# Maximum tokens for AI responses (default: 350, increase if responses truncate too often)
+AI_MAX_TOKENS=350
+# Number of conversation turns to include as context (default: 6, one turn = user + assistant)
+AI_MAX_HISTORY=6
 
 # Per-Mode Token Overrides (optional - for modes that need more/less depth)
 # Pattern: AI_MAX_TOKENS_{MODE_KEY_UPPERCASE}
