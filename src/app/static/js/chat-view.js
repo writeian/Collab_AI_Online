@@ -275,6 +275,21 @@
         let queueStatusIntervalId = null;
         let activeEventSource = null;
         let activeStreamFetchController = null;
+        /** User Message.id we are waiting to pair with an assistant (token stream). */
+        let streamingForUserMessageId = null;
+
+        function clearStreamingTarget() {
+            streamingForUserMessageId = null;
+        }
+
+        function setStreamingTarget(id) {
+            if (id == null || id === '') {
+                streamingForUserMessageId = null;
+                return;
+            }
+            const n = Number(id);
+            streamingForUserMessageId = isNaN(n) ? null : n;
+        }
 
         function releaseActiveEventSource(es) {
             if (activeEventSource === es) activeEventSource = null;
@@ -324,6 +339,7 @@
         window.addEventListener('beforeunload', function() {
             closeActiveEventSource('page-unload');
             abortActiveFetchStream('page-unload');
+            clearStreamingTarget();
         });
 
         // Delegate clicks for Add Comment toggles (avoids inline handlers in HTML lints)
@@ -721,7 +737,17 @@
             const wasNearTop = isNearTop(container);
             list.forEach(msg => {
                 if (msg.role === 'assistant') {
-                    removeStreamingAssistantBubble();
+                    const pid =
+                        msg.parent_message_id != null && msg.parent_message_id !== ''
+                            ? Number(msg.parent_message_id)
+                            : null;
+                    const waiting = streamingForUserMessageId;
+                    const hasLocalStream = !!(activeEventSource || activeStreamFetchController);
+                    const thisReplyIsOurs =
+                        waiting != null && pid != null && !isNaN(pid) && pid === waiting;
+                    if (!hasLocalStream || thisReplyIsOurs) {
+                        removeStreamingAssistantBubble();
+                    }
                 }
                 const mid = String(msg.id);
                 if (container.querySelector(`[data-message-id="${mid}"]`)) {
@@ -791,8 +817,12 @@
 
         function removeStreamingAssistantBubble() {
             const el = document.getElementById('streaming-assistant-bubble');
-            if (!el) return;
+            if (!el) {
+                clearStreamingTarget();
+                return;
+            }
             el.remove();
+            clearStreamingTarget();
             try {
                 applyBottomPadding(true);
             } catch (e) { /* ignore */ }
@@ -1046,6 +1076,7 @@
                         function applySseData(d, chunkEl, streamUserMsgIdRef) {
                             if (d.type === 'start' && d.user_message_id) {
                                 streamUserMsgIdRef.id = d.user_message_id;
+                                setStreamingTarget(d.user_message_id);
                                 aiStreamLogVerbose('event', d.type, { user_message_id: d.user_message_id });
                             }
                             if (
@@ -1109,6 +1140,9 @@
                                 ? streamWrap.querySelector('.streaming-assistant-chunk')
                                 : null;
                             const streamUserMsgIdRef = { id: fallbackUserMsgId || null };
+                            if (streamUserMsgIdRef.id) {
+                                setStreamingTarget(streamUserMsgIdRef.id);
+                            }
                             const reader = fetchRes.body.getReader();
                             const dec = new TextDecoder();
                             let buf = '';
@@ -1248,6 +1282,7 @@
                                 }
                             );
                             const streamWrap = ensureStreamingAssistantBubble();
+                            setStreamingTarget(payload.user_message_id);
                             appendPromise.finally(function() {
                                 moveStreamingBubbleBelowMessages(streamWrap);
                             });
@@ -1342,9 +1377,11 @@
                         );
                         resetSendUi();
                         releaseActiveFetchController(fetchController);
+                        clearStreamingTarget();
                         return false;
                     } catch (err) {
                         releaseActiveFetchController(fetchController);
+                        clearStreamingTarget();
                         console.warn('[AI stream] Fetch failed, falling back to full submit', err);
                     }
                 }

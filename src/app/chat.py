@@ -990,6 +990,7 @@ def get_new_messages(chat_id: int) -> Any:
                 "rendered_html": markdown_filter(m.content or ""),
                 "reply_context": ctx,
                 "is_truncated": bool(m.is_truncated),
+                "parent_message_id": m.parent_message_id,
                 "user": {
                     "id": m.user.id if m.user else None,
                     "display_name": m.user.display_name if m.user else None,
