@@ -43,6 +43,7 @@ from src.models import (
 from src.utils.openai_utils import get_ai_response, get_modes_for_room, BASE_MODES
 from src.utils.progression import compute_suggestion, should_show_with_exponential_cooldown
 from src.utils.ai_load_tracker import room_ai_begin, snapshot_room
+from src.utils.ai_stream_logging import log_ai_stream_event
 from src.utils.message_display import reply_context_dict
 from src.models.analytics import ProgressSuggestionState, ProgressSuggestionEvent
 import os
@@ -74,6 +75,12 @@ def _inrequest_sse_serializer() -> URLSafeTimedSerializer:
     if not sk:
         raise RuntimeError("SECRET_KEY is required for streaming auth tokens")
     return URLSafeTimedSerializer(sk, salt=_SSE_INREQUEST_SALT)
+
+
+def _safe_sse_prep_prefix(prep_key: str, n: int = 8) -> str:
+    if not prep_key:
+        return ""
+    return prep_key[:n] + ("…" if len(prep_key) > n else "")
 
 
 def _ai_async_configured() -> bool:
@@ -280,6 +287,23 @@ def view_chat(chat_id: int) -> Any:
                                         }
                                     ),
                                 )
+                                _snap = snapshot_room(chat_obj.room_id)
+                                log_ai_stream_event(
+                                    "post_accept_async",
+                                    logger=current_app.logger,
+                                    path="redis_worker_sse",
+                                    chat_id=chat_obj.id,
+                                    room_id=chat_obj.room_id,
+                                    user_id=user.id,
+                                    username=getattr(user, "username", None),
+                                    user_message_id=user_msg.id,
+                                    want_stream=True,
+                                    queue_active_in_room=_snap.get("active_in_room"),
+                                    queue_estimated_wait_s=_snap.get(
+                                        "estimated_wait_seconds"
+                                    ),
+                                    token=stream_token,
+                                )
                                 return (
                                     jsonify(
                                         {
@@ -331,6 +355,24 @@ def view_chat(chat_id: int) -> Any:
                                 _tok_ex,
                             )
                         else:
+                            _snap = snapshot_room(chat_obj.room_id)
+                            log_ai_stream_event(
+                                "post_accept_async",
+                                logger=current_app.logger,
+                                path="in_request_sse",
+                                chat_id=chat_obj.id,
+                                room_id=chat_obj.room_id,
+                                user_id=user.id,
+                                username=getattr(user, "username", None),
+                                user_message_id=user_msg.id,
+                                want_stream=True,
+                                prep_key_prefix=_safe_sse_prep_prefix(prep_key),
+                                queue_active_in_room=_snap.get("active_in_room"),
+                                queue_estimated_wait_s=_snap.get(
+                                    "estimated_wait_seconds"
+                                ),
+                                token=signed,
+                            )
                             return (
                                 jsonify(
                                     {
@@ -353,6 +395,22 @@ def view_chat(chat_id: int) -> Any:
 
                     # Synchronous AI reply (default or fallback)
                     try:
+                        _snap = snapshot_room(chat_obj.room_id)
+                        log_ai_stream_event(
+                            "post_accept_sync",
+                            logger=current_app.logger,
+                            path="sync_blocking",
+                            chat_id=chat_obj.id,
+                            room_id=chat_obj.room_id,
+                            user_id=user.id,
+                            username=getattr(user, "username", None),
+                            user_message_id=user_msg.id,
+                            want_stream=want_ai_stream_http,
+                            queue_active_in_room=_snap.get("active_in_room"),
+                            queue_estimated_wait_s=_snap.get(
+                                "estimated_wait_seconds"
+                            ),
+                        )
                         with room_ai_begin(chat_obj.room_id):
                             if critique_instructions:
                                 ai_content, is_truncated = get_ai_response(
@@ -770,6 +828,7 @@ def chat_ai_stream(chat_id: int) -> Any:
     critique = (meta.get("critique_instructions") or "").strip()
     user_message_id = int(meta["user_message_id"])
 
+    enqueued_new_job = False
     if r.set(f"ai_stream_enqueued:{token}", "1", nx=True, ex=900):
         from src.workers.ai_reply_job import enqueue_ai_reply_job
 
@@ -779,6 +838,22 @@ def chat_ai_stream(chat_id: int) -> Any:
         if not ok:
             r.delete(f"ai_stream_enqueued:{token}")
             abort(503)
+        enqueued_new_job = True
+
+    chat_row = db.session.get(Chat, chat_id)
+    room_id = chat_row.room_id if chat_row else None
+    log_ai_stream_event(
+        "sse_redis_client_open",
+        logger=current_app.logger,
+        path="redis_worker_sse",
+        chat_id=chat_id,
+        room_id=room_id,
+        user_id=user.id,
+        username=getattr(user, "username", None),
+        user_message_id=user_message_id,
+        enqueued_new_job=enqueued_new_job,
+        token=token,
+    )
 
     channel = f"ai_stream:{token}"
 
@@ -876,6 +951,17 @@ def chat_inrequest_sse(chat_id: int) -> Any:
 
     @stream_with_context
     def generate():
+        log_ai_stream_event(
+            "sse_inprocess_stream_start",
+            logger=current_app.logger,
+            path="in_request_sse",
+            chat_id=chat_obj.id,
+            room_id=chat_obj.room_id,
+            user_id=user.id,
+            username=getattr(user, "username", None),
+            user_message_id=user_msg.id,
+            token=token,
+        )
         yield f"data: {json.dumps({'type': 'connected'})}\n\n"
         # Comment frames help some proxies flush early so EventSource sees bytes sooner.
         yield ": ping\n\n"
@@ -909,6 +995,17 @@ def chat_inrequest_sse(chat_id: int) -> Any:
                         break
                     yield f"data: {json.dumps({'type': 'chunk', 'text': ev})}\n\n"
         except Exception as ex:
+            log_ai_stream_event(
+                "sse_inprocess_stream_failed",
+                logger=current_app.logger,
+                phase="llm_or_prep",
+                path="in_request_sse",
+                chat_id=chat_obj.id,
+                room_id=chat_obj.room_id,
+                user_message_id=user_msg.id,
+                error_type=type(ex).__name__,
+                token=token,
+            )
             current_app.logger.exception("AI in-request GET stream failed")
             yield f"data: {json.dumps({'type': 'error', 'message': str(ex)})}\n\n"
             return
@@ -923,7 +1020,28 @@ def chat_inrequest_sse(chat_id: int) -> Any:
             )
             db.session.add(ai_msg_s)
             db.session.commit()
+            log_ai_stream_event(
+                "sse_inprocess_stream_persisted",
+                logger=current_app.logger,
+                path="in_request_sse",
+                chat_id=chat_obj.id,
+                room_id=chat_obj.room_id,
+                user_message_id=user_msg.id,
+                assistant_message_id=ai_msg_s.id,
+                token=token,
+            )
         except Exception as db_ex:
+            log_ai_stream_event(
+                "sse_inprocess_stream_failed",
+                logger=current_app.logger,
+                phase="persist",
+                path="in_request_sse",
+                chat_id=chat_obj.id,
+                room_id=chat_obj.room_id,
+                user_message_id=user_msg.id,
+                error_type=type(db_ex).__name__,
+                token=token,
+            )
             current_app.logger.exception("AI stream persist failed")
             yield f"data: {json.dumps({'type': 'error', 'message': str(db_ex)})}\n\n"
             return

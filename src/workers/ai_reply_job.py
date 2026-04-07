@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from typing import Any
+
+from src.utils.ai_stream_logging import log_ai_stream_event
 
 
 def _emit(r: Any, channel: str, obj: dict) -> None:
@@ -35,11 +38,32 @@ def process_ai_reply_job(
 
     try:
         with app.app_context():
+            from flask import current_app
+
             chat_obj = db.session.get(Chat, chat_id)
             user_msg = db.session.get(Message, user_message_id)
             if not chat_obj or not user_msg or user_msg.chat_id != chat_id:
+                log_ai_stream_event(
+                    "worker_stream_aborted",
+                    logger=current_app.logger,
+                    reason="chat_or_message_missing",
+                    path="redis_worker_sse",
+                    chat_id=chat_id,
+                    user_message_id=user_message_id,
+                    token=stream_token,
+                )
                 _emit(r, channel, {"type": "error", "message": "Chat or message not found"})
                 return
+
+            log_ai_stream_event(
+                "worker_stream_start",
+                logger=current_app.logger,
+                path="redis_worker_sse",
+                chat_id=chat_id,
+                room_id=chat_obj.room_id,
+                user_message_id=user_message_id,
+                token=stream_token,
+            )
 
             extra = (critique_instructions or "").strip() or None
 
@@ -61,15 +85,18 @@ def process_ai_reply_job(
                         on_text_chunk=on_chunk,
                     )
             except Exception as ex:
-                current_app = None
-                try:
-                    from flask import current_app as _ca
-
-                    current_app = _ca
-                except Exception:
-                    pass
-                if current_app:
-                    current_app.logger.exception("AI async job failed")
+                log_ai_stream_event(
+                    "worker_stream_failed",
+                    logger=current_app.logger,
+                    phase="llm_or_prep",
+                    path="redis_worker_sse",
+                    chat_id=chat_id,
+                    room_id=chat_obj.room_id,
+                    user_message_id=user_message_id,
+                    error_type=type(ex).__name__,
+                    token=stream_token,
+                )
+                current_app.logger.exception("AI async job failed")
                 _emit(r, channel, {"type": "error", "message": str(ex)})
                 return
 
@@ -82,6 +109,17 @@ def process_ai_reply_job(
             )
             db.session.add(ai_msg)
             db.session.commit()
+
+            log_ai_stream_event(
+                "worker_stream_persisted",
+                logger=current_app.logger,
+                path="redis_worker_sse",
+                chat_id=chat_id,
+                room_id=chat_obj.room_id,
+                user_message_id=user_message_id,
+                assistant_message_id=ai_msg.id,
+                token=stream_token,
+            )
 
             try:
                 from src.utils.learning.triggers import trigger_auto_note_generation
@@ -129,6 +167,14 @@ def enqueue_ai_reply_job(
             stream_token,
             critique_instructions or "",
             job_timeout=600,
+        )
+        log_ai_stream_event(
+            "worker_job_enqueued",
+            logger=logging.getLogger(__name__),
+            path="redis_worker_sse",
+            chat_id=chat_id,
+            user_message_id=user_message_id,
+            token=stream_token,
         )
         return True
     except Exception:
