@@ -733,12 +733,63 @@
             );
         }
 
+        /** Match server-rendered chat controls (templates/chat/view.html). */
+        function buildAppendedMessageActionsHtml(dialogueNum, messageId) {
+            const cc = document.querySelector('.chat-container');
+            if (!cc || cc.dataset.showMessageActions !== '1') {
+                return '';
+            }
+            const d = String(dialogueNum);
+            const mid = String(messageId);
+            return (
+                '<button type="button" class="text-xs text-muted-foreground hover:text-foreground ml-2" data-toggle-comment data-dialogue="' +
+                d +
+                '">💬 Add Comment</button>' +
+                '<button type="button" class="text-xs ml-2 pin-toggle" data-pin-message="' +
+                mid +
+                '" data-pinned="false">Pin</button>'
+            );
+        }
+
+        function buildAppendedCommentFormHtml(dialogueNum) {
+            const cc = document.querySelector('.chat-container');
+            if (!cc || cc.dataset.showMessageActions !== '1') {
+                return '';
+            }
+            const chatId = String(cc.dataset.chatId || '');
+            const csrfInput = document.querySelector('#message-form input[name="csrf_token"]');
+            const csrf = csrfInput ? csrfInput.value : '';
+            const d = String(dialogueNum);
+            const csrfField = csrf
+                ? '<input type="hidden" name="csrf_token" value="' + escapeHtml(csrf) + '">'
+                : '';
+            return (
+                '<form method="POST" action="/chat/' +
+                escapeHtml(chatId) +
+                '/comment" class="comment-form" id="comment-form-' +
+                d +
+                '" style="display: none;">' +
+                csrfField +
+                '<input type="hidden" name="dialogue_number" value="' +
+                d +
+                '">' +
+                '<textarea name="comment_content" required class="comment-textarea w-full" rows="2" placeholder="Add your comment here..."></textarea>' +
+                '<div class="flex gap-1 mt-1">' +
+                '<button type="submit" class="px-2 py-1 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90">Add</button>' +
+                '<button type="button" class="px-2 py-1 text-xs bg-muted text-muted-foreground rounded hover:bg-muted/80" data-toggle-comment data-dialogue="' +
+                d +
+                '">Cancel</button>' +
+                '</div></form>'
+            );
+        }
+
         function appendMessageEntries(list) {
             if (!list || !list.length) return;
             const container = document.getElementById('chat-messages');
             if (!container) return;
             const wasNearBottom = isNearBottom(container);
             const wasNearTop = isNearTop(container);
+            let dialogueCounter = container.querySelectorAll('[data-message-id]').length;
             list.forEach(msg => {
                 if (msg.role === 'assistant') {
                     const pid =
@@ -757,26 +808,32 @@
                 if (container.querySelector(`[data-message-id="${mid}"]`)) {
                     return;
                 }
+                dialogueCounter += 1;
+                const dialogueNum = dialogueCounter;
+                const actionsHtml = buildAppendedMessageActionsHtml(dialogueNum, msg.id);
+                const commentFormHtml = buildAppendedCommentFormHtml(dialogueNum);
                 const wrapper = document.createElement('div');
                 wrapper.className = `flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`;
                 wrapper.setAttribute('data-message-id', mid);
+                wrapper.id = 'message-' + mid;
                 const truncAttr = msg.role === 'assistant' ? ` data-truncated="${msg.is_truncated ? 'true' : 'false'}"` : '';
                 const replyBlock = msg.role === 'assistant' ? renderReplyContext(msg.reply_context) : '';
+                const tsSec = Math.floor(new Date(msg.timestamp).getTime() / 1000);
                 wrapper.innerHTML = `
                       <div class="message-bubble ${msg.role === 'user' ? 'user' : 'assistant'}"${truncAttr}>
                         ${msg.role === 'assistant' ? `
                         <div class="flex items-start gap-3">
                           <div class="ai-avatar">AI</div>
                           <div class="flex-1">${replyBlock}<div class="message-content">${msg.rendered_html || `<p>${escapeHtml(msg.content)}</p>`}
-                          <p class="message-timestamp"><time class=\"msg-time\" data-ts=\"${Math.floor(new Date(msg.timestamp).getTime()/1000)}\"></time></p>
+                          <p class="message-timestamp"><time class=\"msg-time\" data-ts=\"${tsSec}\"></time>${actionsHtml}</p>
                           </div></div>
-                        </div>` : `
+                        </div>${commentFormHtml}` : `
                         <div class="flex items-start gap-3">
-                          <div class="flex-1"><div class="message-content text-right">${msg.rendered_html || `<p>${msg.content}</p>`}
-                          <p class="message-timestamp"><time class=\"msg-time\" data-ts=\"${Math.floor(new Date(msg.timestamp).getTime()/1000)}\"></time></p>
+                          <div class="flex-1"><div class="message-content text-right">${msg.rendered_html || `<p>${escapeHtml(msg.content)}</p>`}
+                          <p class="message-timestamp"><time class=\"msg-time\" data-ts=\"${tsSec}\"></time>${actionsHtml}</p>
                           </div></div>
                           ${getUserAvatarHtml(msg.user)}
-                        </div>`}
+                        </div>${commentFormHtml}`}
                       </div>`;
                 container.appendChild(wrapper);
             });
