@@ -16,6 +16,7 @@ def _emit(r: Any, channel: str, obj: dict) -> None:
 
 def process_ai_reply_job(
     chat_id: int,
+    room_id: int,
     user_message_id: int,
     stream_token: str,
     critique_instructions: str,
@@ -25,11 +26,12 @@ def process_ai_reply_job(
 
     from src.app import create_app, db
     from src.models import Chat, Message
-    from src.utils.ai_load_tracker import room_ai_begin
+    from src.utils.ai_load_tracker import room_ai_slot_release
     from src.utils.openai_utils import get_ai_response_streaming
 
     redis_url = os.getenv("REDIS_URL")
     if not redis_url:
+        room_ai_slot_release(int(room_id))
         return
 
     r = Redis.from_url(redis_url, decode_responses=True)
@@ -77,13 +79,12 @@ def process_ai_reply_job(
                     channel,
                     {"type": "start", "user_message_id": user_message_id},
                 )
-                with room_ai_begin(chat_obj.room_id):
-                    ai_content, is_truncated = get_ai_response_streaming(
-                        chat_obj,
-                        extra_system=extra,
-                        through_message=user_msg,
-                        on_text_chunk=on_chunk,
-                    )
+                ai_content, is_truncated = get_ai_response_streaming(
+                    chat_obj,
+                    extra_system=extra,
+                    through_message=user_msg,
+                    on_text_chunk=on_chunk,
+                )
             except Exception as ex:
                 log_ai_stream_event(
                     "worker_stream_failed",
@@ -142,10 +143,13 @@ def process_ai_reply_job(
             _emit(r, channel, {"type": "error", "message": str(ex)})
         except Exception:
             pass
+    finally:
+        room_ai_slot_release(int(room_id))
 
 
 def enqueue_ai_reply_job(
     chat_id: int,
+    room_id: int,
     user_message_id: int,
     stream_token: str,
     critique_instructions: str,
@@ -158,16 +162,24 @@ def enqueue_ai_reply_job(
         from redis import Redis
         from rq import Queue
 
+        from src.utils.ai_load_tracker import room_ai_slot_release, room_ai_slot_reserve
+
         conn = Redis.from_url(redis_url)
         q = Queue("ai_replies", connection=conn)
-        q.enqueue(
-            process_ai_reply_job,
-            chat_id,
-            user_message_id,
-            stream_token,
-            critique_instructions or "",
-            job_timeout=600,
-        )
+        room_ai_slot_reserve(int(room_id))
+        try:
+            q.enqueue(
+                process_ai_reply_job,
+                chat_id,
+                int(room_id),
+                user_message_id,
+                stream_token,
+                critique_instructions or "",
+                job_timeout=600,
+            )
+        except Exception:
+            room_ai_slot_release(int(room_id))
+            raise
         log_ai_stream_event(
             "worker_job_enqueued",
             logger=logging.getLogger(__name__),

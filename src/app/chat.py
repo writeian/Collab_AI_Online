@@ -831,20 +831,22 @@ def chat_ai_stream(chat_id: int) -> Any:
     critique = (meta.get("critique_instructions") or "").strip()
     user_message_id = int(meta["user_message_id"])
 
+    chat_row = db.session.get(Chat, chat_id)
+    if not chat_row:
+        abort(404)
+    room_id = chat_row.room_id
+
     enqueued_new_job = False
     if r.set(f"ai_stream_enqueued:{token}", "1", nx=True, ex=900):
         from src.workers.ai_reply_job import enqueue_ai_reply_job
 
         ok = enqueue_ai_reply_job(
-            chat_id, user_message_id, token, critique
+            chat_id, room_id, user_message_id, token, critique
         )
         if not ok:
             r.delete(f"ai_stream_enqueued:{token}")
             abort(503)
         enqueued_new_job = True
-
-    chat_row = db.session.get(Chat, chat_id)
-    room_id = chat_row.room_id if chat_row else None
     log_ai_stream_event(
         "sse_redis_client_open",
         logger=current_app.logger,
@@ -968,12 +970,13 @@ def chat_inrequest_sse(chat_id: int) -> Any:
         yield f"data: {json.dumps({'type': 'connected'})}\n\n"
         # Comment frames help some proxies flush early so EventSource sees bytes sooner.
         yield ": ping\n\n"
-        yield f"data: {json.dumps({'type': 'start', 'user_message_id': user_msg.id})}\n\n"
-        yield ": ping\n\n"
         ai_content = ""
         is_truncated = False
         try:
             with room_ai_begin(chat_obj.room_id):
+                # Count this request in the room load before ``start`` so queue polls stay consistent.
+                yield f"data: {json.dumps({'type': 'start', 'user_message_id': user_msg.id})}\n\n"
+                yield ": ping\n\n"
                 (
                     messages_payload,
                     system_prompt,

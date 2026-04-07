@@ -84,25 +84,38 @@ def _queue_lines(others: int, estimated: int) -> tuple[str, str, str]:
 def snapshot_room(room_id: int, *, subtract_self: int = 0) -> dict:
     """Return queue info for API / UI.
 
-    ``subtract_self=1`` when the client has already received stream ``start`` for this
-    browser's request, so the Redis active count includes their own in-flight job.
+    ``subtract_self=1`` when the client's own AI job is already counted in the room
+    total (e.g. async slot reserved after EventSource opens, or stream ``start`` for
+    in-request SSE), so ``others`` excludes their slot.
     """
-    redis_active = 0
     r = _get_redis()
+    redis_active = 0
     if r is not None:
-        try:
-            raw = r.get(_redis_key(room_id))
-            redis_active = int(raw or 0)
-        except Exception as e:
-            _log.debug("ai_load_tracker redis GET failed: %s", e)
+        last_err = None
+        for attempt in range(3):
+            try:
+                raw = r.get(_redis_key(room_id))
+                redis_active = int(raw or 0)
+                last_err = None
+                break
+            except Exception as e:
+                last_err = e
+                _log.debug("ai_load_tracker redis GET failed (try %s): %s", attempt + 1, e)
+        if last_err is not None:
+            _log.warning(
+                "ai_load_tracker: redis GET failed after retries for room %s — queue may look empty",
+                room_id,
+            )
 
     with _lock:
         mem_active = int(_active_by_room.get(room_id, 0))
 
+    # With Redis, trust the shared counter only. Mixing in per-worker memory
+    # was meant as a fallback but produces flicker and false zeros under gthread.
     if r is None:
         active = mem_active
     else:
-        active = max(redis_active, mem_active)
+        active = redis_active
 
     sub = 1 if int(subtract_self) == 1 else 0
     others = max(0, active - sub)
@@ -157,3 +170,34 @@ def room_ai_begin(room_id: int) -> Iterator[None]:
                     _active_by_room.pop(room_id, None)
                 else:
                     _active_by_room[room_id] = cur
+
+
+def room_ai_slot_reserve(room_id: int) -> None:
+    """Increment room load when an async job is queued (RQ). Pair with room_ai_slot_release.
+
+    Only used when Redis is configured (same preconditions as the worker queue).
+    """
+    r = _get_redis()
+    if r is None:
+        _log.warning("room_ai_slot_reserve called without REDIS_URL; queue counts will be wrong multi-worker")
+        return
+    key = _redis_key(room_id)
+    try:
+        r.incr(key)
+        r.expire(key, _REDIS_ACTIVE_TTL_S)
+    except Exception as e:
+        _log.warning("room_ai_slot_reserve failed for room %s: %s", room_id, e)
+
+
+def room_ai_slot_release(room_id: int) -> None:
+    """Decrement after async AI job finishes (success, error, or early exit)."""
+    r = _get_redis()
+    if r is None:
+        return
+    key = _redis_key(room_id)
+    try:
+        n = r.decr(key)
+        if n < 0:
+            r.set(key, 0)
+    except Exception as e:
+        _log.warning("room_ai_slot_release failed for room %s: %s", room_id, e)

@@ -275,8 +275,9 @@
         let queueStatusIntervalId = null;
         /** 1 after SSE ``start`` so /queue-status excludes our job from "others". */
         let queuePollSubtractSelf = 0;
-        /** Hide queue only after 2 consecutive polls with nothing to show (avoids worker INCR race). */
+        /** Hide queue only after N consecutive polls with nothing to show (brief blips / latency). */
         let queueNoticeMissStreak = 0;
+        const QUEUE_NOTICE_MISS_BEFORE_HIDE = 3;
         let activeEventSource = null;
         let activeStreamFetchController = null;
         /** User Message.id we are waiting to pair with an assistant (token stream). */
@@ -993,7 +994,7 @@
                     applyQueueNoticeFromPayload(j);
                 } else {
                     queueNoticeMissStreak += 1;
-                    if (queueNoticeMissStreak >= 2) {
+                    if (queueNoticeMissStreak >= QUEUE_NOTICE_MISS_BEFORE_HIDE) {
                         hideQueueNotice();
                     }
                 }
@@ -1398,6 +1399,9 @@
                             const streamUserMsgIdRef = { id: payload.user_message_id };
                             es.onopen = function() {
                                 aiStreamLogVerbose('EventSource open');
+                                // Async path reserves a room slot when the stream connects; exclude our
+                                // slot from /queue-status "others" so we do not count ourselves as backlog.
+                                queuePollSubtractSelf = 1;
                             };
                             es.onmessage = function(ev) {
                                 try {
