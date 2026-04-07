@@ -792,7 +792,10 @@ def edit_chat(chat_id: int) -> Any:
 def chat_queue_status(chat_id: int) -> Any:
     """Lightweight queue snapshot for this chat's room (LLM load estimate)."""
     chat_obj = Chat.query.get_or_404(chat_id)
-    data = snapshot_room(chat_obj.room_id)
+    sub = request.args.get("subtract_self", type=int) or 0
+    if sub not in (0, 1):
+        sub = 0
+    data = snapshot_room(chat_obj.room_id, subtract_self=sub)
     return jsonify({"success": True, **data})
 
 

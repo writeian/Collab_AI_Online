@@ -273,6 +273,10 @@
     // Initialize touch optimization when DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
         let queueStatusIntervalId = null;
+        /** 1 after SSE ``start`` so /queue-status excludes our job from "others". */
+        let queuePollSubtractSelf = 0;
+        /** Hide queue only after 2 consecutive polls with nothing to show (avoids worker INCR race). */
+        let queueNoticeMissStreak = 0;
         let activeEventSource = null;
         let activeStreamFetchController = null;
         /** User Message.id we are waiting to pair with an assistant (token stream). */
@@ -894,6 +898,9 @@
         }
 
         function isWaitingForAssistantAtBottom() {
+            if (document.getElementById('streaming-assistant-bubble')) {
+                return true;
+            }
             const container = document.getElementById('chat-messages');
             if (!container) return false;
             const rows = container.querySelectorAll('[data-message-id]');
@@ -909,27 +916,36 @@
                 chatId = chatContainer?.dataset.chatId;
             }
             if (!chatId) return Promise.resolve(null);
-            return fetch('/chat/' + chatId + '/queue-status').then(function(r) { return r.json(); });
+            const q = encodeURIComponent(String(queuePollSubtractSelf));
+            return fetch('/chat/' + chatId + '/queue-status?subtract_self=' + q).then(
+                function(r) { return r.json(); }
+            );
         }
 
         async function queueStatusPollTick() {
             if (!isWaitingForAssistantAtBottom()) {
                 stopQueueStatusPolling();
                 hideQueueNotice();
+                queueNoticeMissStreak = 0;
                 return;
             }
             try {
                 const j = await fetchQueueStatusJson();
                 if (j && j.success && j.show_notice) {
+                    queueNoticeMissStreak = 0;
                     applyQueueNoticeFromPayload(j);
                 } else {
-                    hideQueueNotice();
+                    queueNoticeMissStreak += 1;
+                    if (queueNoticeMissStreak >= 2) {
+                        hideQueueNotice();
+                    }
                 }
             } catch (_) { /* ignore */ }
         }
 
         function startQueueStatusPolling() {
             stopQueueStatusPolling();
+            queueNoticeMissStreak = 0;
             queueStatusPollTick();
             queueStatusIntervalId = setInterval(queueStatusPollTick, 2500);
         }
@@ -1046,6 +1062,7 @@
                 }
 
                 if (useAiAsync) {
+                    queuePollSubtractSelf = 0;
                     console.info('[AI stream] Using fetch + X-AI-Async (token streaming path). Verbose:', aiStreamDebugVerbose(), '(add ?debug_stream=1 or localStorage collab_ai_stream_debug=1)');
                     let queueNoticeDismissedForThisStream = false;
                     function dismissQueueNoticeOnceStreamBegan() {
@@ -1086,6 +1103,7 @@
                             if (d.type === 'start' && d.user_message_id) {
                                 streamUserMsgIdRef.id = d.user_message_id;
                                 setStreamingTarget(d.user_message_id);
+                                queuePollSubtractSelf = 1;
                                 aiStreamLogVerbose('event', d.type, { user_message_id: d.user_message_id });
                                 if (typeof dismissQueue === 'function') {
                                     dismissQueue();

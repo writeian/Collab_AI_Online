@@ -51,41 +51,42 @@ def _get_redis():
     return _redis_client
 
 
-def _queue_lines(active: int, estimated: int, high: bool) -> tuple[str, str, str]:
-    """Return (primary_line, detail_line, full_message)."""
+def _queue_lines(others: int, estimated: int) -> tuple[str, str, str]:
+    """Build notice text. ``others`` = in-flight replies excluding the viewer's own when requested."""
     per = _avg_seconds_per_job()
-    if active <= 0:
+    if others <= 0:
         return ("", "", "")
-    place = active + 1
-    primary = f"You are #{place} in the queue."
-    if high:
+    if others >= 2:
+        primary = "High demand in this room"
         if estimated >= 60:
             lo = max(1, estimated // 60)
             hi = max(lo + 1, (estimated + per) // 60 + 1)
             detail = (
-                f"High demand ({active} other AI request(s) in progress). "
-                f"Rough wait before your reply starts: about {lo}–{hi} min."
+                f"{others} AI replies are generating at once in this chat. "
+                f"Rough wait before yours gets going: about {lo}–{hi} min."
             )
         else:
             detail = (
-                f"High demand: about {estimated}–{estimated + per} s before your reply may start."
+                f"{others} AI replies are generating at once in this chat. "
+                f"Rough wait: about {estimated}–{estimated + per} s."
             )
-    elif active == 1:
-        detail = (
-            f"Another reply is generating now. "
-            f"Yours may start in roughly {estimated}–{estimated + per} s."
-        )
-    else:
-        detail = (
-            f"{active} other AI requests are in progress. "
-            f"Your response may begin in roughly {estimated}–{estimated + per} s."
-        )
+        full = f"{primary} {detail}"
+        return (primary, detail, full)
+    primary = "You are #2 in the queue."
+    detail = (
+        f"Another reply is generating now. "
+        f"Yours may start in roughly {estimated}–{estimated + per} s."
+    )
     full = f"{primary} {detail}"
     return (primary, detail, full)
 
 
-def snapshot_room(room_id: int) -> dict:
-    """Return queue info for API / UI (before starting a new LLM job)."""
+def snapshot_room(room_id: int, *, subtract_self: int = 0) -> dict:
+    """Return queue info for API / UI.
+
+    ``subtract_self=1`` when the client has already received stream ``start`` for this
+    browser's request, so the Redis active count includes their own in-flight job.
+    """
     redis_active = 0
     r = _get_redis()
     if r is not None:
@@ -103,16 +104,20 @@ def snapshot_room(room_id: int) -> dict:
     else:
         active = max(redis_active, mem_active)
 
+    sub = 1 if int(subtract_self) == 1 else 0
+    others = max(0, active - sub)
+
     per = _avg_seconds_per_job()
-    estimated = active * per
-    high = active >= _high_demand_threshold()
-    primary, detail, full = _queue_lines(active, estimated, high)
+    estimated = others * per
+    high = others >= _high_demand_threshold()
+    primary, detail, full = _queue_lines(others, estimated)
     return {
         "active_in_room": active,
+        "others_in_room": others,
         "estimated_wait_seconds": estimated,
         "high_demand": high,
-        "show_notice": active >= 1,
-        "queue_position": active + 1 if active >= 1 else 0,
+        "show_notice": others >= 1,
+        "queue_position": 2 if others == 1 else 0,
         "primary_line": primary,
         "detail_line": detail,
         "message": full,
