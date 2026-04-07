@@ -1047,6 +1047,15 @@
 
                 if (useAiAsync) {
                     console.info('[AI stream] Using fetch + X-AI-Async (token streaming path). Verbose:', aiStreamDebugVerbose(), '(add ?debug_stream=1 or localStorage collab_ai_stream_debug=1)');
+                    let queueNoticeDismissedForThisStream = false;
+                    function dismissQueueNoticeOnceStreamBegan() {
+                        if (queueNoticeDismissedForThisStream) {
+                            return;
+                        }
+                        queueNoticeDismissedForThisStream = true;
+                        stopQueueStatusPolling();
+                        hideQueueNotice();
+                    }
                     let fetchController = null;
                     try {
                         const csrf =
@@ -1073,17 +1082,23 @@
                             redirected: res.redirected,
                         });
 
-                        function applySseData(d, chunkEl, streamUserMsgIdRef) {
+                        function applySseData(d, chunkEl, streamUserMsgIdRef, dismissQueue) {
                             if (d.type === 'start' && d.user_message_id) {
                                 streamUserMsgIdRef.id = d.user_message_id;
                                 setStreamingTarget(d.user_message_id);
                                 aiStreamLogVerbose('event', d.type, { user_message_id: d.user_message_id });
+                                if (typeof dismissQueue === 'function') {
+                                    dismissQueue();
+                                }
                             }
                             if (
                                 d.type === 'chunk' &&
                                 typeof d.text === 'string' &&
                                 chunkEl
                             ) {
+                                if (typeof dismissQueue === 'function') {
+                                    dismissQueue();
+                                }
                                 const p = chunkEl.querySelector('p');
                                 if (p) {
                                     p.textContent = (p.textContent || '') + d.text;
@@ -1108,6 +1123,9 @@
                                     message_id: d.message_id,
                                     is_truncated: d.is_truncated,
                                 });
+                                if (typeof dismissQueue === 'function') {
+                                    dismissQueue();
+                                }
                                 return 'done';
                             }
                             if (d.type === 'connected') {
@@ -1121,8 +1139,6 @@
                         async function consumeSseFromFetch(fetchRes, fallbackUserMsgId) {
                             console.info('[AI stream] Consuming in-request SSE (same POST body).');
                             const priorLastId = getLastMessageId();
-                            stopQueueStatusPolling();
-                            hideQueueNotice();
                             // Must not await this before reading the response body: the server
                             // holds the same connection for in-request SSE; if we delay
                             // getReader(), the socket buffer fills, Flask blocks on write, and
@@ -1135,6 +1151,9 @@
                             const streamWrap = ensureStreamingAssistantBubble();
                             appendPromise.finally(function() {
                                 moveStreamingBubbleBelowMessages(streamWrap);
+                                if (isWaitingForAssistantAtBottom()) {
+                                    startQueueStatusPolling();
+                                }
                             });
                             const chunkEl = streamWrap
                                 ? streamWrap.querySelector('.streaming-assistant-chunk')
@@ -1173,7 +1192,12 @@
                                             const jsonPart = line.slice(5).trimStart();
                                             try {
                                                 const d = JSON.parse(jsonPart);
-                                                const r = applySseData(d, chunkEl, streamUserMsgIdRef);
+                                                const r = applySseData(
+                                                    d,
+                                                    chunkEl,
+                                                    streamUserMsgIdRef,
+                                                    dismissQueueNoticeOnceStreamBegan
+                                                );
                                                 if (r === 'chunk') {
                                                     chunkEvents += 1;
                                                     if (chunkEvents <= 5 || aiStreamDebugVerbose()) {
@@ -1189,6 +1213,7 @@
                                                 }
                                                 if (r === 'error') {
                                                     streamSettled = true;
+                                                    dismissQueueNoticeOnceStreamBegan();
                                                     removeStreamingAssistantBubble();
                                                     resetSendUi();
                                                     console.error(d.message || 'AI stream error');
@@ -1240,6 +1265,7 @@
                                     chunkEvents: chunkEvents,
                                     rawReads: rawReads,
                                 });
+                                dismissQueueNoticeOnceStreamBegan();
                                 removeStreamingAssistantBubble();
                                 resetSendUi();
                                 try {
@@ -1274,8 +1300,6 @@
                             }
                             aiStreamLogVerbose('stream_url', payload.stream_url);
                             const priorLastId = getLastMessageId();
-                            stopQueueStatusPolling();
-                            hideQueueNotice();
                             const appendPromise = fetchAndAppendMessagesAfter(priorLastId).catch(
                                 function() {
                                     return null;
@@ -1285,6 +1309,9 @@
                             setStreamingTarget(payload.user_message_id);
                             appendPromise.finally(function() {
                                 moveStreamingBubbleBelowMessages(streamWrap);
+                                if (isWaitingForAssistantAtBottom()) {
+                                    startQueueStatusPolling();
+                                }
                             });
                             const chunkEl = streamWrap
                                 ? streamWrap.querySelector('.streaming-assistant-chunk')
@@ -1300,7 +1327,12 @@
                             es.onmessage = function(ev) {
                                 try {
                                     const d = JSON.parse(ev.data);
-                                    const r = applySseData(d, chunkEl, streamUserMsgIdRef);
+                                    const r = applySseData(
+                                        d,
+                                        chunkEl,
+                                        streamUserMsgIdRef,
+                                        dismissQueueNoticeOnceStreamBegan
+                                    );
                                     if (r === 'chunk') {
                                         esChunkCount += 1;
                                         if (esChunkCount <= 5 || aiStreamDebugVerbose()) {
@@ -1311,6 +1343,7 @@
                                         streamSettled = true;
                                         es.close();
                                         releaseActiveEventSource(es);
+                                        dismissQueueNoticeOnceStreamBegan();
                                         removeStreamingAssistantBubble();
                                         resetSendUi();
                                         console.error(d.message || 'AI stream error');
@@ -1353,6 +1386,7 @@
                                 streamSettled = true;
                                 es.close();
                                 releaseActiveEventSource(es);
+                                dismissQueueNoticeOnceStreamBegan();
                                 removeStreamingAssistantBubble();
                                 resetSendUi();
                                 appendPromise
