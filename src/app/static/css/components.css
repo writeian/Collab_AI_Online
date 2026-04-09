@@ -489,6 +489,46 @@
   background: #BFDBFE; /* Slightly darker light blue on hover */
 }
 
+/* Room presence indicators (participants sidebar) */
+.presence-led {
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+  background: #6b7280;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+.presence-led.is-active {
+  background: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.3);
+}
+.presence-header-led {
+  width: 8px;
+  height: 8px;
+}
+.presence-header-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.sidebar-summary-trailing {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.sidebar-summary-trailing .badge {
+  margin-left: 0;
+  margin-right: 0;
+}
+.member-presence-led {
+  align-self: center;
+}
+.dark .presence-led:not(.is-active) {
+  background: #4b5563;
+}
+
 /* Modern Input Area */
 .chat-input-container {
   /* Liquid glass bar inspired by iOS 18 "glass" effect */

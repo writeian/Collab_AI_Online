@@ -43,6 +43,7 @@ from src.models import (
 from src.utils.openai_utils import get_ai_response, get_modes_for_room, BASE_MODES
 from src.utils.progression import compute_suggestion, should_show_with_exponential_cooldown
 from src.utils.ai_load_tracker import room_ai_begin, snapshot_room
+from src.utils.room_presence import active_members, touch_presence
 from src.utils.ai_stream_logging import log_ai_stream_event
 from src.utils.message_display import reply_context_dict
 from src.models.analytics import ProgressSuggestionState, ProgressSuggestionEvent
@@ -797,6 +798,45 @@ def chat_queue_status(chat_id: int) -> Any:
         sub = 0
     data = snapshot_room(chat_obj.room_id, subtract_self=sub)
     return jsonify({"success": True, **data})
+
+
+def _room_member_user_ids(room_id: int) -> List[int]:
+    rows = RoomMember.query.filter_by(room_id=room_id).all()
+    return [int(r.user_id) for r in rows]
+
+
+@chat.route("/<int:chat_id>/presence", methods=["GET"])
+@limiter.limit("120 per minute")
+@require_chat_access
+def chat_presence_status(chat_id: int) -> Any:
+    """Who in this chat's room has an active session (recent heartbeat)."""
+    chat_obj = Chat.query.get_or_404(chat_id)
+    member_ids = _room_member_user_ids(chat_obj.room_id)
+    active_ids = active_members(chat_obj.room_id, member_ids)
+    return jsonify(
+        {
+            "success": True,
+            "active_user_ids": active_ids,
+            "active_count": len(active_ids),
+        }
+    )
+
+
+@chat.route("/<int:chat_id>/presence/ping", methods=["POST"])
+@limiter.limit("90 per minute")
+@require_chat_access
+def chat_presence_ping(chat_id: int) -> Any:
+    """Record current user as active in this room (call every ~30s while tab visible)."""
+    chat_obj = Chat.query.get_or_404(chat_id)
+    user = get_current_user()
+    if not user:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+    if not RoomMember.query.filter_by(
+        room_id=chat_obj.room_id, user_id=user.id
+    ).first():
+        return jsonify({"success": False, "error": "Not a room member"}), 403
+    touch_presence(chat_obj.room_id, user.id)
+    return jsonify({"success": True})
 
 
 @chat.route("/<int:chat_id>/ai-stream", methods=["GET"])

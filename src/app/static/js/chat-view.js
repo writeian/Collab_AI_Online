@@ -1624,8 +1624,101 @@
                 markUserActivity();
                 // trigger an immediate poll when tab becomes visible
                 pollNewMessages();
+                if (typeof presencePingAndRefresh === 'function') {
+                    presencePingAndRefresh();
+                }
             }
         });
+
+        const PRESENCE_POLL_MS = 12000;
+        function getCsrfTokenForPresence() {
+            return (
+                document.querySelector('#message-form input[name="csrf_token"]')?.value || ''
+            );
+        }
+        function applyPresenceToDom(activeIds) {
+            const ids = Array.isArray(activeIds) ? activeIds : [];
+            const set = new Set(
+                ids.map(function (x) {
+                    const n = parseInt(String(x), 10);
+                    return isNaN(n) ? null : n;
+                }).filter(Boolean)
+            );
+            const headerLed = document.getElementById('presence-room-led');
+            const countEl = document.getElementById('presence-active-count');
+            const summary = document.getElementById('participants-section-summary');
+            const n = set.size;
+            if (countEl) {
+                countEl.textContent = String(n);
+            }
+            if (headerLed) {
+                headerLed.classList.toggle('is-active', n > 0);
+            }
+            if (summary) {
+                summary.setAttribute(
+                    'aria-label',
+                    'Participants — ' + n + ' active in this room now'
+                );
+            }
+            document.querySelectorAll('.member-item[data-user-id]').forEach(function (row) {
+                const uid = parseInt(row.getAttribute('data-user-id') || '0', 10);
+                const led = row.querySelector('.member-presence-led');
+                if (!led || isNaN(uid)) {
+                    return;
+                }
+                const on = set.has(uid);
+                led.classList.toggle('is-active', on);
+                led.setAttribute('aria-label', on ? 'Active in this room' : 'Offline');
+            });
+        }
+        async function presencePingAndRefresh() {
+            if (document.hidden) {
+                return;
+            }
+            const chatContainer = document.querySelector('.chat-container');
+            if (!chatContainer || !chatContainer.dataset.userId) {
+                return;
+            }
+            let chatId = window.location.pathname.match(/\/chat\/(\d+)/)?.[1];
+            if (!chatId) {
+                chatId = chatContainer.dataset.chatId;
+            }
+            if (!chatId) {
+                return;
+            }
+            try {
+                await fetch('/chat/' + chatId + '/presence/ping', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        Accept: 'application/json',
+                        'X-CSRFToken': getCsrfTokenForPresence(),
+                    },
+                });
+            } catch (_) {
+                /* ignore */
+            }
+            try {
+                const r = await fetch('/chat/' + chatId + '/presence', {
+                    credentials: 'same-origin',
+                });
+                const j = await r.json();
+                if (j && j.success && Array.isArray(j.active_user_ids)) {
+                    applyPresenceToDom(j.active_user_ids);
+                }
+            } catch (_) {
+                /* ignore */
+            }
+        }
+        let presenceIntervalId = null;
+        const ccPresence = document.querySelector('.chat-container');
+        if (ccPresence && ccPresence.dataset.userId) {
+            presencePingAndRefresh();
+            presenceIntervalId = setInterval(function () {
+                presencePingAndRefresh();
+            }, PRESENCE_POLL_MS);
+        }
 
         // kick off
         startPolling();

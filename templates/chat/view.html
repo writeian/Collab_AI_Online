@@ -478,10 +478,16 @@
 
         <!-- Participants Section (Collapsible) -->
         <details class="sidebar-section" data-section="members">
-            <summary class="sidebar-summary">
+            <summary id="participants-section-summary" class="sidebar-summary" aria-label="Participants">
                 <i data-lucide="users" class="w-5 h-5"></i>
                 <span>Participants</span>
-                <span class="badge">{{ (room_members|length) if room_members else 0 }}</span>
+                <span class="sidebar-summary-trailing">
+                    <span class="presence-header-wrap" title="Active in this room (chat open recently)">
+                        <span id="presence-room-led" class="presence-led presence-header-led" aria-hidden="true"></span>
+                        <span id="presence-active-count" class="text-xs font-semibold text-muted-foreground tabular-nums">0</span>
+                    </span>
+                    <span class="badge">{{ (room_members|length) if room_members else 0 }}</span>
+                </span>
                 <i data-lucide="chevron-down" class="w-4 h-4 chevron"></i>
             </summary>
             <div class="sidebar-panel">
@@ -491,7 +497,7 @@
                     <div class="member-list">
                         {% for member in room_members %}
                         {% set color_class = 'avatar-color-' ~ ((member.id % 6) + 1) %}
-                        <div class="member-item">
+                        <div class="member-item" data-user-id="{{ member.id }}">
                             <div class="member-avatar {{ color_class }}">
                                 <span class="avatar-text">
                                     {% if ' ' in member.display_name %}
@@ -509,9 +515,7 @@
                                    class="member-action-btn primary" title="View Profile">
                                     👤
                                 </a>
-                                <button class="member-action-btn" title="Message (Coming Soon)" disabled>
-                                    💬
-                                </button>
+                                <span class="member-presence-led presence-led" role="img" aria-label="Offline"></span>
                             </div>
                         </div>
                         {% endfor %}
@@ -918,7 +922,7 @@
 
 {% block extra_js %}
     {{ super() }}
-    <script src="{{ url_for('static', filename='js/chat-view.js') }}?v=2026-04-02-queue-consistency"></script>
+    <script src="{{ url_for('static', filename='js/chat-view.js') }}?v=2026-04-02-room-presence"></script>
     {% if can_invite %}
     <script>
     (function() {
