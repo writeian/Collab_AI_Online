@@ -437,6 +437,13 @@
   margin-bottom: 0.25rem;
   background: white;
   transition: background-color 0.2s;
+  position: relative;
+  z-index: 0;
+}
+/* Raise row while presence tooltip is shown so bubble stacks above neighbors */
+.member-item:has(.member-presence-tooltip-host:hover),
+.member-item:has(.member-presence-tooltip-host:focus-visible) {
+  z-index: 30;
 }
 
 .member-item:hover {
@@ -547,11 +554,14 @@
   align-self: center;
   outline: none;
 }
+/* Below the LED: avoids clipping by .member-list { overflow-y: auto } when row is at top */
 .member-presence-tooltip-host[data-presence-tip]:not([data-presence-tip=""])::after {
   content: attr(data-presence-tip);
   position: absolute;
+  top: calc(100% + 6px);
   right: 0;
-  bottom: calc(100% + 6px);
+  bottom: auto;
+  left: auto;
   padding: 6px 10px;
   max-width: min(280px, 72vw);
   background: rgba(17, 24, 39, 0.94);
@@ -563,7 +573,7 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
   white-space: normal;
   text-align: left;
-  z-index: 200;
+  z-index: 10050;
   pointer-events: none;
   opacity: 0;
   visibility: hidden;

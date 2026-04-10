@@ -1636,6 +1636,29 @@
                 document.querySelector('#message-form input[name="csrf_token"]')?.value || ''
             );
         }
+        function sortMemberListByPresence(activeIdMap) {
+            const list = document.querySelector('.chat-sidebar .member-list');
+            if (!list || !activeIdMap) {
+                return;
+            }
+            const items = Array.from(list.querySelectorAll('.member-item[data-user-id]'));
+            if (items.length < 2) {
+                return;
+            }
+            items.sort(function (a, b) {
+                const ua = parseInt(a.getAttribute('data-user-id') || '0', 10);
+                const ub = parseInt(b.getAttribute('data-user-id') || '0', 10);
+                const aOn = activeIdMap.has(ua);
+                const bOn = activeIdMap.has(ub);
+                if (aOn !== bOn) {
+                    return aOn ? -1 : 1;
+                }
+                return ua - ub;
+            });
+            items.forEach(function (el) {
+                list.appendChild(el);
+            });
+        }
         function applyPresenceToDom(activePresence) {
             const map = new Map();
             const rows = Array.isArray(activePresence) ? activePresence : [];
@@ -1703,6 +1726,7 @@
                     }
                 }
             });
+            sortMemberListByPresence(map);
         }
         async function presencePingAndRefresh() {
             if (document.hidden) {
