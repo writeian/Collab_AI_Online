@@ -508,7 +508,10 @@
                                 </span>
                             </div>
                             <div class="member-info">
-                                <p class="member-name">{{ member.display_name }}</p>
+                                <p class="member-name">
+                                    <a href="{{ url_for('auth.view_member_profile', user_id=member.id) }}"
+                                       class="member-profile-link">{{ member.display_name }}</a>
+                                </p>
                             </div>
                             <div class="member-actions">
                                 <span class="member-presence-tooltip-host" tabindex="0">

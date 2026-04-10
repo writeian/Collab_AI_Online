@@ -18,6 +18,7 @@ from flask import (
     session,
     flash,
     current_app,
+    abort,
 )
 from src.app import db
 from src.app.access_control import get_current_user, require_login
@@ -29,6 +30,29 @@ import traceback
 # Removed incorrect flask_login import
 
 auth = Blueprint("auth", __name__)
+
+
+def _users_share_any_room(user_a_id: int, user_b_id: int) -> bool:
+    from src.models import RoomMember
+
+    if user_a_id == user_b_id:
+        return True
+    a_rooms = {m.room_id for m in RoomMember.query.filter_by(user_id=user_a_id).all()}
+    b_rooms = {m.room_id for m in RoomMember.query.filter_by(user_id=user_b_id).all()}
+    return bool(a_rooms & b_rooms)
+
+
+def _profile_activity_counts(user_id: int) -> tuple[int, int]:
+    """Distinct chats with a user message, and count of user-role messages."""
+    from src.models import Message
+
+    q = Message.query.filter(
+        Message.user_id == user_id,
+        Message.role == "user",
+    )
+    total_messages = q.count()
+    total_chats = q.with_entities(Message.chat_id).distinct().count()
+    return int(total_chats), int(total_messages)
 
 
 @auth.route("/register", methods=["GET", "POST"])
@@ -407,8 +431,45 @@ def profile() -> Any:
     user = get_current_user()
     # Get invitation count for navigation
     from src.app.room.utils.room_utils import get_invitation_count
+
     invitation_count = get_invitation_count(user)
-    return render_template("profile.html", user=user, invitation_count=invitation_count)
+    tc, tm = _profile_activity_counts(user.id)
+    return render_template(
+        "profile.html",
+        user=user,
+        invitation_count=invitation_count,
+        viewing_own_profile=True,
+        total_chats=tc,
+        total_messages=tm,
+    )
+
+
+@auth.route("/profile/<int:user_id>")
+@require_login
+def view_member_profile(user_id: int) -> Any:
+    """View another member's profile if you share at least one room with them."""
+    from src.models import User
+
+    from src.app.room.utils.room_utils import get_invitation_count
+
+    viewer = get_current_user()
+    if not viewer:
+        return redirect(url_for("auth.login"))
+    if user_id == viewer.id:
+        return redirect(url_for("auth.profile"))
+    profile_user = User.query.get_or_404(user_id)
+    if not _users_share_any_room(viewer.id, profile_user.id):
+        abort(403)
+    invitation_count = get_invitation_count(viewer)
+    tc, tm = _profile_activity_counts(profile_user.id)
+    return render_template(
+        "profile.html",
+        user=profile_user,
+        invitation_count=invitation_count,
+        viewing_own_profile=False,
+        total_chats=tc,
+        total_messages=tm,
+    )
 
 
 @auth.route("/edit-profile", methods=["GET", "POST"])

@@ -1,12 +1,17 @@
 {% extends "base.html" %}
 {% block title %}Profile - {{ user.display_name }}{% endblock %}
 {% block content %}
+  {% set viewing_own_profile = viewing_own_profile|default(true) %}
   <!-- Main Content Container -->
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Page Header -->
     <div class="mb-8">
       <h1 class="text-3xl font-bold text-foreground mb-2">Profile</h1>
+      {% if viewing_own_profile %}
       <p class="text-muted-50">Manage your account and preferences</p>
+      {% else %}
+      <p class="text-muted-50">Collaborator profile — you share at least one room</p>
+      {% endif %}
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
@@ -33,15 +38,18 @@
             <span class="text-sm font-medium text-muted-40 mb-1 sm:mb-0">Display Name:</span>
             <span class="text-foreground font-medium">{{ user.display_name }}</span>
           </div>
+          {% if viewing_own_profile %}
           <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-3 border-b border-border/30">
             <span class="text-sm font-medium text-muted-40 mb-1 sm:mb-0">Email:</span>
             <span class="text-foreground break-all">{{ user.email }}</span>
           </div>
+          {% endif %}
           <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-3">
             <span class="text-sm font-medium text-muted-40 mb-1 sm:mb-0">Member Since:</span>
             <span class="text-foreground">{{ user.created_at.strftime('%B %d, %Y') }}</span>
           </div>
         </div>
+        {% if viewing_own_profile %}
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-6">
           <a href="{{ url_for('auth.edit_profile') }}" 
              class="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium text-center">
@@ -52,6 +60,7 @@
             Change Password
           </a>
         </div>
+        {% endif %}
       </div>
 
       <!-- Academic Information Section -->
@@ -92,7 +101,8 @@
         </div>
       </div>
 
-      <!-- Preferences Section -->
+      <!-- Preferences Section (account owner only) -->
+      {% if viewing_own_profile %}
       <div class="bg-card border border-border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
         <div class="flex items-center gap-3 mb-6">
           <div class="w-8 h-8 bg-green-500/10 rounded-lg flex items-center justify-center">
@@ -130,6 +140,7 @@
           </div>
         </div>
       </div>
+      {% endif %}
 
       <!-- Activity Summary Section -->
       <div class="bg-card border border-border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
