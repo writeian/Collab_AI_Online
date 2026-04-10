@@ -1679,6 +1679,7 @@
             }
             document.querySelectorAll('.member-item[data-user-id]').forEach(function (row) {
                 const uid = parseInt(row.getAttribute('data-user-id') || '0', 10);
+                const host = row.querySelector('.member-presence-tooltip-host');
                 const led = row.querySelector('.member-presence-led');
                 if (!led || isNaN(uid)) {
                     return;
@@ -1686,13 +1687,20 @@
                 const chatTitle = map.has(uid) ? map.get(uid) : null;
                 const on = chatTitle !== null;
                 led.classList.toggle('is-active', on);
+                const label = chatTitle || 'a chat in this room';
                 if (on) {
-                    const label = chatTitle || 'a chat in this room';
-                    led.setAttribute('title', 'Active in: ' + label);
+                    const tip = 'Active in: ' + label;
                     led.setAttribute('aria-label', 'Active in ' + label);
+                    if (host) {
+                        host.setAttribute('data-presence-tip', tip);
+                        host.classList.add('has-presence-tip');
+                    }
                 } else {
-                    led.removeAttribute('title');
                     led.setAttribute('aria-label', 'Offline');
+                    if (host) {
+                        host.removeAttribute('data-presence-tip');
+                        host.classList.remove('has-presence-tip');
+                    }
                 }
             });
         }

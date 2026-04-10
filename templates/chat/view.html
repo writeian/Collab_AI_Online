@@ -511,11 +511,9 @@
                                 <p class="member-name">{{ member.display_name }}</p>
                             </div>
                             <div class="member-actions">
-                                <a href="{{ url_for('auth.profile') }}" 
-                                   class="member-action-btn primary" title="View Profile">
-                                    👤
-                                </a>
-                                <span class="member-presence-led presence-led" role="img" aria-label="Offline"></span>
+                                <span class="member-presence-tooltip-host" tabindex="0">
+                                    <span class="member-presence-led presence-led" role="img" aria-label="Offline"></span>
+                                </span>
                             </div>
                         </div>
                         {% endfor %}
@@ -922,7 +920,7 @@
 
 {% block extra_js %}
     {{ super() }}
-    <script src="{{ url_for('static', filename='js/chat-view.js') }}?v=2026-04-02-presence-chat-tooltip"></script>
+    <script src="{{ url_for('static', filename='js/chat-view.js') }}?v=2026-04-10-presence-tooltip-instant"></script>
     {% if can_invite %}
     <script>
     (function() {
