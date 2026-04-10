@@ -525,6 +525,9 @@
 .member-presence-led {
   align-self: center;
 }
+.member-presence-led.is-active {
+  cursor: help;
+}
 .dark .presence-led:not(.is-active) {
   background: #4b5563;
 }

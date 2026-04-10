@@ -1636,18 +1636,35 @@
                 document.querySelector('#message-form input[name="csrf_token"]')?.value || ''
             );
         }
-        function applyPresenceToDom(activeIds) {
-            const ids = Array.isArray(activeIds) ? activeIds : [];
-            const set = new Set(
-                ids.map(function (x) {
-                    const n = parseInt(String(x), 10);
-                    return isNaN(n) ? null : n;
-                }).filter(Boolean)
-            );
+        function applyPresenceToDom(activePresence) {
+            const map = new Map();
+            const rows = Array.isArray(activePresence) ? activePresence : [];
+            if (
+                rows.length &&
+                typeof rows[0] === 'object' &&
+                rows[0] !== null &&
+                Object.prototype.hasOwnProperty.call(rows[0], 'user_id')
+            ) {
+                rows.forEach(function (row) {
+                    const uid = parseInt(String(row.user_id), 10);
+                    if (isNaN(uid)) {
+                        return;
+                    }
+                    const t = (row.chat_title && String(row.chat_title).trim()) || '';
+                    map.set(uid, t);
+                });
+            } else {
+                rows.forEach(function (id) {
+                    const uid = parseInt(String(id), 10);
+                    if (!isNaN(uid)) {
+                        map.set(uid, '');
+                    }
+                });
+            }
             const headerLed = document.getElementById('presence-room-led');
             const countEl = document.getElementById('presence-active-count');
             const summary = document.getElementById('participants-section-summary');
-            const n = set.size;
+            const n = map.size;
             if (countEl) {
                 countEl.textContent = String(n);
             }
@@ -1666,9 +1683,17 @@
                 if (!led || isNaN(uid)) {
                     return;
                 }
-                const on = set.has(uid);
+                const chatTitle = map.has(uid) ? map.get(uid) : null;
+                const on = chatTitle !== null;
                 led.classList.toggle('is-active', on);
-                led.setAttribute('aria-label', on ? 'Active in this room' : 'Offline');
+                if (on) {
+                    const label = chatTitle || 'a chat in this room';
+                    led.setAttribute('title', 'Active in: ' + label);
+                    led.setAttribute('aria-label', 'Active in ' + label);
+                } else {
+                    led.removeAttribute('title');
+                    led.setAttribute('aria-label', 'Offline');
+                }
             });
         }
         async function presencePingAndRefresh() {
@@ -1704,8 +1729,12 @@
                     credentials: 'same-origin',
                 });
                 const j = await r.json();
-                if (j && j.success && Array.isArray(j.active_user_ids)) {
-                    applyPresenceToDom(j.active_user_ids);
+                if (j && j.success) {
+                    if (Array.isArray(j.active_presence)) {
+                        applyPresenceToDom(j.active_presence);
+                    } else if (Array.isArray(j.active_user_ids)) {
+                        applyPresenceToDom(j.active_user_ids);
+                    }
                 }
             } catch (_) {
                 /* ignore */
