@@ -924,7 +924,7 @@
 
 {% block extra_js %}
     {{ super() }}
-    <script src="{{ url_for('static', filename='js/chat-view.js') }}?v=2026-04-10-participants-sort-tooltip"></script>
+    <script src="{{ url_for('static', filename='js/chat-view.js') }}?v=2026-04-14-presence-chatid-csrf"></script>
     {% if can_invite %}
     <script>
     (function() {

@@ -1640,11 +1640,6 @@
         });
 
         const PRESENCE_POLL_MS = 12000;
-        function getCsrfTokenForPresence() {
-            return (
-                document.querySelector('#message-form input[name="csrf_token"]')?.value || ''
-            );
-        }
         function sortMemberListByPresence(activeIdMap) {
             const list = document.querySelector('.chat-sidebar .member-list');
             if (!list || !activeIdMap) {
@@ -1745,10 +1740,9 @@
             if (!chatContainer || !chatContainer.dataset.userId) {
                 return;
             }
-            let chatId = window.location.pathname.match(/\/chat\/(\d+)/)?.[1];
-            if (!chatId) {
-                chatId = chatContainer.dataset.chatId;
-            }
+            let chatId =
+                (chatContainer.dataset.chatId && String(chatContainer.dataset.chatId).trim()) ||
+                window.location.pathname.match(/\/chat\/(\d+)/)?.[1];
             if (!chatId) {
                 return;
             }
@@ -1759,7 +1753,6 @@
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         Accept: 'application/json',
-                        'X-CSRFToken': getCsrfTokenForPresence(),
                     },
                 });
             } catch (_) {
