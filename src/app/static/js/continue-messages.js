@@ -1,90 +1,96 @@
 (function () {
-  // prevent duplicate init
   if (window.__CONTINUE_INIT__) return;
-  window.__CONTINUE_INIT__ = 'v1.2';
+  window.__CONTINUE_INIT__ = 'v1.5';
+
+  /** Min plain-text length to offer Continue when the DB flag is false (streaming sometimes omits truncation). */
+  var LONG_ASSISTANT_CHARS = 3200;
 
   function enhanceBubble(bubble) {
-    if (!bubble || bubble.dataset.continueEnhanced === '1') return;
+    if (!bubble) return;
 
     const content = bubble.querySelector('.message-content');
     if (!content) return;
 
-    // ALWAYS remove any old anchors first (cleanup before gating)
-    content.querySelectorAll('a.continue-link, .continue-cta').forEach(el => el.remove());
-
-    // Only add continue button if message was truncated
-    const isTruncated = bubble.dataset.truncated === 'true';
-    if (!isTruncated) return;
-
-    const ts = content.querySelector('.message-timestamp');
-
-    // figure out the last non-timestamp block to make it feel "end of the message"
-    let lastTextEl = null;
-    Array.from(content.children).forEach(el => {
-      if (!el.classList.contains('message-timestamp')) lastTextEl = el;
+    content.querySelectorAll('a.continue-link, .continue-cta').forEach(function (el) {
+      el.remove();
     });
 
-    // create CTA (inline-friendly)
+    const truncatedFlag = bubble.getAttribute('data-truncated') === 'true';
+    const textLen = (content.textContent || '').trim().length;
+    const showContinue = truncatedFlag || textLen >= LONG_ASSISTANT_CHARS;
+    if (!showContinue) {
+      delete bubble.dataset.continueEnhanced;
+      return;
+    }
+
+    const tsRow = content.querySelector('.message-timestamp');
+
     const a = document.createElement('button');
     a.type = 'button';
-    a.className = 'continue-cta inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 ml-2 align-baseline';
+    a.className =
+      'continue-cta inline-flex items-center justify-center gap-1 text-xs font-semibold ml-2 rounded-md ' +
+      'text-blue-800 bg-blue-50 border border-blue-200 hover:bg-blue-100 hover:border-blue-300 ' +
+      'dark:text-blue-100 dark:bg-blue-950/50 dark:border-blue-700 dark:hover:bg-blue-900/40';
     a.setAttribute('aria-label', 'Continue this response');
-    a.innerHTML = `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-      stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg> Continue`;
+    a.innerHTML =
+      '<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+      'stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg> Continue';
 
-    // action: call the continue endpoint with message context
-    a.addEventListener('click', async () => {
-      // Get message ID from bubble
+    a.addEventListener('click', async function () {
       const messageWrapper = bubble.closest('[data-message-id]');
       if (!messageWrapper) return;
-      
+
       const messageId = messageWrapper.dataset.messageId;
       const chatId = window.location.pathname.match(/\/chat\/(\d+)/)?.[1];
-      
+
       if (!chatId || !messageId) {
         console.error('Cannot continue: missing chat ID or message ID');
         return;
       }
-      
-      // Show loading state
+
       a.disabled = true;
-      a.innerHTML = `<svg class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg> Continuing...`;
-      
+      a.innerHTML =
+        '<svg class="w-3.5 h-3.5 shrink-0 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+        '<path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg> Continuing...';
+
       try {
-        // Call the continue endpoint
-        const response = await fetch(`/chat/${chatId}/continue/${messageId}`, {
+        var csrf =
+          document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+          document.querySelector('#message-form input[name="csrf_token"]')?.value ||
+          '';
+        const response = await fetch('/chat/' + chatId + '/continue/' + messageId, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
-          }
+            'X-CSRFToken': csrf,
+          },
         });
-        
+
         if (response.ok) {
-          // Redirect or reload to show continued message
           window.location.reload();
         } else {
           console.error('Continue failed:', response.status);
           a.disabled = false;
-          a.innerHTML = `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg> Continue`;
+          a.innerHTML =
+            '<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+            'stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg> Continue';
         }
       } catch (error) {
         console.error('Continue error:', error);
         a.disabled = false;
-        a.innerHTML = `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg> Continue`;
+        a.innerHTML =
+          '<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+          'stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg> Continue';
       }
     });
 
-    // preferred placement: at the very end of the AI text (inline in the last block if possible)
-    if (lastTextEl && lastTextEl.nodeName === 'P') {
-      lastTextEl.appendChild(document.createTextNode(' '));
-      lastTextEl.appendChild(a);
-    } else if (ts) {
-      // fallback: just before timestamp (always before it, never after)
-      content.insertBefore(a, ts);
+    if (tsRow) {
+      const pinBtn = tsRow.querySelector('.pin-toggle');
+      if (pinBtn) {
+        pinBtn.insertAdjacentElement('afterend', a);
+      } else {
+        tsRow.appendChild(a);
+      }
     } else {
       content.appendChild(a);
     }
@@ -93,30 +99,40 @@
   }
 
   function enhanceAll() {
-    document.querySelectorAll('.message-bubble.assistant').forEach(enhanceBubble);
+    document.querySelectorAll('.message-bubble.assistant').forEach(function (b) {
+      delete b.dataset.continueEnhanced;
+      enhanceBubble(b);
+    });
   }
 
-  // initial pass
+  window.refreshContinueButtons = enhanceAll;
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', enhanceAll);
   } else {
     enhanceAll();
   }
 
-  // observe future messages appended by polling
   const messages = document.getElementById('chat-messages');
   if (messages && !window.__CONTINUE_OBS__) {
-    window.__CONTINUE_OBS__ = new MutationObserver(muts => {
-      for (const m of muts) {
-        m.addedNodes.forEach(node => {
+    window.__CONTINUE_OBS__ = new MutationObserver(function (muts) {
+      for (var i = 0; i < muts.length; i++) {
+        var m = muts[i];
+        m.addedNodes.forEach(function (node) {
           if (!(node instanceof HTMLElement)) return;
-          if (node.matches?.('.message-bubble.assistant')) enhanceBubble(node);
-          node.querySelectorAll?.('.message-bubble.assistant').forEach(enhanceBubble);
+          if (node.matches && node.matches('.message-bubble.assistant')) {
+            delete node.dataset.continueEnhanced;
+            enhanceBubble(node);
+          }
+          if (node.querySelectorAll) {
+            node.querySelectorAll('.message-bubble.assistant').forEach(function (b) {
+              delete b.dataset.continueEnhanced;
+              enhanceBubble(b);
+            });
+          }
         });
       }
     });
     window.__CONTINUE_OBS__.observe(messages, { childList: true, subtree: true });
   }
 })();
-
-// Old functions removed - using new idempotent approach above

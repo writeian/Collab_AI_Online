@@ -110,3 +110,85 @@ body.chat-page .chat-main {
   outline: 2px solid hsl(var(--primary));
   outline-offset: 2px;
 }
+
+/* Continue — same line as Pin; match chip metrics and vertical-align to row */
+.message-timestamp button.continue-cta {
+  vertical-align: middle;
+  padding: 0.125rem 0.5rem !important;
+  line-height: 1 !important;
+  font-size: 0.75rem !important;
+  box-sizing: border-box;
+  opacity: 1 !important;
+}
+
+/* Chat message markdown: headings become <h1–h6> (no visible #); 10–12pt scale + bold hierarchy */
+.message-content.chat-md-root {
+  font-size: 10pt;
+  line-height: 1.55;
+}
+
+.message-content.chat-md-root .chat-md-h {
+  margin: 0.85rem 0 0.4rem;
+  padding: 0;
+  line-height: 1.35;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: inherit;
+}
+
+.message-content.chat-md-root .chat-md-h:first-child {
+  margin-top: 0;
+}
+
+.message-content.chat-md-root .chat-md-h--1 {
+  font-size: 12pt;
+  font-weight: 700;
+}
+
+.message-content.chat-md-root .chat-md-h--2 {
+  font-size: 11.5pt;
+  font-weight: 600;
+}
+
+.message-content.chat-md-root .chat-md-h--3 {
+  font-size: 11pt;
+  font-weight: 600;
+}
+
+.message-content.chat-md-root .chat-md-h--4 {
+  font-size: 10.5pt;
+  font-weight: 600;
+}
+
+.message-content.chat-md-root .chat-md-h--5,
+.message-content.chat-md-root .chat-md-h--6 {
+  font-size: 10pt;
+  font-weight: 600;
+}
+
+.message-content.chat-md-root .chat-md-p {
+  margin: 0 0 0.55em;
+  font-size: 10pt;
+  font-weight: 400;
+}
+
+.message-content.chat-md-root .chat-md-hr {
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  margin: 0.65em 0;
+}
+
+.message-content.chat-md-root .chat-md-ul {
+  margin: 0.35em 0 0.55em;
+  padding-left: 1.2em;
+  font-size: 10pt;
+  list-style-type: disc;
+}
+
+.message-content.chat-md-root .chat-md-ul li {
+  margin: 0.2em 0;
+}
+
+.message-content.chat-md-root strong {
+  font-weight: 600;
+}

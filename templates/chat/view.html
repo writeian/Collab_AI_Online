@@ -371,6 +371,7 @@
                     <span class="font-medium">Tools</span>
                     <span class="text-xs text-muted-foreground summary-meta">
                         Tone: <span id="tone-summary">Not set</span> · 
+                        Length: <span id="length-summary">Medium</span> · 
                         Progress: <span id="progress-summary">Not assessed</span>
                     </span>
                 </span>
@@ -421,7 +422,7 @@
                     <!-- 3. Document Generation Card (injected via restore-document-generation.js) -->
                     <div id="doc-gen-mount"></div>
                     
-                    <!-- 4. Tone & Critique Card (injected via base.html) -->
+                    <!-- 4. Tone & Length Card (injected via base.html) -->
                     <div id="tone-critique-mount"></div>
                     <!-- 5. Library Tool Card -->
                     <section class="tool-card" id="library-card">
@@ -642,8 +643,8 @@
                                 </div>
                             </div>
                             {% endif %}
-                            <div class="message-content">
-                                <p>{{ message.content|markdown|safe }}</p>
+                            <div class="message-content chat-md-root">
+                                {{ message.content|markdown|safe }}
                                 <p class="message-timestamp">
                                     <time class="msg-time" data-ts="{{ (message.timestamp.timestamp())|int }}"></time>
                                     {% if user %}
@@ -668,8 +669,8 @@
                     {% else %}
                     <div class="flex items-start gap-3">
                         <div class="flex-1">
-                            <div class="message-content text-right">
-                                <p>{{ message.content|markdown|safe }}</p>
+                            <div class="message-content text-right chat-md-root">
+                                {{ message.content|markdown|safe }}
                                 <p class="message-timestamp">
                                     <time class="msg-time" data-ts="{{ (message.timestamp.timestamp())|int }}"></time>
                                     {% if user %}

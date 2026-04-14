@@ -23,14 +23,14 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tutorial.css') }}?v=1.0">
     
     <!-- Chat improvements -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat-improvements.css') }}?v=2.2-pins-toolcard">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat-improvements.css') }}?v=2.4-chat-md">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chat-sidebar-improvements.css') }}?v=1.1">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chat-overrides.css') }}?v=2025-12-04-shared-pins">
     <!-- chat-input-fixes.js REMOVED - conflicts with ResizeObserver approach in view.html -->
     <script src="{{ url_for('static', filename='js/loading.js') }}?v=1.1"></script>
     <script src="{{ url_for('static', filename='js/chat-accessibility.js') }}?v=1.0"></script>
     <script src="{{ url_for('static', filename='js/restore-document-generation.js') }}?v=1.0"></script>
-    <script src="{{ url_for('static', filename='js/continue-messages.js') }}?v=1.2"></script>
+    <script src="{{ url_for('static', filename='js/continue-messages.js') }}?v=1.5"></script>
     
     <!-- Inject critique component on all chat pages -->
     <script>
@@ -80,7 +80,7 @@
         toneHeader.innerHTML = `
           <div class="tool-card__title">
             <i data-lucide="sliders" class="w-4 h-4"></i>
-            Tone & Critique
+            Tone & Length
           </div>
           <button type="button" class="tool-card__chevron" aria-expanded="false" aria-controls="tone-body" onclick="toggleToolCard(this, 'tone-body')">
             <i data-lucide="chevron-down" class="w-4 h-4"></i>
@@ -110,74 +110,112 @@
     function initToneCritiqueControl() {
       const slider = document.getElementById('critique-slider');
       const label = document.getElementById('critique-label');
-      const saveBtn = document.getElementById('critique-save');
+      const lengthBtns = document.querySelectorAll('.response-length-btn');
       
       const levelNames = ['', 'Very Supportive', 'Supportive', 'Balanced', 'Critical', 'Very Critical'];
+      const chatId = getChatId();
+
+      function dispatchToneState() {
+        const s = document.getElementById('critique-slider');
+        const level = parseInt(
+          (s && s.value) || sessionStorage.getItem(`chat_${chatId}_critique`) || '3',
+          10
+        );
+        const responseLength =
+          sessionStorage.getItem(`chat_${chatId}_response_length`) || 'medium';
+        document.dispatchEvent(new CustomEvent('tone:change', {
+          detail: { level: level, responseLength: responseLength }
+        }));
+      }
+
+      function syncLengthButtons(activeKey) {
+        lengthBtns.forEach(function(btn) {
+          const on = btn.getAttribute('data-length') === activeKey;
+          btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+          /* Explicit blue (theme --primary is full hsl(); Tailwind primary/opacity utilities break) */
+          btn.classList.toggle('border-blue-600', on);
+          btn.classList.toggle('bg-blue-100', on);
+          btn.classList.toggle('text-blue-900', on);
+          btn.classList.toggle('dark:border-blue-400', on);
+          btn.classList.toggle('dark:bg-blue-950/55', on);
+          btn.classList.toggle('dark:text-blue-100', on);
+          btn.classList.toggle('font-semibold', on);
+          btn.classList.toggle('shadow-md', on);
+          btn.classList.toggle('border-border', !on);
+          btn.classList.toggle('bg-background', !on);
+          btn.classList.toggle('text-muted-foreground', !on);
+          btn.classList.toggle('font-medium', !on);
+          btn.classList.toggle('shadow-sm', !on);
+        });
+      }
+
+      function applyResponseLength(key) {
+        try {
+          sessionStorage.setItem(`chat_${chatId}_response_length`, key);
+        } catch (e) {
+          console.warn('response length persist failed:', e);
+        }
+        syncLengthButtons(key);
+        dispatchToneState();
+      }
+
+      function applyCritiqueLevel(level) {
+        try {
+          sessionStorage.setItem(`chat_${chatId}_critique`, String(level));
+        } catch (e) {
+          console.warn('critique persist failed:', e);
+        }
+        dispatchToneState();
+      }
+
+      var initialLen = sessionStorage.getItem(`chat_${chatId}_response_length`) || 'medium';
+      if (initialLen !== 'short' && initialLen !== 'medium' && initialLen !== 'long') {
+        initialLen = 'medium';
+      }
+      try {
+        sessionStorage.setItem(`chat_${chatId}_response_length`, initialLen);
+      } catch (e) { /* ignore */ }
+      syncLengthButtons(initialLen);
+
+      lengthBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var v = btn.getAttribute('data-length');
+          if (v) applyResponseLength(v);
+        });
+      });
       
       if (slider && label) {
-        // Update label when slider changes
         slider.addEventListener('input', function() {
-          const level = parseInt(this.value);
+          const level = parseInt(this.value, 10);
           label.textContent = levelNames[level] || 'Balanced';
+          applyCritiqueLevel(level);
         });
         
-        // Save functionality
-        if (saveBtn) {
-          saveBtn.addEventListener('click', async function() {
-            const level = parseInt(slider.value);
-            const chatId = getChatId();
-            
-            this.textContent = 'Saving...';
-            this.disabled = true;
-            
-            try {
-              sessionStorage.setItem(`chat_${chatId}_critique`, level);
-              
-              // Dispatch tone:change event for summary update
-              document.dispatchEvent(new CustomEvent('tone:change', {
-                detail: { level: level }
-              }));
-              
-              this.textContent = 'Saved!';
-              setTimeout(() => {
-                this.textContent = 'Save';
-                this.disabled = false;
-              }, 1000);
-            } catch (error) {
-              console.error('Save failed:', error);
-              this.textContent = 'Error';
-              setTimeout(() => {
-                this.textContent = 'Save';
-                this.disabled = false;
-              }, 2000);
-            }
-          });
-        }
-        
-        // Initialize summary on load with saved value
-        const chatId = getChatId();
         const savedLevel = sessionStorage.getItem(`chat_${chatId}_critique`);
         if (savedLevel) {
-          const level = parseInt(savedLevel);
+          const level = parseInt(savedLevel, 10);
           slider.value = level;
           label.textContent = levelNames[level] || 'Balanced';
-          // Dispatch initial event for summary
-          document.dispatchEvent(new CustomEvent('tone:change', {
-            detail: { level: level }
-          }));
+          applyCritiqueLevel(level);
+        } else {
+          dispatchToneState();
         }
+      } else {
+        dispatchToneState();
       }
       
-      // Add critique level to message forms
       const forms = document.querySelectorAll('form[method="POST"]');
       forms.forEach(form => {
         const contentField = form.querySelector('textarea[name="content"]');
         if (contentField) {
+          // capture: true so hidden fields exist before chat-view's submit handler builds FormData
           form.addEventListener('submit', function() {
-            const chatId = getChatId();
-            const level = sessionStorage.getItem(`chat_${chatId}_critique`) || '3';
+            const cid = getChatId();
+            const level = sessionStorage.getItem(`chat_${cid}_critique`) || '3';
+            const lenKey = sessionStorage.getItem(`chat_${cid}_response_length`) || 'medium';
             
-            const instructions = getCritiqueInstructions(parseInt(level));
+            const instructions = getCritiqueInstructions(parseInt(level, 10));
+            const lengthInstructions = getLengthInstructions(lenKey);
             
             let hiddenInput = form.querySelector('#critique-instructions-input');
             if (!hiddenInput) {
@@ -188,7 +226,17 @@
               form.appendChild(hiddenInput);
             }
             hiddenInput.value = instructions;
-          });
+
+            let lengthInput = form.querySelector('#response-length-instructions-input');
+            if (!lengthInput) {
+              lengthInput = document.createElement('input');
+              lengthInput.type = 'hidden';
+              lengthInput.name = 'room81_response_length_instructions';
+              lengthInput.id = 'response-length-instructions-input';
+              form.appendChild(lengthInput);
+            }
+            lengthInput.value = lengthInstructions;
+          }, true);
         }
       });
     }
@@ -207,6 +255,15 @@
         5: "Act as an exacting reviewer. Insist on evidence for claims. Provide pointed, actionable edits with no fluff."
       };
       return instructions[level] || instructions[3];
+    }
+
+    function getLengthInstructions(key) {
+      if (key === 'long') return '';
+      const map = {
+        short: 'RESPONSE LENGTH: Keep the reply very brief—only a few bullet points (at most 4–5 bullets), minimal prose, no long paragraphs or extended explanations.',
+        medium: 'RESPONSE LENGTH: Use a balanced length—mix short bullets with short paragraphs where helpful; stay noticeably more concise than your longest, most thorough default answers unless the question clearly needs more depth.'
+      };
+      return map[key] || map.medium;
     }
     </script>
     

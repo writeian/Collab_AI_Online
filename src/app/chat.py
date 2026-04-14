@@ -48,6 +48,16 @@ from src.utils.ai_stream_logging import log_ai_stream_event
 from src.utils.message_display import reply_context_dict
 from src.models.analytics import ProgressSuggestionState, ProgressSuggestionEvent
 import os
+
+
+def _merge_user_style_instructions(critique: str, length_instructions: str) -> str:
+    """Combine tone/critique and response-length hints for extra_system."""
+    parts = [
+        p.strip()
+        for p in (critique or "", length_instructions or "")
+        if p and str(p).strip()
+    ]
+    return "\n\n".join(parts)
 from src.app.access_control import (
     get_current_user,
     require_login,
@@ -251,6 +261,12 @@ def view_chat(chat_id: int) -> Any:
                     critique_instructions = request.form.get(
                         "room81_critique_instructions", ""
                     )
+                    length_instructions = request.form.get(
+                        "room81_response_length_instructions", ""
+                    )
+                    style_extra = _merge_user_style_instructions(
+                        critique_instructions, length_instructions
+                    )
 
                     # Client requests streaming when header X-AI-Async: 1 is set.
                     # IMPORTANT: use separate `if` blocks, not if/elif. If REDIS_URL is set but
@@ -284,7 +300,7 @@ def view_chat(chat_id: int) -> Any:
                                             "chat_id": chat_obj.id,
                                             "user_message_id": user_msg.id,
                                             "user_id": user.id,
-                                            "critique_instructions": critique_instructions,
+                                            "critique_instructions": style_extra,
                                         }
                                     ),
                                 )
@@ -333,7 +349,7 @@ def view_chat(chat_id: int) -> Any:
                     # In-request SSE via follow-up GET (202 + stream_url). POST bodies are often
                     # not exposed as a readable stream for text/event-stream in browsers.
                     if want_ai_stream_http and _stream_in_request_enabled():
-                        extra_crit = (critique_instructions or "").strip() or None
+                        extra_crit = (style_extra or "").strip() or None
                         prep_key = secrets.token_urlsafe(24)
                         session[f"ai_sse_prep:{prep_key}"] = {
                             "user_message_id": user_msg.id,
@@ -413,10 +429,10 @@ def view_chat(chat_id: int) -> Any:
                             ),
                         )
                         with room_ai_begin(chat_obj.room_id):
-                            if critique_instructions:
+                            if style_extra.strip():
                                 ai_content, is_truncated = get_ai_response(
                                     chat_obj,
-                                    extra_system=critique_instructions,
+                                    extra_system=style_extra,
                                     through_message=user_msg,
                                 )
                             else:

@@ -10,6 +10,7 @@ from flask_wtf.csrf import CSRFProtect, generate_csrf
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_wtf import FlaskForm
+from markupsafe import Markup, escape
 import re
 
 # Create SQLAlchemy instance for app package
@@ -33,21 +34,96 @@ limiter = Limiter(
 )
 
 
+def _inline_markdown_segments(s: str) -> str:
+    """Apply **bold** and *italic* after HTML escaping (expects escaped plain text)."""
+    if not s:
+        return s
+    s = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", s)
+    s = re.sub(r"\*(.+?)\*", r"<em>\1</em>", s)
+    return s
+
+
 def markdown_filter(text):
-    """Convert basic markdown to HTML."""
-    if not text:
-        return text
-    
-    # Convert line breaks to <br> tags
-    text = text.replace('\n', '<br>')
-    
-    # Convert **text** to <strong>text</strong>
-    text = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', text)
-    
-    # Convert *text* to <em>text</em>
-    text = re.sub(r'\*(.*?)\*', r'<em>\1</em>', text)
-    
-    return text
+    """Convert chat markdown to HTML: ATX headings, lists, rules, paragraphs; inline ** *.
+
+    Headings become real <h1>–<h6> with classes for10–12pt typography (styled in CSS).
+    """
+    if text is None:
+        return ""
+    text = str(text)
+    if not text.strip():
+        return ""
+
+    # Plain str: Markup from escape() would re-escape tags we add in inline pass
+    safe = str(escape(text))
+    lines = safe.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    blocks: list[str] = []
+    para_buf: list[str] = []
+    list_buf: list[str] = []
+
+    def flush_para() -> None:
+        nonlocal para_buf
+        if not para_buf:
+            return
+        inner = "<br>".join(_inline_markdown_segments(line) for line in para_buf)
+        blocks.append(f'<p class="chat-md-p">{inner}</p>')
+        para_buf = []
+
+    def flush_list() -> None:
+        nonlocal list_buf
+        if not list_buf:
+            return
+        items = "".join(
+            f"<li>{_inline_markdown_segments(item)}</li>" for item in list_buf
+        )
+        blocks.append(f'<ul class="chat-md-ul">{items}</ul>')
+        list_buf = []
+
+    i = 0
+    n = len(lines)
+    while i < n:
+        raw_line = lines[i]
+        stripped = raw_line.strip()
+        if not stripped:
+            flush_list()
+            flush_para()
+            i += 1
+            continue
+
+        if re.match(r"^[-*]{3,}\s*$", stripped):
+            flush_list()
+            flush_para()
+            blocks.append('<hr class="chat-md-hr" role="separator">')
+            i += 1
+            continue
+
+        hm = re.match(r"^\s{0,3}(#{1,6})\s+(.+)$", raw_line)
+        if hm:
+            flush_list()
+            flush_para()
+            level = len(hm.group(1))
+            body = _inline_markdown_segments(hm.group(2).strip())
+            blocks.append(
+                f'<h{level} class="chat-md-h chat-md-h--{level}">{body}</h{level}>'
+            )
+            i += 1
+            continue
+
+        lm = re.match(r"^\s{0,3}[-*]\s+(.+)$", raw_line)
+        if lm:
+            flush_para()
+            list_buf.append(lm.group(1).strip())
+            i += 1
+            continue
+
+        flush_list()
+        para_buf.append(stripped)
+        i += 1
+
+    flush_list()
+    flush_para()
+
+    return Markup("".join(blocks)) if blocks else Markup("")
 
 
 def create_app(config_name=None):

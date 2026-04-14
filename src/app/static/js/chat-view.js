@@ -825,12 +825,12 @@
                         ${msg.role === 'assistant' ? `
                         <div class="flex items-start gap-3">
                           <div class="ai-avatar">AI</div>
-                          <div class="flex-1">${replyBlock}<div class="message-content">${msg.rendered_html || `<p>${escapeHtml(msg.content)}</p>`}
+                          <div class="flex-1">${replyBlock}<div class="message-content chat-md-root">${msg.rendered_html || `<p class="chat-md-p">${escapeHtml(msg.content)}</p>`}
                           <p class="message-timestamp"><time class=\"msg-time\" data-ts=\"${tsSec}\"></time>${actionsHtml}</p>
                           </div></div>
                         </div>${commentFormHtml}` : `
                         <div class="flex items-start gap-3">
-                          <div class="flex-1"><div class="message-content text-right">${msg.rendered_html || `<p>${escapeHtml(msg.content)}</p>`}
+                          <div class="flex-1"><div class="message-content text-right chat-md-root">${msg.rendered_html || `<p class="chat-md-p">${escapeHtml(msg.content)}</p>`}
                           <p class="message-timestamp"><time class=\"msg-time\" data-ts=\"${tsSec}\"></time>${actionsHtml}</p>
                           </div></div>
                           ${getUserAvatarHtml(msg.user)}
@@ -841,6 +841,11 @@
             if (typeof lucide !== 'undefined') { try { lucide.createIcons(); } catch (e) {} }
             try { formatAllMessageTimes(container); } catch (e) {}
             try { applyBottomPadding(false); } catch (e) {}
+            try {
+                if (typeof window.refreshContinueButtons === 'function') {
+                    window.refreshContinueButtons();
+                }
+            } catch (e) { /* ignore */ }
             const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             if (wasNearBottom && !wasNearTop) {
                 if (isMobile) {
@@ -1071,6 +1076,10 @@
                 }
 
                 function resetSendUi() {
+                    stopQueueStatusPolling();
+                    hideQueueNotice();
+                    queueNoticeMissStreak = 0;
+                    queuePollSubtractSelf = 0;
                     if (btn) {
                         btn.classList.remove('sending-state');
                         const sendIcon = btn.querySelector('#send-icon');
@@ -2140,11 +2149,19 @@
     
     // Tone level names
     const TONE_LABELS = ['Not set', 'Very Supportive', 'Supportive', 'Balanced', 'Critical', 'Very Critical'];
+    const LENGTH_LABELS = { short: 'Short', medium: 'Medium', long: 'Long' };
     
     function updateToneSummary(level) {
         const summaryEl = document.getElementById('tone-summary');
         if (summaryEl) {
             summaryEl.textContent = TONE_LABELS[level] || 'Not set';
+        }
+    }
+
+    function updateLengthSummary(key) {
+        const summaryEl = document.getElementById('length-summary');
+        if (summaryEl && key) {
+            summaryEl.textContent = LENGTH_LABELS[key] || LENGTH_LABELS.medium;
         }
     }
     
@@ -2155,10 +2172,13 @@
         }
     }
     
-    // Listen for tone changes (from critique component)
+    // Listen for tone / length changes (from Tone & Length tool)
     document.addEventListener('tone:change', function(e) {
         if (e.detail && typeof e.detail.level !== 'undefined') {
             updateToneSummary(e.detail.level);
+        }
+        if (e.detail && e.detail.responseLength) {
+            updateLengthSummary(e.detail.responseLength);
         }
     });
     
@@ -2178,6 +2198,12 @@
             if (savedTone) {
                 updateToneSummary(parseInt(savedTone, 10));
             }
+
+            var savedLen = sessionStorage.getItem('chat_' + chatId + '_response_length') || 'medium';
+            if (savedLen !== 'short' && savedLen !== 'medium' && savedLen !== 'long') {
+                savedLen = 'medium';
+            }
+            updateLengthSummary(savedLen);
         }
     } catch (e) {
         console.log('Could not load saved tone:', e);

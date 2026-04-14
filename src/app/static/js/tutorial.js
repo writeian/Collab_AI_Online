@@ -421,7 +421,7 @@
     }
     if (toneCard) {
       steps.push(createStepOptions(
-        'Tone & Critique lets you adjust how critical or supportive the AI feedback is. Slide to find your preference.',
+        'Tone & Length lets you set how critical the AI is and how long replies should be (short bullets, balanced, or full detail).',
         { element: toneCard, on: 'left' },
         []
       ));
