@@ -1640,6 +1640,56 @@
         });
 
         const PRESENCE_POLL_MS = 12000;
+        /** When active count crosses above this, default length → Short once (user can change back). */
+        const BUSY_AUTO_SHORT_THRESHOLD = 5;
+        let prevBusyPresenceCount = 0;
+
+        function busyPresenceCountForAutoShort(rows, roomActiveCount, currentChatId) {
+            var cid = parseInt(String(currentChatId || ''), 10);
+            var hasChatIds = false;
+            var sameChat = 0;
+            if (!isNaN(cid) && rows.length) {
+                rows.forEach(function (row) {
+                    if (
+                        typeof row === 'object' &&
+                        row !== null &&
+                        Object.prototype.hasOwnProperty.call(row, 'user_id') &&
+                        row.chat_id != null &&
+                        row.chat_id !== ''
+                    ) {
+                        hasChatIds = true;
+                        if (parseInt(String(row.chat_id), 10) === cid) {
+                            sameChat++;
+                        }
+                    }
+                });
+            }
+            if (hasChatIds) {
+                return sameChat;
+            }
+            return roomActiveCount;
+        }
+
+        function maybeAutoShortResponseLength() {
+            function tryApply() {
+                if (typeof window.collabApplyResponseLength === 'function') {
+                    window.collabApplyResponseLength('short');
+                    return true;
+                }
+                return false;
+            }
+            if (tryApply()) {
+                return;
+            }
+            var attempts = 0;
+            var t = setInterval(function () {
+                attempts++;
+                if (tryApply() || attempts >= 25) {
+                    clearInterval(t);
+                }
+            }, 100);
+        }
+
         function sortMemberListByPresence(activeIdMap) {
             const list = document.querySelector('.chat-sidebar .member-list');
             if (!list || !activeIdMap) {
@@ -1731,6 +1781,16 @@
                 }
             });
             sortMemberListByPresence(map);
+            const ccBusy = document.querySelector('.chat-container');
+            const curChatForBusy = ccBusy && ccBusy.dataset.chatId;
+            const busyN = busyPresenceCountForAutoShort(rows, n, curChatForBusy);
+            if (
+                busyN > BUSY_AUTO_SHORT_THRESHOLD &&
+                prevBusyPresenceCount <= BUSY_AUTO_SHORT_THRESHOLD
+            ) {
+                maybeAutoShortResponseLength();
+            }
+            prevBusyPresenceCount = busyN;
         }
         async function presencePingAndRefresh() {
             if (document.hidden) {

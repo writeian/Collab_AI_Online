@@ -66,6 +66,7 @@ from src.app.access_control import (
     require_chat_delete,
     can_access_chat,
     can_edit_chat,
+    is_room_member,
 )
 from src.app.google_docs import validate_google_docs_url, get_document_content
 from src.app.achievements import track_mode_usage
@@ -817,8 +818,17 @@ def chat_queue_status(chat_id: int) -> Any:
 
 
 def _room_member_user_ids(room_id: int) -> List[int]:
+    """User ids that participate in room presence (invited members + owner).
+
+    Owners are not always inserted into ``room_member``; ``is_room_member`` still
+    treats them as members, so presence must include their user id too.
+    """
     rows = RoomMember.query.filter_by(room_id=room_id).all()
-    return [int(r.user_id) for r in rows]
+    ids = {int(r.user_id) for r in rows}
+    room = Room.query.get(room_id)
+    if room and room.owner_id:
+        ids.add(int(room.owner_id))
+    return sorted(ids)
 
 
 @chat.route("/<int:chat_id>/presence", methods=["GET"])
@@ -849,9 +859,8 @@ def chat_presence_ping(chat_id: int) -> Any:
     user = get_current_user()
     if not user:
         return jsonify({"success": False, "error": "Not authenticated"}), 401
-    if not RoomMember.query.filter_by(
-        room_id=chat_obj.room_id, user_id=user.id
-    ).first():
+    room = Room.query.get(chat_obj.room_id)
+    if not room or not is_room_member(user, room):
         return jsonify({"success": False, "error": "Not a room member"}), 403
     chat_label = (chat_obj.title or "").strip() or f"Chat {chat_obj.id}"
     touch_presence(
