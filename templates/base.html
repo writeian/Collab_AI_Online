@@ -55,7 +55,7 @@
       }
 
       try {
-        const res = await fetch('/static/components/chat/tone_critique_control.html', { credentials: 'same-origin' });
+        const res = await fetch('/static/components/chat/tone_critique_control.html?v=2026-04-02-tooltips', { credentials: 'same-origin' });
         if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
         const html = await res.text();
         
