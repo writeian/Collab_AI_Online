@@ -2985,7 +2985,8 @@
     vertical-align: middle;
 }
 
-#tone-card .tone-help__tip {
+/* Tip node may be portaled under body; keep selectors independent of #tone-card ancestry. */
+.tone-help__tip {
     position: absolute;
     left: 0;
     right: auto;
@@ -3009,18 +3010,23 @@
     transition: opacity 0.1s ease, visibility 0.1s ease;
 }
 
-#tone-card .tone-help:hover .tone-help__tip,
-#tone-card .tone-help:focus-within .tone-help__tip {
+#tone-card .tone-help:hover .tone-help__tip:not(.tone-help__tip--open),
+#tone-card .tone-help:focus-within .tone-help__tip:not(.tone-help__tip--open) {
     opacity: 1;
     visibility: visible;
-    /* Allow cursor on the tip so :hover stays on .tone-help (pointer-events: none would leak through to chat below). */
     pointer-events: auto;
 }
 
-/* Fixed to viewport while open: escapes .chat-sidebar overflow; above .chat-input-container (10000) */
-#tone-card .tone-help__tip.tone-help__tip--fixed {
+.tone-help__tip.tone-help__tip--open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+/* Portaled under body: true viewport fixed + stack above chat chrome (see sidebar backdrop-filter). */
+.tone-help__tip.tone-help__tip--fixed {
     position: fixed !important;
-    z-index: 10050 !important;
+    z-index: 200000 !important;
     transform: none !important;
     pointer-events: auto !important;
 }
