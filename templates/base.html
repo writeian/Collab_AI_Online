@@ -11,7 +11,7 @@
     
     <!-- New Design System CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/globals.css') }}?v=3.2">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=7.2">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=7.3">
     
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
@@ -244,32 +244,55 @@
       wireToneHelpTipClampIntoViewport();
     }
 
-    /** Keep Tone & Length ? tooltips inside the browser window (sidebar is flush-left). */
+    /** Tone & Length ? tips: fixed layer above chat (sidebar overflow-y clips absolute children). */
     function wireToneHelpTipClampIntoViewport() {
       var margin = 10;
-      function clampWrap(wrap) {
+      function resetToneHelpTip(wrap) {
         var tip = wrap.querySelector('.tone-help__tip');
         if (!tip) return;
-        tip.style.setProperty('--tone-tip-shift', '0px');
+        tip.classList.remove('tone-help__tip--fixed');
+        tip.style.position = '';
+        tip.style.left = '';
+        tip.style.top = '';
+        tip.style.right = '';
+        tip.style.bottom = '';
+        tip.style.transform = '';
+        tip.style.zIndex = '';
+        tip.style.removeProperty('--tone-tip-shift');
+      }
+      function clampWrap(wrap) {
+        var tip = wrap.querySelector('.tone-help__tip');
+        var btn = wrap.querySelector('.tone-help-btn');
+        if (!tip || !btn) return;
+        var br = btn.getBoundingClientRect();
+        tip.classList.add('tone-help__tip--fixed');
+        tip.style.position = 'fixed';
+        tip.style.left = br.left + 'px';
+        tip.style.top = (br.bottom + 6) + 'px';
+        tip.style.right = 'auto';
+        tip.style.bottom = 'auto';
+        tip.style.transform = 'none';
+        tip.style.zIndex = '10050';
         requestAnimationFrame(function () {
           requestAnimationFrame(function () {
             var vw = window.innerWidth;
-            function applyShift(px) {
-              tip.style.setProperty('--tone-tip-shift', px ? px + 'px' : '0px');
+            var rect = tip.getBoundingClientRect();
+            if (rect.width < 1 || rect.height < 1) return;
+            if (rect.left < margin) {
+              tip.style.left = margin + 'px';
             }
-            var shift = 0;
-            applyShift(0);
-            for (var pass = 0; pass < 2; pass++) {
-              var rect = tip.getBoundingClientRect();
-              if (rect.width < 1 || rect.height < 1) return;
-              var d = 0;
-              if (rect.left < margin) d += Math.round(margin - rect.left);
-              if (rect.right > vw - margin) d -= Math.round(rect.right - (vw - margin));
-              if (!d) break;
-              shift += d;
-              applyShift(shift);
+            rect = tip.getBoundingClientRect();
+            if (rect.right > vw - margin) {
+              tip.style.left = Math.max(margin, vw - margin - rect.width) + 'px';
             }
           });
+        });
+      }
+      function reclampOpenTips() {
+        document.querySelectorAll('#tone-card .tone-help').forEach(function (wrap) {
+          if (wrap.matches(':hover') || wrap.contains(document.activeElement)) {
+            clampWrap(wrap);
+          }
         });
       }
       document.querySelectorAll('#tone-card .tone-help').forEach(function (wrap) {
@@ -277,28 +300,23 @@
         wrap.dataset.tipClampWired = '1';
         wrap.addEventListener('mouseenter', function () { clampWrap(wrap); });
         wrap.addEventListener('focusin', function () { clampWrap(wrap); });
-        wrap.addEventListener('mouseleave', function () {
-          var tip = wrap.querySelector('.tone-help__tip');
-          if (tip) tip.style.setProperty('--tone-tip-shift', '0px');
-        });
-        wrap.addEventListener('focusout', function () {
-          var tip = wrap.querySelector('.tone-help__tip');
-          if (tip) tip.style.setProperty('--tone-tip-shift', '0px');
-        });
+        wrap.addEventListener('mouseleave', function () { resetToneHelpTip(wrap); });
+        wrap.addEventListener('focusout', function () { resetToneHelpTip(wrap); });
       });
       if (!window._toneHelpClampResizeWired) {
         window._toneHelpClampResizeWired = true;
         var resizeT = null;
         window.addEventListener('resize', function () {
           clearTimeout(resizeT);
-          resizeT = setTimeout(function () {
-            document.querySelectorAll('#tone-card .tone-help').forEach(function (wrap) {
-              if (wrap.matches(':hover') || wrap.contains(document.activeElement)) {
-                clampWrap(wrap);
-              }
-            });
-          }, 100);
+          resizeT = setTimeout(reclampOpenTips, 100);
         });
+      }
+      if (!window._toneHelpSidebarScrollWired) {
+        window._toneHelpSidebarScrollWired = true;
+        var sb = document.querySelector('.chat-sidebar');
+        if (sb) {
+          sb.addEventListener('scroll', reclampOpenTips, { passive: true });
+        }
       }
     }
 

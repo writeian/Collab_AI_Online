@@ -2990,7 +2990,6 @@
     left: 0;
     right: auto;
     top: calc(100% + 6px);
-    /* Horizontal nudge set by JS so the box stays inside the viewport */
     transform: translateX(var(--tone-tip-shift, 0px));
     z-index: 10000;
     width: max-content;
@@ -3014,6 +3013,16 @@
 #tone-card .tone-help:focus-within .tone-help__tip {
     opacity: 1;
     visibility: visible;
+    /* Allow cursor on the tip so :hover stays on .tone-help (pointer-events: none would leak through to chat below). */
+    pointer-events: auto;
+}
+
+/* Fixed to viewport while open: escapes .chat-sidebar overflow; above .chat-input-container (10000) */
+#tone-card .tone-help__tip.tone-help__tip--fixed {
+    position: fixed !important;
+    z-index: 10050 !important;
+    transform: none !important;
+    pointer-events: auto !important;
 }
 
 /* Chat list in Other Chats section */
