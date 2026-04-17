@@ -2987,12 +2987,14 @@
 
 #tone-card .tone-help__tip {
     position: absolute;
-    left: 50%;
+    left: 0;
+    right: auto;
     top: calc(100% + 6px);
-    transform: translateX(-50%);
+    /* Horizontal nudge set by JS so the box stays inside the viewport */
+    transform: translateX(var(--tone-tip-shift, 0px));
     z-index: 10000;
     width: max-content;
-    max-width: min(280px, calc(100vw - 2rem));
+    max-width: min(280px, calc(100vw - 20px));
     padding: 6px 8px;
     font-size: 11px;
     line-height: 1.35;

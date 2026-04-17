@@ -11,7 +11,7 @@
     
     <!-- New Design System CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/globals.css') }}?v=3.2">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=7.1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=7.2">
     
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
@@ -240,6 +240,66 @@
           }, true);
         }
       });
+
+      wireToneHelpTipClampIntoViewport();
+    }
+
+    /** Keep Tone & Length ? tooltips inside the browser window (sidebar is flush-left). */
+    function wireToneHelpTipClampIntoViewport() {
+      var margin = 10;
+      function clampWrap(wrap) {
+        var tip = wrap.querySelector('.tone-help__tip');
+        if (!tip) return;
+        tip.style.setProperty('--tone-tip-shift', '0px');
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () {
+            var vw = window.innerWidth;
+            function applyShift(px) {
+              tip.style.setProperty('--tone-tip-shift', px ? px + 'px' : '0px');
+            }
+            var shift = 0;
+            applyShift(0);
+            for (var pass = 0; pass < 2; pass++) {
+              var rect = tip.getBoundingClientRect();
+              if (rect.width < 1 || rect.height < 1) return;
+              var d = 0;
+              if (rect.left < margin) d += Math.round(margin - rect.left);
+              if (rect.right > vw - margin) d -= Math.round(rect.right - (vw - margin));
+              if (!d) break;
+              shift += d;
+              applyShift(shift);
+            }
+          });
+        });
+      }
+      document.querySelectorAll('#tone-card .tone-help').forEach(function (wrap) {
+        if (wrap.dataset.tipClampWired) return;
+        wrap.dataset.tipClampWired = '1';
+        wrap.addEventListener('mouseenter', function () { clampWrap(wrap); });
+        wrap.addEventListener('focusin', function () { clampWrap(wrap); });
+        wrap.addEventListener('mouseleave', function () {
+          var tip = wrap.querySelector('.tone-help__tip');
+          if (tip) tip.style.setProperty('--tone-tip-shift', '0px');
+        });
+        wrap.addEventListener('focusout', function () {
+          var tip = wrap.querySelector('.tone-help__tip');
+          if (tip) tip.style.setProperty('--tone-tip-shift', '0px');
+        });
+      });
+      if (!window._toneHelpClampResizeWired) {
+        window._toneHelpClampResizeWired = true;
+        var resizeT = null;
+        window.addEventListener('resize', function () {
+          clearTimeout(resizeT);
+          resizeT = setTimeout(function () {
+            document.querySelectorAll('#tone-card .tone-help').forEach(function (wrap) {
+              if (wrap.matches(':hover') || wrap.contains(document.activeElement)) {
+                clampWrap(wrap);
+              }
+            });
+          }, 100);
+        });
+      }
     }
 
     function getChatId() {
