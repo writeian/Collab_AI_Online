@@ -8,10 +8,13 @@
       <div class="flex items-center justify-between gap-2">
         <span class="inline-flex items-center gap-1">
           <span class="font-medium">Style</span>
-          <button type="button"
-                  class="inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full border border-border bg-background px-0.5 text-[10px] font-semibold leading-none text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
-                  title="Adjust how tough or gentle the AI's feedback is."
-                  aria-label="Tip: Style — adjust how tough or gentle the AI's feedback is.">?</button>
+          <span class="tone-help">
+            <button type="button"
+                    class="tone-help-btn inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full border border-border bg-background px-0.5 text-[11px] font-semibold leading-none text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+                    aria-label="Style help"
+                    aria-describedby="tone-help-style-tip">?</button>
+            <span id="tone-help-style-tip" class="tone-help__tip" role="tooltip">Adjust how tough or gentle the AI’s feedback is.</span>
+          </span>
         </span>
         <span id="critique-label" class="text-muted-foreground">Balanced</span>
       </div>
@@ -34,10 +37,13 @@
     <div class="space-y-2 border-t border-border pt-3">
       <div class="inline-flex items-center gap-1">
         <span class="font-medium">Length</span>
-        <button type="button"
-                class="inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full border border-border bg-background px-0.5 text-[10px] font-semibold leading-none text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
-                title="Short is a few bullets; Medium mixes brevity and detail; Long matches our usual full answers."
-                aria-label="Tip: Length — Short is a few bullets; Medium mixes brevity and detail; Long matches our usual full answers.">?</button>
+        <span class="tone-help">
+          <button type="button"
+                  class="tone-help-btn inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full border border-border bg-background px-0.5 text-[11px] font-semibold leading-none text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+                  aria-label="Length help"
+                  aria-describedby="tone-help-length-tip">?</button>
+          <span id="tone-help-length-tip" class="tone-help__tip" role="tooltip">Short is a few bullets; Medium mixes brevity and detail; Long matches our usual full answers.</span>
+        </span>
       </div>
       <div class="flex gap-2" role="group" aria-label="Response length">
         <button type="button"

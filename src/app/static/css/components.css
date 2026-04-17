@@ -2971,11 +2971,47 @@
     margin-top: 0.75rem;
 }
 
-/* Tip text spacing */
-#tone-card p.text-\\[11px\\] {
-    margin-top: 0.5rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid hsl(var(--border) / 0.3);
+/* Tone & Length: visible tooltips (native title is unreliable in WebKit / some browsers) */
+#tone-card .tool-card__body,
+#tone-card .tool-card__body > details,
+#tone-card .tool-card__body > details > div {
+    overflow: visible;
+}
+
+#tone-card .tone-help {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+}
+
+#tone-card .tone-help__tip {
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 6px);
+    transform: translateX(-50%);
+    z-index: 10000;
+    width: max-content;
+    max-width: min(280px, calc(100vw - 2rem));
+    padding: 6px 8px;
+    font-size: 11px;
+    line-height: 1.35;
+    font-weight: 400;
+    color: hsl(var(--foreground));
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgb(15 23 42 / 0.15);
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.1s ease, visibility 0.1s ease;
+}
+
+#tone-card .tone-help:hover .tone-help__tip,
+#tone-card .tone-help:focus-within .tone-help__tip {
+    opacity: 1;
+    visibility: visible;
 }
 
 /* Chat list in Other Chats section */
