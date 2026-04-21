@@ -32,20 +32,17 @@ python run.py
 
 ## 📋 Branches
 
-- Production (Railway tracked branch): `feature/railway-deployment`
-- Development: `dev`
+- **Development**: `dev`
+- **Production**: whichever branch your **Railway** service is connected to (check *Settings → Source* in the Railway dashboard). Teams often use `feature/railway-deployment` or a long-lived feature branch such as `updated-edu-tools`—this repo does not enforce a single production branch name in code.
 
 ### How to deploy to Railway
-- Ensure you are on the tracked branch:
+- Check out the branch Railway is tracking, then push:
   ```bash
-  git checkout feature/railway-deployment && git pull --ff-only
+  git checkout <your-railway-branch> && git pull --ff-only
+  git commit -m "deploy: your summary here"
+  git push origin <your-railway-branch>
   ```
-- Commit your changes and push to trigger a deploy:
-  ```bash
-  git commit -m "deploy: landing updates" # or --allow-empty to force
-  git push origin feature/railway-deployment
-  ```
-- After deploy, hard refresh the browser to bypass cached assets.
+- After deploy, hard refresh the browser to bypass cached static assets (many files use `?v=` cache busters).
 
 ---
 
@@ -73,6 +70,7 @@ AI Collab Online is an **intelligent learning platform** that creates adaptive, 
 
 ### **For Writing Teams:**
 - **Collaborate in dedicated rooms** with real-time messaging and AI assistance
+- **See who is active** in a room via participant presence (sidebar); room owners are treated as members for presence the same as invited collaborators
 - **Use specialized templates** for different project types (Business Hub, Creative Studio)
 - **Organize goals** with collapsible categories to reduce cognitive overload
 - **Toggle AI responses** on/off per conversation for flexible collaboration
@@ -133,6 +131,8 @@ AI Collab Online is an **intelligent learning platform** that creates adaptive, 
 
 ### 💬 **Enhanced Chat Experience**
 - **Focus mode toggle** to maximize learning space
+- **Tone & Length** sidebar control: critique level (supportive → critical) plus **Short / Medium / Long** response length; tips on `?` help icons (tooltips portaled above the chat stack)
+- **Busy rooms**: when more than five people are active in the same chat (by presence), the UI **defaults response length to Short** once per “busy” spike (users can change it back in Tone & Length)
 - **Rubric-aware progress assessment** with structured recommendations
 - **Liquid glass UI** with iOS 18-inspired translucent effects and multi-layered shadows
 - **Modular component architecture** with 70% template size reduction
@@ -170,11 +170,12 @@ AI Collab Online is an **intelligent learning platform** that creates adaptive, 
 - **Deep linking support** to specific learning steps with auto-expand functionality
 - **Room statistics integration** with collapsible team stats and progress metrics
 
-### 🎚️ **AI Critique Control System (v3.1)** - *September 2025*
-- **5-level feedback control** from Very Supportive to Very Critical
-- **Real-time AI tone adaptation** based on user preference
-- **Session-based storage** for personalized learning experiences
-- **Contextual prompt enhancement** without database complexity
+### 🎚️ **Tone & Length (v3.1+)** - *September 2025 — ongoing*
+- **5-level critique / feedback control** from Very Supportive to Very Critical
+- **Response length**: Short, Medium, or Long (session storage per chat); instructions are sent with each message as hidden fields
+- **Real-time AI adaptation** from tone + length preferences
+- **Session-based storage** (no extra DB tables for these controls)
+- **Contextual prompt enhancement** via `room81_critique_instructions` and `room81_response_length_instructions`
 
 ### 🧠 **Learning Progression System (v2.0)**
 - **Automatic note generation** at 5-message milestones with iterative refinement
@@ -299,9 +300,9 @@ ROOM_MAX_CHATS=25
 ```bash
 # Clone the repository
 git clone https://github.com/writeian/Collab_AI_Online.git
-cd AI_Collab_Online
+cd Collab_AI_Online
 
-# Create virtual environment
+# Create virtual environment (repo docs also use .venv — either name is fine)
 python -m venv venv
 venv\Scripts\activate  # Windows
 source venv/bin/activate  # macOS/Linux
@@ -309,32 +310,16 @@ source venv/bin/activate  # macOS/Linux
 # Install dependencies
 pip install -r requirements.txt
 
-# Set up environment variables
-cp env.example .env
-# Edit .env with your Anthropic API key
+# Set up environment variables (canonical template in repo root)
+cp env_template.txt .env
+# Edit .env — see “Environment Variables” above and SETUP_LOCAL.md
 
-# Run the application
+# Apply DB migrations, then run
+alembic upgrade head
 python run.py
 ```
 
-### Environment Variables
-Create a `.env` file in the root directory:
-
-```env
-# Required
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
-
-# Database (optional - defaults to SQLite)
-DATABASE_URL=sqlite:///instance/ai_collab.db
-
-# Flask settings
-FLASK_ENV=development
-SECRET_KEY=your_secret_key_here
-
-# Google OAuth (optional)
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-```
+*(For a shorter local checklist, see [SETUP_LOCAL.md](SETUP_LOCAL.md).)*
 
 ---
 
@@ -357,16 +342,18 @@ python -m flake8 src/ --max-line-length=120
 
 ### Project Structure
 ```
-AI_Collab_Online/
-├── src/                    # Main application
-│   ├── app/               # Flask blueprints
+Collab_AI_Online/
+├── src/                    # Main application (Python path / packages)
+│   ├── app/               # Flask blueprints & static assets served as /static (see src/app/static/)
 │   ├── models/            # Database models
 │   ├── utils/             # Utilities & AI integration
 │   └── config/            # Configuration
-├── templates/             # HTML templates
+├── templates/             # HTML templates (Jinja2)
 ├── tests/                 # Test suite
 ├── scripts/               # Development utilities
-└── deployment/            # Deployment configs
+├── deployment/            # Deployment configs
+├── wsgi.py                # Gunicorn entry (loads src/main.py app)
+└── start.sh               # Railway/local process wrapper (see railway.toml)
 ```
 
 **Full structure**: [See detailed breakdown](#detailed-project-structure)
@@ -404,8 +391,8 @@ export DATABASE_URL=your_postgresql_url
 # Run migrations
 alembic upgrade head
 
-# Start production server
-gunicorn src.wsgi:app
+# Start production server (from repo root; see wsgi.py)
+gunicorn wsgi:app
 ```
 
 ### Custom Domains (Railway)
@@ -513,17 +500,27 @@ Collab_AI_Online/
 │   ├── components/              # Modular template components
 │   │   └── chat/                # Chat-specific components
 │   └── room/                     # Room templates and wizards
-├── static/                       # CSS, JavaScript, images
+├── src/app/static/              # Flask `url_for('static', …)` assets (CSS, JS, components)
 │   ├── css/                     # Modular CSS with design tokens
 │   └── js/                      # External JavaScript files
+├── Static/                      # Legacy/landing assets (not the main Flask static tree)
 ├── tests/                        # Test suite
 ├── migrations/                   # Database migrations
 ├── docs/                         # Documentation and lessons learned
 └── requirements.txt              # Python dependencies
 ```
 
-**Type Coverage**: 85% of functions have comprehensive type hints for better code quality and IDE support.
- # Force redeploy to fix import issue - Wed Sep 17 05:56:01 PDT 2025
+**Type Coverage**: A large share of the codebase uses type hints; run `mypy` in CI/local dev for current status.
+
+---
+
+## Recent Updates (2026)
+
+### Collaboration & chat polish
+- **Participant presence**: heartbeats per room/chat for “who’s active” in the sidebar; fixes ensure **room owners** are included in presence the same as `RoomMember` rows
+- **Presence + CSRF**: client uses the correct chat id and cookie-based CSRF for ping endpoints
+- **Busy chat**: when active count crosses above five (same chat when presence includes `chat_id`), response length auto-switches to **Short** once per spike (overridable in Tone & Length)
+- **Tone & Length UX**: inline tips replaced with `?` help; tooltips are **portaled to `document.body`** so they render above the main chat (sidebar `backdrop-filter` / overflow no longer clip them)
 
 ---
 
@@ -531,7 +528,7 @@ Collab_AI_Online/
 
 ### Sidebar Overhaul (Phases 1-3)
 - **Collapsible sections**: Tools, Participants, Other Chats with smart defaults
-- **Unified tool cards**: Learning Progress, Tone & Critique, Document Generation
+- **Unified tool cards**: Learning Progress, Tone & Length, Document Generation
 - **Dynamic dashboard**: Tools summary shows current tone and progress status at a glance
 - **Professional polish**: Lucide icons, 8pt spacing rhythm, accessible ARIA patterns
 - **Mobile optimized**: Scrollable drawer, 44px tap targets, responsive spacing
