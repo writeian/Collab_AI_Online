@@ -1,324 +1,130 @@
-# AI Collab Teams 🤖💬👥
-
-A modern, room-based collaborative AI chat application built with Flask, SQLAlchemy, and AI services. Designed specifically for educational writing support, AI Collab Teams helps students and instructors work together through intelligent AI feedback across different writing stages.
-
-## ✨ Features
-
-### Core Functionality
-- **Room-Based Collaboration**: Create dedicated spaces for teams, classes, or projects
-- **Multi-User Support**: Register, login, and manage user profiles with role-based access
-- **AI Chat Integration**: Powered by OpenAI GPT-4o and Anthropic Claude for intelligent responses
-- **Chat Management**: Create, edit, delete, and organize conversations within rooms
-- **Interactive Comments**: Students can comment on specific dialogue points for threaded discussions
-- **Public/Private Rooms**: Make rooms public for community discovery or keep them private
-
-### Educational Writing Support
-- **Writing Mode System**: 10 different writing stages (Explore, Focus, Outline, Draft, Revise, Polish, etc.)
-- **Mode-Specific AI Prompts**: AI adapts its responses based on the current writing stage
-- **Custom System Instructions**: Instructors can edit AI prompts for different modes and rooms
-- **Google Docs Integration**: Import and analyze Google Docs directly into chats
-- **Document Analysis**: Get AI feedback on your writing without importing text
-
-### Instructor Dashboard & Analytics
-- **Comprehensive Dashboard**: Room overview, member management, and analytics
-- **Student Analytics**: Track student prompts and writing modes usage
-- **Prompt History**: Monitor how students use AI assistance with detailed logs
-- **Mode Filtering**: Analyze usage patterns by writing stage
-- **Member Activity**: Track participation and engagement levels
-- **System Instructions Management**: Edit AI prompts for different modes and rooms
-
-### Modern UI & Collaboration
-- **Clean Design**: Responsive, intuitive user experience with modern styling
-- **Real-time Messaging**: Seamless conversation flow with AI assistant
-- **Access Control**: Secure permission system with decorators
-- **Room Management**: Easy room creation, joining, and member management
-- **Comment System**: Threaded discussions on specific AI responses
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Python 3.8+
-- OpenAI API key or Anthropic API key
-- Google Cloud Project (for Google Docs integration)
-- Git
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/writeian/AI_Collab_Teams.git
-   cd AI_Collab_Teams
-   ```
-
-2. **Create and activate virtual environment**
-   ```bash
-   python -m venv venv
-   # On Windows:
-   venv\Scripts\activate
-   # On macOS/Linux:
-   source venv/bin/activate
-   ```
-
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Set up environment variables**
-   Create a `.env` file in the project root:
-   ```env
-   # Choose one or both AI services:
-   ANTHROPIC_API_KEY=your_anthropic_api_key_here  # Recommended (cheaper)
-   OPENAI_API_KEY=your_openai_api_key_here        # Alternative
-   SECRET_KEY=your_secret_key_here
-   GOOGLE_SERVICE_ACCOUNT_FILE=service-account-key.json
-   ```
-
-5. **Set up Google Docs Integration (Optional)**
-   - Follow the setup guide in `GOOGLE_DOCS_SETUP.md`
-   - Place your service account key file as `service-account-key.json`
-
-6. **Run the application**
-   ```bash
-   python app.py
-   ```
-
-7. **Open your browser**
-   Navigate to `http://127.0.0.1:5000`
-
-## 📁 Project Structure
-
-```
-AI_Collab_Teams/
-├── app.py                 # Main Flask application
-├── models.py              # SQLAlchemy database models
-├── openai_utils.py        # AI API integration & writing modes
-├── google_docs.py         # Google Docs integration utilities
-├── chat.py                # Chat routes and functionality
-├── auth.py                # Authentication routes
-├── room.py                # Room management and collaboration
-├── dashboard.py           # Instructor dashboard and analytics
-├── access_control.py      # Permission decorators
-├── requirements.txt       # Python dependencies
-├── .env                   # Environment variables (create this)
-├── .gitignore            # Git ignore rules
-├── README.md             # This file
-├── GOOGLE_DOCS_SETUP.md  # Google Docs setup guide
-├── Static/
-│   └── style.css         # CSS styling
-└── Templates/
-    ├── base.html         # Base template
-    ├── about.html        # About page
-    ├── login.html        # Login page
-    ├── register.html     # Registration page
-    ├── profile.html      # User profile
-    ├── room/
-    │   ├── index.html    # Room listing
-    │   ├── create.html   # Create room
-    │   ├── view.html     # View room details
-    │   └── members.html  # Room member management
-    ├── chat/
-    │   ├── create.html   # Create new chat
-    │   ├── view.html     # View chat conversation
-    │   └── edit.html     # Edit chat settings
-    └── dashboard/
-        ├── index.html    # Dashboard overview
-        ├── prompts.html  # Prompt analytics
-        ├── room_detail.html # Room-specific analytics
-        └── system_instructions.html # System instructions management
-```
-
-## 🔧 Configuration
-
-### Environment Variables
-
-Create a `.env` file with the following variables:
-
-- `ANTHROPIC_API_KEY`: Your Anthropic API key (recommended)
-- `OPENAI_API_KEY`: Your OpenAI API key (alternative)
-- `SECRET_KEY`: Flask secret key for sessions (optional, defaults to "dev")
-- `GOOGLE_SERVICE_ACCOUNT_FILE`: Path to Google service account key (optional)
-
-### Database
-
-The application uses SQLite by default. The database file (`ai_collab.db`) will be created automatically in the project root on first run.
-
-### Google Docs Integration
-
-For Google Docs functionality:
-1. Create a Google Cloud Project
-2. Enable Google Docs API
-3. Create a service account
-4. Download the JSON key file
-5. Share documents with the service account email
-
-See `GOOGLE_DOCS_SETUP.md` for detailed instructions.
-
-## 🎯 Usage
-
-### Getting Started
-
-1. **Register an account** at `/register`
-2. **Create or join a room** at `/room`
-3. **Start a chat** within your room
-4. **Select a writing mode** (Explore, Focus, Outline, etc.)
-5. **Optionally add a Google Doc URL** to import content
-6. **Start chatting** with the AI assistant
-7. **Add comments** on specific dialogue points for discussion
-
-### Room-Based Collaboration
-
-- **Create Rooms**: Set up dedicated spaces for your teams or classes
-- **Join Rooms**: Participate in existing collaborative environments
-- **Member Management**: Add/remove members and manage permissions
-- **Room Analytics**: Track activity and engagement within each room
-
-### Writing Modes
-
-AI Collab Teams supports 10 different writing stages:
-
-1. **Explore** - Brainstorming and idea generation
-2. **Focus** - Narrowing down topics and research questions
-3. **Outline** - Creating structure and organization
-4. **Draft** - Initial writing and content creation
-5. **Revise** - Improving content and structure
-6. **Polish** - Final editing and refinement
-7. **Proposal** - Writing proposals and pitches
-8. **Research** - Finding and evaluating sources
-9. **Context** - Understanding background information
-10. **Feedback** - Getting and incorporating feedback
-
-### Instructor Dashboard
-
-- **Room Overview**: See all rooms and their activity levels
-- **Member Management**: Track student participation and engagement
-- **Chat Analytics**: Monitor AI usage patterns and writing mode preferences
-- **Prompt History**: Detailed logs of all student-AI interactions
-- **System Instructions**: Customize AI prompts for different modes and rooms
-
-### Interactive Comments
-
-- **Dialogue Comments**: Students can comment on specific AI responses
-- **Threaded Discussions**: Build conversations around AI feedback
-- **User Attribution**: Track who made which comments
-- **Comment Management**: Add and delete comments as needed
-
-### Google Docs Integration
-
-1. **Share your Google Doc** with the service account email
-2. **Copy the sharing link** from Google Docs
-3. **Paste the URL** in the "Google Doc URL" field when creating a chat
-4. **The AI will analyze** your document and provide feedback
-5. **Continue the conversation** to get more specific guidance
-
-## 🛠️ Technology Stack
-
-- **Backend**: Flask, SQLAlchemy
-- **Database**: SQLite
-- **AI Services**: OpenAI GPT-4o, Anthropic Claude
-- **Google Integration**: Google Docs API with service account
-- **Frontend**: HTML, CSS, JavaScript
-- **Authentication**: Flask-SQLAlchemy with password hashing
-- **Access Control**: Custom decorators for permissions
-- **Analytics**: Dashboard for tracking student usage and room activity
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- OpenAI for providing the GPT-4o API
-- Anthropic for providing the Claude API
-- Google Cloud for Google Docs API
-- Flask community for the excellent web framework
-- SQLAlchemy for robust database management
-
-## 🧪 Testing
-
-### Test Status
-
-The application includes a comprehensive test suite with the following status:
-
-#### ✅ **Passing Tests (Core Functionality)**
-- **App Creation**: Flask application initializes correctly
-- **Database Setup**: SQLAlchemy models and tables work properly
-- **Basic Routes**: All main routes (home, login, register, rooms, about) function correctly
-- **Template Rendering**: All HTML templates load without errors
-- **User Registration**: User creation and authentication work as expected
-
-#### ⚠️ **Test Suite Notes**
-- **Basic Functionality**: All core features are tested and working
-- **Comprehensive Tests**: Extended test suite exists but may have minor mismatches with current implementation
-- **Test Coverage**: Core functionality is well-tested; advanced features may need test updates
-- **Database Warnings**: Minor ResourceWarnings about unclosed database connections (non-critical)
-
-### Running Tests
-
-```bash
-# Activate virtual environment first
-venv\Scripts\activate  # Windows
-source venv/bin/activate  # macOS/Linux
-
-# Run basic functionality tests
-python -m unittest tests.test_basic.TestBasicFunctionality -v
-
-# Run all tests (may show some expected errors)
-python run_tests.py
-```
-
-### Test Structure
-
-```
-tests/
-├── test_basic.py          # Core functionality tests (✅ All Passing)
-├── test_models.py         # Database model tests
-├── test_routes.py         # Route functionality tests
-├── test_dashboard.py      # Dashboard and analytics tests
-├── test_ai_integration.py # AI service integration tests
-└── README.md             # Test documentation
-```
-
-**Note**: The basic functionality tests confirm that the application is working correctly for production use. The comprehensive test suite may show some errors due to implementation details that differ from test expectations, but these don't affect core functionality.
-
-## 📞 Support
-
-If you encounter any issues or have questions:
-
-1. Check the [Issues](https://github.com/writeian/AI_Collab_Teams/issues) page
-2. Create a new issue with detailed information
-3. Include your Python version, OS, and error messages
-
-## 🔮 Roadmap
-
-- [x] Room-based collaboration system
-- [x] Instructor dashboard with analytics
-- [x] Interactive commenting system
-- [x] Custom system instructions management
-- [x] Google Docs integration with service account
-- [x] Writing mode system with 10 stages
-- [x] Dashboard analytics for student tracking
-- [x] Access control with permission decorators
-- [x] Comprehensive test suite
-- [ ] Real-time messaging with WebSockets
-- [ ] Advanced chat analytics
-- [ ] Mobile-responsive design improvements
-- [ ] Multi-language support
-- [ ] Chat export functionality
-- [ ] Integration with learning management systems
-- [ ] Video conferencing integration
-- [ ] Advanced room templates
+# AI Collab Online
+
+**Collaborative learning rooms where AI and structure meet:** learners and teams progress through guided steps, carry context **across chats** (not only the latest thread), and export real artifacts—without treating the product as “just another chatbot in a doc.”
+
+| | |
+|:---|:---|
+| **What it is** | A web app for **rooms**, **structured journeys** (e.g. writing / study paths), **multi-user chat**, and **context-aware AI** tied to goals and history. |
+| **Who it’s for** | **Students**, **writing groups**, **educators**, and **small teams** who learn through dialogue and need continuity between sessions. |
+| **Problem it solves** | Plain chat and static forums **lose thread and progress**; generic AI **forgets** earlier work in the same course or project. |
+| **Why it’s different** | **Cross-chat memory** (notes, welcomes, progression), **pin-seeded** focused chats, **presence**-aware collaboration, and **prompt assembly** tuned to mode, tone, length, documents, and multi-speaker threads—not a single isolated Q&A pane. |
+
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=flat&logo=github)](https://github.com/writeian/Collab_AI_Online)
+[![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
 
 ---
 
-**Made with ❤️ by writeian**
- 
+## Live
+
+- **App:** https://collab.up.railway.app  
+- **Health:** https://collab.up.railway.app/health  
+
+---
+
+## Visual proof
+
+| **Learning journey** — progress, modules, collaboration | **Home** — rooms, goals, activity |
+|:---:|:---:|
+| ![Learning journey: steps, completion, avatars](docs/screenshots/learning-journey.png) | ![Dashboard: My Learning Spaces](docs/screenshots/dashboard-learning-spaces.png) |
+
+| **Study group setup** — template / wizard step | **Chat** — Tone & Length, presence, structured AI |
+|:---:|:---:|
+| ![Study Group Setup wizard](docs/screenshots/study-group-setup-wizard.png) | ![Chat with tone, length, participants, AI reply](docs/screenshots/chat-tone-length-collaboration.png) |
+
+More context and a text walkthrough: **[DEMO.md](DEMO.md)**.
+
+---
+
+## Why this isn’t “ChatGPT in a Google Doc”
+
+| Typical setup | **AI Collab Online** |
+|---------------|----------------------|
+| **Shared doc + side chat** | **Room + journey** as the spine; chats are steps in a path, not loose margins. |
+| **ChatGPT / copilot in a doc** | **Cross-chat learning context**: milestones, notes, and welcomes that **reference prior chats** in the same room. |
+| **Slack / Discord + a bot** | **Structured templates** (e.g. essay steps, study group modes), **rubric-style** controls, and **exports** (notes / outlines / docx)—not only channel scrollback. |
+| **LMS discussion boards** | **Real-time collaboration**, **presence**, **pin-seeded synthesis** chats, and **adaptive** AI (tone, length, archetypes, document library) in one product. |
+
+---
+
+## One concrete workflow
+
+A **student writing group** creates a **room** with an academic-essay (or workshop) template. They **chat through drafting steps**; at milestones, the system can **generate notes** that feed **later chats**. They tune **Tone & Length**, optionally **attach library documents**, and **export** an outline or transcript. They **open a new chat** for the next step—**welcome messages and progression** can **reuse prior context** so they are not starting from zero every time.
+
+That single path hits structured progression, AI, collaboration, and continuity—without listing every feature.
+
+---
+
+## Technical highlights *(for collaborators & hiring managers)*
+
+- **Cross-chat memory** — note generation triggers, `ChatNotes`-style persistence, context pulled into new conversations.  
+- **Context-aware prompt assembly** — mode prompts, optional document retrieval, tone/length/archetype layers, **multi-participant “weaving”** in recent history.  
+- **Pin snapshot persistence** — pin-seeded chats keep a **frozen pin payload** (`PinChatMetadata`) so AI context does not drift when sources move.  
+- **Collaborative presence** — heartbeats and sidebar “who’s active”; busy-room heuristics (e.g. default shorter replies when activity spikes).  
+- **Resilient AI plumbing** — Anthropic-first with **failover** (`AI_FAILOVER_ORDER`), streaming paths, and template fallbacks when providers degrade.  
+
+Deeper stack and diagrams: **[ARCHITECTURE.md](ARCHITECTURE.md)**.
+
+---
+
+## Quick start (local)
+
+```bash
+git clone https://github.com/writeian/Collab_AI_Online.git
+cd Collab_AI_Online
+python -m venv .venv && source .venv/bin/activate   # or `venv`
+pip install -r requirements.txt
+cp env_template.txt .env   # add keys; see DEVELOPMENT.md
+alembic upgrade head
+python run.py
+```
+
+Shorter checklist: **[SETUP_LOCAL.md](SETUP_LOCAL.md)** (if present).
+
+---
+
+## Documentation map *(README = front door; depth lives here)*
+
+| Doc | Purpose |
+|-----|---------|
+| **[FEATURES.md](FEATURES.md)** | Full capability breakdown (what the product does). |
+| **[CHANGELOG.md](CHANGELOG.md)** | Release-style **recent updates** (was “Recent Major Updates” in the old README). |
+| **[ARCHITECTURE.md](ARCHITECTURE.md)** | Stack, distinctive design choices, high-level layout. |
+| **[DEVELOPMENT.md](DEVELOPMENT.md)** | Env vars, tests, linting, project tree, macOS case note. |
+| **[DEPLOYMENT.md](DEPLOYMENT.md)** | Railway / production entry points and links. |
+| **[DEMO.md](DEMO.md)** | Screenshots, walkthroughs, example outputs *(you fill in media)*. |
+| **[EXAMPLES.md](EXAMPLES.md)** | Pointer to demo/output samples (same content as DEMO for now). |
+
+---
+
+## Branches & deploy
+
+- **Development:** `dev`  
+- **Production:** whatever branch your **Railway** service uses (*Settings → Source*). Common examples: `feature/railway-deployment`, `updated-edu-tools`.  
+
+```bash
+git checkout <your-railway-branch> && git pull --ff-only
+git push origin <your-railway-branch>
+```
+
+After deploy, **hard-refresh** the browser so cache-busted static assets pick up.
+
+---
+
+## Environment (minimal)
+
+You need at least **`SECRET_KEY`**, **`ANTHROPIC_API_KEY`** (for AI), and a database (**`DATABASE_URL`** for Postgres; SQLite locally if configured). Full lists and optional flags: **[DEVELOPMENT.md](DEVELOPMENT.md)** and **`env_template.txt`**.
+
+---
+
+## Contributing, support, license
+
+- **Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md)  
+- **Issues:** [GitHub Issues](https://github.com/writeian/Collab_AI_Online/issues)  
+- **License:** [MIT](LICENSE)  
+
+**Thanks:** Anthropic (Claude API), Flask & Tailwind communities, and contributors.
+
+---
+
+**Made for educators, students, and writing teams who want learning to accumulate—not reset every new chat.**
