@@ -10,6 +10,7 @@ import time
 import threading
 from flask import current_app
 from collections import namedtuple
+from sqlalchemy.orm import joinedload
 from typing import Optional, Dict, Any, Tuple, List, Callable, Set
 
 
@@ -899,6 +900,82 @@ def _get_pin_chat_system_prompt(chat: Any) -> str:
         return "You are a helpful AI assistant working with pinned content. Help the user achieve their goals."
 
 
+def _user_display_name(user: Any) -> str:
+    if user is None:
+        return "Participant"
+    dn = (getattr(user, "display_name", None) or "").strip()
+    if dn:
+        return dn
+    un = (getattr(user, "username", None) or "").strip()
+    return un or "Participant"
+
+
+def _format_user_turn_for_llm(user_id: Optional[int], user: Any, raw_content: str) -> Tuple[str, str]:
+    """Return (payload_content, raw_stripped) for a user message row."""
+    raw = raw_content if raw_content is not None else ""
+    if user_id is None:
+        return raw, raw.strip()
+    name = _user_display_name(user)
+    return f"{name}: {raw}", raw.strip()
+
+
+def _distinct_human_user_ids(messages_payload: List[Dict[str, Any]]) -> int:
+    ids: Set[int] = set()
+    for m in messages_payload:
+        if (m.get("role") or "") != "user":
+            continue
+        uid = m.get("_user_id")
+        if uid is not None:
+            ids.add(int(uid))
+    return len(ids)
+
+
+_INDIVIDUAL_ONLY_MARKERS = (
+    "just for me",
+    "only answer my question",
+    "only for me",
+    "ignore the others",
+    "ignore everyone else",
+    "private:",
+)
+
+
+def _force_individual_only_reply(raw_user_text: str) -> bool:
+    low = (raw_user_text or "").lower()
+    return any(marker in low for marker in _INDIVIDUAL_ONLY_MARKERS)
+
+
+def _latest_user_raw_for_search(messages_payload: List[Dict[str, Any]]) -> str:
+    for m in reversed(messages_payload):
+        if (m.get("role") or "") != "user":
+            continue
+        raw = m.get("_raw_user_content")
+        if raw is not None:
+            return str(raw)
+        return str(m.get("content") or "")
+    return ""
+
+
+def _collaboration_system_addon(
+    *,
+    weaving_active: bool,
+    max_speakers_named: int,
+) -> str:
+    if weaving_active:
+        return (
+            "COLLABORATION (multi-participant thread): You are speaking to the group, not only the last speaker. "
+            f"When several recent human participants (up to {max_speakers_named}) are clearly discussing the same topic "
+            "as the latest message, briefly: acknowledge → synthesize their points by name → connect or contrast views "
+            "(do not fake consensus if they disagree) → offer one shared follow-up question or direction. "
+            "Keep the reply short and scannable unless the user's length/tone settings ask for more. "
+            "Rely on the recent messages shown, not the full chat history."
+        )
+    return (
+        "COLLABORATION: Only one human participant appears in the recent window—reply directly to them. "
+        "Do not use faux group framing ('you all', 'everyone here') unless others are clearly present in the excerpt."
+    )
+
+
 def _build_chat_cache_control(messages_payload: List[Dict[str, str]], system_prompt: str) -> Optional[Dict[str, str]]:
     if not _bool_env("AI_PROMPT_CACHE_ENABLED", default=True):
         return None
@@ -1092,7 +1169,10 @@ def _prepare_anthropic_completion(
     anchor_id = None
     if through_message is not None:
         anchor_id = getattr(through_message, "id", None)
-    q = Message.query.filter_by(chat_id=chat.id)
+    q = (
+        Message.query.options(joinedload(Message.user))
+        .filter_by(chat_id=chat.id)
+    )
     if anchor_id is not None:
         q = q.filter(Message.id <= int(anchor_id))
         try:
@@ -1101,24 +1181,36 @@ def _prepare_anthropic_completion(
             )
         except Exception:
             pass
-    all_messages = [
-        {"role": m.role, "content": m.content}
-        for m in q.order_by(Message.id).all()
-    ]
-    
+    all_messages: List[Dict[str, Any]] = []
+    for m in q.order_by(Message.id).all():
+        if (m.role or "") == "user":
+            content, _ = _format_user_turn_for_llm(
+                m.user_id, m.user, m.content or ""
+            )
+            all_messages.append(
+                {
+                    "role": "user",
+                    "content": content,
+                    "_user_id": m.user_id,
+                    "_raw_user_content": m.content or "",
+                }
+            )
+        else:
+            all_messages.append({"role": "assistant", "content": m.content or ""})
+
     # Cap message history to last N turns (user + assistant pairs)
     # Each "turn" is 2 messages (user + assistant), so take last MAX_HISTORY_TURNS * 2
     if len(all_messages) > MAX_HISTORY_TURNS * 2:
-        messages_payload = all_messages[-(MAX_HISTORY_TURNS * 2):]
+        messages_payload = all_messages[-(MAX_HISTORY_TURNS * 2) :]
         try:
             current_app.logger.info(
                 f"📊 Context trimmed: {len(all_messages)} messages → {len(messages_payload)} "
                 f"(last {MAX_HISTORY_TURNS} turns)"
             )
-        except:
+        except Exception:
             pass
     else:
-        messages_payload = all_messages
+        messages_payload = list(all_messages)
 
     if (
         through_message is not None
@@ -1136,18 +1228,41 @@ def _prepare_anthropic_completion(
                 )
             except Exception:
                 pass
-        elif (last.get("content") or "").strip() != (
-            through_message.content or ""
-        ).strip():
-            try:
-                current_app.logger.warning(
-                    "get_ai_response: aligning last user turn to anchor message "
-                    "(chat=%s)",
-                    getattr(chat, "id", None),
-                )
-            except Exception:
-                pass
-            messages_payload[-1]["content"] = through_message.content
+        else:
+            anchor_raw = (through_message.content or "").strip()
+            last_raw = (last.get("_raw_user_content") or "").strip()
+            if last_raw != anchor_raw:
+                try:
+                    current_app.logger.warning(
+                        "get_ai_response: aligning last user turn to anchor message "
+                        "(chat=%s)",
+                        getattr(chat, "id", None),
+                    )
+                except Exception:
+                    pass
+                uid = getattr(through_message, "user_id", None)
+                user_obj = getattr(through_message, "user", None)
+                raw = through_message.content or ""
+                content, _ = _format_user_turn_for_llm(uid, user_obj, raw)
+                messages_payload[-1]["content"] = content
+                messages_payload[-1]["_user_id"] = uid
+                messages_payload[-1]["_raw_user_content"] = raw
+
+    distinct_humans = _distinct_human_user_ids(messages_payload)
+    min_distinct = _int_env("AI_WEAVING_MIN_DISTINCT_USERS", 2, minimum=1)
+    latest_raw_turn = _latest_user_raw_for_search(messages_payload)
+    force_individual = _force_individual_only_reply(latest_raw_turn)
+    weaving_active = (
+        _bool_env("AI_WEAVING_ENABLED", default=True)
+        and (not is_pin_chat or _bool_env("AI_WEAVING_PIN_CHATS", default=False))
+        and distinct_humans >= min_distinct
+        and not force_individual
+    )
+    max_speakers_named = _int_env("AI_WEAVING_MAX_SPEAKERS_NAMED", 3, minimum=1)
+    collaboration_addon = _collaboration_system_addon(
+        weaving_active=weaving_active,
+        max_speakers_named=max_speakers_named,
+    )
 
     # NEW: Search Library Tool documents for relevant context (with room_id scoping)
     try:
@@ -1165,7 +1280,7 @@ def _prepare_anthropic_completion(
         if room_id:
             user_messages = [m for m in messages_payload if m.get("role") == "user"]
             if user_messages:
-                latest_query = user_messages[-1].get("content", "")
+                latest_query = _latest_user_raw_for_search(messages_payload) or ""
 
                 # Detect synthesis/summarization requests with tighter matching
                 # Require explicit synthesis keywords and minimum query length to avoid false positives
@@ -1311,6 +1426,12 @@ def _prepare_anthropic_completion(
                     if doc_context:
                         # Add document context with clear instructions to use it
                         # Prepend to user message so AI sees it first
+                        preserved_meta = {
+                            "_raw_user_content": messages_payload[-1].get(
+                                "_raw_user_content"
+                            ),
+                            "_user_id": messages_payload[-1].get("_user_id"),
+                        }
                         original_question = messages_payload[-1]["content"]
                         
                         # Different instructions for synthesis vs normal search
@@ -1336,6 +1457,7 @@ def _prepare_anthropic_completion(
                             f"{instruction}"
                             f"User question: {original_question}"
                         )
+                        messages_payload[-1].update(preserved_meta)
                         current_app.logger.info(f"✅ Added {len(context_snippets)} document chunks to user message")
                 else:
                     current_app.logger.info("ℹ️  No relevant documents found for this query")
@@ -1344,25 +1466,59 @@ def _prepare_anthropic_completion(
         # If document search failed, continue without it (graceful degradation)
         current_app.logger.error(f"❌ Document search failed: {e}")
 
-    # Rebuild system_prompt to include any extra_system modifications (e.g., synthesis disabled note)
+    # Rebuild system_prompt: collaboration weaving layer, then extra_system (e.g., tone)
+    system_prompt = base_system_prompt
+    if _bool_env("AI_WEAVING_ENABLED", default=True) and (
+        not is_pin_chat or _bool_env("AI_WEAVING_PIN_CHATS", default=False)
+    ):
+        system_prompt = f"{system_prompt}\n\n{collaboration_addon}"
     if extra_system:
-        system_prompt = f"{base_system_prompt}\n\nADDITIONAL STYLE: {extra_system}"
-    else:
-        system_prompt = base_system_prompt
+        system_prompt = f"{system_prompt}\n\nADDITIONAL STYLE: {extra_system}"
 
     if (
         through_message is not None
         and getattr(through_message, "role", None) == "user"
         and (through_message.content or "").strip()
     ):
-        system_prompt = (
-            f"{system_prompt}\n\n"
-            "CURRENT TURN: Address the user's latest message in the conversation below. "
-            "If it asks something new or changes topic, answer that—not a previous thread—unless the user explicitly connects topics."
+        collab_turn_instructions_applied = _bool_env(
+            "AI_WEAVING_ENABLED", default=True
+        ) and (
+            not is_pin_chat or _bool_env("AI_WEAVING_PIN_CHATS", default=False)
         )
+        if collab_turn_instructions_applied:
+            system_prompt = (
+                f"{system_prompt}\n\n"
+                "CURRENT TURN: The latest user message is the immediate trigger—answer it. "
+                "If it changes topic or asks something only for themselves, prioritize that and do not reopen unrelated threads. "
+                "When multiple participants appear in the recent window and their contributions clearly relate to the same topic "
+                "as that latest message, you may briefly weave their views (by name) before answering, following the COLLABORATION instructions above."
+            )
+        else:
+            system_prompt = (
+                f"{system_prompt}\n\n"
+                "CURRENT TURN: Address the user's latest message in the conversation below. "
+                "If it asks something new or changes topic, answer that—not a previous thread—unless the user explicitly connects topics."
+            )
 
-    request_options = _build_chat_request_options(messages_payload)
-    return messages_payload, system_prompt, max_tokens, request_options
+    try:
+        current_app.logger.info(
+            "ai_weaving context chat=%s distinct_humans=%s weaving_active=%s force_individual=%s history_msgs=%s",
+            getattr(chat, "id", None),
+            distinct_humans,
+            weaving_active,
+            force_individual,
+            len(messages_payload),
+        )
+    except Exception:
+        pass
+
+    # API helpers only read role/content; strip internal keys before Anthropic call
+    messages_for_api: List[Dict[str, str]] = [
+        {"role": str(m.get("role") or ""), "content": str(m.get("content") or "")}
+        for m in messages_payload
+    ]
+    request_options = _build_chat_request_options(messages_for_api)
+    return messages_for_api, system_prompt, max_tokens, request_options
 
 
 def assess_learning_progression(chat: Any, target_mode: Optional[str] = None) -> Dict[str, Any]:
