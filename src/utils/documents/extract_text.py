@@ -122,7 +122,7 @@ def summarize_text(text: str) -> str:
         client = Anthropic(api_key=api_key)
         
         response = client.messages.create(
-            model=os.getenv('ANTHROPIC_MODEL', 'claude-3-opus-20240229'),
+            model=os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
             max_tokens=400,
             system='You are a helpful assistant that summarizes documents.',
             messages=[{'role': 'user', 'content': prompt}]

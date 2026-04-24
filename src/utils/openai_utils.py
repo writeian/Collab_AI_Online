@@ -594,8 +594,9 @@ def _int_env(name: str, default: int, minimum: int = 0) -> int:
 
 
 def _get_anthropic_model_name() -> str:
-    # Default to Haiku 4.5 (fastest); override with ANTHROPIC_MODEL for Sonnet etc.
-    model = os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5")
+    # Default: latest GA Sonnet (see https://docs.anthropic.com/en/docs/about-claude/models).
+    # Override with ANTHROPIC_MODEL; use claude-opus-4-7 for maximum capability (higher cost).
+    model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
     if "/" in model:
         model = model.split("/", 1)[-1]
     return model.strip()
@@ -1024,8 +1025,8 @@ def _build_chat_request_options(messages_payload: List[Dict[str, str]]) -> Dict[
         return {}
 
     model = _get_anthropic_model_name()
-    # Adaptive thinking controls apply to 4.6 models.
-    if model not in {"claude-opus-4-6", "claude-sonnet-4-6"}:
+    # Adaptive thinking for supported Claude 4.x API IDs (see Anthropic Messages API / model docs).
+    if model not in {"claude-opus-4-6", "claude-opus-4-7", "claude-sonnet-4-6"}:
         return {}
 
     latest = _latest_user_turn(messages_payload)

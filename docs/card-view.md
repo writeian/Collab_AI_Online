@@ -63,7 +63,7 @@ In multi-worker deployments (e.g., gunicorn with >1 worker):
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `ANTHROPIC_API_KEY` | (required) | Anthropic API key for AI features |
-| `ANTHROPIC_MODEL` | `claude-3-5-sonnet-20241022` | Model for main app (card view uses haiku) |
+| `ANTHROPIC_MODEL` | `claude-sonnet-4-6` | Model for main app (card view helpers temporarily use `claude-haiku-4-5`) |
 
 ## API Endpoints
 

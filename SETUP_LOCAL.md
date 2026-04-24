@@ -37,7 +37,7 @@ cp env_template.txt .env
 # Edit .env and add at minimum:
 #   SECRET_KEY=<generate with: python -c "import secrets; print(secrets.token_hex(32))">
 #   ANTHROPIC_API_KEY=<your key from console.anthropic.com>
-#   ANTHROPIC_MODEL=claude-haiku-4-5  # optional; default is Haiku (fast). Use claude-sonnet-4-6 for higher quality.
+#   ANTHROPIC_MODEL=claude-sonnet-4-6  # optional; code default is Sonnet 4.6. Use claude-haiku-4-5 for speed/cost or claude-opus-4-7 for max quality.
 #   FLASK_ENV=development
 ```
 

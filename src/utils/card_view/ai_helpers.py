@@ -337,7 +337,7 @@ def _call_ai(prompt: str, max_tokens: int = 200) -> Optional[str]:
             import os
             # Temporarily override model for card view helpers
             original_model = os.environ.get("ANTHROPIC_MODEL")
-            os.environ["ANTHROPIC_MODEL"] = "claude-3-haiku-20240307"
+            os.environ["ANTHROPIC_MODEL"] = "claude-haiku-4-5"
             
             text, _ = call_anthropic_api(
                 messages=[{"role": "user", "content": prompt}],
