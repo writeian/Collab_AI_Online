@@ -1122,6 +1122,130 @@ def get_ai_response_streaming(
     return "", False
 
 
+def _library_read_scope(query_lower: str) -> str:
+    """Classify whether the user likely needs full Library text vs chunk retrieval only.
+
+    Returns:
+        \"full_document\" — inject concatenated Document.full_text (capped by env).
+        \"targeted\" — FTS / representative chunks only.
+    """
+    q = (query_lower or "").strip()
+    if not q:
+        return "targeted"
+
+    whole_doc_markers = (
+        "whole document",
+        "whole essay",
+        "whole file",
+        "whole paper",
+        "entire document",
+        "entire essay",
+        "entire file",
+        "entire paper",
+        "full document",
+        "full essay",
+        "full paper",
+        "full text",
+        "read the entire",
+        "read the whole",
+        "read everything",
+        "read through the whole",
+        "read through the entire",
+        "all of the document",
+        "all of the essay",
+        "all of my essay",
+        "all of my document",
+        "from beginning to end",
+        "start to finish",
+        "cover to cover",
+        "complete essay",
+        "complete document",
+        "complete manuscript",
+        "throughout the essay",
+        "throughout the document",
+        "every scene",
+        "every section",
+        "all scenes",
+        "all sections",
+        "everything i uploaded",
+        "everything in my essay",
+        "everything in the essay",
+        "everything in the document",
+        "the entire upload",
+        "the entire piece",
+        "the entire paper",
+        "uses the entire",
+        "needs the entire",
+        "need the entire",
+        "based on the entire",
+        "based on the whole",
+    )
+    if any(m in q for m in whole_doc_markers):
+        return "full_document"
+
+    if (
+        "summarize the essay" in q
+        or "summarize my essay" in q
+        or "summarize the document" in q
+        or "summarize this essay" in q
+        or "summarize this document" in q
+    ):
+        return "full_document"
+
+    return "targeted"
+
+
+def _select_library_documents_for_full_read(room_id: int, query_lower: str) -> List[Any]:
+    """Pick which Document rows to load full_text for (newest-first list from DB)."""
+    from src.utils.documents.database import get_all_documents
+
+    docs = list(get_all_documents(room_id=room_id) or [])
+    if not docs:
+        return []
+    if len(docs) == 1:
+        return docs
+
+    matched: List[Any] = []
+    for d in docs:
+        base = (d.name or "").lower().rsplit(".", 1)[0]
+        tokens = re.findall(r"[\w]{4,}", base.replace("-", " ").replace("_", " "))
+        for t in tokens:
+            if len(t) >= 4 and t in query_lower:
+                matched.append(d)
+                break
+    if len(matched) == 1:
+        return matched
+    if matched:
+        return [matched[0]]
+    return [docs[0]]
+
+
+def _combined_library_full_text(docs: List[Any], max_chars: int) -> str:
+    """Concatenate document.full_text fields up to max_chars."""
+    parts: List[str] = []
+    used = 0
+    for d in docs:
+        body = (getattr(d, "full_text", None) or "").strip()
+        if not body:
+            continue
+        name = getattr(d, "name", None) or "Untitled"
+        header = f"\n\n===== Library document: {name} =====\n\n"
+        chunk_len = len(header) + len(body)
+        if used + chunk_len <= max_chars:
+            parts.append(header + body)
+            used += chunk_len
+            continue
+        room_left = max_chars - used - len(header)
+        if room_left > 800:
+            parts.append(
+                header
+                + body[:room_left]
+                + "\n\n[Truncated to fit AI_DOC_FULL_TEXT_MAX_CHARS]\n"
+            )
+        break
+    return "".join(parts).strip()
+
+
 def _prepare_anthropic_completion(
     chat: Any,
     *,
@@ -1327,6 +1451,10 @@ def _prepare_anthropic_completion(
                 ]
                 has_doc_intent = any(kw in query_lower for kw in doc_intent_keywords)
                 library_fts_fallback = False
+                library_full_text_mode = False
+                snippet_cap = _int_env("AI_DOC_SNIPPET_MAX_CHARS", 3000, minimum=200)
+                fts_limit = _int_env("AI_DOC_FTS_MAX_CHUNKS", 10, minimum=1)
+                full_text_cap = _int_env("AI_DOC_FULL_TEXT_MAX_CHARS", 120000, minimum=5000)
                 retrieval_enabled = _bool_env("AI_DOC_RETRIEVAL_ENABLED", default=True)
                 intent_only = _bool_env("AI_DOC_SEARCH_INTENT_ONLY", default=True)
                 min_query_chars = _int_env("AI_DOC_SEARCH_MIN_QUERY_CHARS", 24, minimum=1)
@@ -1385,14 +1513,52 @@ def _prepare_anthropic_completion(
                     
                     current_app.logger.info(f"📚 Synthesis mode: Retrieved {len(search_results)} chunks/summaries from documents")
                 else:
-                    current_app.logger.info(
-                        f"🔍 Searching documents for query: '{latest_query[:50]}...' in room {room_id}"
-                    )
-                    # Normal search: Get top-ranked chunks
-                    from src.utils.documents.indexer import search_indexed_chunks
-                    search_results = search_indexed_chunks(
-                        query=latest_query, room_id=room_id, limit=3, min_rank=0.0
-                    )
+                    read_scope = _library_read_scope(query_lower)
+                    search_results = []
+
+                    if read_scope == "full_document" and has_doc_intent:
+                        docs_full = _select_library_documents_for_full_read(
+                            room_id, query_lower
+                        )
+                        combined_txt = _combined_library_full_text(
+                            docs_full, full_text_cap
+                        )
+                        if combined_txt:
+                            library_full_text_mode = True
+                            label = (
+                                docs_full[0].name
+                                if len(docs_full) == 1
+                                else f"{len(docs_full)} Library documents (combined)"
+                            )
+                            search_results = [
+                                {
+                                    "document_name": label,
+                                    "chunk_text": combined_txt,
+                                    "chunk_index": 0,
+                                    "rank": 1.0,
+                                }
+                            ]
+                            try:
+                                current_app.logger.info(
+                                    "📖 Library full-text mode: injecting %s chars (chat=%s)",
+                                    len(combined_txt),
+                                    getattr(chat, "id", None),
+                                )
+                            except Exception:
+                                pass
+
+                    if not library_full_text_mode:
+                        current_app.logger.info(
+                            f"🔍 Searching documents for query: '{latest_query[:50]}...' in room {room_id}"
+                        )
+                        from src.utils.documents.indexer import search_indexed_chunks
+
+                        search_results = search_indexed_chunks(
+                            query=latest_query,
+                            room_id=room_id,
+                            limit=fts_limit,
+                            min_rank=0.0,
+                        )
 
                 current_app.logger.info(
                     f"📚 Document search returned {len(search_results) if search_results else 0} results"
@@ -1401,6 +1567,7 @@ def _prepare_anthropic_completion(
                 if (
                     should_search_documents
                     and not is_synthesis_request
+                    and not library_full_text_mode
                     and not search_results
                     and has_doc_intent
                 ):
@@ -1413,6 +1580,7 @@ def _prepare_anthropic_completion(
                         chunks_per_doc=3,
                         max_documents=5,
                         max_total_chunks=8,
+                        chunk_text_limit=snippet_cap,
                     )
                     if search_results:
                         library_fts_fallback = True
@@ -1454,7 +1622,12 @@ def _prepare_anthropic_completion(
                         })
                         current_app.logger.info(f"  - {result.get('document_name')}: rank={result.get('rank', 0):.3f}")
                 
-                    doc_context = build_document_context_block(context_snippets)
+                    doc_context = build_document_context_block(
+                        context_snippets,
+                        max_chars_per_snippet=(
+                            full_text_cap if library_full_text_mode else snippet_cap
+                        ),
+                    )
                     if doc_context:
                         # Add document context with clear instructions to use it
                         # Prepend to user message so AI sees it first
@@ -1466,13 +1639,19 @@ def _prepare_anthropic_completion(
                         }
                         original_question = messages_payload[-1]["content"]
                         
-                        # Different instructions for synthesis vs normal search
+                        # Different instructions for synthesis vs full-document vs retrieved excerpts
                         if is_synthesis_request:
                             instruction = (
                                 f"IMPORTANT: The user wants a comprehensive summary/synthesis of ALL documents "
                                 f"in their Library. The context above includes representative chunks from each document. "
                                 f"Provide a thorough synthesis that covers all documents, identifies common themes, "
                                 f"compares perspectives, and highlights key information from each source.\n\n"
+                            )
+                        elif library_full_text_mode:
+                            instruction = (
+                                "IMPORTANT: The complete Library document text appears below (very large uploads "
+                                "may be truncated by AI_DOC_FULL_TEXT_MAX_CHARS). Treat it as the authoritative "
+                                "source for this question and answer using the full scope of that material.\n\n"
                             )
                         else:
                             instruction = (
@@ -2248,34 +2427,36 @@ Just let me know how you'd like to begin!"""
     return welcome
 
 
-def build_document_context_block(context_snippets: List[Dict[str, Any]]) -> str:
+def build_document_context_block(
+    context_snippets: List[Dict[str, Any]],
+    max_chars_per_snippet: int = 400,
+) -> str:
     """
     Build a formatted document context block from search results.
-    
+
     Args:
         context_snippets: List of dicts with 'title', 'content', 'chunk_index', 'rank'
-        
+        max_chars_per_snippet: Cap per snippet (use a large value for full-document injection)
+
     Returns:
         Formatted string with document context, or empty string if no snippets
     """
     if not context_snippets:
         return ""
-    
+
+    cap = max(1, int(max_chars_per_snippet))
     context_lines = ["📚 Relevant Document Context:"]
-    
+
     for snippet in context_snippets:
         title = snippet.get('title', 'Unknown Document')
         content = snippet.get('content', '')
         chunk_idx = snippet.get('chunk_index', 0)
         rank = snippet.get('rank', 0.0)
-        
-        # Truncate content if too long (keep first 400 chars to match synthesis limit)
-        # Note: Chunks are already truncated in get_representative_chunks_from_all_documents,
-        # but keep this as a safety net
-        if len(content) > 400:
-            content = content[:400] + "..."
-        
+
+        if len(content) > cap:
+            content = content[:cap] + "..."
+
         context_lines.append(f"\nFrom: {title} (chunk {chunk_idx}, relevance: {rank:.2f})")
         context_lines.append(f"{content}")
-    
+
     return "\n".join(context_lines)

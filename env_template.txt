@@ -46,6 +46,11 @@ AI_SPEED_SIMPLE_QUERY_MAX_CHARS=160
 AI_DOC_RETRIEVAL_ENABLED=1
 AI_DOC_SEARCH_INTENT_ONLY=1
 AI_DOC_SEARCH_MIN_QUERY_CHARS=24
+# Library → AI context sizing (targeted retrieval vs full-document injection)
+# Snippet cap per chunk in FTS/fallback paths; full-text cap when user asks to read the whole document
+AI_DOC_SNIPPET_MAX_CHARS=3000
+AI_DOC_FTS_MAX_CHUNKS=10
+AI_DOC_FULL_TEXT_MAX_CHARS=120000
 
 # Auto-note generation off request critical path
 AI_AUTO_NOTES_ASYNC=1
