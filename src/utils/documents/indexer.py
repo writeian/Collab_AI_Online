@@ -120,7 +120,7 @@ def search_railway(
     query: str,
     room_id: int,
     limit: int = 5,
-    min_rank: float = 0.01
+    min_rank: float = 0.0,
 ) -> List[Dict[str, Any]]:
     """
     Search chunks using PostgreSQL Full-Text Search via SQLAlchemy.
@@ -129,11 +129,13 @@ def search_railway(
         query: Search query
         room_id: Room ID to scope search
         limit: Maximum results
-        min_rank: Minimum relevance score
+        min_rank: Ignored for filtering (kept for API compatibility). Rank ordering only.
         
     Returns:
         List of matching chunks with metadata
     """
+    # min_rank kept for callers; search_railway ranks by ts_rank without a cutoff.
+    _ = min_rank
     # Extract meaningful terms (keep existing function)
     search_query = extract_search_terms(query)
     
@@ -160,13 +162,10 @@ def search_railway(
             DocumentChunk.search_vector.op('@@')(search_query_ts)
         )
         
-        # Filter by minimum rank and order
-        results = base_query.filter(
-            func.ts_rank(
-                DocumentChunk.search_vector,
-                search_query_ts
-            ) > min_rank
-        ).order_by(
+        # Order by rank only — do not filter ts_rank > min_rank here.
+        # PostgreSQL ts_rank is often << 0.01 for valid matches on long chunks; that
+        # threshold filtered out real hits and made the model think there were no Library docs.
+        results = base_query.order_by(
             text('rank DESC'),
             DocumentChunk.document_id,
             DocumentChunk.chunk_index
@@ -390,7 +389,7 @@ def search_indexed_chunks(
     query: str,
     room_id: int,
     limit: int = 5,
-    min_rank: float = 0.01
+    min_rank: float = 0.0,
 ) -> List[Dict[str, Any]]:
     """
     Search chunks with Railway and Supabase fallback.

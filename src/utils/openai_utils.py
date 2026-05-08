@@ -1326,6 +1326,7 @@ def _prepare_anthropic_completion(
                     "in my",
                 ]
                 has_doc_intent = any(kw in query_lower for kw in doc_intent_keywords)
+                library_fts_fallback = False
                 retrieval_enabled = _bool_env("AI_DOC_RETRIEVAL_ENABLED", default=True)
                 intent_only = _bool_env("AI_DOC_SEARCH_INTENT_ONLY", default=True)
                 min_query_chars = _int_env("AI_DOC_SEARCH_MIN_QUERY_CHARS", 24, minimum=1)
@@ -1389,9 +1390,39 @@ def _prepare_anthropic_completion(
                     )
                     # Normal search: Get top-ranked chunks
                     from src.utils.documents.indexer import search_indexed_chunks
-                    search_results = search_indexed_chunks(query=latest_query, room_id=room_id, limit=3, min_rank=0.01)
-            
-                current_app.logger.info(f"📚 Document search returned {len(search_results) if search_results else 0} results")
+                    search_results = search_indexed_chunks(
+                        query=latest_query, room_id=room_id, limit=3, min_rank=0.0
+                    )
+
+                current_app.logger.info(
+                    f"📚 Document search returned {len(search_results) if search_results else 0} results"
+                )
+
+                if (
+                    should_search_documents
+                    and not is_synthesis_request
+                    and not search_results
+                    and has_doc_intent
+                ):
+                    from src.utils.documents.database import (
+                        get_representative_chunks_from_all_documents,
+                    )
+
+                    search_results = get_representative_chunks_from_all_documents(
+                        room_id=room_id,
+                        chunks_per_doc=3,
+                        max_documents=5,
+                        max_total_chunks=8,
+                    )
+                    if search_results:
+                        library_fts_fallback = True
+                        try:
+                            current_app.logger.info(
+                                "📎 Library fallback: injecting representative chunks "
+                                "(FTS returned no rows or library question)"
+                            )
+                        except Exception:
+                            pass
             
                 # If synthesis was requested but no results (feature flag disabled), add user-facing note
                 if is_synthesis_request and not search_results:
@@ -1452,6 +1483,12 @@ def _prepare_anthropic_completion(
                                 "ignore them and answer from general knowledge. When excerpts are "
                                 "relevant, reference specific content from them.\n\n"
                             )
+                            if library_fts_fallback:
+                                instruction = (
+                                    "Sample excerpts from this room's Library are included below "
+                                    "(broad retrieval because exact keyword match was weak or missing). "
+                                    "Prefer answering from them when they relate to the question.\n\n"
+                                ) + instruction
                         
                         messages_payload[-1]["content"] = (
                             f"{doc_context}\n\n"
