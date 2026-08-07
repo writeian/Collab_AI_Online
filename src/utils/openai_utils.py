@@ -403,8 +403,30 @@ def generate_room_modes(room: Any, template_name: Optional[str] = None) -> Dict[
     return BASE_TEMPLATES["academic_essay"]["modes"]
 
 
+def _instant_fallback_modes(room: Any) -> Dict[str, Any]:
+    """Return template/base modes with no model call — safe for render paths.
+
+    Used when a room has no saved CustomPrompt modes yet. AI-tailored modes are
+    generated in the background (see workers.mode_backfill_job) and replace these
+    on a later load.
+    """
+    try:
+        from src.app.room.utils.room_utils import infer_template_type_from_room as _infer
+        inferred = _infer(room)
+        if inferred and inferred in BASE_TEMPLATES:
+            return BASE_TEMPLATES[inferred]["modes"]
+    except Exception:
+        pass
+    return BASE_TEMPLATES["academic_essay"]["modes"]
+
+
 def get_modes_for_room(room: Any) -> Dict[str, Any]:
-    """Get modes for a room - check for custom prompts first, generate contextual modes if needed."""
+    """Get modes for a room - saved custom prompts if present, else an instant fallback.
+
+    Never calls the model synchronously: this runs on page renders, so contextual
+    generation is deferred to a background job (workers.mode_backfill_job) to keep
+    renders fast and resilient to slow/failed model calls.
+    """
     # Import here to avoid circular imports
     from src.models import CustomPrompt
 
@@ -430,20 +452,18 @@ def get_modes_for_room(room: Any) -> Dict[str, Any]:
         for prompt in sorted_prompts:
             custom_modes[prompt.mode_key] = ChatMode(prompt.label, prompt.prompt)
         return custom_modes
-    else:
-        # Generate contextual modes based on room goals with robust fallback
-        modes = generate_room_modes(room)
-        if modes:
-            return modes
-        # As a final guard, return inferred or academic base modes
+
+    # No saved modes yet. Do NOT generate here — this function runs on page
+    # renders, and a synchronous model call blocks the page and can hang or fail
+    # under load. Return an instant template fallback and kick off a one-time
+    # background generation so AI-tailored modes appear on a later load.
+    if (getattr(room, "goals", None) or "").strip():
         try:
-            from src.app.room.utils.room_utils import infer_template_type_from_room as _infer
-            inferred = _infer(room)
-            if inferred and inferred in BASE_TEMPLATES:
-                return BASE_TEMPLATES[inferred]["modes"]
+            from src.workers.mode_backfill_job import enqueue_mode_backfill_job
+            enqueue_mode_backfill_job(room.id)
         except Exception:
             pass
-        return BASE_TEMPLATES["academic_essay"]["modes"]
+    return _instant_fallback_modes(room)
 
 
 # Mode-specific brevity guidance (Phase 2)

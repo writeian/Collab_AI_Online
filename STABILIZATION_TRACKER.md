@@ -20,7 +20,7 @@ Each item has: **Issue** (what's wrong), **Fix** (the plan), **Implementation** 
 
 | ID | Priority | Area | Issue (short) | Week | Status |
 |----|----------|------|---------------|------|--------|
-| R1 | 🔴 Critical | Performance | Live AI call on every page render (modes) | 1 | ⬜ |
+| R1 | 🔴 Critical | Performance | Live AI call on every page render (modes) | 1 | 🟡 |
 | S1 | 🔴 Critical | Security | Leaked DB password in git history + committed doc | 1 | ⏸️ |
 | S2 | 🟠 High | Security | `SECRET_KEY` hardcoded fallback, not enforced | 1 | ⬜ |
 | S3 | 🟠 High | Security | Stored XSS in admin password-reset page | 1 | ⬜ |
@@ -45,11 +45,11 @@ Each item has: **Issue** (what's wrong), **Fix** (the plan), **Implementation** 
 
 ## Week 1 — See it & stop the bleeding
 
-### R1 — Live AI call on every page render (modes) 🔴 ⬜
+### R1 — Live AI call on every page render (modes) 🔴 🟡
 - **Issue:** When a chat/room page renders, `get_modes_for_room()` runs, and for a room that has learning goals but no saved modes it calls the model synchronously (with provider failover) *during the page load*. Result: 5–30s page loads, and hangs/failures when the model is slow, rate-limited, or errors. This is the most visible "slow / breaks."
 - **Fix:** Generate a room's modes once (at room creation / when goals change) and persist them (as `CustomPrompt` rows or a cached column). Make `get_modes_for_room()` a pure database read that returns instantly, with a template fallback if modes aren't generated yet. No model call on any GET render.
-- **Implementation:** _pending_
-- **Files:** `src/utils/openai_utils.py` (`get_modes_for_room` ~L406, `generate_room_modes` ~L238); call sites `src/app/chat.py:606,795`, `src/app/room/routes/crud.py:224,660`, `src/app/room/__init__.py:169`, `src/app/dashboard.py:131`, `src/app/achievements.py:114,235`; persistence via `src/models/custom_prompt.py`.
+- **Implementation:** `get_modes_for_room()` no longer calls the model on the render path. It returns saved `CustomPrompt` modes if present, else an **instant** template fallback (new `_instant_fallback_modes()`, which infers a template or uses `academic_essay` base modes). When a room has goals but no saved modes, it best-effort enqueues a one-time background job to generate + persist tailored modes, so they appear on a later load. Added `src/workers/mode_backfill_job.py` — runs on the existing `ai_replies` rq queue, is idempotent (skips if modes already exist / on unique-constraint race), and is guarded by a Redis key so a room enqueues at most once per 15 min. If Redis/worker is unavailable, the room simply keeps the instant template modes (no error, no block). `generate_room_modes()` and the creation-time callers are unchanged (creation-time generation is separate — see R2). **Verification:** syntax-checked with `py_compile`; **runtime/integration test still pending** — app dependencies aren't installed in this environment, so run the app locally / on Railway and confirm chat & room pages load instantly and modes backfill on a second load.
+- **Files:** `src/utils/openai_utils.py` (`get_modes_for_room` made render-safe + new `_instant_fallback_modes`, ~L406); **new** `src/workers/mode_backfill_job.py`. Render call sites now fast automatically: `src/app/chat.py:606,795`, `src/app/room/routes/crud.py:224,660`, `src/app/room/__init__.py:169`, `src/app/dashboard.py:131`, `src/app/achievements.py:114,235`.
 
 ### S1 — Leaked DB password in git history + committed doc 🔴 ⏸️
 - **Issue:** A real Railway Postgres password was committed in `a0ff8ca` and is still reachable in git history; it's also printed in plaintext inside `SECURITY_INCIDENT_2025-11-27.md`. A later commit says "password rotated."
