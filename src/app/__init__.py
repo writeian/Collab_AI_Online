@@ -484,8 +484,13 @@ def create_app(config_name=None):
     # Card Comments API (no prefix - routes defined with full paths)
     app.register_blueprint(card_comments_api)
 
+    # Admin gate for diagnostic/info endpoints below (function-level import avoids
+    # the circular import: access_control imports from this package).
+    from src.app.access_control import require_admin
+
     # Diagnostics: template folder + which room template is found
     @app.route("/__tpl")
+    @require_admin
     def __tpl():
         import os as __os
         info = {
@@ -498,6 +503,7 @@ def create_app(config_name=None):
 
     # Diagnostics: inspect base.html to see linked CSS versions
     @app.route("/__tpl_base")
+    @require_admin
     def __tpl_base():
         import os as __os
         import re as __re
@@ -549,8 +555,9 @@ def create_app(config_name=None):
         return render_template("landing.html")
     
     @app.route("/metrics")
+    @require_admin
     def metrics():
-        """Application metrics endpoint for monitoring."""
+        """Application metrics endpoint for monitoring. Admin-only (leaks live counts)."""
         from flask import jsonify
         from datetime import datetime, timedelta
         
@@ -594,6 +601,7 @@ def create_app(config_name=None):
 
     # Lightweight endpoint to verify static file availability in prod
     @app.route("/__static_check")
+    @require_admin
     def __static_check():
         import os as __os
         try:
@@ -706,6 +714,7 @@ def create_app(config_name=None):
             return ("Not found", 404)
 
         @app.route('/__landing_assets_check')
+        @require_admin
         def __landing_assets_check():
             import os as __os
             try:
