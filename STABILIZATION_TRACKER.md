@@ -23,7 +23,7 @@ Each item has: **Issue** (what's wrong), **Fix** (the plan), **Implementation** 
 | R1 | 🔴 Critical | Performance | Live AI call on every page render (modes) | 1 | 🟡 |
 | S1 | 🔴 Critical | Security | Leaked DB password in git history + committed doc | 1 | ⏸️ |
 | S2 | 🟠 High | Security | `SECRET_KEY` hardcoded fallback, not enforced | 1 | ✅ |
-| S3 | 🟠 High | Security | Stored XSS in admin password-reset page | 1 | ⬜ |
+| S3 | 🟠 High | Security | Stored XSS in admin password-reset page | 1 | ✅ |
 | R7 | 🟠 High | Reliability | Broken migrations; schema hand-patched every boot | 1 | ⬜ |
 | R8 | 🟠 High | Observability | No error monitoring — failures are invisible | 1 | ⬜ |
 | S4 | 🟡 Medium | Security | Unauthenticated diagnostic/info endpoints | 1 | ⬜ |
@@ -63,11 +63,11 @@ Each item has: **Issue** (what's wrong), **Fix** (the plan), **Implementation** 
 - **Implementation:** The insecure default is now the named module constant `DEV_FALLBACK_SECRET_KEY`; the base `Config` still falls back to it so **local dev/testing keep working with no env var set**. `ProductionConfig.init_app()` (which `create_app()` calls at startup only when `FLASK_ENV=production`) now raises `RuntimeError` if the effective `SECRET_KEY` is missing, empty/whitespace, or equal to that default — halting boot with a message telling you to set a strong key (`python -c "import secrets; print(secrets.token_hex(32))"`). Development is unaffected (it uses the base no-op `init_app`). **Verification:** `py_compile` clean; guard unit-tested in isolation — default/empty/blank keys are blocked, a strong key starts. Runtime confirmation on Railway happens naturally (a bad deploy fails loudly instead of silently using the public key).
 - **Files:** `src/config/settings.py` (new `DEV_FALLBACK_SECRET_KEY` constant ~L19; `Config.SECRET_KEY` ~L26; guard in `ProductionConfig.init_app` ~L203).
 
-### S3 — Stored XSS in admin password-reset page 🟠 ⬜
+### S3 — Stored XSS in admin password-reset page 🟠 ✅
 - **Issue:** The reset page builds an HTML message via f-string containing user-controlled `display_name` / `username` / `email`, then renders it with `{{ message|safe }}`. A user who registers with a `<script>` display name executes JS in the admin's browser when that user's password is reset.
 - **Fix:** Escape the values (drop `|safe`, or build the message with escaping). Do not render user-controlled strings as raw HTML.
-- **Implementation:** _pending_
-- **Files:** `src/app/admin_password_reset.py` (template `~L38`, message build `~L110–136`).
+- **Implementation:** Dropped `|safe` — the template now renders `{{ message }}`, which Flask 3.1.1 auto-escapes (`render_template_string` → `select_jinja_autoescape(None)` returns `True`, **verified empirically**). The success message is now built with `markupsafe.Markup("""…{display_name}…""").format(email=…, username=…, display_name=…, password=…)`: the intended `<strong>`/`<br>`/`<pre>`/`<code>` formatting stays as trusted markup while **every interpolated user value is escaped** (a `<script>` display name renders as inert `&lt;script&gt;`). Error messages remain plain strings and are auto-escaped by the template. Form fields (`{{ email }}`, `{{ suggested_password }}`) were already safe (auto-escaped). **Verification:** `py_compile` clean; no `|safe` remains; escaping confirmed against real `markupsafe==3.0.2` (user value escaped, intended markup preserved) and real `flask==3.1.1` (error-path string auto-escaped).
+- **Files:** `src/app/admin_password_reset.py` (import of `Markup`; template `{{ message }}` ~L39; message build via `Markup(...).format(...)` ~L111–140).
 
 ### R7 — Broken migrations; schema hand-patched every boot 🟠 ⬜
 - **Issue:** Alembic migrations aren't clean, so on every startup the app runs a large block of manual `CREATE TABLE` / `ALTER TABLE` statements to patch the schema. Fragile; a bad deploy can leave a half-built table.
