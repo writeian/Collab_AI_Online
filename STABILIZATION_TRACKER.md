@@ -25,7 +25,7 @@ Each item has: **Issue** (what's wrong), **Fix** (the plan), **Implementation** 
 | S2 | 🟠 High | Security | `SECRET_KEY` hardcoded fallback, not enforced | 1 | ✅ |
 | S3 | 🟠 High | Security | Stored XSS in admin password-reset page | 1 | ✅ |
 | R7 | 🟠 High | Reliability | Broken migrations; schema hand-patched every boot | 1 | ⬜ |
-| R8 | 🟠 High | Observability | No error monitoring — failures are invisible | 1 | ⬜ |
+| R8 | 🟠 High | Observability | No error monitoring — failures are invisible | 1 | ✅ |
 | S4 | 🟡 Medium | Security | Unauthenticated diagnostic/info endpoints | 1 | ⬜ |
 | R2 | 🟠 High | Performance | Synchronous AI calls block request threads | 2 | ⬜ |
 | R3 | 🟠 High | Reliability | DB connection pool can exceed Railway's limit | 2 | ⬜ |
@@ -75,11 +75,11 @@ Each item has: **Issue** (what's wrong), **Fix** (the plan), **Implementation** 
 - **Implementation:** _pending_
 - **Files:** `src/main.py:33–531` (`run_production_migrations` + manual DDL), `src/app/__init__.py:162–253` (document-table DDL), `migrations/`, `alembic.ini`.
 
-### R8 — No error monitoring (failures are invisible) 🟠 ⬜
+### R8 — No error monitoring (failures are invisible) 🟠 ✅ (code done; set `SENTRY_DSN` to activate)
 - **Issue:** The app swallows many errors (`try/except → print → continue`), so crashes students hit are never seen. You can't fix "it breaks" without watching it break.
 - **Fix:** Add error monitoring (e.g., Sentry free tier) so every unhandled error is captured with a stack trace and request context.
-- **Implementation:** _pending_
-- **Files:** `src/app/__init__.py` (init in the factory), `requirements.txt`, env var for the DSN.
+- **Implementation:** Added `_init_sentry(app)` in the app factory, called right after config load. It is **dormant by default**: with no `SENTRY_DSN` set (local dev, or before a Sentry project exists) it is a no-op and the app runs normally. Set the `SENTRY_DSN` env var to turn on capture — no code change needed. Uses the Sentry `FlaskIntegration`, so unhandled exceptions (the 500s students hit) are captured automatically with stack trace + request context. Privacy-conscious defaults: `send_default_pii=False` (no cookies/bodies/student PII shipped) and `traces_sample_rate=0.0` (errors only, no perf tracing — free-tier friendly); both, plus `environment`/`release`, are env-tunable. Fully defensive: if `SENTRY_DSN` is set but the SDK isn't installed, or init fails, it logs a warning and the app still starts. A module-level guard prevents double-init when a worker reuses `create_app()`. **Activation (your 2-min step):** create a free project at https://sentry.io (Python/Flask), copy its DSN into `SENTRY_DSN` (Railway env var + local `.env`), redeploy. **Verification:** both files `py_compile` clean; validated against real `sentry-sdk 2.68.0` that the `FlaskIntegration` import path and the exact `init(...)` kwargs are accepted.
+- **Files:** `src/app/__init__.py` (`_init_sentry` helper + call in `create_app`); `src/config/settings.py` (`SENTRY_DSN`/`SENTRY_ENVIRONMENT`/`SENTRY_RELEASE`/`SENTRY_TRACES_SAMPLE_RATE`); `requirements.txt` (`sentry-sdk[flask]>=2.14.0`); `env_template.txt` (documented `SENTRY_DSN`).
 
 ### S4 — Unauthenticated diagnostic/info endpoints 🟡 ⬜
 - **Issue:** `/routes` (full URL map), `/metrics` (live user/room/message counts), `/version`, `/__tpl`, `/__tpl_base`, `/__static_check`, `/__landing_assets_check` are all public.

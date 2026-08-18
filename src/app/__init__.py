@@ -126,6 +126,63 @@ def markdown_filter(text):
     return Markup("".join(blocks)) if blocks else Markup("")
 
 
+_SENTRY_INITIALIZED = False
+
+
+def _init_sentry(app):
+    """Initialize Sentry error monitoring — dormant unless SENTRY_DSN is set.
+
+    With no SENTRY_DSN configured (local dev, or before a Sentry project exists)
+    this is a no-op and the app runs normally. Set the SENTRY_DSN env var to turn
+    on error capture — no code change or redeploy of logic needed. Unhandled
+    exceptions (the 500s students hit) are then captured automatically with a
+    stack trace and request context via the Flask integration.
+    """
+    global _SENTRY_INITIALIZED
+    if _SENTRY_INITIALIZED:
+        return  # already initialized in this process (e.g. worker reusing create_app)
+
+    dsn = app.config.get("SENTRY_DSN") or _os.getenv("SENTRY_DSN")
+    if not dsn:
+        return  # monitoring not configured — stay dormant, no error
+
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.flask import FlaskIntegration
+    except Exception:
+        app.logger.warning(
+            "SENTRY_DSN is set but sentry-sdk is not installed; "
+            "error monitoring disabled (pip install 'sentry-sdk[flask]')"
+        )
+        return
+
+    try:
+        traces_rate = float(app.config.get("SENTRY_TRACES_SAMPLE_RATE") or 0.0)
+    except (TypeError, ValueError):
+        traces_rate = 0.0
+
+    environment = (
+        app.config.get("SENTRY_ENVIRONMENT")
+        or _os.getenv("FLASK_ENV", "production")
+    )
+
+    try:
+        sentry_sdk.init(
+            dsn=dsn,
+            integrations=[FlaskIntegration()],
+            environment=environment,
+            traces_sample_rate=traces_rate,  # 0.0 = errors only (no perf tracing)
+            send_default_pii=False,  # do not ship student PII (cookies/bodies) to Sentry
+            release=app.config.get("SENTRY_RELEASE") or _os.getenv("SENTRY_RELEASE"),
+        )
+        _SENTRY_INITIALIZED = True
+        app.logger.info(
+            "Sentry error monitoring initialized (environment=%s)", environment
+        )
+    except Exception as e:  # never let monitoring setup break app startup
+        app.logger.warning("Sentry initialization failed: %s", e)
+
+
 def create_app(config_name=None):
     """Application factory pattern for Flask app creation."""
     from src.config.settings import config
@@ -153,6 +210,9 @@ def create_app(config_name=None):
 
     app.config.from_object(config[config_name])
     config[config_name].init_app(app)
+
+    # Initialize error monitoring as early as possible (no-op unless SENTRY_DSN set)
+    _init_sentry(app)
 
     # Initialize database
     db.init_app(app)

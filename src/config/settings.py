@@ -91,6 +91,12 @@ class Config:
     # Rate limiting settings
     REDIS_URL = os.getenv("REDIS_URL")
 
+    # Error monitoring (Sentry) — dormant unless SENTRY_DSN is set.
+    SENTRY_DSN = os.getenv("SENTRY_DSN")
+    SENTRY_ENVIRONMENT = os.getenv("SENTRY_ENVIRONMENT")
+    SENTRY_RELEASE = os.getenv("SENTRY_RELEASE")
+    SENTRY_TRACES_SAMPLE_RATE = os.getenv("SENTRY_TRACES_SAMPLE_RATE")
+
     # Feature flags
     REFINE_V2_ENABLED = os.getenv("REFINE_V2_ENABLED", "false").lower() == "true"
 
