@@ -16,11 +16,15 @@ from datetime import timedelta
 # Load environment variables from .env file
 load_dotenv()
 
+# Insecure development-only fallback. Fine for local dev; PRODUCTION MUST NOT use
+# this — ProductionConfig.init_app() fails fast if SECRET_KEY resolves to this.
+DEV_FALLBACK_SECRET_KEY = "dev-secret-key-change-in-production"
+
 
 class Config:
     """Base configuration class"""
 
-    SECRET_KEY = os.environ.get("SECRET_KEY") or "dev-secret-key-change-in-production"
+    SECRET_KEY = os.environ.get("SECRET_KEY") or DEV_FALLBACK_SECRET_KEY
     # SQLite fallback: use project instance folder (works on Mac/Linux/Windows)
     _config_dir = os.path.dirname(os.path.abspath(__file__))
     _project_root = os.path.abspath(os.path.join(_config_dir, "..", ".."))
@@ -197,6 +201,17 @@ class ProductionConfig(Config):
     def init_app(cls, app):
         """Initialize production-specific settings."""
         Config.init_app(app)
+
+        # Fail fast: never run production with a missing or default SECRET_KEY.
+        # A known/absent key means sessions are signed with a value that is public
+        # in the repo -> forgeable sessions / auth bypass.
+        secret_key = (app.config.get("SECRET_KEY") or "").strip()
+        if not secret_key or secret_key == DEV_FALLBACK_SECRET_KEY:
+            raise RuntimeError(
+                "SECRET_KEY is not set (or is the insecure default) in production. "
+                "Set a strong, unique SECRET_KEY environment variable before starting. "
+                'Generate one with: python -c "import secrets; print(secrets.token_hex(32))"'
+            )
 
         # Production logging setup
         import logging

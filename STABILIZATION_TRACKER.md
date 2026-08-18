@@ -22,7 +22,7 @@ Each item has: **Issue** (what's wrong), **Fix** (the plan), **Implementation** 
 |----|----------|------|---------------|------|--------|
 | R1 | 🔴 Critical | Performance | Live AI call on every page render (modes) | 1 | 🟡 |
 | S1 | 🔴 Critical | Security | Leaked DB password in git history + committed doc | 1 | ⏸️ |
-| S2 | 🟠 High | Security | `SECRET_KEY` hardcoded fallback, not enforced | 1 | ⬜ |
+| S2 | 🟠 High | Security | `SECRET_KEY` hardcoded fallback, not enforced | 1 | ✅ |
 | S3 | 🟠 High | Security | Stored XSS in admin password-reset page | 1 | ⬜ |
 | R7 | 🟠 High | Reliability | Broken migrations; schema hand-patched every boot | 1 | ⬜ |
 | R8 | 🟠 High | Observability | No error monitoring — failures are invisible | 1 | ⬜ |
@@ -57,11 +57,11 @@ Each item has: **Issue** (what's wrong), **Fix** (the plan), **Implementation** 
 - **Implementation:** _pending_
 - **Files:** `SECURITY_INCIDENT_2025-11-27.md`; full git history (rewrite); Railway dashboard (rotation).
 
-### S2 — `SECRET_KEY` hardcoded fallback, not enforced 🟠 ⬜
+### S2 — `SECRET_KEY` hardcoded fallback, not enforced 🟠 ✅
 - **Issue:** `SECRET_KEY = os.environ.get("SECRET_KEY") or "dev-secret-key-change-in-production"`. If the env var is ever missing in production, sessions are signed with a key that's public in the repo → forgeable sessions / auth bypass.
 - **Fix:** In production, fail fast at startup if `SECRET_KEY` is unset instead of falling back to the hardcoded default.
-- **Implementation:** _pending_
-- **Files:** `src/config/settings.py:23` (and `ProductionConfig.init_app`).
+- **Implementation:** The insecure default is now the named module constant `DEV_FALLBACK_SECRET_KEY`; the base `Config` still falls back to it so **local dev/testing keep working with no env var set**. `ProductionConfig.init_app()` (which `create_app()` calls at startup only when `FLASK_ENV=production`) now raises `RuntimeError` if the effective `SECRET_KEY` is missing, empty/whitespace, or equal to that default — halting boot with a message telling you to set a strong key (`python -c "import secrets; print(secrets.token_hex(32))"`). Development is unaffected (it uses the base no-op `init_app`). **Verification:** `py_compile` clean; guard unit-tested in isolation — default/empty/blank keys are blocked, a strong key starts. Runtime confirmation on Railway happens naturally (a bad deploy fails loudly instead of silently using the public key).
+- **Files:** `src/config/settings.py` (new `DEV_FALLBACK_SECRET_KEY` constant ~L19; `Config.SECRET_KEY` ~L26; guard in `ProductionConfig.init_app` ~L203).
 
 ### S3 — Stored XSS in admin password-reset page 🟠 ⬜
 - **Issue:** The reset page builds an HTML message via f-string containing user-controlled `display_name` / `username` / `email`, then renders it with `{{ message|safe }}`. A user who registers with a `<script>` display name executes JS in the admin's browser when that user's password is reset.
