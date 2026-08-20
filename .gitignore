@@ -100,4 +100,6 @@ scripts/check_*.py
 # /Templates/ would match templates/ on case-insensitive macOS; explicitly allow templates/
 /Templates/
 !/templates/
-.venv/bin/
+.venv/
+.venv311/
+.venv*/
