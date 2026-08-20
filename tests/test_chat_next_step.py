@@ -15,7 +15,10 @@ def test_client(monkeypatch):
     with flask_app.app_context():
         flask_app.config.update(TESTING=True, WTF_CSRF_ENABLED=False)
         db.drop_all()
-        db.create_all()
+        # SQLite can't render document_chunk.search_vector (Postgres-only TSVECTOR),
+        # and this test doesn't need the document tables — create everything else.
+        _tables = [t for t in db.metadata.sorted_tables if t.name != "document_chunk"]
+        db.metadata.create_all(bind=db.engine, tables=_tables)
 
         # Patch expensive side effects triggered during chat creation
         monkeypatch.setattr(

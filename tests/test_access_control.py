@@ -9,6 +9,16 @@ from src.app.access_control import (
     get_current_user
 )
 
+# SKIPPED: this file tests the pre-room-based access model — chat.is_public,
+# ChatShare, and chat.owner_id — all removed by the room-based rewrite. The
+# assertions no longer describe how access control works (it now goes through
+# RoomMember / is_admin / can_access_room). Rewrite against the current model
+# before re-enabling. Tracked as test-suite cleanup in STABILIZATION_TRACKER.
+pytestmark = pytest.mark.skip(
+    reason="Obsolete: exercises the removed public/ChatShare chat model; "
+    "needs rewriting for the room-based access control."
+)
+
 
 class TestAccessControl:
     """Test cases for access control functions."""

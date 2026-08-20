@@ -1,11 +1,18 @@
 #!/usr/bin/env python3
 """Comprehensive test script to verify all environment variables are loaded correctly."""
 
+import pytest
 from dotenv import load_dotenv
 import os
 
 # Load environment variables
 load_dotenv()
+
+# SKIPPED: this file is a manual diagnostic script, not a pytest suite — its
+# helpers (test_env_variable(name, ...), test_ai_services(), test_google_services())
+# take arguments / print results, so pytest miscollects them as tests. Run directly:
+# `python tests/test_env.py`.
+pytestmark = pytest.mark.skip(reason="Diagnostic env-check script, not a unit test suite.")
 
 def test_env_variable(name, required=True, show_value=False):
     """Test if an environment variable is set."""
