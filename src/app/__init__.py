@@ -183,6 +183,103 @@ def _init_sentry(app):
         app.logger.warning("Sentry initialization failed: %s", e)
 
 
+def _reconcile_missing_columns(app, db):
+    """Add model columns that are missing from existing DB tables (additive-only, dialect-aware).
+
+    A safety net against schema drift. The Alembic migrations are Postgres-first
+    (they gate on ``information_schema``), so ``alembic upgrade head`` cannot run on
+    SQLite and, more generally, a column added to a model after its table already
+    exists can silently never land in the DB — ``db.create_all()`` only creates
+    missing *tables*, it never alters existing ones. That drift is what makes the
+    ORM ask for columns the database doesn't have (e.g. ``document.key_document_type``).
+
+    This compares every mapped table to the live schema and ``ADD COLUMN`` s anything
+    missing. It is deliberately conservative:
+      * additive only — never drops or alters an existing column;
+      * skips brand-new tables (``create_all`` already made those);
+      * skips column types the current dialect can't compile (e.g. Postgres
+        ``TSVECTOR`` on SQLite) — those are legitimately backend-specific;
+      * adds every reconciled column as NULLABLE (safe for tables with existing
+        rows) and logs a warning when the model wanted NOT NULL, so a real
+        migration can still enforce the constraint later.
+    It never raises: reconciliation must not be able to block app startup.
+    """
+    from sqlalchemy import inspect as _sa_inspect
+
+    # Make sure every model's table is registered in the metadata before we compare.
+    # Some model modules (notably src/models/document.py) are NOT imported by
+    # src/models/__init__, so their tables would otherwise be invisible here — which
+    # is exactly why document/document_chunk drift. Import all model modules now.
+    # This deliberately runs AFTER db.create_all(): registering the document models
+    # earlier would make create_all() try to emit their Postgres-only TSVECTOR column
+    # on SQLite and fail. By this point create_all() is done, so it's safe.
+    try:
+        import importlib as _importlib
+        import pkgutil as _pkgutil
+        import src.models as _models_pkg
+        for _mod in _pkgutil.iter_modules(_models_pkg.__path__):
+            try:
+                _importlib.import_module(f"src.models.{_mod.name}")
+            except Exception:
+                pass  # a single unimportable module must not stop reconciliation
+    except Exception:
+        pass
+
+    try:
+        engine = db.engine
+        insp = _sa_inspect(engine)
+        dialect = engine.dialect
+        preparer = dialect.identifier_preparer
+        existing_tables = set(insp.get_table_names())
+        added = []
+
+        for table in db.metadata.sorted_tables:
+            if table.name not in existing_tables:
+                continue  # a brand-new table; create_all() already handled it
+            try:
+                db_cols = {c["name"] for c in insp.get_columns(table.name)}
+            except Exception as inspect_err:
+                app.logger.warning("reconcile: could not inspect %s: %s", table.name, inspect_err)
+                continue
+
+            for col in table.columns:
+                if col.name in db_cols:
+                    continue
+                # Render the column type for THIS backend; skip backend-specific
+                # types the dialect can't express (e.g. TSVECTOR on SQLite).
+                try:
+                    type_sql = col.type.compile(dialect=dialect)
+                except Exception as type_err:
+                    app.logger.info(
+                        "reconcile: skipping %s.%s — type not supported on %s (%s)",
+                        table.name, col.name, dialect.name, type_err,
+                    )
+                    continue
+
+                q_table = preparer.format_table(table)
+                q_col = preparer.quote(col.name)
+                ddl = f"ALTER TABLE {q_table} ADD COLUMN {q_col} {type_sql}"
+                if not col.nullable:
+                    # Adding a NOT NULL column to a table with existing rows fails
+                    # without a default; add it nullable and flag for a real migration.
+                    app.logger.warning(
+                        "reconcile: %s.%s is NOT NULL in the model; adding it NULLABLE "
+                        "(a migration is still needed to backfill + enforce NOT NULL)",
+                        table.name, col.name,
+                    )
+                try:
+                    with engine.begin() as conn:
+                        conn.execute(db.text(ddl))
+                    added.append(f"{table.name}.{col.name}")
+                except Exception as add_err:
+                    app.logger.warning("reconcile: could not add %s.%s: %s", table.name, col.name, add_err)
+
+        if added:
+            app.logger.info("reconcile: added %d missing column(s): %s", len(added), ", ".join(added))
+    except Exception as e:  # never let a schema safety-net crash startup
+        app.logger.warning("reconcile: schema reconciliation skipped: %s", e)
+
+
 def create_app(config_name=None):
     """Application factory pattern for Flask app creation."""
     from src.config.settings import config
@@ -310,7 +407,11 @@ def create_app(config_name=None):
                             conn.commit()
                 except Exception as doc_error:
                     app.logger.warning(f"Could not create document tables: {doc_error}")
-            
+
+            # Safety net: add any model columns missing from existing tables so the
+            # schema can't silently drift from the models (see _reconcile_missing_columns).
+            _reconcile_missing_columns(app, db)
+
             app.config["DB_INIT_STATUS"] = "success"
             app.logger.info("✅ Database tables initialized successfully")
         except Exception as e:
