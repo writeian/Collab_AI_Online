@@ -29,8 +29,8 @@ Each item has: **Issue** (what's wrong), **Fix** (the plan), **Implementation** 
 | S4 | 🟡 Medium | Security | Unauthenticated diagnostic/info endpoints | 1 | ✅ |
 | R2 | 🟠 High | Performance | Synchronous AI calls block request threads | 2 | ⬜ |
 | R3 | 🟠 High | Reliability | DB connection pool can exceed Railway's limit | 2 | ⬜ |
-| R4 | 🟠 High | Reliability | Transaction poisoning → intermittent 500s | 2 | ⬜ |
-| R5 | 🟡 Medium | Performance | N+1 queries on dashboard / member lists | 2 | ⬜ |
+| R4 | 🟠 High | Reliability | Transaction poisoning → intermittent 500s | 2 | ✅ |
+| R5 | 🟡 Medium | Performance | N+1 queries on dashboard / member lists | 2 | ✅ |
 | R6 | 🟡 Medium | Config | Dead gunicorn config, 300s timeout, hot-path logging | 2 | ⬜ |
 | S5 | 🟡 Medium | Security | Account enumeration (register + forgot-password) | 3 | ⬜ |
 | S6 | 🟡 Medium | Security | Password-reset token logged to server output | 3 | ⬜ |
@@ -104,17 +104,17 @@ Each item has: **Issue** (what's wrong), **Fix** (the plan), **Implementation** 
 - **Implementation:** _pending_
 - **Files:** `src/config/settings.py:40–46`; env vars on Railway; `start.sh` (worker count).
 
-### R4 — Transaction poisoning → intermittent 500s 🟠 ⬜
-- **Issue:** Swallowed exceptions after a DB write without a rollback leave the pooled connection in a failed state; the next request to reuse it errors ("current transaction is aborted") — intermittent, hard to reproduce, clears on restart. (Evidence: reactive rollback patches across many files; the `InFailedSqlTransaction` fix in `library/upload.py`.)
-- **Fix:** Roll back in every `except` around a DB write; add a `teardown_request`/`teardown_appcontext` that rolls back a dirty session so no bad connection is returned to the pool.
-- **Implementation:** _pending_
-- **Files:** `src/app/__init__.py` (add teardown; 500 handler rollback exists ~L714); swallow-and-continue sites in `src/app/chat.py`, `src/app/dashboard.py`, `src/app/room/**`, others.
+### R4 — Transaction poisoning → intermittent 500s 🟠 ✅ (core loop; broader audit deferred)
+- **Issue:** Swallowed exceptions after a DB operation without a rollback leave the session's transaction **aborted**; on Postgres every subsequent query in that request errors with "current transaction is aborted" → intermittent 500s that clear on restart. **Confirmed in the core page (`view_chat`):** the render does a *sequence* of best-effort queries (comments, pin metadata, room chats) each wrapped in `except → log → set empty → continue` with **no rollback** — the comments one even says "likely pending migration" (i.e. it fails on schema drift). One failed query there poisons the session and cascades every later query in the render into a 500.
+- **Fix:** Roll back in the `except` at each swallow-and-continue-after-DB-op site so the session recovers within the request; add a `teardown_request` safety net so a request that ends in an exception never returns a poisoned connection to the pool. (Cross-request is already largely covered: `db` is standard Flask-SQLAlchemy — its `session.remove()` at app-context teardown rolls back — and prod has `pool_pre_ping=True`.)
+- **Implementation:** Added `db.session.rollback()` to the 7 swallow sites in the core loop `src/app/chat.py`: the message-send path (auto-note trigger, mode-suggestion block) and the `view_chat` render cascade (comments, pin metadata, room chats) and the in-request SSE stream (persist failure, note trigger). Added `@app.teardown_request _r4_rollback_on_error` in the app factory that rolls back when a request ends with an exception (complements the existing 500-handler rollback and the per-site rollbacks; only acts on the error path, so it never disturbs streaming/SSE success responses). **Verification (local, fresh venv):** py_compile clean; suite still green (114 passed); teardown confirmed registered; `/chat/1` renders 200 (happy path unaffected); and with the comments query forced to raise, the page now renders **200** (rollback lets the render continue) instead of cascading to 500. **Deferred:** the same `except`-without-rollback pattern exists in lower-traffic paths (`src/app/dashboard.py`, `src/app/room/**`, others) — the teardown net + FSA cover the cross-request cascade there; per-site within-request rollbacks are a follow-up.
+- **Files:** `src/app/chat.py` (7 rollbacks: ~L468, 527, 560, 604, 620, 1118, 1139); `src/app/__init__.py` (`@app.teardown_request` ~L876, above the existing 500 handler). Deferred: `src/app/dashboard.py`, `src/app/room/**`.
 
-### R5 — N+1 queries on dashboard / member lists 🟡 ⬜
-- **Issue:** Member rendering runs one query per member (`[User.query.get(m.user_id) for m in members]`); the dashboard runs several count queries per room in a loop. Sluggish at class scale.
-- **Fix:** Batch with `User.query.filter(User.id.in_(ids))` and grouped aggregate counts.
-- **Implementation:** _pending_
-- **Files:** `src/app/dashboard.py:294` (and per-room count loop ~L?), `src/app/room/services/room_service.py:360`.
+### R5 — N+1 queries on dashboard / member lists 🟡 ✅
+- **Issue:** Member rendering runs one query per member (`[User.query.get(m.user_id) for m in members]`); the dashboard `index()` runs **six** count/aggregate queries **per room** in a loop (members, chats, messages, last-activity, prompts, comments). Both scale with N → sluggish at class scale (an instructor with many rooms, or a room with many students).
+- **Fix:** Batch with `User.query.filter(User.id.in_(ids))` and grouped aggregate counts (`GROUP BY room_id`) so the query count is constant regardless of N.
+- **Implementation:** `dashboard.index()` — replaced the per-room loop (≈6×N queries) with six grouped queries over `room_id IN (...)`, then a dict lookup per room; identical stats semantics (owner still `+1` on member_count, message/comment counts still via the Chat join, `last_activity` still `max(timestamp)`). `RoomService.get_room_members()` — replaced the per-member `User.query.get()` with a single `User.query.filter(User.id.in_(...))` batch (owner folded into the same query), preserving membership order and the owner-append behavior; this is on the **live room view** (`crud.py:200`, also api/invitations). Left alone: the `dashboard.room_detail()` N+1 at ~L294 is **dead code** (the route redirects to the new room view before reaching it). **Verification (local, fresh venv):** py_compile clean; suite green (114 passed); grouped counts proven equal to the old per-room counts (members/chats/messages MATCH); and a query-counter test shows the dashboard render is **flat at 10 queries for 1 room and for 8 rooms** (was ~6/room → would be ~52 at 8) — the N+1 is gone.
+- **Files:** `src/app/dashboard.py` (`index()` grouped stats ~L47), `src/app/room/services/room_service.py` (`get_room_members()` batch ~L360).
 
 ### R6 — Config footguns: dead gunicorn config, timeout, hot-path logging 🟡 ⬜
 - **Issue:** Railway starts via `start.sh`, which ignores `gunicorn_conf.py` (two disagreeing config sources). The 300s timeout lets a hung call tie up a thread for 5 minutes. `require_room_access` logs several ERROR lines on every room visit.

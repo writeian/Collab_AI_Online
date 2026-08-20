@@ -465,6 +465,7 @@ def view_chat(chat_id: int) -> Any:
                         from src.utils.learning.triggers import trigger_auto_note_generation
                         trigger_auto_note_generation(ai_msg)
                     except Exception as e:
+                        db.session.rollback()  # R4: recover the session so a partial write doesn't poison the rest of the request
                         current_app.logger.error(f"Auto note generation failed: {e}")
                     # Conservative progression suggestion: feature-gated
                     try:
@@ -523,6 +524,7 @@ def view_chat(chat_id: int) -> Any:
                                     session["_mode_suggest"][str(chat_obj.id)] = payload
                                     session.modified = True
                     except Exception as _e:
+                        db.session.rollback()  # R4: a failed suggestion write must not poison the rest of the request
                         current_app.logger.warning(f"[mode_suggest] skipped due to error: {_e}")
                 else:
                     # No AI response requested
@@ -555,6 +557,7 @@ def view_chat(chat_id: int) -> Any:
                 .all()
             )
         except Exception as _e:
+            db.session.rollback()  # R4: a failed query aborts the transaction; roll back so later queries in this render still work
             current_app.logger.warning(
                 f"Comments load failed (likely pending migration). Rendering without comments. err={_e}"
             )
@@ -598,6 +601,7 @@ def view_chat(chat_id: int) -> Any:
                     'option': meta.option
                 }
         except Exception as e:
+            db.session.rollback()  # R4: clear the aborted transaction so the rest of the render's queries succeed
             current_app.logger.warning(f"Could not load pin chat metadata: {e}")
             pin_chat_ids = set()
             pin_chat_info = {}
@@ -613,6 +617,7 @@ def view_chat(chat_id: int) -> Any:
                 .all()
             )
         except Exception:
+            db.session.rollback()  # R4: don't let a failed query poison the remaining render queries
             room_chats = []
         if room_chats:
             for rc in room_chats:
@@ -1110,6 +1115,7 @@ def chat_inrequest_sse(chat_id: int) -> Any:
                 token=token,
             )
         except Exception as db_ex:
+            db.session.rollback()  # R4: failed persist must not leave an aborted transaction on this connection
             log_ai_stream_event(
                 "sse_inprocess_stream_failed",
                 logger=current_app.logger,
@@ -1130,7 +1136,7 @@ def chat_inrequest_sse(chat_id: int) -> Any:
 
             trigger_auto_note_generation(ai_msg_s)
         except Exception:
-            pass
+            db.session.rollback()  # R4: recover the session if note generation left a partial write
 
         yield f"data: {json.dumps({'type': 'done', 'message_id': ai_msg_s.id, 'is_truncated': bool(is_truncated)})}\n\n"
 

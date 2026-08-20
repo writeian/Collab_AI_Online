@@ -44,50 +44,64 @@ def index() -> Any:
     # Combine and remove duplicates (rooms should never be None from queries)
     all_rooms = list({room.id: room for room in owned_rooms + member_rooms}.values())
 
-    # Get room statistics
+    # Get room statistics. Compute every aggregate with a fixed set of grouped
+    # queries instead of ~6 queries per room (was an N+1 that scaled with the
+    # number of rooms; now a constant handful regardless of room count).
+    room_ids = [room.id for room in all_rooms]
     room_stats = {}
-    for room in all_rooms:
-        # Count members (including owner)
-        member_count = RoomMember.query.filter_by(room_id=room.id).count() + 1
-
-        # Count chats
-        chat_count = Chat.query.filter_by(room_id=room.id).count()
-
-        # Count total messages
-        message_count = (
-            db.session.query(func.count(Message.id))
-            .join(Chat)
-            .filter(Chat.room_id == room.id)
-            .scalar()
+    if room_ids:
+        member_counts = dict(
+            db.session.query(RoomMember.room_id, func.count(RoomMember.id))
+            .filter(RoomMember.room_id.in_(room_ids))
+            .group_by(RoomMember.room_id)
+            .all()
+        )
+        chat_counts = dict(
+            db.session.query(Chat.room_id, func.count(Chat.id))
+            .filter(Chat.room_id.in_(room_ids))
+            .group_by(Chat.room_id)
+            .all()
+        )
+        message_counts = dict(
+            db.session.query(Chat.room_id, func.count(Message.id))
+            .select_from(Chat)
+            .join(Message, Message.chat_id == Chat.id)
+            .filter(Chat.room_id.in_(room_ids))
+            .group_by(Chat.room_id)
+            .all()
+        )
+        last_activities = dict(
+            db.session.query(Chat.room_id, func.max(Message.timestamp))
+            .select_from(Chat)
+            .join(Message, Message.chat_id == Chat.id)
+            .filter(Chat.room_id.in_(room_ids))
+            .group_by(Chat.room_id)
+            .all()
+        )
+        prompt_counts = dict(
+            db.session.query(PromptRecord.room_id, func.count(PromptRecord.id))
+            .filter(PromptRecord.room_id.in_(room_ids))
+            .group_by(PromptRecord.room_id)
+            .all()
+        )
+        comment_counts = dict(
+            db.session.query(Chat.room_id, func.count(Comment.id))
+            .select_from(Chat)
+            .join(Comment, Comment.chat_id == Chat.id)
+            .filter(Chat.room_id.in_(room_ids))
+            .group_by(Chat.room_id)
+            .all()
         )
 
-        # Get last activity (latest message timestamp)
-        last_activity = (
-            db.session.query(func.max(Message.timestamp))
-            .join(Chat)
-            .filter(Chat.room_id == room.id)
-            .scalar()
-        )
-
-        # Count prompts in this room
-        prompt_count = PromptRecord.query.filter_by(room_id=room.id).count()
-
-        # Count comments in this room
-        comment_count = (
-            db.session.query(func.count(Comment.id))
-            .join(Chat)
-            .filter(Chat.room_id == room.id)
-            .scalar()
-        )
-
-        room_stats[room.id] = {
-            "member_count": member_count,
-            "chat_count": chat_count,
-            "message_count": message_count or 0,
-            "last_activity": last_activity,
-            "prompt_count": prompt_count,
-            "comment_count": comment_count or 0,
-        }
+        for room in all_rooms:
+            room_stats[room.id] = {
+                "member_count": member_counts.get(room.id, 0) + 1,  # +1 for the owner
+                "chat_count": chat_counts.get(room.id, 0),
+                "message_count": message_counts.get(room.id, 0),
+                "last_activity": last_activities.get(room.id),
+                "prompt_count": prompt_counts.get(room.id, 0),
+                "comment_count": comment_counts.get(room.id, 0),
+            }
 
     return render_template(
         "dashboard/index.html", user=user, rooms=all_rooms, room_stats=room_stats

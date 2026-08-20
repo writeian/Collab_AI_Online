@@ -355,15 +355,27 @@ class RoomService:
             if not permissions["can_access"]:
                 return []
             
-            # Get room members and convert to User objects
+            # Get room members and convert to User objects.
+            # Batch-load every member (and the owner) in a single query instead of
+            # one User.query.get() per member — avoids an N+1 on the room view.
             members = RoomMember.query.filter_by(room_id=room.id).all()
-            member_users = [User.query.get(member.user_id) for member in members]
-            
+            wanted_ids = {m.user_id for m in members}
+            if room.owner_id is not None:
+                wanted_ids.add(room.owner_id)
+            users_by_id = (
+                {u.id: u for u in User.query.filter(User.id.in_(wanted_ids)).all()}
+                if wanted_ids
+                else {}
+            )
+            member_users = [
+                users_by_id[m.user_id] for m in members if m.user_id in users_by_id
+            ]
+
             # Add room owner to member list if not already included
-            owner = User.query.get(room.owner_id)
+            owner = users_by_id.get(room.owner_id)
             if owner and owner not in member_users:
                 member_users.append(owner)
-            
+
             return member_users
             
         except Exception as e:
