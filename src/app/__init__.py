@@ -126,6 +126,160 @@ def markdown_filter(text):
     return Markup("".join(blocks)) if blocks else Markup("")
 
 
+_SENTRY_INITIALIZED = False
+
+
+def _init_sentry(app):
+    """Initialize Sentry error monitoring — dormant unless SENTRY_DSN is set.
+
+    With no SENTRY_DSN configured (local dev, or before a Sentry project exists)
+    this is a no-op and the app runs normally. Set the SENTRY_DSN env var to turn
+    on error capture — no code change or redeploy of logic needed. Unhandled
+    exceptions (the 500s students hit) are then captured automatically with a
+    stack trace and request context via the Flask integration.
+    """
+    global _SENTRY_INITIALIZED
+    if _SENTRY_INITIALIZED:
+        return  # already initialized in this process (e.g. worker reusing create_app)
+
+    dsn = app.config.get("SENTRY_DSN") or _os.getenv("SENTRY_DSN")
+    if not dsn:
+        return  # monitoring not configured — stay dormant, no error
+
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.flask import FlaskIntegration
+    except Exception:
+        app.logger.warning(
+            "SENTRY_DSN is set but sentry-sdk is not installed; "
+            "error monitoring disabled (pip install 'sentry-sdk[flask]')"
+        )
+        return
+
+    try:
+        traces_rate = float(app.config.get("SENTRY_TRACES_SAMPLE_RATE") or 0.0)
+    except (TypeError, ValueError):
+        traces_rate = 0.0
+
+    environment = (
+        app.config.get("SENTRY_ENVIRONMENT")
+        or _os.getenv("FLASK_ENV", "production")
+    )
+
+    try:
+        sentry_sdk.init(
+            dsn=dsn,
+            integrations=[FlaskIntegration()],
+            environment=environment,
+            traces_sample_rate=traces_rate,  # 0.0 = errors only (no perf tracing)
+            send_default_pii=False,  # do not ship student PII (cookies/bodies) to Sentry
+            release=app.config.get("SENTRY_RELEASE") or _os.getenv("SENTRY_RELEASE"),
+        )
+        _SENTRY_INITIALIZED = True
+        app.logger.info(
+            "Sentry error monitoring initialized (environment=%s)", environment
+        )
+    except Exception as e:  # never let monitoring setup break app startup
+        app.logger.warning("Sentry initialization failed: %s", e)
+
+
+def _reconcile_missing_columns(app, db):
+    """Add model columns that are missing from existing DB tables (additive-only, dialect-aware).
+
+    A safety net against schema drift. The Alembic migrations are Postgres-first
+    (they gate on ``information_schema``), so ``alembic upgrade head`` cannot run on
+    SQLite and, more generally, a column added to a model after its table already
+    exists can silently never land in the DB — ``db.create_all()`` only creates
+    missing *tables*, it never alters existing ones. That drift is what makes the
+    ORM ask for columns the database doesn't have (e.g. ``document.key_document_type``).
+
+    This compares every mapped table to the live schema and ``ADD COLUMN`` s anything
+    missing. It is deliberately conservative:
+      * additive only — never drops or alters an existing column;
+      * skips brand-new tables (``create_all`` already made those);
+      * skips column types the current dialect can't compile (e.g. Postgres
+        ``TSVECTOR`` on SQLite) — those are legitimately backend-specific;
+      * adds every reconciled column as NULLABLE (safe for tables with existing
+        rows) and logs a warning when the model wanted NOT NULL, so a real
+        migration can still enforce the constraint later.
+    It never raises: reconciliation must not be able to block app startup.
+    """
+    from sqlalchemy import inspect as _sa_inspect
+
+    # Make sure every model's table is registered in the metadata before we compare.
+    # Some model modules (notably src/models/document.py) are NOT imported by
+    # src/models/__init__, so their tables would otherwise be invisible here — which
+    # is exactly why document/document_chunk drift. Import all model modules now.
+    # This deliberately runs AFTER db.create_all(): registering the document models
+    # earlier would make create_all() try to emit their Postgres-only TSVECTOR column
+    # on SQLite and fail. By this point create_all() is done, so it's safe.
+    try:
+        import importlib as _importlib
+        import pkgutil as _pkgutil
+        import src.models as _models_pkg
+        for _mod in _pkgutil.iter_modules(_models_pkg.__path__):
+            try:
+                _importlib.import_module(f"src.models.{_mod.name}")
+            except Exception:
+                pass  # a single unimportable module must not stop reconciliation
+    except Exception:
+        pass
+
+    try:
+        engine = db.engine
+        insp = _sa_inspect(engine)
+        dialect = engine.dialect
+        preparer = dialect.identifier_preparer
+        existing_tables = set(insp.get_table_names())
+        added = []
+
+        for table in db.metadata.sorted_tables:
+            if table.name not in existing_tables:
+                continue  # a brand-new table; create_all() already handled it
+            try:
+                db_cols = {c["name"] for c in insp.get_columns(table.name)}
+            except Exception as inspect_err:
+                app.logger.warning("reconcile: could not inspect %s: %s", table.name, inspect_err)
+                continue
+
+            for col in table.columns:
+                if col.name in db_cols:
+                    continue
+                # Render the column type for THIS backend; skip backend-specific
+                # types the dialect can't express (e.g. TSVECTOR on SQLite).
+                try:
+                    type_sql = col.type.compile(dialect=dialect)
+                except Exception as type_err:
+                    app.logger.info(
+                        "reconcile: skipping %s.%s — type not supported on %s (%s)",
+                        table.name, col.name, dialect.name, type_err,
+                    )
+                    continue
+
+                q_table = preparer.format_table(table)
+                q_col = preparer.quote(col.name)
+                ddl = f"ALTER TABLE {q_table} ADD COLUMN {q_col} {type_sql}"
+                if not col.nullable:
+                    # Adding a NOT NULL column to a table with existing rows fails
+                    # without a default; add it nullable and flag for a real migration.
+                    app.logger.warning(
+                        "reconcile: %s.%s is NOT NULL in the model; adding it NULLABLE "
+                        "(a migration is still needed to backfill + enforce NOT NULL)",
+                        table.name, col.name,
+                    )
+                try:
+                    with engine.begin() as conn:
+                        conn.execute(db.text(ddl))
+                    added.append(f"{table.name}.{col.name}")
+                except Exception as add_err:
+                    app.logger.warning("reconcile: could not add %s.%s: %s", table.name, col.name, add_err)
+
+        if added:
+            app.logger.info("reconcile: added %d missing column(s): %s", len(added), ", ".join(added))
+    except Exception as e:  # never let a schema safety-net crash startup
+        app.logger.warning("reconcile: schema reconciliation skipped: %s", e)
+
+
 def create_app(config_name=None):
     """Application factory pattern for Flask app creation."""
     from src.config.settings import config
@@ -153,6 +307,9 @@ def create_app(config_name=None):
 
     app.config.from_object(config[config_name])
     config[config_name].init_app(app)
+
+    # Initialize error monitoring as early as possible (no-op unless SENTRY_DSN set)
+    _init_sentry(app)
 
     # Initialize database
     db.init_app(app)
@@ -250,7 +407,11 @@ def create_app(config_name=None):
                             conn.commit()
                 except Exception as doc_error:
                     app.logger.warning(f"Could not create document tables: {doc_error}")
-            
+
+            # Safety net: add any model columns missing from existing tables so the
+            # schema can't silently drift from the models (see _reconcile_missing_columns).
+            _reconcile_missing_columns(app, db)
+
             app.config["DB_INIT_STATUS"] = "success"
             app.logger.info("✅ Database tables initialized successfully")
         except Exception as e:
@@ -424,8 +585,13 @@ def create_app(config_name=None):
     # Card Comments API (no prefix - routes defined with full paths)
     app.register_blueprint(card_comments_api)
 
+    # Admin gate for diagnostic/info endpoints below (function-level import avoids
+    # the circular import: access_control imports from this package).
+    from src.app.access_control import require_admin
+
     # Diagnostics: template folder + which room template is found
     @app.route("/__tpl")
+    @require_admin
     def __tpl():
         import os as __os
         info = {
@@ -438,6 +604,7 @@ def create_app(config_name=None):
 
     # Diagnostics: inspect base.html to see linked CSS versions
     @app.route("/__tpl_base")
+    @require_admin
     def __tpl_base():
         import os as __os
         import re as __re
@@ -489,8 +656,9 @@ def create_app(config_name=None):
         return render_template("landing.html")
     
     @app.route("/metrics")
+    @require_admin
     def metrics():
-        """Application metrics endpoint for monitoring."""
+        """Application metrics endpoint for monitoring. Admin-only (leaks live counts)."""
         from flask import jsonify
         from datetime import datetime, timedelta
         
@@ -534,6 +702,7 @@ def create_app(config_name=None):
 
     # Lightweight endpoint to verify static file availability in prod
     @app.route("/__static_check")
+    @require_admin
     def __static_check():
         import os as __os
         try:
@@ -646,6 +815,7 @@ def create_app(config_name=None):
             return ("Not found", 404)
 
         @app.route('/__landing_assets_check')
+        @require_admin
         def __landing_assets_check():
             import os as __os
             try:

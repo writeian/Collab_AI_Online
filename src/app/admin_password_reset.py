@@ -8,6 +8,7 @@ from flask_wtf.csrf import generate_csrf
 from src.app import db
 from src.models import User
 from src.app.access_control import require_admin
+from markupsafe import Markup
 import secrets
 
 admin_reset_bp = Blueprint('admin_password_reset', __name__)
@@ -35,7 +36,7 @@ RESET_FORM_HTML = """
     <h1>🔐 Admin Password Reset</h1>
     
     {% if message %}
-    <div class="{{ message_type }}">{{ message|safe }}</div>
+    <div class="{{ message_type }}">{{ message }}</div>
     {% endif %}
     
     <form method="POST">
@@ -106,25 +107,28 @@ def admin_reset_password():
         user.reset_token_expiry = None
         db.session.commit()
         
-        # Generate message for user
-        user_message = f"""
+        # Generate message for user. Markup(...).format(...) keeps the intended
+        # HTML formatting as trusted markup while ESCAPING every interpolated
+        # user-controlled value (email/username/display_name), so a user who
+        # registered a <script> display name can't run JS in the admin's browser.
+        user_message = Markup("""
 <strong>✅ Password reset successful!</strong><br><br>
 
 <strong>User Details:</strong><br>
-• Email: {user.email}<br>
-• Username: {user.username}<br>
-• Display Name: {user.display_name}<br>
-• New Password: <code>{new_password}</code><br><br>
+• Email: {email}<br>
+• Username: {username}<br>
+• Display Name: {display_name}<br>
+• New Password: <code>{password}</code><br><br>
 
-<strong>📧 Message to send to {user.display_name}:</strong>
+<strong>📧 Message to send to {display_name}:</strong>
 <pre>
-Hi {user.display_name},
+Hi {display_name},
 
-Your password has been reset to: {new_password}
+Your password has been reset to: {password}
 
 Please login at: https://collab.up.railway.app/auth/login
-  • Username: {user.username}
-  • Password: {new_password}
+  • Username: {username}
+  • Password: {password}
 
 After logging in, please immediately:
 1. Click on 'Profile' in the top menu
@@ -133,7 +137,12 @@ After logging in, please immediately:
 
 Let me know if you have any issues!
 </pre>
-"""
+""").format(
+            email=user.email,
+            username=user.username,
+            display_name=user.display_name,
+            password=new_password,
+        )
         
         return render_template_string(
             RESET_FORM_HTML,

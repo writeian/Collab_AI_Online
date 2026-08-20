@@ -75,4 +75,12 @@ GOOGLE_SERVICE_ACCOUNT_FILE=service-account-key.json
 # Get from: https://console.cloud.google.com/apis/credentials
 GOOGLE_CLIENT_ID=your_google_client_id_here
 GOOGLE_CLIENT_SECRET=your_google_client_secret_here
-GOOGLE_REDIRECT_URI=http://localhost:5000/auth/google/callback 
+GOOGLE_REDIRECT_URI=http://localhost:5000/auth/google/callback
+
+# Error monitoring (optional). Leave SENTRY_DSN blank to disable (default).
+# Create a free project at https://sentry.io -> Python/Flask, copy its DSN here.
+# When set, unhandled errors are captured with stack traces + request context.
+SENTRY_DSN=
+# SENTRY_ENVIRONMENT=production        # optional; defaults to FLASK_ENV
+# SENTRY_RELEASE=                      # optional; e.g. a git SHA to tag releases
+# SENTRY_TRACES_SAMPLE_RATE=0.0        # optional; 0.0 = errors only (no perf tracing) 

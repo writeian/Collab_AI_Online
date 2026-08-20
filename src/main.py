@@ -15,6 +15,7 @@ from flask import Flask, render_template, redirect, url_for
 
 # Import the application factory
 from src.app import create_app, db
+from src.app.access_control import require_admin
 
 # Load environment variables from .env file
 try:
@@ -667,8 +668,9 @@ def ready():
 
 # Test endpoint to list all routes
 @app.route("/routes")
+@require_admin
 def list_routes():
-    """List all registered routes for debugging."""
+    """List all registered routes for debugging. Admin-only (leaks the URL map)."""
     routes = []
     for rule in app.url_map.iter_rules():
         routes.append(
@@ -684,8 +686,9 @@ def list_routes():
 
 # Debug: Check deployed code version
 @app.route("/version")
+@require_admin
 def version_check():
-    """Check which commit/version is deployed."""
+    """Check which commit/version is deployed. Admin-only (leaks deploy details)."""
     import subprocess
     try:
         commit = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode().strip()
