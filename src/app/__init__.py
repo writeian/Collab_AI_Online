@@ -873,13 +873,31 @@ def create_app(config_name=None):
             404,
         )
 
+    @app.teardown_request
+    def _r4_rollback_on_error(exc=None):
+        """R4 safety net: never return a poisoned connection to the pool.
+
+        If a request ends with an exception, roll back the session so no aborted
+        transaction lingers on the connection. This runs for *every* exception
+        (not just those that reach the 500 handler), complementing the per-site
+        rollbacks and the 500 handler. Guarded so teardown itself can't fail.
+        (Only acts on the error path, so it never interferes with streaming/SSE
+        responses on the success path.)
+        """
+        if exc is None:
+            return
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+
     @app.errorhandler(500)
     def internal_error(error):
         """Handle 500 errors."""
         from flask import render_template, request
         from src.app import db
         import logging
-        
+
         logging.error(f"500 error: {error} from {request.remote_addr} at {request.url}")
         db.session.rollback()
         return (
