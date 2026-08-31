@@ -27,7 +27,7 @@ Each item has: **Issue** (what's wrong), **Fix** (the plan), **Implementation** 
 | R7 | 🟠 High | Reliability | Broken migrations; schema hand-patched every boot | 1 | ✅ |
 | R8 | 🟠 High | Observability | No error monitoring — failures are invisible | 1 | ✅ |
 | S4 | 🟡 Medium | Security | Unauthenticated diagnostic/info endpoints | 1 | ✅ |
-| R2 | 🟠 High | Performance | Synchronous AI calls block request threads | 2 | 🟡 |
+| R2 | 🟠 High | Performance | Synchronous AI calls block request threads | 2 | ✅ |
 | R3 | 🟠 High | Reliability | DB connection pool can exceed Railway's limit | 2 | ⬜ |
 | R4 | 🟠 High | Reliability | Transaction poisoning → intermittent 500s | 2 | ✅ |
 | R5 | 🟡 Medium | Performance | N+1 queries on dashboard / member lists | 2 | ✅ |
@@ -92,7 +92,7 @@ Each item has: **Issue** (what's wrong), **Fix** (the plan), **Implementation** 
 
 ## Week 2 — Make the core loop survive the class
 
-### R2 — Synchronous AI calls block request threads 🟡 (honest errors + time-boxing done; full worker-routing of secondary calls deferred to Phase 2)
+### R2 — Synchronous AI calls block request threads ✅ (high-frequency paths async; two low-frequency calls intentionally sync + honest)
 - **Issue:** Some actions call the model in-request, holding one of ~24 server threads (3 workers × 8) for the whole call: message-send fallback (`sync_blocking`), "continue generating", and Google-Doc import on chat creation. Under a class this starves the thread pool → slow, then 5-minute timeouts → 500s.
 - **Fix:** Route all model calls through the existing Redis + rq worker; make any in-request AI optional and time-boxed. Keep graceful fallback but stop masking errors with a canned greeting.
 - **Findings that reframed the fix:**
@@ -104,8 +104,14 @@ Each item has: **Issue** (what's wrong), **Fix** (the plan), **Implementation** 
   - `src/app/room/routes/crud.py` **doc import**: commit the imported Google-Doc message **first** (so an AI failure can't lose the import), then make the AI reply best-effort/guarded so a model failure can't 500 chat creation.
   - `src/app/api/card_comments.py`: already returns an honest `503`/`500` (no masking) — left as-is.
   - **Verification (local, isolated temp DB):** forced `get_ai_response` to raise on the sync path → endpoint returns **303**, exactly **1 user message** persisted, **0 assistant messages**, canned greeting absent. Suite green (114 passed / 21 skipped / 0 failed); all three files `py_compile` clean.
-- **Deferred to Phase 2 (needs a local Redis + frontend SSE wiring):** route the secondary sync sites (`continue`, doc-import) through the async worker, and/or make the default message reply prefer the worker even when the client doesn't opt in. These change the request→response contract (those endpoints currently return full-page redirects, with no SSE client listening), so they need frontend cooperation and an end-to-end worker test against a live Redis.
-- **Files:** `src/app/chat.py` (sync fallback ~L444, `continue_message` ~L1296), `src/app/room/routes/crud.py` (doc import ~L638). Unchanged: `src/app/api/card_comments.py` (already honest), worker `src/workers/ai_reply_job.py` (already built).
+- **Implementation (Phase 2 — worker path proven locally, `continue` routed through it):**
+  - **Stood up Redis locally** (`brew install redis`) and proved the async path end-to-end: `enqueue_ai_reply_job` → rq worker dequeues → `process_ai_reply_job` streams chunks over Redis pub/sub → assistant message persisted. Verified twice — once with a stubbed model (deterministic) and once with a **real Anthropic streaming call** (start + 4 chunks + done, ~2.4s to first token, persisted text == streamed text).
+  - **Frontend audit:** the **main reply is already async in production** — `chat-view.js` sends `X-AI-Async: 1` whenever `ai_async_available` (Redis configured); the sync path is only the fallback. So Phase 2's real surface was the secondary flows.
+  - **`continue` now routes through the worker.** When `_ai_async_configured()`, `continue_message` writes `ai_stream_meta:{token}` with `user_message_id = the truncated message` + `critique_instructions = continuation_prompt` and returns **202** + `stream_url`; the existing `chat_ai_stream` SSE endpoint enqueues the job and relays it. The worker's `through_message`/`extra_system` params express a continuation exactly (same `parent_message_id` as the old sync code) — **no worker changes needed**. Sync path kept as the fallback. `continue-messages.js` updated to handle the 202 (open `EventSource`, reload on `done`, honest reset on `error`, best-effort reload on stream drop); cache-buster bumped `?v=1.5`→`1.6`.
+  - **Verification (local Redis, isolated DB):** `continue` POST → **202** with `async:true`; **no** synchronous generation on the POST thread; meta targets the truncated message with the continuation prompt; feeding that meta to the worker persists a continuation with `parent_message_id` = the truncated message. `node --check` clean on the JS; suite 114/21/0.
+- **Intentionally left synchronous (honest + 30s time-boxed), by design:** **Google-Doc import** (rare; happens during chat creation, a redirect flow with no SSE client on that page) and **card-comment AI replies** (already returns an honest 503). Async-routing these is low-value at class scale and would need extra frontend wiring; the high-frequency paths (every message, plus continue) are what matter for thread starvation, and those are async.
+- **Follow-up before relying on the JS:** the `continue-messages.js` change passed `node --check` but should get a 1-minute real-browser smoke (click Continue on a truncated reply with Redis up) before the class. The sync fallback + defensive `onerror` reload bound the risk if anything's off.
+- **Files:** `src/app/chat.py` (sync fallback ~L444, `continue_message` async branch ~L1303), `src/app/room/routes/crud.py` (doc import ~L638), `src/app/static/js/continue-messages.js`, `templates/base.html` (cache-buster). Unchanged: `src/app/api/card_comments.py` (already honest), worker `src/workers/ai_reply_job.py` (already built, reused as-is).
 
 ### R3 — DB connection pool can exceed Railway's limit 🟠 ⬜
 - **Issue:** Each worker holds up to 22 connections (pool 10 + overflow 12); ×3 workers + the background worker ≈ 70+, likely above the Postgres plan's `max_connections` → "too many connections" under load.

@@ -48,6 +48,14 @@
         return;
       }
 
+      const CONTINUE_ICON =
+        '<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+        'stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg> Continue';
+      function resetButton() {
+        a.disabled = false;
+        a.innerHTML = CONTINUE_ICON;
+      }
+
       a.disabled = true;
       a.innerHTML =
         '<svg class="w-3.5 h-3.5 shrink-0 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
@@ -66,21 +74,52 @@
           },
         });
 
+        // Async worker path: 202 + { async, stream_url }. The continuation is generated
+        // off-thread by the worker; stream it over the same SSE endpoint the main reply
+        // uses, then reload to render it. Reloading (rather than live-appending) keeps
+        // this button's long-standing UX while freeing the server thread immediately.
+        if (response.status === 202) {
+          let data = {};
+          try { data = await response.json(); } catch (e) { /* fall through */ }
+          if (data && data.async && data.stream_url) {
+            let settled = false;
+            const es = new EventSource(data.stream_url);
+            es.onmessage = function (ev) {
+              let d = null;
+              try { d = JSON.parse(ev.data); } catch (e) { return; }
+              if (d.type === 'done') {
+                settled = true;
+                es.close();
+                window.location.reload();
+              } else if (d.type === 'error') {
+                settled = true;
+                es.close();
+                console.error('Continue stream error:', d.message);
+                resetButton();
+              }
+            };
+            es.onerror = function () {
+              // Stream dropped. If we never saw a terminal event, reload best-effort —
+              // the worker may still have persisted the continuation.
+              es.close();
+              if (!settled) window.location.reload();
+            };
+            return;
+          }
+          // Malformed 202 — safe default is to reload.
+          window.location.reload();
+          return;
+        }
+
         if (response.ok) {
           window.location.reload();
         } else {
           console.error('Continue failed:', response.status);
-          a.disabled = false;
-          a.innerHTML =
-            '<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
-            'stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg> Continue';
+          resetButton();
         }
       } catch (error) {
         console.error('Continue error:', error);
-        a.disabled = false;
-        a.innerHTML =
-          '<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
-          'stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg> Continue';
+        resetButton();
       }
     });
 
