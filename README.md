@@ -11,7 +11,7 @@
 
 [![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=flat&logo=github)](https://github.com/writeian/Collab_AI_Online)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](LICENSE)
-[![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
 
 ---
 
@@ -72,14 +72,15 @@ Deeper stack and diagrams: **[ARCHITECTURE.md](ARCHITECTURE.md)**.
 ```bash
 git clone https://github.com/writeian/Collab_AI_Online.git
 cd Collab_AI_Online
-python -m venv .venv && source .venv/bin/activate   # or `venv`
+python3.11 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-cp env_template.txt .env   # add keys; see DEVELOPMENT.md
-alembic upgrade head
-python run.py
+cp env_template.txt .env    # add SECRET_KEY + ANTHROPIC_API_KEY; see DEVELOPMENT.md
+python run.py               # → http://localhost:5001
 ```
 
-Shorter checklist: **[SETUP_LOCAL.md](SETUP_LOCAL.md)** (if present).
+The app **creates its local SQLite schema on first boot** (`db.create_all()` plus an additive column reconciler), so no migration step is needed to run locally. The Alembic migrations under `migrations/` are **Postgres-only** (they gate on `information_schema`) and are meant for the production database, not local SQLite.
+
+Shorter checklist: **[SETUP_LOCAL.md](SETUP_LOCAL.md)**.
 
 ---
 
@@ -99,15 +100,17 @@ Shorter checklist: **[SETUP_LOCAL.md](SETUP_LOCAL.md)** (if present).
 
 ## Branches & deploy
 
-- **Development:** `dev`  
-- **Production:** whatever branch your **Railway** service uses (*Settings → Source*). Common examples: `feature/railway-deployment`, `updated-edu-tools`.  
+- **Production:** `updated-edu-tools` — the live branch **Railway** builds and deploys to [collab.up.railway.app](https://collab.up.railway.app). Changes land here via reviewed pull requests.
+- **`dev`:** legacy skeleton kept for history — **not** the current product; don't branch new work off it.
+
+Railway auto-builds whenever `updated-edu-tools` is updated:
 
 ```bash
-git checkout <your-railway-branch> && git pull --ff-only
-git push origin <your-railway-branch>
+git checkout updated-edu-tools && git pull --ff-only
+# open a PR into updated-edu-tools; Railway builds on merge
 ```
 
-After deploy, **hard-refresh** the browser so cache-busted static assets pick up.
+After a deploy, **hard-refresh** the browser so cache-busted static assets pick up.
 
 ---
 
