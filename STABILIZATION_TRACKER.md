@@ -193,6 +193,12 @@ Each item has: **Issue** (what's wrong), **Fix** (the plan), **Implementation** 
 - **Implementation:** `get_current_user()` now checks `is_active` on the loaded user; if the account has been deactivated it pops `user_id` from the session and returns `None`, so the next request is anonymous. Since every access check flows through `get_current_user`, deactivation now takes effect immediately across the app. **Verified:** an active user still resolves; an inactive user → `None` and the session is cleared; suite green.
 - **Files:** `src/app/access_control.py` (`get_current_user`).
 
+### B1 — Register button hangs ("infinite loop") when a required field is invalid 🟢 ✅
+- **Issue:** Reported in testing: clicking **Create Account** without ticking the required Terms checkbox left the button stuck spinning ("⏳ Processing…") and disabled — looked like an infinite loop, and you couldn't retry without reloading the page.
+- **Cause:** `loading.js` set the button's loading state from its **click** handler, which fires regardless of validation. The browser's HTML `required` validation then blocked the submit, so the form's `submit` event never fired and `resetLoading()` never ran → the button stayed spinning + disabled. This affected *any* form with a failing required field; the Terms checkbox just made it the easiest to hit (and it's on the signup path every student uses).
+- **Fix:** In the click handler, skip entering the loading state when `form.checkValidity()` is `false` — the browser shows its native "please check this box" prompt and the button stays usable. Valid submits still show the spinner. Bumped `loading.js` cache-buster v1.1→v1.2. `node --check` clean; wants a 30-second browser confirm on the register page.
+- **Files:** `src/app/static/js/loading.js`, `templates/base.html` (cache-buster).
+
 ---
 
 ## Also planned (not code fixes — Week 3 wrap-up)

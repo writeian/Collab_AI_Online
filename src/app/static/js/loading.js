@@ -131,6 +131,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (this.closest && this.closest('#message-form')) {
                 return;
             }
+            // Don't enter a loading state if the button's form fails HTML validation
+            // (e.g. a required field left empty, or the unchecked Terms checkbox on
+            // register): the browser blocks the submit, the form's 'submit' event never
+            // fires, and the button would otherwise be stuck spinning + disabled forever.
+            const parentForm = this.closest && this.closest('form');
+            if (parentForm && typeof parentForm.checkValidity === 'function'
+                    && !parentForm.checkValidity()) {
+                return;
+            }
             // If this is a submit button, set loading state
             if (this.type === 'submit' || this.classList.contains('btn-primary')) {
                 loadingManager.setLoading(this);
