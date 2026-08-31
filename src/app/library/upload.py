@@ -36,6 +36,21 @@ def upload_file():
     
     Room ID is extracted from query parameter (canonical source) or chat context (fallback).
     """
+    # S8: the library blueprint is CSRF-exempt for its JSON endpoints (shielded by
+    # content-type), but /upload is a multipart POST a cross-site <form> could forge.
+    # Validate a CSRF token here — the frontend already sends X-CSRFToken — so only
+    # same-origin requests with a valid session token can upload.
+    from flask_wtf.csrf import validate_csrf
+    csrf_token = (
+        request.headers.get("X-CSRFToken")
+        or request.headers.get("X-CSRF-Token")
+        or request.form.get("csrf_token")
+    )
+    try:
+        validate_csrf(csrf_token)
+    except Exception:
+        return jsonify({'error': 'CSRF validation failed. Please refresh and try again.'}), 400
+
     try:
         # Extract room_id from query parameter (canonical source)
         room_id = request.args.get('room_id', type=int)

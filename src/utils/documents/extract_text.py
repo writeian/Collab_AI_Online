@@ -12,6 +12,11 @@ PREVIEW_CHAR_LIMIT = 1500
 SUMMARY_CHAR_LIMIT = 12000
 SUMMARY_PROMPT = 'Summarize this document in 3 sentences.'
 
+# S10: ceiling on extracted text. A small compressed file (PDF/DOCX) can decompress to
+# an enormous amount of text; stop accumulating once we pass this so a bomb can't OOM the
+# worker. 5M chars (~5MB of text) is far more than any legitimate document.
+MAX_EXTRACT_CHARS = 5_000_000
+
 
 def get_file_extension(filename: str) -> str:
     """Extract file extension from filename."""
@@ -50,11 +55,15 @@ def extract_pdf_text(file_data: bytes) -> str:
         reader = PdfReader(pdf_file)
         
         text_parts = []
+        total = 0
         for page in reader.pages:
             text = page.extract_text()
             if text:
                 text_parts.append(text)
-        
+                total += len(text)
+                if total >= MAX_EXTRACT_CHARS:  # S10: bound memory against bombs
+                    break
+
         return '\n'.join(text_parts)
     except Exception as e:
         raise Exception(f"Failed to parse PDF file: {str(e)}")
@@ -70,10 +79,14 @@ def extract_docx_text(file_data: bytes) -> str:
         doc = Document(docx_file)
         
         text_parts = []
+        total = 0
         for paragraph in doc.paragraphs:
             if paragraph.text:
                 text_parts.append(paragraph.text)
-        
+                total += len(paragraph.text)
+                if total >= MAX_EXTRACT_CHARS:  # S10: bound memory against bombs
+                    break
+
         return '\n'.join(text_parts)
     except Exception as e:
         raise Exception(f"Failed to parse DOCX file: {str(e)}")
