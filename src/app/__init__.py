@@ -463,7 +463,13 @@ def create_app(config_name=None):
             pass
 
         # CSP configuration that allows CDN resources
-        response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net; img-src 'self' data:; connect-src 'self' https://cdn.tailwindcss.com https://unpkg.com https://cdn.jsdelivr.net;"
+        # NOTE (S11): script-src still allows 'unsafe-inline'/'unsafe-eval' because the
+        # Tailwind Play CDN needs eval and ~26 templates use inline <script>. Removing
+        # them needs a frontend refactor (nonces + a compiled Tailwind build) — tracked
+        # as a residual. The directives below harden everything that DOESN'T need script
+        # execution and are safe to add now: no plugins/objects, no <base> injection, no
+        # cross-origin framing (clickjacking), and forms may only submit to this origin.
+        response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net; img-src 'self' data:; connect-src 'self' https://cdn.tailwindcss.com https://unpkg.com https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self';"
         if not app.config.get('TESTING', False) and not app.debug:
             response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
         return response

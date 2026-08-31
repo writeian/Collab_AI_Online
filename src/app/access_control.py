@@ -17,7 +17,13 @@ from typing import Any, Optional
 def get_current_user() -> Optional[User]:
     """Get the currently logged-in user from session."""
     if "user_id" in session:
-        return User.query.get(session["user_id"])
+        user = User.query.get(session["user_id"])
+        # A user deactivated mid-session must not stay authenticated — is_active was
+        # previously only checked at login, so an existing session kept working. (S12)
+        if user is not None and not user.is_active:
+            session.pop("user_id", None)
+            return None
+        return user
     return None
 
 

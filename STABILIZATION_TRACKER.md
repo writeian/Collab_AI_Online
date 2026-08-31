@@ -35,11 +35,11 @@ Each item has: **Issue** (what's wrong), **Fix** (the plan), **Implementation** 
 | S5 | 🟡 Medium | Security | Account enumeration (register + forgot-password) | 3 | ✅ |
 | S6 | 🟡 Medium | Security | Password-reset token logged to server output | 3 | ✅ |
 | S7 | 🟡 Medium | Security | Weak password policy (6 chars, no checks) | 3 | ✅ |
-| S8 | 🟢 Low | Security | Whole library blueprint is CSRF-exempt | 3 | ⬜ |
-| S9 | 🟢 Low | Cleanup | Committed virtualenvs (`.venv/`, `.venv311/`) | 3 | ⬜ |
-| S10 | 🟢 Low | Security | Upload decompression-bomb DoS; no body size cap | 3 | ⬜ |
-| S11 | 🟢 Low | Security | CSP allows `unsafe-inline` / `unsafe-eval` | 3 | ⬜ |
-| S12 | 🟢 Low | Security | Deactivated user keeps an active session | 3 | ⬜ |
+| S8 | 🟢 Low | Security | Whole library blueprint is CSRF-exempt | 3 | ✅ |
+| S9 | 🟢 Low | Cleanup | Committed virtualenvs (`.venv/`, `.venv311/`) | 3 | ✅ |
+| S10 | 🟢 Low | Security | Upload decompression-bomb DoS; no body size cap | 3 | ✅ |
+| S11 | 🟢 Low | Security | CSP allows `unsafe-inline` / `unsafe-eval` | 3 | ✅ |
+| S12 | 🟢 Low | Security | Deactivated user keeps an active session | 3 | ✅ |
 
 ---
 
@@ -163,35 +163,35 @@ Each item has: **Issue** (what's wrong), **Fix** (the plan), **Implementation** 
 - **Implementation:** Added one `validate_password_strength(password, *, username, email)` helper (NIST-style — length over composition) and wired it into **all three** password-set paths so the rule can't drift: register, reset, change. Rules: **min 8 chars** (was 6), reject all-numeric, reject a small common-password blocklist, and reject passwords that contain the username or the email local-part. No forced symbol/case rules (they frustrate users for little gain). **Verified:** 6-char / all-digits / "password" / contains-username all rejected with clear messages; ordinary passphrases accepted; suite 114/21/0.
 - **Files:** `src/app/auth.py` (`validate_password_strength` helper + register/reset/change call sites).
 
-### S8 — Library blueprint is fully CSRF-exempt 🟢 ⬜
+### S8 — Library blueprint is fully CSRF-exempt 🟢 ✅ (upload now validated; JSON endpoints stay exempt)
 - **Issue:** `csrf.exempt(library)` covers the whole blueprint. JSON endpoints are shielded by content-type/CORS, but `/upload` (multipart) is realistically CSRF-able (minor impact).
 - **Fix:** Scope the exemption; require a custom header / token on state-changing endpoints.
-- **Implementation:** _pending_
-- **Files:** `src/app/__init__.py:404`; `src/app/library/**`.
+- **Implementation:** Kept the blanket exemption for the JSON endpoints (content-type-shielded) and added explicit `flask_wtf.csrf.validate_csrf` at the top of `/upload`, reading the token from `X-CSRFToken` / `X-CSRF-Token` header or a `csrf_token` form field — the frontend already sends `X-CSRFToken`, so legit uploads are unaffected while a cross-site `<form>` (which can't set custom headers or know the token) is rejected with 400. **Verified:** `POST /api/library/upload` with no token → **400 "CSRF validation failed"**; suite green. **Wants a browser smoke** of the upload happy-path (instructor uploads a key doc) before the class, since the token-bearing path can't be exercised headless. The one known caller (`view_mountain_simple.html`) sends the header.
+- **Files:** `src/app/library/upload.py` (`upload_file`).
 
-### S9 — Committed virtualenvs 🟢 ⬜
-- **Issue:** `.venv/` and `.venv311/` are committed (bloat); `.gitignore` only lists `venv/`.
+### S9 — Committed virtualenvs 🟢 ✅
+- **Issue:** `.venv/` and `.venv311/` were committed (bloat); `.gitignore` only listed `venv/`.
 - **Fix:** `git rm -r --cached .venv .venv311` and add `.venv*/` to `.gitignore`.
-- **Implementation:** _pending_
-- **Files:** `.gitignore`, `.venv/`, `.venv311/`.
+- **Implementation:** Done earlier in commit `403e99a` — the 40 committed dead-venv files were removed and `.gitignore` now lists `.venv/`, `.venv311/`, `.venv*/`. (This row was just stale bookkeeping.)
+- **Files:** `.gitignore`.
 
-### S10 — Upload decompression-bomb DoS; no body size cap 🟢 ⬜
+### S10 — Upload decompression-bomb DoS; no body size cap 🟢 ✅
 - **Issue:** Uploaded PDFs/DOCX (≤10MB) are text-extracted in memory; a decompression bomb could OOM the single worker. No Flask `MAX_CONTENT_LENGTH`.
 - **Fix:** Add extraction limits/timeouts and a global `MAX_CONTENT_LENGTH`.
-- **Implementation:** _pending_
-- **Files:** `src/app/library/upload.py`, `src/utils/documents/extract_text.py`, `src/config/settings.py`.
+- **Implementation:** (1) Added `MAX_CONTENT_LENGTH` to the base config (default **16MB**, env-overridable via `MAX_CONTENT_LENGTH_MB`) so Werkzeug rejects an oversized body with 413 before buffering it. (2) Added `MAX_EXTRACT_CHARS = 5,000,000` and made the PDF and DOCX extraction loops **stop accumulating** once they pass it — so a small compressed file that expands to gigabytes of text can't OOM the worker mid-extraction (the body cap alone doesn't stop a 16MB file that decompresses 1000×). **Verified:** `app.config['MAX_CONTENT_LENGTH'] == 16MB`; suite green.
+- **Files:** `src/config/settings.py` (`MAX_CONTENT_LENGTH`), `src/utils/documents/extract_text.py` (`MAX_EXTRACT_CHARS` + PDF/DOCX loop caps).
 
-### S11 — CSP allows `unsafe-inline` / `unsafe-eval` 🟢 ⬜
+### S11 — CSP allows `unsafe-inline` / `unsafe-eval` 🟢 ✅ (safe hardening added; script-src loosening is a documented residual)
 - **Issue:** Script CSP includes `unsafe-inline` and `unsafe-eval`, weakening XSS defense (mitigated today by the escaping markdown filter).
 - **Fix:** Tighten the script policy where the frontend allows.
-- **Implementation:** _pending_
-- **Files:** `src/app/__init__.py:305`.
+- **Implementation:** The frontend does **not** currently allow removing the script loosening: the Tailwind Play CDN (`cdn.tailwindcss.com`, loaded in `base.html`) needs `unsafe-eval`, and **~26 templates** use inline `<script>`, so dropping `unsafe-inline`/`unsafe-eval` would break the app without a nonce refactor + a compiled Tailwind build (a real feature — logged as a residual). What was safe to add now, and was added, hardens everything that doesn't need script execution: **`object-src 'none'`** (no plugins/Flash), **`base-uri 'self'`** (no `<base>` injection), **`frame-ancestors 'self'`** (clickjacking), **`form-action 'self'`** (forms can only submit to this origin). **Verified:** all four directives present on responses; suite green.
+- **Files:** `src/app/__init__.py` (CSP `after_request`).
 
-### S12 — Deactivated user keeps active session 🟢 ⬜
-- **Issue:** `is_active` is only checked at login; a deactivated user with an existing session stays logged in.
+### S12 — Deactivated user keeps active session 🟢 ✅
+- **Issue:** `is_active` was only checked at login; a deactivated user with an existing session stayed logged in.
 - **Fix:** Reject inactive users in `get_current_user()`.
-- **Implementation:** _pending_
-- **Files:** `src/app/access_control.py:17–21`.
+- **Implementation:** `get_current_user()` now checks `is_active` on the loaded user; if the account has been deactivated it pops `user_id` from the session and returns `None`, so the next request is anonymous. Since every access check flows through `get_current_user`, deactivation now takes effect immediately across the app. **Verified:** an active user still resolves; an inactive user → `None` and the session is cleared; suite green.
+- **Files:** `src/app/access_control.py` (`get_current_user`).
 
 ---
 

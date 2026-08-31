@@ -35,7 +35,13 @@ class Config:
         or f"sqlite:///{_sqlite_path}"
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    
+
+    # Hard cap on request body size (S10). Werkzeug rejects anything larger with 413
+    # before it is buffered into memory, so a giant upload can't OOM the worker. Uploads
+    # are limited to ~10MB by the library endpoint itself; 16MB leaves headroom for
+    # multipart overhead. Override via MAX_CONTENT_LENGTH_MB.
+    MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH_MB", "16")) * 1024 * 1024
+
     # Database connection pooling for better performance (PostgreSQL only)
     if os.environ.get("DATABASE_URL") and "postgresql" in os.environ.get("DATABASE_URL", ""):
         # Per-process pool (each Gunicorn worker has its own engine). With gthread, many
