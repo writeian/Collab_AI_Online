@@ -32,9 +32,9 @@ Each item has: **Issue** (what's wrong), **Fix** (the plan), **Implementation** 
 | R4 | 🟠 High | Reliability | Transaction poisoning → intermittent 500s | 2 | ✅ |
 | R5 | 🟡 Medium | Performance | N+1 queries on dashboard / member lists | 2 | ✅ |
 | R6 | 🟡 Medium | Config | Dead gunicorn config, 300s timeout, hot-path logging | 2 | ✅ |
-| S5 | 🟡 Medium | Security | Account enumeration (register + forgot-password) | 3 | ⬜ |
-| S6 | 🟡 Medium | Security | Password-reset token logged to server output | 3 | ⬜ |
-| S7 | 🟡 Medium | Security | Weak password policy (6 chars, no checks) | 3 | ⬜ |
+| S5 | 🟡 Medium | Security | Account enumeration (register + forgot-password) | 3 | ✅ |
+| S6 | 🟡 Medium | Security | Password-reset token logged to server output | 3 | ✅ |
+| S7 | 🟡 Medium | Security | Weak password policy (6 chars, no checks) | 3 | ✅ |
 | S8 | 🟢 Low | Security | Whole library blueprint is CSRF-exempt | 3 | ⬜ |
 | S9 | 🟢 Low | Cleanup | Committed virtualenvs (`.venv/`, `.venv311/`) | 3 | ⬜ |
 | S10 | 🟢 Low | Security | Upload decompression-bomb DoS; no body size cap | 3 | ⬜ |
@@ -145,23 +145,23 @@ Each item has: **Issue** (what's wrong), **Fix** (the plan), **Implementation** 
 
 ## Week 3 — Smooth it & harden
 
-### S5 — Account enumeration 🟡 ⬜
+### S5 — Account enumeration ✅ (forgot-password closed; register email is an accepted residual)
 - **Issue:** Registration ("Username already exists" / "Email already registered") and forgot-password (different message when the email exists vs. not) let an attacker enumerate valid accounts.
 - **Fix:** Make responses uniform (generic success/failure).
-- **Implementation:** _pending_
-- **Files:** `src/app/auth.py` (register `:88,107`; forgot-password `:343` vs `:381–385`).
+- **Implementation:** **forgot-password** now returns an identical generic response ("If an account with that email exists, a password reset link has been sent.") whether or not the address is registered, **and** whether or not the email actually sends. The old flow flashed "email sent / check your inbox" (or "link logged on server") for real accounts vs. the generic line for unknown ones — that difference was the enumeration signal. The reset token is still issued + emailed for real accounts (flow intact). **Register left as-is by design:** username-taken feedback is a UX necessity (usernames are a public namespace, shown throughout the app), and closing register *email* enumeration properly needs an email-verification signup flow (a feature, not a patch) — logged as a residual for after the class. Worth adding later: a rate limit on `/forgot-password` to blunt mass probing. **Verified:** existing vs. unknown email produce identical user-facing responses; token still issued internally for the real user.
+- **Files:** `src/app/auth.py` `forgot_password()` (rewritten ~L340).
 
-### S6 — Password-reset token logged to server output 🟡 ⬜
+### S6 — Password-reset token logged to server output ✅ (code) — SMTP config is on Ian
 - **Issue:** When email send fails / SMTP isn't configured, the full reset URL and token are printed to stdout (retained in Railway logs).
 - **Fix:** Never log the token; confirm SMTP is configured in production.
-- **Implementation:** _pending_
-- **Files:** `src/app/auth.py:369–379`; email config `src/utils/email.py`.
+- **Implementation:** Removed both `print(...)` blocks that dumped the reset URL + raw token to stdout on send-failure / unconfigured-SMTP (they persisted in Railway logs — anyone with log access could reset any account). Replaced with a `current_app.logger.warning` that records only that delivery failed for `user id=<id>` — **no token, no URL, no email address**. **Verified:** no `PASSWORD RESET LINK` / `Reset URL` / `Token:` prints remain in `auth.py`, and the forgot-password responses contain none of that text. **On Ian (ops):** confirm an email provider is actually configured in Railway (`EMAIL_PROVIDER` etc.) so resets deliver — otherwise a reset silently no-ops (token issued, no email arrives).
+- **Files:** `src/app/auth.py` `forgot_password()` (~L355–375); email config `src/utils/email.py` (ops).
 
-### S7 — Weak password policy 🟡 ⬜
+### S7 — Weak password policy ✅
 - **Issue:** 6-character minimum, no complexity, across register / reset / change.
 - **Fix:** Raise the minimum and add basic strength checks.
-- **Implementation:** _pending_
-- **Files:** `src/app/auth.py:192` (register), `:412` (reset), `:562` (change).
+- **Implementation:** Added one `validate_password_strength(password, *, username, email)` helper (NIST-style — length over composition) and wired it into **all three** password-set paths so the rule can't drift: register, reset, change. Rules: **min 8 chars** (was 6), reject all-numeric, reject a small common-password blocklist, and reject passwords that contain the username or the email local-part. No forced symbol/case rules (they frustrate users for little gain). **Verified:** 6-char / all-digits / "password" / contains-username all rejected with clear messages; ordinary passphrases accepted; suite 114/21/0.
+- **Files:** `src/app/auth.py` (`validate_password_strength` helper + register/reset/change call sites).
 
 ### S8 — Library blueprint is fully CSRF-exempt 🟢 ⬜
 - **Issue:** `csrf.exempt(library)` covers the whole blueprint. JSON endpoints are shielded by content-type/CORS, but `/upload` (multipart) is realistically CSRF-able (minor impact).

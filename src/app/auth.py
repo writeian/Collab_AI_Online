@@ -55,6 +55,37 @@ def _profile_activity_counts(user_id: int) -> tuple[int, int]:
     return int(total_chats), int(total_messages)
 
 
+# --- Password policy (S7) -------------------------------------------------------
+# NIST-style: favour length over composition rules (no forced symbols/case). Enforced
+# everywhere a password is set — register, reset, and change — via one helper so the
+# rule can't drift between routes.
+MIN_PASSWORD_LENGTH = 8
+
+# A tiny blocklist of the most trivially guessed passwords — enough to stop the worst
+# choices without frustrating users.
+_COMMON_PASSWORDS = {
+    "password", "password1", "password123", "12345678", "123456789",
+    "qwerty123", "letmein123", "welcome1", "iloveyou", "admin123", "changeme",
+}
+
+
+def validate_password_strength(password, *, username=None, email=None):
+    """Return a human-readable error if the password is too weak, else None."""
+    if not password or len(password) < MIN_PASSWORD_LENGTH:
+        return f"Password must be at least {MIN_PASSWORD_LENGTH} characters long."
+    if password.isdigit():
+        return "Password can't be all numbers — please add some letters."
+    if password.lower() in _COMMON_PASSWORDS:
+        return "That password is too common. Please choose a less predictable one."
+    if username and len(username) >= 3 and username.lower() in password.lower():
+        return "Password can't contain your username."
+    if email:
+        local = email.split("@")[0].lower()
+        if len(local) >= 3 and local in password.lower():
+            return "Password can't contain your email address."
+    return None
+
+
 @auth.route("/register", methods=["GET", "POST"])
 def register() -> Any:
     if request.method == "POST":
@@ -188,9 +219,10 @@ def register() -> Any:
                 contact_for_research=contact_for_research,
             )
 
-        # Validate password strength
-        if len(password) < 6:
-            flash("Password must be at least 6 characters long.", "error")
+        # Validate password strength (S7)
+        pw_error = validate_password_strength(password, username=username, email=email)
+        if pw_error:
+            flash(pw_error, "error")
             return render_template(
                 "register.html",
                 username=username,
@@ -337,11 +369,16 @@ def forgot_password() -> Any:
             flash("Please enter your email address.", "error")
             return render_template("forgot_password.html", email=email)
 
-        # Find user by email
-        user = User.query.filter_by(email=email).first()
+        # Respond identically whether or not the address is registered, so this form
+        # can't be used to enumerate accounts. (S5)
+        generic_message = (
+            "If an account with that email exists, a password reset link has been sent."
+        )
 
+        user = User.query.filter_by(email=email).first()
         if user:
-            # Generate reset token
+            # Issue a reset token and email the link. Any delivery failure is logged
+            # WITHOUT the token or URL (S6) and never changes what the user sees.
             token = secrets.token_urlsafe(32)
             user.reset_token = token
             user.reset_token_expiry = datetime.datetime.utcnow() + datetime.timedelta(
@@ -349,10 +386,7 @@ def forgot_password() -> Any:
             )
             db.session.commit()
 
-            # Create reset URL
             reset_url = url_for("auth.reset_password", token=token, _external=True)
-
-            # Send email via helper
             try:
                 from src.utils.email import send_email
                 html = (
@@ -361,29 +395,26 @@ def forgot_password() -> Any:
                     f"<p><a href='{reset_url}' target='_blank'>{reset_url}</a></p>"
                     f"<p>If you did not request this, you can ignore this email.</p>"
                 )
-                sent = send_email(user.email, "Reset your password", html, f"Reset your password: {reset_url}")
-                if sent:
-                    flash("Password reset email sent. Please check your inbox.", "success")
-                else:
-                    # Fallback to logging for visibility
-                    print(f"=== PASSWORD RESET LINK FOR {user.email} ===")
-                    print(f"Reset URL: {reset_url}")
-                    print(f"Token: {token}")
-                    print("=== END PASSWORD RESET LINK ===")
-                    flash("Password reset link generated. Email not configured; link logged on server.", "info")
+                sent = send_email(
+                    user.email,
+                    "Reset your password",
+                    html,
+                    f"Reset your password: {reset_url}",
+                )
+                if not sent:
+                    current_app.logger.warning(
+                        "Password reset requested for user id=%s but email delivery is "
+                        "unavailable (SMTP not configured?). Token issued, not logged.",
+                        user.id,
+                    )
             except Exception as _e:
-                print(f"[email] Failed to send reset email: {_e}")
-                print(f"=== PASSWORD RESET LINK FOR {user.email} ===")
-                print(f"Reset URL: {reset_url}")
-                print(f"Token: {token}")
-                print("=== END PASSWORD RESET LINK ===")
-                flash("Password reset link generated. Email send failed; link logged on server.", "info")
-        else:
-            flash(
-                "If an account with that email exists, a reset link has been sent.",
-                "info",
-            )
+                current_app.logger.warning(
+                    "Password reset email failed to send for user id=%s: %s",
+                    user.id,
+                    type(_e).__name__,
+                )
 
+        flash(generic_message, "info")
         return redirect(url_for("auth.login"))
 
     return render_template("forgot_password.html")
@@ -409,8 +440,11 @@ def reset_password(token: str) -> Any:
             flash("Passwords do not match.", "error")
             return render_template("reset_password.html")
 
-        if len(password) < 6:
-            flash("Password must be at least 6 characters long.", "error")
+        pw_error = validate_password_strength(
+            password, username=user.username, email=user.email
+        )
+        if pw_error:
+            flash(pw_error, "error")
             return render_template("reset_password.html")
 
         # Update password and clear reset token
@@ -558,9 +592,12 @@ def change_password() -> Any:
             flash("Current password is incorrect.", "error")
             return render_template("change_password.html", invitation_count=invitation_count)
 
-        # Validate new password
-        if len(new_password) < 6:
-            flash("New password must be at least 6 characters long.", "error")
+        # Validate new password (S7)
+        pw_error = validate_password_strength(
+            new_password, username=user.username, email=user.email
+        )
+        if pw_error:
+            flash(pw_error, "error")
             return render_template("change_password.html", invitation_count=invitation_count)
 
         if new_password != confirm_password:
