@@ -40,7 +40,9 @@ class Config:
     # before it is buffered into memory, so a giant upload can't OOM the worker. Uploads
     # are limited to ~10MB by the library endpoint itself; 16MB leaves headroom for
     # multipart overhead. Override via MAX_CONTENT_LENGTH_MB.
-    MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH_MB", "16")) * 1024 * 1024
+    # `or 16` guards the set-but-empty case (a bare `MAX_CONTENT_LENGTH_MB=` line yields
+    # "", which int() would reject) — matches the convention used elsewhere in this file.
+    MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH_MB", "16") or 16) * 1024 * 1024
 
     # Database connection pooling for better performance (PostgreSQL only)
     if os.environ.get("DATABASE_URL") and "postgresql" in os.environ.get("DATABASE_URL", ""):
