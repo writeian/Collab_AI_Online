@@ -259,23 +259,21 @@ def require_room_access(f):
         
         # First check if user is logged in
         if not user:
-            current_app.logger.error(f"🔐 NO USER: Redirecting to login for room {room_id}")
+            current_app.logger.debug("Room %s access: no user in session, redirecting to login", room_id)
             flash("Please log in to access this room.")
             return redirect(url_for("auth.login"))
         
-        current_app.logger.error(f"🔍 LOOKING UP ROOM: {room_id}")
-        room = Room.query.get(room_id)  # Don't 404 yet, let's see what we get
-        current_app.logger.error(f"🔍 ROOM LOOKUP RESULT: {room.name if room else 'None'} (ID: {room.id if room else 'None'})")
+        room = Room.query.get(room_id)
         
         if not room:
-            current_app.logger.error(f"🔍 ROOM {room_id} NOT FOUND - RETURNING 404")
+            current_app.logger.debug("Room %s not found, returning 404", room_id)
             from flask import abort
             abort(404)
         
         # Continue with the original room object
 
         if not can_access_room(user, room):
-            current_app.logger.error(f"🔐 NO ACCESS: User {user.username} denied access to room {room_id}")
+            current_app.logger.debug("Room %s access denied for user %s", room_id, user.username)
             flash("You don't have access to this room.")
             return redirect(url_for("room.room_crud.index"))
 
@@ -289,7 +287,6 @@ def require_room_access(f):
             # Don't block access on failure to mark acceptance
             db.session.rollback()
 
-        current_app.logger.error(f"🔐 ACCESS GRANTED: User {user.username} accessing room {room_id} - CALLING FUNCTION")
         return f(room_id, *args, **kwargs)
 
     return decorated_function

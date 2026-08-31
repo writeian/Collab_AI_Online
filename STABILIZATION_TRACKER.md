@@ -31,7 +31,7 @@ Each item has: **Issue** (what's wrong), **Fix** (the plan), **Implementation** 
 | R3 | 🟠 High | Reliability | DB connection pool can exceed Railway's limit | 2 | ⬜ |
 | R4 | 🟠 High | Reliability | Transaction poisoning → intermittent 500s | 2 | ✅ |
 | R5 | 🟡 Medium | Performance | N+1 queries on dashboard / member lists | 2 | ✅ |
-| R6 | 🟡 Medium | Config | Dead gunicorn config, 300s timeout, hot-path logging | 2 | ⬜ |
+| R6 | 🟡 Medium | Config | Dead gunicorn config, 300s timeout, hot-path logging | 2 | ✅ |
 | S5 | 🟡 Medium | Security | Account enumeration (register + forgot-password) | 3 | ⬜ |
 | S6 | 🟡 Medium | Security | Password-reset token logged to server output | 3 | ⬜ |
 | S7 | 🟡 Medium | Security | Weak password policy (6 chars, no checks) | 3 | ⬜ |
@@ -116,11 +116,15 @@ Each item has: **Issue** (what's wrong), **Fix** (the plan), **Implementation** 
 - **Implementation:** `dashboard.index()` — replaced the per-room loop (≈6×N queries) with six grouped queries over `room_id IN (...)`, then a dict lookup per room; identical stats semantics (owner still `+1` on member_count, message/comment counts still via the Chat join, `last_activity` still `max(timestamp)`). `RoomService.get_room_members()` — replaced the per-member `User.query.get()` with a single `User.query.filter(User.id.in_(...))` batch (owner folded into the same query), preserving membership order and the owner-append behavior; this is on the **live room view** (`crud.py:200`, also api/invitations). Left alone: the `dashboard.room_detail()` N+1 at ~L294 is **dead code** (the route redirects to the new room view before reaching it). **Verification (local, fresh venv):** py_compile clean; suite green (114 passed); grouped counts proven equal to the old per-room counts (members/chats/messages MATCH); and a query-counter test shows the dashboard render is **flat at 10 queries for 1 room and for 8 rooms** (was ~6/room → would be ~52 at 8) — the N+1 is gone.
 - **Files:** `src/app/dashboard.py` (`index()` grouped stats ~L47), `src/app/room/services/room_service.py` (`get_room_members()` batch ~L360).
 
-### R6 — Config footguns: dead gunicorn config, timeout, hot-path logging 🟡 ⬜
-- **Issue:** Railway starts via `start.sh`, which ignores `gunicorn_conf.py` (two disagreeing config sources). The 300s timeout lets a hung call tie up a thread for 5 minutes. `require_room_access` logs several ERROR lines on every room visit.
-- **Fix:** Consolidate to one gunicorn config; lower the request timeout (with AI work moved off-request per R2); drop the per-request ERROR logs to debug.
-- **Implementation:** _pending_
-- **Files:** `start.sh`, `gunicorn_conf.py`, `railway.toml`, `Procfile`; `src/app/access_control.py:262–292` (logging).
+### R6 — Config footguns: dead gunicorn config, timeout, hot-path logging 🟡 ✅ (config consolidated + logging fixed; timeout cut deferred to R2 by design)
+- **Issue:** Railway starts via `start.sh`, which ignored `gunicorn_conf.py` (two disagreeing config sources — threads 8 vs 12, graceful 60 vs 30, keepalive default vs 5). `require_room_access` logged **6 ERROR lines on every room visit** (pure debug tracing), which now floods the ERROR stream that Sentry (R8) watches.
+- **Fix:** Consolidate to one gunicorn config; drop the per-request ERROR logs to debug; make the request timeout a single tunable knob (actual lowering happens with R2).
+- **Implementation:**
+  - **Single source of truth:** `gunicorn_conf.py` is now authoritative and every knob is env-overridable. `start.sh` was reduced to `export PORT` + `exec gunicorn -c gunicorn_conf.py wsgi:app`; the `Procfile` `web:` line already used `-c gunicorn_conf.py`, so both paths now agree. Defaults were reconciled to match what was **live** in `start.sh` (workers 3, threads 8, graceful_timeout 60, keepalive 2, `preload_app=False`) — a pure consolidation with **no** prod concurrency change. `railway.toml` `startCommand` unchanged.
+  - **Timeout (deferred, intentionally):** left at 300s. Correction to the original issue framing — with `gthread` workers `--timeout` is the worker *heartbeat* timeout, **not** a per-request kill (per gunicorn docs, non-sync workers aren't tied to request duration), so a streaming AI reply is never truncated and lowering it wouldn't free a busy thread mid-call. It only makes sense to lower once AI work moves off the request thread (**R2**). Documented inline in `gunicorn_conf.py`.
+  - **Hot-path logging:** in `require_room_access`, removed the 3 pure-trace `logger.error` lines (LOOKING UP ROOM / ROOM LOOKUP RESULT / ACCESS GRANTED) and demoted the 3 control-flow ones (no-user redirect, 404, access-denied) to `logger.debug` with lazy `%`-args (no string cost when debug is off). ERROR stream is now clean on normal room visits.
+  - **Verification:** `gunicorn -c gunicorn_conf.py --print-config wsgi:app` resolves to the intended values and imports `wsgi:app`; `sh -n start.sh` clean; test suite 114 passed / 21 skipped / 0 failed (unchanged baseline).
+- **Files:** `start.sh`, `gunicorn_conf.py` (rewritten); `src/app/access_control.py:261–290` (logging). `railway.toml`, `Procfile` unchanged (already consistent).
 
 ---
 
