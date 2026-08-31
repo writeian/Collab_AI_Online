@@ -624,7 +624,8 @@ def create_chat(room_id: int) -> Any:
                 return redirect(url_for("chat.view_chat", chat_id=chat_obj.id))
 
             if content:
-                # Add the Google Doc content as the first user message
+                # Add the Google Doc content as the first user message. Commit the
+                # import first so a downstream AI failure can't lose it. (R2)
                 doc_message = Message(
                     chat_id=chat_obj.id,
                     user_id=user.id,
@@ -632,24 +633,35 @@ def create_chat(room_id: int) -> Any:
                     content=f"[Google Doc Content]\n\n{content}",
                 )
                 db.session.add(doc_message)
-                db.session.flush()
-
-                # Get AI response to the imported content
-                with room_ai_begin(chat_obj.room_id):
-                    ai_content, _ai_trunc = get_ai_response(
-                        chat_obj, through_message=doc_message
-                    )
-                ai_msg = Message(
-                    chat_id=chat_obj.id,
-                    role="assistant",
-                    content=ai_content,
-                    is_truncated=_ai_trunc,
-                    parent_message_id=doc_message.id,
-                )
-                db.session.add(ai_msg)
                 db.session.commit()
-
                 flash("Google Doc content imported successfully!")
+
+                # Get AI response to the imported content. Best-effort and time-boxed
+                # (get_ai_response has a 30s timeout): a model failure must not 500 chat
+                # creation — the import is already saved, so the user can just continue. (R2)
+                try:
+                    with room_ai_begin(chat_obj.room_id):
+                        ai_content, _ai_trunc = get_ai_response(
+                            chat_obj, through_message=doc_message
+                        )
+                    ai_msg = Message(
+                        chat_id=chat_obj.id,
+                        role="assistant",
+                        content=ai_content,
+                        is_truncated=_ai_trunc,
+                        parent_message_id=doc_message.id,
+                    )
+                    db.session.add(ai_msg)
+                    db.session.commit()
+                except Exception as e:
+                    db.session.rollback()
+                    current_app.logger.error(
+                        f"AI response to imported Google Doc failed: {e}"
+                    )
+                    flash(
+                        "The AI couldn't respond to the import yet — "
+                        "send a message to continue."
+                    )
 
         if payload is not None:
             return jsonify({"success": True, "chat_id": chat_obj.id})

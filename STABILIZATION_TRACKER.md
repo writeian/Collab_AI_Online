@@ -27,7 +27,7 @@ Each item has: **Issue** (what's wrong), **Fix** (the plan), **Implementation** 
 | R7 | 🟠 High | Reliability | Broken migrations; schema hand-patched every boot | 1 | ✅ |
 | R8 | 🟠 High | Observability | No error monitoring — failures are invisible | 1 | ✅ |
 | S4 | 🟡 Medium | Security | Unauthenticated diagnostic/info endpoints | 1 | ✅ |
-| R2 | 🟠 High | Performance | Synchronous AI calls block request threads | 2 | ⬜ |
+| R2 | 🟠 High | Performance | Synchronous AI calls block request threads | 2 | 🟡 |
 | R3 | 🟠 High | Reliability | DB connection pool can exceed Railway's limit | 2 | ⬜ |
 | R4 | 🟠 High | Reliability | Transaction poisoning → intermittent 500s | 2 | ✅ |
 | R5 | 🟡 Medium | Performance | N+1 queries on dashboard / member lists | 2 | ✅ |
@@ -92,11 +92,20 @@ Each item has: **Issue** (what's wrong), **Fix** (the plan), **Implementation** 
 
 ## Week 2 — Make the core loop survive the class
 
-### R2 — Synchronous AI calls block request threads 🟠 ⬜
+### R2 — Synchronous AI calls block request threads 🟡 (honest errors + time-boxing done; full worker-routing of secondary calls deferred to Phase 2)
 - **Issue:** Some actions call the model in-request, holding one of ~24 server threads (3 workers × 8) for the whole call: message-send fallback (`sync_blocking`), "continue generating", and Google-Doc import on chat creation. Under a class this starves the thread pool → slow, then 5-minute timeouts → 500s.
 - **Fix:** Route all model calls through the existing Redis + rq worker; make any in-request AI optional and time-boxed. Keep graceful fallback but stop masking errors with a canned greeting.
-- **Implementation:** _pending_
-- **Files:** `src/app/chat.py:434,440` (sync fallback), `:1291` (continue), `src/app/room/routes/crud.py:639` (doc import), `src/app/api/card_comments.py:331`; worker `src/workers/ai_reply_job.py`.
+- **Findings that reframed the fix:**
+  - The **main chat reply already has a working async path**: when the client sends `X-AI-Async: 1` and `REDIS_URL` is set, the POST returns `202` and a Redis+rq worker (`src/workers/ai_reply_job.py`) streams the reply over Redis pub/sub → SSE and persists it. It falls back to in-request SSE, then to the sync path.
+  - **In-request AI is already time-boxed at 30s**: `call_anthropic_api` / `call_anthropic_api_stream` default `timeout=30` and pass it to the SDK; the OpenAI fallback uses `requests(..., timeout=30)`. So the "5-minute 500s" premise is largely already mitigated — a hung provider frees the thread in ~30s, not 5 min. Residual risk is thread-pool **saturation** under burst (many ~30s holds), not 5-minute hangs.
+- **Implementation (this pass — honest errors + de-fragilize, no Redis/frontend change needed):**
+  - `src/app/chat.py` **sync fallback**: removed the canned `"Hello! I'm here to help you with your research…"` reply that masked a real outage as if the AI had answered. Now rolls back, logs, flashes an honest "AI temporarily unavailable — your message was saved, try again", and 303-redirects. The user's message is preserved; **no fake assistant turn is persisted**.
+  - `src/app/chat.py` **`continue_message`**: the AI call was unguarded → any failure 500'd. Wrapped it so a failure rolls back and flashes an honest message instead.
+  - `src/app/room/routes/crud.py` **doc import**: commit the imported Google-Doc message **first** (so an AI failure can't lose the import), then make the AI reply best-effort/guarded so a model failure can't 500 chat creation.
+  - `src/app/api/card_comments.py`: already returns an honest `503`/`500` (no masking) — left as-is.
+  - **Verification (local, isolated temp DB):** forced `get_ai_response` to raise on the sync path → endpoint returns **303**, exactly **1 user message** persisted, **0 assistant messages**, canned greeting absent. Suite green (114 passed / 21 skipped / 0 failed); all three files `py_compile` clean.
+- **Deferred to Phase 2 (needs a local Redis + frontend SSE wiring):** route the secondary sync sites (`continue`, doc-import) through the async worker, and/or make the default message reply prefer the worker even when the client doesn't opt in. These change the request→response contract (those endpoints currently return full-page redirects, with no SSE client listening), so they need frontend cooperation and an end-to-end worker test against a live Redis.
+- **Files:** `src/app/chat.py` (sync fallback ~L444, `continue_message` ~L1296), `src/app/room/routes/crud.py` (doc import ~L638). Unchanged: `src/app/api/card_comments.py` (already honest), worker `src/workers/ai_reply_job.py` (already built).
 
 ### R3 — DB connection pool can exceed Railway's limit 🟠 ⬜
 - **Issue:** Each worker holds up to 22 connections (pool 10 + overflow 12); ×3 workers + the background worker ≈ 70+, likely above the Postgres plan's `max_connections` → "too many connections" under load.

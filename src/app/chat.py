@@ -442,10 +442,18 @@ def view_chat(chat_id: int) -> Any:
                                     through_message=user_msg,
                                 )
                     except Exception as e:
-                        # If AI response fails, provide a helpful message
-                        ai_content = "Hello! I'm here to help you with your research. What would you like to explore today?"
-                        is_truncated = False
+                        # R2: don't fabricate a canned "Hello!" reply that hides a real
+                        # outage. The user's message is already saved; tell them the truth
+                        # and let them retry rather than persisting a fake assistant turn.
+                        db.session.rollback()
                         current_app.logger.error(f"AI response failed: {e}")
+                        flash(
+                            "The AI is temporarily unavailable. Your message was saved — "
+                            "please try again in a moment."
+                        )
+                        return redirect(
+                            url_for("chat.view_chat", chat_id=chat_obj.id), code=303
+                        )
 
                     ai_msg = Message(
                         chat_id=chat_obj.id,
@@ -1292,14 +1300,21 @@ def continue_message(chat_id: int, message_id: int) -> Any:
         f"Continue naturally without restating prior content."
     )
     
-    # Get AI response with continuation context
-    with room_ai_begin(chat_obj.room_id):
-        ai_content, is_truncated = get_ai_response(
-            chat_obj,
-            extra_system=continuation_prompt,
-            through_message=prev_msg,
-        )
-    
+    # Get AI response with continuation context. Time-boxed (get_ai_response has a 30s
+    # timeout) and guarded so a model failure returns an honest message, not a 500. (R2)
+    try:
+        with room_ai_begin(chat_obj.room_id):
+            ai_content, is_truncated = get_ai_response(
+                chat_obj,
+                extra_system=continuation_prompt,
+                through_message=prev_msg,
+            )
+    except Exception as e:
+        current_app.logger.error(f"Continuation generation failed: {e}")
+        db.session.rollback()
+        flash("Could not continue the response right now. Please try again.")
+        return redirect(url_for("chat.view_chat", chat_id=chat_obj.id))
+
     current_app.logger.info(
         f"Continuation generated: {len(ai_content)} chars, truncated={is_truncated}"
     )
