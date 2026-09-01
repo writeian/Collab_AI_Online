@@ -59,9 +59,11 @@ def extract_pdf_text(file_data: bytes) -> str:
         for page in reader.pages:
             text = page.extract_text()
             if text:
+                if total + len(text) > MAX_EXTRACT_CHARS:  # S10: bound retained text
+                    text = text[: MAX_EXTRACT_CHARS - total]
                 text_parts.append(text)
                 total += len(text)
-                if total >= MAX_EXTRACT_CHARS:  # S10: bound memory against bombs
+                if total >= MAX_EXTRACT_CHARS:
                     break
 
         return '\n'.join(text_parts)
@@ -81,10 +83,13 @@ def extract_docx_text(file_data: bytes) -> str:
         text_parts = []
         total = 0
         for paragraph in doc.paragraphs:
-            if paragraph.text:
-                text_parts.append(paragraph.text)
-                total += len(paragraph.text)
-                if total >= MAX_EXTRACT_CHARS:  # S10: bound memory against bombs
+            ptext = paragraph.text
+            if ptext:
+                if total + len(ptext) > MAX_EXTRACT_CHARS:  # S10: bound retained text
+                    ptext = ptext[: MAX_EXTRACT_CHARS - total]
+                text_parts.append(ptext)
+                total += len(ptext)
+                if total >= MAX_EXTRACT_CHARS:
                     break
 
         return '\n'.join(text_parts)
