@@ -308,6 +308,25 @@ def create_app(config_name=None):
     app.config.from_object(config[config_name])
     config[config_name].init_app(app)
 
+    # Behind Railway's proxy the app sees plain HTTP; trust the proxy's
+    # X-Forwarded-Proto so url_for(..., _external=True) builds https:// links
+    # (password-reset and invitation emails). Only the scheme is trusted here.
+    if config_name == "production":
+        from werkzeug.middleware.proxy_fix import ProxyFix
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1)
+
+    # Password reset depends on outbound email. Say so loudly at startup instead
+    # of letting resets fail silently (KAN-7).
+    try:
+        from src.utils.email import email_configured
+        if not email_configured():
+            app.logger.warning(
+                "Email is NOT configured (need EMAIL_PROVIDER=sendgrid and SENDGRID_API_KEY). "
+                "Password-reset and invitation emails will not be delivered."
+            )
+    except Exception:
+        pass
+
     # Initialize error monitoring as early as possible (no-op unless SENTRY_DSN set)
     _init_sentry(app)
 

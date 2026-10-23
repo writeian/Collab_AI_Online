@@ -381,7 +381,8 @@ def forgot_password() -> Any:
             "If an account with that email exists, a password reset link has been sent."
         )
 
-        user = User.query.filter_by(email=email).first()
+        # Case-insensitive: "Jane@School.edu" and "jane@school.edu" are the same mailbox.
+        user = User.query.filter(db.func.lower(User.email) == email.lower()).first()
         if user:
             # Issue a reset token and email the link. Any delivery failure is logged
             # WITHOUT the token or URL (S6) and never changes what the user sees.

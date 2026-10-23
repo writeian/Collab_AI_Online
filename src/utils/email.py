@@ -9,11 +9,21 @@ from typing import Optional
 import os
 import json
 import requests
+import logging
+
+# Use the logger (not print) so these show up reliably in Railway's logs.
+logger = logging.getLogger(__name__)
 
 
 def _get_env(name: str, default: Optional[str] = None) -> Optional[str]:
     val = os.getenv(name)
     return val if val is not None else default
+
+
+def email_configured() -> bool:
+    """True when outbound email can actually be sent (SendGrid provider + API key set)."""
+    provider = (_get_env("EMAIL_PROVIDER", "") or "").strip().lower()
+    return provider == "sendgrid" and bool(_get_env("SENDGRID_API_KEY"))
 
 
 def send_email(to_email: str, subject: str, html_body: str, text_body: Optional[str] = None) -> bool:
@@ -26,7 +36,7 @@ def send_email(to_email: str, subject: str, html_body: str, text_body: Optional[
     provider = (_get_env("EMAIL_PROVIDER", "").strip().lower())
     if provider != "sendgrid":
         # Not configured to send emails
-        print(f"[email] Provider not configured (EMAIL_PROVIDER={provider!r}). To={to_email}, Subject={subject}")
+        logger.warning(f"[email] Provider not configured (EMAIL_PROVIDER={provider!r}). Email not sent: {subject}")
         return False
 
     api_key = _get_env("SENDGRID_API_KEY")
@@ -35,7 +45,7 @@ def send_email(to_email: str, subject: str, html_body: str, text_body: Optional[
     reply_to = _get_env("EMAIL_REPLY_TO")
 
     if not api_key:
-        print("[email] SENDGRID_API_KEY is not set. Email not sent.")
+        logger.warning("[email] SENDGRID_API_KEY is not set. Email not sent.")
         return False
 
     # Build SendGrid request
@@ -62,10 +72,10 @@ def send_email(to_email: str, subject: str, html_body: str, text_body: Optional[
         )
         if 200 <= resp.status_code < 300:
             return True
-        print(f"[email] SendGrid error {resp.status_code}: {resp.text}")
+        logger.warning(f"[email] SendGrid error {resp.status_code}: {resp.text[:500]}")
         return False
     except Exception as e:
-        print(f"[email] Exception sending email: {e}")
+        logger.warning(f"[email] Exception sending email: {type(e).__name__}: {e}")
         return False
 
 
