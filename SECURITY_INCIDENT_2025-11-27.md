@@ -10,7 +10,7 @@ Production database credentials were accidentally committed to the repository in
    - Hostname: `yamanote.proxy.rlwy.net`
    - Port: `36405`
    - Username: `postgres`
-   - Password: `fKCmPKBlRjNFlDKbvdOZXjQTXMlnYyJJ` ⚠️
+   - Password: `[REDACTED — rotated, confirmed 2026-10-16]` ⚠️
    - Database: `railway`
 
 2. **Production user data** (`room_sample.csv`):
@@ -163,7 +163,7 @@ with app.app_context():
 
 1. **Database Password Rotated** ✅
    - Railway Postgres password regenerated
-   - Old password (`fKCmPKBlRjNFlDKbvdOZXjQTXMlnYyJJ`) revoked
+   - Old password (`[REDACTED]`) revoked
    - No evidence of unauthorized access detected
 
 2. **Files Removed from Repository** ✅

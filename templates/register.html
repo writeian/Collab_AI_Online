@@ -1,179 +1,184 @@
 {% extends "base.html" %}
-{% block title %}Register{% endblock %}
-{% block content %}
-  <!-- Main Content Container -->
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Page Header -->
-    <div class="mb-8 text-center">
-      <h1 class="text-3xl font-bold text-foreground mb-2">Create Account</h1>
-      <p class="text-muted-foreground">Join AI Collab and start collaborating with AI-powered writing</p>
-    </div>
+{% block title %}Create Account{% endblock %}
 
-    <!-- Registration Form Card -->
-    <div class="max-w-2xl mx-auto">
-      <div class="bg-card border border-border rounded-lg p-8">
-                    <form method="post" class="space-y-6">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="form-group">
-              <label for="username" class="block text-sm font-medium text-foreground mb-2">Username *</label>
-              <input type="text" id="username" name="username" value="{{ username or '' }}" required 
-                     class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
-                            focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-                            placeholder:text-muted-foreground">
-              <small class="text-xs text-muted-foreground mt-1">Letters, numbers, and underscores only</small>
-            </div>
+{% block extra_css %}
+<style>
+  /* Sign-up page styles, scoped under .signup so they don't leak into the rest of the app. */
+  .signup { --su-accent: #0660d4; /* same blue as the app's submit buttons */ --su-danger: var(--destructive, hsl(0, 84%, 60%));
+            --su-card: #ffffff; --su-text: #0f172a; --su-muted: #64748b; --su-line: #e2e8f0;
+            --su-field: #ffffff; --su-soft: #f8fafc; }
+  .dark .signup { --su-card: hsl(142, 6%, 12%); --su-text: #f1f5f9; --su-muted: #94a3b8; --su-line: hsl(142, 8%, 20%);
+                  --su-field: hsl(142, 6%, 9%); --su-soft: hsl(142, 6%, 15%); }
 
-            <div class="form-group">
-              <label for="email" class="block text-sm font-medium text-foreground mb-2">Email *</label>
-              <input type="email" id="email" name="email" value="{{ email or '' }}" required 
-                     class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
-                            focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-                            placeholder:text-muted-foreground">
-            </div>
-          </div>
+  .signup, .signup *, .signup *::before, .signup *::after { box-sizing: border-box; }
+  .signup { max-width: 36rem; margin: 0 auto; padding: 2.5rem 1rem 4rem; color: var(--su-text); }
+  .signup-card { background: var(--su-card); border: 1px solid var(--su-line); border-radius: 1rem;
+                 box-shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 8px 24px rgba(15, 23, 42, .06); padding: 2rem; }
+  @media (min-width: 640px) { .signup-card { padding: 2.5rem; } }
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="form-group">
-              <label for="full_name" class="block text-sm font-medium text-foreground mb-2">Full Name *</label>
-              <input type="text" id="full_name" name="full_name" value="{{ full_name or '' }}" required 
-                     class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
-                            focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-                            placeholder:text-muted-foreground">
-            </div>
+  .signup-header { text-align: center; margin-bottom: 2rem; }
+  .signup-header h1 { font-size: 1.75rem; line-height: 1.2; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 .5rem; }
+  .signup-header p { color: var(--su-muted); font-size: .95rem; margin: 0; }
 
-            <div class="form-group">
-              <label for="display_name" class="block text-sm font-medium text-foreground mb-2">Display Name *</label>
-              <input type="text" id="display_name" name="display_name" value="{{ display_name or '' }}" required 
-                     class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
-                            focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-                            placeholder:text-muted-foreground">
-            </div>
-          </div>
+  .signup-section-title { font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+                          color: var(--su-muted); margin: 0 0 1rem; }
+  .signup-grid { display: grid; gap: 1.25rem; }
+  @media (min-width: 640px) { .signup-grid.two { grid-template-columns: 1fr 1fr; } }
+  .signup-stack > * + * { margin-top: 1.25rem; }
 
-          <div class="form-group">
-            <label for="password" class="block text-sm font-medium text-foreground mb-2">Password *</label>
-            <input type="password" id="password" name="password" required 
-                   class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
-                          focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-                          placeholder:text-muted-foreground">
-            <small class="text-xs text-muted-foreground mt-1">At least 6 characters</small>
-          </div>
+  .signup-field label { display: block; font-size: .875rem; font-weight: 500; margin-bottom: .4rem; }
+  .signup-req { color: var(--su-danger); margin-left: .15rem; }
+  .signup-hint { display: block; font-size: .78rem; color: var(--su-muted); margin-top: .4rem; line-height: 1.4; }
 
-          <div class="border-t border-border pt-6">
-            <h3 class="text-lg font-semibold text-foreground mb-4">Optional Information</h3>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div class="form-group">
-                <label for="institution" class="block text-sm font-medium text-foreground mb-2">Institution/University</label>
-                <input type="text" id="institution" name="institution" value="{{ institution or '' }}" 
-                       class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
-                              focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-                              placeholder:text-muted-foreground">
-              </div>
+  .signup .signup-input { margin: 0; max-width: 100%; min-height: 0; box-shadow: none;
+                          width: 100%; height: 2.75rem; padding: 0 .9rem; border: 1px solid var(--su-line); border-radius: .6rem;
+                  background: var(--su-field); color: var(--su-text); font-size: .95rem;
+                  transition: border-color .15s, box-shadow .15s; }
+  .signup .signup-input::placeholder { color: var(--su-muted); opacity: .8; }
+  .signup .signup-input:hover { border-color: color-mix(in srgb, var(--su-line) 50%, var(--su-muted)); }
+  .signup .signup-input:focus { outline: none; border-color: var(--su-accent);
+                        box-shadow: 0 0 0 3px color-mix(in srgb, var(--su-accent) 22%, transparent); }
+  .signup select.signup-input { appearance: none; padding-right: 2.25rem; background-repeat: no-repeat; background-position: right .8rem center;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
 
-              <div class="form-group">
-                <label for="department" class="block text-sm font-medium text-foreground mb-2">Department/Field of Study</label>
-                <input type="text" id="department" name="department" value="{{ department or '' }}" 
-                       class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
-                              focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-                              placeholder:text-muted-foreground">
-              </div>
-            </div>
+  .signup-password { position: relative; }
+  .signup .signup-password .signup-input { padding-right: 4.25rem; }
+  .signup .signup-toggle { min-height: 0; margin: 0; position: absolute; right: .4rem; top: 50%; transform: translateY(-50%); border: 0; background: transparent;
+                   color: var(--su-muted); font-size: .8rem; font-weight: 500; padding: .35rem .6rem; border-radius: .4rem; cursor: pointer; }
+  .signup-toggle:hover, .signup-toggle:focus-visible { color: var(--su-text); background: var(--su-soft); outline: none; }
 
-            <div class="form-group">
-              <label for="research_area" class="block text-sm font-medium text-foreground mb-2">Research Area</label>
-              <input type="text" id="research_area" name="research_area" value="{{ research_area or '' }}" 
-                     placeholder="e.g., Computer Science, Education, etc."
-                     class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
-                            focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-                            placeholder:text-muted-foreground">
-            </div>
+  .signup-optional { margin-top: 1.75rem; border: 1px solid var(--su-line); border-radius: .75rem; background: var(--su-soft); }
+  .signup-optional > summary { list-style: none; cursor: pointer; padding: .9rem 1rem; display: flex; align-items: center;
+                               justify-content: space-between; font-size: .9rem; font-weight: 500; }
+  .signup-optional > summary::-webkit-details-marker { display: none; }
+  .signup-optional > summary span { color: var(--su-muted); font-weight: 400; font-size: .8rem; }
+  .signup-optional > summary::after { content: ""; width: .5rem; height: .5rem; margin-left: .75rem; flex: none;
+                                      border-right: 2px solid var(--su-muted); border-bottom: 2px solid var(--su-muted);
+                                      transform: rotate(45deg); transition: transform .15s; }
+  .signup-optional[open] > summary::after { transform: rotate(-135deg); }
+  .signup-optional-body { padding: .25rem 1rem 1.25rem; }
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div class="form-group">
-                <label for="role" class="block text-sm font-medium text-foreground mb-2">Role</label>
-                <select id="role" name="role" 
-                        class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
-                               focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
-                  <option value="">Select your role</option>
-                  <option value="Student" {{ 'selected' if role == 'Student' else '' }}>Student</option>
-                  <option value="Professor" {{ 'selected' if role == 'Professor' else '' }}>Professor</option>
-                  <option value="Researcher" {{ 'selected' if role == 'Researcher' else '' }}>Researcher</option>
-                  <option value="Administrator" {{ 'selected' if role == 'Administrator' else '' }}>Administrator</option>
-                  <option value="Other" {{ 'selected' if role == 'Other' else '' }}>Other</option>
-                </select>
-              </div>
+  .signup-terms { display: flex; align-items: flex-start; gap: .6rem; margin-top: 1.75rem; font-size: .875rem; line-height: 1.45; }
+  .signup .signup-terms input { width: 1rem; height: 1rem; min-width: 0; min-height: 0; padding: 0; margin: .15rem 0 0; accent-color: var(--su-accent); flex: none; }
+  .signup-terms a, .signup-footer a { color: var(--su-accent); font-weight: 500; text-decoration: none; }
+  .signup-terms a:hover, .signup-footer a:hover { text-decoration: underline; }
 
-              <div class="form-group">
-                <label for="primary_use_case" class="block text-sm font-medium text-foreground mb-2">Primary Use Case</label>
-                <select id="primary_use_case" name="primary_use_case" 
-                        class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
-                               focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
-                  <option value="">Select primary use</option>
-                  <option value="Research" {{ 'selected' if primary_use_case == 'Research' else '' }}>Research</option>
-                  <option value="Teaching" {{ 'selected' if primary_use_case == 'Teaching' else '' }}>Teaching</option>
-                  <option value="Personal Projects" {{ 'selected' if primary_use_case == 'Personal Projects' else '' }}>Personal Projects</option>
-                  <option value="Other" {{ 'selected' if primary_use_case == 'Other' else '' }}>Other</option>
-                </select>
-              </div>
-            </div>
+  .signup .signup-submit { display: block; min-height: 0; padding: 0;
+                   width: 100%; height: 2.875rem; margin-top: 1.5rem; border: 0; border-radius: .6rem; cursor: pointer;
+                   background: var(--su-accent); color: #fff; font-size: .95rem; font-weight: 600;
+                   box-shadow: 0 1px 2px rgba(15, 23, 42, .08); transition: filter .15s, transform .05s; }
+  .signup .signup-submit:hover { background: var(--su-accent); filter: brightness(.92); }
+  .signup .signup-submit:active { transform: translateY(1px); }
+  .signup .signup-submit:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--su-accent) 35%, transparent); }
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div class="form-group">
-                <label for="team_size" class="block text-sm font-medium text-foreground mb-2">Expected Team Size</label>
-                <select id="team_size" name="team_size" 
-                        class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
-                               focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
-                  <option value="">Select team size</option>
-                  <option value="Individual" {{ 'selected' if team_size == 'Individual' else '' }}>Individual</option>
-                  <option value="Small Group (2-5)" {{ 'selected' if team_size == 'Small Group (2-5)' else '' }}>Small Group (2-5)</option>
-                  <option value="Large Class (6+)" {{ 'selected' if team_size == 'Large Class (6+)' else '' }}>Large Class (6+)</option>
-                </select>
-              </div>
+  .signup-legend { font-size: .78rem; color: var(--su-muted); margin: -1rem 0 1.5rem; text-align: center; }
+  .signup-footer { text-align: center; margin-top: 1.5rem; font-size: .875rem; color: var(--su-muted); }
+</style>
+{% endblock %}
 
-              <div class="form-group">
-                <label for="heard_from" class="block text-sm font-medium text-foreground mb-2">How did you hear about us?</label>
-                <select id="heard_from" name="heard_from" 
-                        class="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground 
-                               focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
-                  <option value="">Select option</option>
-                  <option value="Colleague/Peer" {{ 'selected' if heard_from == 'Colleague/Peer' else '' }}>Colleague/Peer</option>
-                  <option value="Conference/Event" {{ 'selected' if heard_from == 'Conference/Event' else '' }}>Conference/Event</option>
-                  <option value="Social Media" {{ 'selected' if heard_from == 'Social Media' else '' }}>Social Media</option>
-                  <option value="Search Engine" {{ 'selected' if heard_from == 'Search Engine' else '' }}>Search Engine</option>
-                  <option value="Other" {{ 'selected' if heard_from == 'Other' else '' }}>Other</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-group checkbox-group">
-              <label class="flex items-center space-x-2">
-                <input type="checkbox" name="agree_terms" required 
-                       class="w-4 h-4 text-primary border-border rounded focus:ring-primary focus:ring-2">
-                <span class="text-sm text-foreground">
-                  I agree to the 
-                  <a href="{{ url_for('about') }}" class="text-primary hover:text-primary/80 transition-colors">Terms of Service</a>
-                  and 
-                  <a href="{{ url_for('about') }}" class="text-primary hover:text-primary/80 transition-colors">Privacy Policy</a>
-                </span>
-              </label>
-            </div>
-          </div>
-
-          <div class="flex items-center justify-between pt-6">
-            <button type="submit" 
-                    class="px-6 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 
-                           transition-colors font-medium">
-              Create Account
-            </button>
-            <a href="{{ url_for('auth.login') }}" 
-               class="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Already have an account? Login
-            </a>
-          </div>
-        </form>
-      </div>
-    </div>
+{% macro field(id, label, type="text", value="", required=false, hint=none, placeholder="", autocomplete=none) -%}
+  <div class="signup-field">
+    <label for="{{ id }}">{{ label }}{% if required %}<span class="signup-req" aria-hidden="true">*</span>{% endif %}</label>
+    <input class="signup-input" type="{{ type }}" id="{{ id }}" name="{{ id }}" value="{{ value or '' }}"
+           {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+           {% if autocomplete %}autocomplete="{{ autocomplete }}"{% endif %}
+           {% if hint %}aria-describedby="{{ id }}-hint"{% endif %}
+           {% if required %}required{% endif %}>
+    {% if hint %}<small class="signup-hint" id="{{ id }}-hint">{{ hint }}</small>{% endif %}
   </div>
-{% endblock %} 
+{%- endmacro %}
+
+{% macro choice(id, label, current, options, empty_label) -%}
+  <div class="signup-field">
+    <label for="{{ id }}">{{ label }}</label>
+    <select class="signup-input" id="{{ id }}" name="{{ id }}">
+      <option value="">{{ empty_label }}</option>
+      {% for opt in options %}
+        <option value="{{ opt }}" {{ 'selected' if current == opt else '' }}>{{ opt }}</option>
+      {% endfor %}
+    </select>
+  </div>
+{%- endmacro %}
+
+{% block content %}
+{% set has_optional = institution or department or research_area or role or primary_use_case or team_size or heard_from %}
+<div class="signup">
+  <div class="signup-card">
+    <div class="signup-header">
+      <h1>Create your account</h1>
+      <p>Join AI Collab and start learning together with AI.</p>
+    </div>
+    <p class="signup-legend">Fields marked <span class="signup-req" aria-hidden="true">*</span> are required.</p>
+
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+      <h2 class="signup-section-title">Your account</h2>
+      <div class="signup-stack">
+        <div class="signup-grid two">
+          {{ field("username", "Username", value=username, required=true, autocomplete="username",
+                   hint="Letters, numbers, and underscores only") }}
+          {{ field("email", "Email", type="email", value=email, required=true, autocomplete="email") }}
+        </div>
+        <div class="signup-grid two">
+          {{ field("full_name", "Full name", value=full_name, required=true, autocomplete="name") }}
+          {{ field("display_name", "Display name", value=display_name, required=true, autocomplete="nickname",
+                   hint="Shown to others in your rooms") }}
+        </div>
+
+        <div class="signup-field">
+          <label for="password">Password<span class="signup-req" aria-hidden="true">*</span></label>
+          <div class="signup-password">
+            <input class="signup-input" type="password" id="password" name="password" required
+                   minlength="{{ min_password_length }}" autocomplete="new-password" aria-describedby="password-hint">
+            <button type="button" class="signup-toggle" data-toggle-password="password" aria-controls="password" aria-pressed="false">Show</button>
+          </div>
+          <small class="signup-hint" id="password-hint">At least {{ min_password_length }} characters. Can&#39;t be all numbers or contain your username.</small>
+        </div>
+      </div>
+
+      <details class="signup-optional" {% if has_optional %}open{% endif %}>
+        <summary>Tell us about yourself <span>Optional</span></summary>
+        <div class="signup-optional-body signup-stack">
+          <div class="signup-grid two">
+            {{ field("institution", "Institution or university", value=institution, autocomplete="organization") }}
+            {{ field("department", "Department or field of study", value=department) }}
+          </div>
+          {{ field("research_area", "Research area", value=research_area, placeholder="e.g., Computer Science, Education") }}
+          <div class="signup-grid two">
+            {{ choice("role", "Role", role, ["Student", "Professor", "Researcher", "Administrator", "Other"], "Select your role") }}
+            {{ choice("primary_use_case", "Primary use", primary_use_case, ["Research", "Teaching", "Personal Projects", "Other"], "Select primary use") }}
+          </div>
+          <div class="signup-grid two">
+            {{ choice("team_size", "Expected team size", team_size, ["Individual", "Small Group (2-5)", "Large Class (6+)"], "Select team size") }}
+            {{ choice("heard_from", "How did you hear about us?", heard_from, ["Colleague/Peer", "Conference/Event", "Social Media", "Search Engine", "Other"], "Select option") }}
+          </div>
+        </div>
+      </details>
+
+      <label class="signup-terms">
+        <input type="checkbox" name="agree_terms" required>
+        <span>I agree to the <a href="{{ url_for('about') }}">Terms of Service</a> and <a href="{{ url_for('about') }}">Privacy Policy</a><span class="signup-req" aria-hidden="true">*</span></span>
+      </label>
+
+      <button type="submit" class="signup-submit">Create account</button>
+    </form>
+  </div>
+
+  <p class="signup-footer">Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a></p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.querySelectorAll('[data-toggle-password]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var input = document.getElementById(btn.getAttribute('data-toggle-password'));
+      var show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      btn.textContent = show ? 'Hide' : 'Show';
+      btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+    });
+  });
+</script>
+{% endblock %}
