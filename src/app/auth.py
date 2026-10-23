@@ -404,8 +404,9 @@ def forgot_password() -> Any:
                 )
                 if not sent:
                     current_app.logger.warning(
-                        "Password reset requested for user id=%s but email delivery is "
-                        "unavailable (SMTP not configured?). Token issued, not logged.",
+                        "Password reset requested for user id=%s but the email was not "
+                        "sent; see the preceding [email] log line for the reason. "
+                        "Token issued, not logged.",
                         user.id,
                     )
             except Exception as _e:
