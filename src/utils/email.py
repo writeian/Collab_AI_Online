@@ -16,6 +16,12 @@ def _get_env(name: str, default: Optional[str] = None) -> Optional[str]:
     return val if val is not None else default
 
 
+def email_configured() -> bool:
+    """True when outbound email can actually be sent (SendGrid provider + API key set)."""
+    provider = (_get_env("EMAIL_PROVIDER", "") or "").strip().lower()
+    return provider == "sendgrid" and bool(_get_env("SENDGRID_API_KEY"))
+
+
 def send_email(to_email: str, subject: str, html_body: str, text_body: Optional[str] = None) -> bool:
     """Send an email using configured provider.
 
