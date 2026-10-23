@@ -61,6 +61,12 @@ def _profile_activity_counts(user_id: int) -> tuple[int, int]:
 # rule can't drift between routes.
 MIN_PASSWORD_LENGTH = 8
 
+
+@auth.app_context_processor
+def _inject_password_policy():
+    """Expose the password minimum to templates so form hints can't drift from the server rule."""
+    return {"min_password_length": MIN_PASSWORD_LENGTH}
+
 # A tiny blocklist of the most trivially guessed passwords — enough to stop the worst
 # choices without frustrating users.
 _COMMON_PASSWORDS = {
