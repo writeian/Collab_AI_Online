@@ -48,12 +48,16 @@ DATABASE_URL=postgresql+psycopg2://...   # optional locally; SQLite if your conf
 ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-### Email (SendGrid)
+### Email (Brevo or SendGrid)
+
+Password-reset and invitation emails need one provider. Production uses **Brevo**
+(free tier; works with a single verified sender address, no domain needed).
 
 ```
-EMAIL_PROVIDER=sendgrid
-SENDGRID_API_KEY=SG.***
-EMAIL_FROM=your_verified_sender@example.com
+EMAIL_PROVIDER=brevo                 # default if unset; or: sendgrid
+BREVO_API_KEY=xkeysib-***            # if EMAIL_PROVIDER=brevo
+# SENDGRID_API_KEY=SG.***            # if EMAIL_PROVIDER=sendgrid
+EMAIL_FROM=your_verified_sender@example.com   # must be verified with the provider
 EMAIL_FROM_NAME=AI Collab Online
 EMAIL_REPLY_TO=support@example.com
 ```
