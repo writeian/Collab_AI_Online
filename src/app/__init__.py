@@ -321,7 +321,7 @@ def create_app(config_name=None):
         from src.utils.email import email_configured
         if not email_configured():
             app.logger.warning(
-                "Email is NOT configured (need EMAIL_PROVIDER=sendgrid and SENDGRID_API_KEY). "
+                "Email is NOT configured (need EMAIL_PROVIDER=brevo + BREVO_API_KEY, or sendgrid + SENDGRID_API_KEY). "
                 "Password-reset and invitation emails will not be delivered."
             )
     except Exception:

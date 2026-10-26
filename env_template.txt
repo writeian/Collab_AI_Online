@@ -84,3 +84,9 @@ SENTRY_DSN=
 # SENTRY_ENVIRONMENT=production        # optional; defaults to FLASK_ENV
 # SENTRY_RELEASE=                      # optional; e.g. a git SHA to tag releases
 # SENTRY_TRACES_SAMPLE_RATE=0.0        # optional; 0.0 = errors only (no perf tracing) 
+
+# Email: password resets + invitations (see DEVELOPMENT.md). Leave blank locally to skip sending.
+EMAIL_PROVIDER=
+BREVO_API_KEY=
+EMAIL_FROM=
+EMAIL_FROM_NAME=AI Collab Online
