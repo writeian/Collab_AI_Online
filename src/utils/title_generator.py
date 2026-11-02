@@ -8,6 +8,32 @@ from flask import current_app
 import re
 
 
+def clean_ai_title(text: Optional[str]) -> str:
+    """Turn an AI-written title into plain text before it is saved as a room name (KAN-6).
+
+    Models often answer with markdown or a label, e.g. '**Healthcare Inequality**',
+    'Title: "Healthcare Inequality"' or '# Healthcare Inequality'. Room names are shown
+    as plain text, so any of that would appear literally (e.g. the dashboard showed
+    '**Healthcare Inequality: S...').
+    """
+    if not text:
+        return ""
+    # Keep only the first non-empty line (models sometimes add an explanation below).
+    line = next((ln.strip() for ln in str(text).splitlines() if ln.strip()), "")
+    # Drop markdown heading/list markers at the start: '# ', '## ', '- ', '* '.
+    line = re.sub(r"^(?:#{1,6}|[-*])\s+", "", line)
+    # Remove bold/italic/code markers anywhere: ** __ * _ ` (keeps snake_case words intact).
+    line = re.sub(r"(\*\*|__|`)", "", line)
+    line = re.sub(r"(?<!\w)[*_]|[*_](?!\w)", "", line)
+    # Drop a leading 'Title:' / 'Room title:' label.
+    line = re.sub(r"^(?:room\s+)?title\s*:\s*", "", line, flags=re.IGNORECASE)
+    # Strip surrounding quotes and a trailing period.
+    line = line.strip().strip('"\'\u201c\u201d\u2018\u2019').strip()
+    line = re.sub(r"\.$", "", line)
+    # Collapse internal whitespace.
+    return re.sub(r"\s+", " ", line).strip()
+
+
 def generate_short_title(room_name: str, room_goals: Optional[str] = None) -> str:
     """
     Generate a concise 2-4 word title for a room using AI.

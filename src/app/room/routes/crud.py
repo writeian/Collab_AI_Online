@@ -1010,7 +1010,8 @@ Return as JSON with this exact format:
             try:
                 current_app.logger.info(f"🤖 AI Title: Parsing JSON response...")
                 data = json.loads(response.strip())
-                title = data.get("title", "").strip()
+                from src.utils.title_generator import clean_ai_title
+                title = clean_ai_title(data.get("title", ""))
                 modes = data.get("modes", [])
                 
                 current_app.logger.info(f"✅ AI SUCCESS: Generated title: '{title}' and {len(modes)} modes")

@@ -176,7 +176,8 @@ def refine_room_proposal_new():
                 )
                 
                 if ai_response and ai_response.strip():
-                    title = ai_response.strip()
+                    from src.utils.title_generator import clean_ai_title
+                    title = clean_ai_title(ai_response)
                     current_app.logger.info(f"✅ AI TITLE SUCCESS: '{title}'")
                 else:
                     current_app.logger.warning("❌ AI returned empty title response")
