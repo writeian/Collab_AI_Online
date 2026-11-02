@@ -292,7 +292,8 @@ def generate_room_modes(room: Any, template_name: Optional[str] = None) -> Dict[
             data = _json.loads(text.strip())
             
             # Extract title
-            title = data.get("title", "").strip()
+            from src.utils.title_generator import clean_ai_title
+            title = clean_ai_title(data.get("title", ""))
             
             # Extract modes
             modes_data = data.get("modes", [])
