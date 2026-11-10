@@ -155,12 +155,12 @@
       {% endif %}
       
       <!-- Individual Room Card -->
-      <div class="bg-white border border-gray-200 rounded-lg transition-all duration-200 cursor-pointer room-card
+      <div class="bg-white border border-gray-200 rounded-lg transition-all duration-200 room-card
                   hover:bg-gradient-to-r hover:from-amber-50 hover:to-yellow-50 hover:border-amber-200 hover:shadow-lg hover:-translate-y-1
                   {% if stats.has_unread %}ring-2 ring-red-200 bg-red-50/30{% endif %}"
            data-room-card data-room-id="{{ room.id }}" data-room-index="{{ loop.index0 }}"{% if loop.first %} data-tutorial="room-card"{% endif %}>
         
-        <!-- Collapsible Header -->
+        <!-- Header -->
         <div class="flex items-start justify-between gap-3 mb-3 room-card__header">
           <div class="flex-1 min-w-0">
             <a href="{{ url_for('room.room_crud.view_room', room_id=room.id) }}" class="block">
@@ -173,17 +173,10 @@
             <span class="text-xs font-semibold px-2.5 py-1 rounded-full {{ status_class }}">
               {{ status_label }}
             </span>
-            <button type="button"
-                    class="p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors room-card__toggle"
-                    aria-expanded="true"
-                    aria-controls="room-card-body-{{ room.id }}"
-                    data-room-toggle="{{ room.id }}">
-              <i data-lucide="chevron-down" class="w-4 h-4 room-card__chevron"></i>
-            </button>
           </div>
         </div>
         
-        <div class="room-card__body" id="room-card-body-{{ room.id }}">
+        <div class="room-card__body">
           <!-- Description -->
           {% if display_description %}
           <p class="text-base text-gray-700 leading-relaxed mb-4">
@@ -364,19 +357,6 @@
 .room-card {
   padding: 1rem;
 }
-.room-card.collapsed .room-card__body {
-  display: none;
-}
-.room-card__chevron {
-  transition: transform 0.2s ease;
-}
-.room-card.collapsed .room-card__chevron {
-  transform: rotate(-90deg);
-}
-.room-card__toggle:focus-visible {
-  outline: 2px solid rgba(59, 130, 246, 0.6);
-  outline-offset: 2px;
-}
 
 /* Mobile overflow prevention */
 @media (max-width: 640px) {
@@ -400,54 +380,6 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const grid = document.querySelector('[data-total-rooms]');
-  const totalRooms = grid ? parseInt(grid.dataset.totalRooms || '0', 10) : 0;
-
-  const cards = document.querySelectorAll('[data-room-card]');
-  cards.forEach((card) => {
-    const toggle = card.querySelector('[data-room-toggle]');
-    const body = card.querySelector('.room-card__body');
-    if (!toggle || !body) return;
-    
-    // Get room index (0-based)
-    const roomIndex = parseInt(card.dataset.roomIndex || '0', 10);
-    
-    // If >6 rooms, collapse all except first 3 (most recent)
-    // Otherwise, expand all
-    const shouldExpand = totalRooms <= 6 || roomIndex < 3;
-
-    const applyState = (expanded) => {
-      if (expanded) {
-        card.classList.remove('collapsed');
-        toggle.setAttribute('aria-expanded', 'true');
-      } else {
-        card.classList.add('collapsed');
-        toggle.setAttribute('aria-expanded', 'false');
-      }
-    };
-
-    applyState(shouldExpand);
-
-    const handleToggle = () => {
-      const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
-      applyState(!isExpanded);
-    };
-
-    toggle.addEventListener('click', (event) => {
-      event.stopPropagation();
-      handleToggle();
-    });
-
-    const header = card.querySelector('.room-card__header');
-    if (header) {
-      header.addEventListener('click', (event) => {
-        if (event.target.closest('a')) return;
-        if (event.target.closest('.room-card__toggle')) return;
-        handleToggle();
-      });
-    }
-  });
-
   if (window.lucide && typeof window.lucide.createIcons === 'function') {
     window.lucide.createIcons();
   }
